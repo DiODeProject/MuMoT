@@ -33,9 +33,10 @@ get_ipython().magic('matplotlib nbagg')
 class MuMoTmodel: # class describing a model
     _rules = [] # list of rules
     _reactants = set() # set of reactants
-    _reactantsLaTeX = [] # list of LaTeX strings describing reactants
+    _systemSize = None # parameter that determines system size, set by using substitute()
+    _reactantsLaTeX = [] # list of LaTeX strings describing reactants (TODO: depracated?)
     _rates = set() # set of rates
-    _ratesLaTeX = [] # list of LaTeX strings describing rates
+    _ratesLaTeX = [] # list of LaTeX strings describing rates (TODO: depracated?)
     _equations = {} # dictionary of ODE righthand sides with reactant as key
     _pyDSmodel = None
     _dot = None # graphviz visualisation of model
@@ -64,11 +65,21 @@ class MuMoTmodel: # class describing a model
         for rule in newModel._rules:
             for sub in subs:
                 rule.rate = rule.rate.subs(sub[0], sub[1])
+        for sub in subs:
+            if sub[0] in newModel._reactants:
+                for atom in sub[1].atoms(Symbol):
+                    if atom not in newModel._reactants and atom != self._systemSize:
+                        newModel._systemSize = atom
+                newModel._reactants.discard(sub[0])
+                del newModel._equations[sub[0]]
+        if newModel._systemSize == None:
+            newModel._systemSize = self._systemSize
         for reactant in newModel._equations:
             rhs = newModel._equations[reactant]
             for symbol in rhs.atoms(Symbol):
-                if symbol not in newModel._reactants:
+                if symbol not in newModel._reactants and symbol != newModel._systemSize:
                     newModel._rates.add(symbol)
+        # TODO: what else should be copied to new model?
 
         return newModel
 
@@ -186,47 +197,69 @@ class MuMoTmodel: # class describing a model
         name = 'MuMoT Model' + str(id(self))
         self._pyDSmodel = dst.args(name = name)
         self._paramDict = {} # TODO make local?
+        initialRateValue = 1
         for rate in self._rates:
-            self._paramDict[str(rate)] = 0.0
+            self._paramDict[str(rate)] = initialRateValue # TODO choose initial values sensibly
+        self._paramDict[str(self._systemSize)] = 1 # TODO choose initial values sensibly
         self._pyDSmodel.pars = self._paramDict
         varspecs = {}
         for reactant in self._reactants:
             varspecs[str(reactant)] = str(self._equations[reactant])
         self._pyDSmodel.varspecs = varspecs
-        self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel) # TODO: add to __init__()
 
         if stateVariable2 == None:
             # 2-d bifurcation diagram
+            # create widgets
+            self._paramValues = []
+            self._paramNames = []
+            self._widgets = []
+            if self._systemSize != None:
+                # TODO: shouldn't allow system size to be varied?
+                self._paramValues.append(1)
+                self._paramNames.append(str(self._systemSize))
+                widget = widgets.FloatSlider(value = 1, min = 0.0, max = 10.0, step = 0.1, description = str(self._systemSize), continuous_update = False)
+                widget.on_trait_change(self._replot_bifurcation2D, 'value')
+                self._widgets.append(widget)
+                display(widget)
+            else:
+                print('Cannot attempt bifurcation plot until system size is set, using substitute()')
+                return
+            for rate in self._rates:
+                if str(rate) != bifurcationParameter:
+                    self._paramValues.append(initialRateValue)
+                    self._paramNames.append(str(rate))
+                    widget = widgets.FloatSlider(value = initialRateValue, min = 0.0, max = 10.0, step = 0.1, description = str(rate), continuous_update = False)
+                    widget.on_trait_change(self._replot_bifurcation2D, 'value')
+                    self._widgets.append(widget)
+                    display(widget)
             # Prepare the system to start close to a steady state
-            self._pyDSode.set(pars = {bifurcationParameter: 0.1} )     # Lower bound of the bifurcation parameter (TODO: set dynamically)
-            initconds = {stateVariable1:0.45, 'B':0.45, 'U':0.1}       # TODO: remove hack assuming remaining state variables
+            self._bifurcationParameter = bifurcationParameter          # TODO: remove hack (bifurcation parameter for multiple possible bifurcations needs to be stored in self)
+            self._stateVariable1 = stateVariable1                      # TODO: remove hack (state variable for multiple possible bifurcations needs to be stored in self)
+#            self._pyDSode.set(pars = {bifurcationParameter: 0} )       # Lower bound of the bifurcation parameter (TODO: set dynamically)
+#            self._pyDSode.set(pars = self._pyDSmodel.pars )       # Lower bound of the bifurcation parameter (TODO: set dynamically)
+#            self._pyDSode.pars = {bifurcationParameter: 0}             # Lower bound of the bifurcation parameter (TODO: set dynamically?)
+            initconds = {stateVariable1: self._paramDict[str(self._systemSize)] / len(self._reactants)} # TODO: guess where steady states are?
+            for reactant in self._reactants:
+                if str(reactant) != stateVariable1:
+                    initconds[str(reactant)] = self._paramDict[str(self._systemSize)] / len(self._reactants)
             self._pyDSmodel.ics = initconds                            
-            self._pyDSode.set(ics = initconds)                         # TODO: guess where steady states are
+#            self._pyDSode.set(ics = initconds)
+            self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  # TODO: add to __init__()
             self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class (TODO: add to __init__())
             # TODO: add self._pyDScontArgs to __init__()
             self._pyDScontArgs = dst.args(name='EQ1', type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labeled 'EQ1'.
-            self._pyDScontArgs.freepars     = [bifurcationParameter]   # control parameter(s) (it should be among those specified in self._pyDSmodel.pars)
+            self._pyDScontArgs.freepars     = [bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
             self._pyDScontArgs.MaxNumPoints = 450                      # The following 3 parameters are set after trial-and-error TODO: how to automate this?
             self._pyDScontArgs.MaxStepSize  = 2
             self._pyDScontArgs.MinStepSize  = 1e-5
             self._pyDScontArgs.StepSize     = 2e-2
             self._pyDScontArgs.LocBifPoints = 'LP'                     # detect limit points / saddle-node bifurcations
             self._pyDScontArgs.SaveEigen    = True                     # to tell unstable from stable branches
-            self._paramValues = []
-            self._paramNames = []
-            self._widgets = []
-            for rate in self._rates:
-                if str(rate) != bifurcationParameter:
-                    self._paramValues.append(0.0)
-                    self._paramNames.append(str(rate))
-                    widget = widgets.FloatSlider(value = 0.5, min = 0.0, max = 10.0, step = 0.1, description = str(rate), continuous_update = False)
-                    widget.on_trait_change(self._replot_bifurcation2D, 'value')
-                    self._widgets.append(widget)
-                    display(widget)
+
             plt.ion()
 #            self._bifurcation2Dfig = plt.figure(1)                     # TODO: add to __init__()
             self._pyDScont.newCurve(self._pyDScontArgs)
-            self._pyDScont['EQ1'].forward()
+            self._pyDScont['EQ1'].backward()                            # TODO: how to choose direction?
             self._pyDScont.display([bifurcationParameter, stateVariable1], stability = True, figure = 1) 
         else:
             # 3-d bifurcation diagram
@@ -239,9 +272,14 @@ class MuMoTmodel: # class describing a model
             self._paramValues[i] = self._widgets[i].value
         for name, value in zip(self._paramNames, self._paramValues):
             self._pyDSmodel.pars[name] = value
-        self._pyDScont.newCurve(self._pyDScontArgs)
-        self._pyDScont['EQ1'].forward(force = True)
-        self._pyDScont.display([bifurcationParameter, stateVariable1], stability = True, figure = 1) 
+#        self._pyDScont.newCurve(self._pyDScontArgs)
+        self._pyDScont.plot.clearall()
+#        self._pyDScont['EQ1'].reset(self._pyDSmodel.pars)
+        self._pyDSode.set(pars = self._pyDSmodel.pars)
+        self._pyDScont['EQ1'].reset()
+#        self._pyDScont.update(self._pyDSmodel.pars)                       # TODO: what does this do?
+        self._pyDScont['EQ1'].backward()                                # TODO: how to choose direction?
+        self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = 1) 
                                  
     def _localLaTeXimageFile(self, source):
         # render LaTeX source to local image file
@@ -285,6 +323,7 @@ class MuMoTmodel: # class describing a model
     def __init__(self):
         self._rules = []
         self._reactants = set()
+        self._systemSize = None
         self._reactantsLaTeX = None
         self._rates = set()
         self._ratesLaTeX= None
