@@ -197,7 +197,9 @@ class MuMoTmodel: # class describing a model
         name = 'MuMoT Model' + str(id(self))
         self._pyDSmodel = dst.args(name = name)
         self._paramDict = {} # TODO make local?
-        initialRateValue = 1
+        initialRateValue = 0.0
+        rateLimits = (-10.0, 10.0)
+        rateStep = 0.1
         for rate in self._rates:
             self._paramDict[str(rate)] = initialRateValue # TODO choose initial values sensibly
         self._paramDict[str(self._systemSize)] = 1 # TODO choose initial values sensibly
@@ -215,12 +217,13 @@ class MuMoTmodel: # class describing a model
             self._widgets = []
             if self._systemSize != None:
                 # TODO: shouldn't allow system size to be varied?
-                self._paramValues.append(1)
-                self._paramNames.append(str(self._systemSize))
-                widget = widgets.FloatSlider(value = 1, min = 0.0, max = 10.0, step = 0.1, description = str(self._systemSize), continuous_update = False)
-                widget.on_trait_change(self._replot_bifurcation2D, 'value')
-                self._widgets.append(widget)
-                display(widget)
+                pass
+#                self._paramValues.append(1)
+#                self._paramNames.append(str(self._systemSize))
+#                widget = widgets.FloatSlider(value = 1, min = rateLimits[0], max = rateLimits[1], step = rateStep, description = str(self._systemSize), continuous_update = False)
+#                widget.on_trait_change(self._replot_bifurcation2D, 'value')
+#                self._widgets.append(widget)
+#                display(widget)
             else:
                 print('Cannot attempt bifurcation plot until system size is set, using substitute()')
                 return
@@ -228,7 +231,7 @@ class MuMoTmodel: # class describing a model
                 if str(rate) != bifurcationParameter:
                     self._paramValues.append(initialRateValue)
                     self._paramNames.append(str(rate))
-                    widget = widgets.FloatSlider(value = initialRateValue, min = 0.0, max = 10.0, step = 0.1, description = str(rate), continuous_update = False)
+                    widget = widgets.FloatSlider(value = initialRateValue, min = rateLimits[0], max = rateLimits[1], step = rateStep, description = str(rate), continuous_update = False)
                     widget.on_trait_change(self._replot_bifurcation2D, 'value')
                     self._widgets.append(widget)
                     display(widget)
@@ -259,7 +262,11 @@ class MuMoTmodel: # class describing a model
             plt.ion()
 #            self._bifurcation2Dfig = plt.figure(1)                     # TODO: add to __init__()
             self._pyDScont.newCurve(self._pyDScontArgs)
-            self._pyDScont['EQ1'].backward()                            # TODO: how to choose direction?
+            try:
+                self._pyDScont['EQ1'].backward()                            # TODO: how to choose direction?
+            except ZeroDivisionError:
+                pass
+#            self._pyDScont['EQ1'].info()
             self._pyDScont.display([bifurcationParameter, stateVariable1], stability = True, figure = 1) 
         else:
             # 3-d bifurcation diagram
@@ -272,13 +279,19 @@ class MuMoTmodel: # class describing a model
             self._paramValues[i] = self._widgets[i].value
         for name, value in zip(self._paramNames, self._paramValues):
             self._pyDSmodel.pars[name] = value
-#        self._pyDScont.newCurve(self._pyDScontArgs)
         self._pyDScont.plot.clearall()
+        self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  # TODO: add to __init__()
+        self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class (TODO: add to __init__())
+        self._pyDScont.newCurve(self._pyDScontArgs)
 #        self._pyDScont['EQ1'].reset(self._pyDSmodel.pars)
-        self._pyDSode.set(pars = self._pyDSmodel.pars)
-        self._pyDScont['EQ1'].reset()
-#        self._pyDScont.update(self._pyDSmodel.pars)                       # TODO: what does this do?
-        self._pyDScont['EQ1'].backward()                                # TODO: how to choose direction?
+#        self._pyDSode.set(pars = self._pyDSmodel.pars)
+#        self._pyDScont['EQ1'].reset()
+#        self._pyDScont.update(self._pyDScontArgs)                         # TODO: what does this do?
+        try:
+            self._pyDScont['EQ1'].backward()                                  # TODO: how to choose direction?
+        except ZeroDivisionError:
+            pass
+#        self._pyDScont['EQ1'].info()
         self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = 1) 
                                  
     def _localLaTeXimageFile(self, source):
@@ -502,4 +515,3 @@ def _deriveODEsFromRules(reactants, rules):
     
 def _raiseModelError(expected, read, rule):
     raise SyntaxError("Expected " + expected + " but read '" + read + "' in rule: " + rule)
-
