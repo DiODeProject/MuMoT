@@ -197,7 +197,7 @@ class MuMoTmodel: # class describing a model
         name = 'MuMoT Model' + str(id(self))
         self._pyDSmodel = dst.args(name = name)
         self._paramDict = {} # TODO make local?
-        initialRateValue = 0.0
+        initialRateValue = 0.1
         rateLimits = (-10.0, 10.0)
         rateStep = 0.1
         for rate in self._rates:
@@ -235,6 +235,9 @@ class MuMoTmodel: # class describing a model
                     widget.on_trait_change(self._replot_bifurcation2D, 'value')
                     self._widgets.append(widget)
                     display(widget)
+            widget = widgets.HTML(value = '')
+            self._errorMessage = widget                                # TODO: add to __init__()
+            display(self._errorMessage)
             # Prepare the system to start close to a steady state
             self._bifurcationParameter = bifurcationParameter          # TODO: remove hack (bifurcation parameter for multiple possible bifurcations needs to be stored in self)
             self._stateVariable1 = stateVariable1                      # TODO: remove hack (state variable for multiple possible bifurcations needs to be stored in self)
@@ -264,10 +267,12 @@ class MuMoTmodel: # class describing a model
             self._pyDScont.newCurve(self._pyDScontArgs)
             try:
                 self._pyDScont['EQ1'].backward()                            # TODO: how to choose direction?
+                self._errorMessage.value = ''
             except ZeroDivisionError:
-                pass
+                self._errorMessage.value = 'Division by zero'
 #            self._pyDScont['EQ1'].info()
-            self._pyDScont.display([bifurcationParameter, stateVariable1], stability = True, figure = 1) 
+            self._pyDScont.display([bifurcationParameter, stateVariable1], stability = True, figure = 1)
+            self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
         else:
             # 3-d bifurcation diagram
             assert false
@@ -289,10 +294,12 @@ class MuMoTmodel: # class describing a model
 #        self._pyDScont.update(self._pyDScontArgs)                         # TODO: what does this do?
         try:
             self._pyDScont['EQ1'].backward()                                  # TODO: how to choose direction?
+            self._errorMessage.value = ''
         except ZeroDivisionError:
-            pass
+            self._errorMessage.value = 'Division by zero'
 #        self._pyDScont['EQ1'].info()
-        self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = 1) 
+        self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = 1)
+        self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
                                  
     def _localLaTeXimageFile(self, source):
         # render LaTeX source to local image file
