@@ -9,7 +9,7 @@ Repository should contain following files/folders:
 * MuMoTtest.py and other demo files
 
 # Dependencies:
-You need to install the following tools: PyDSTool, graphviz (graph visualization) and antlr4 (parser generator). It is possible to pip. Open a terminal window and type:
+You need to install the following tools: PyDSTool, graphviz (graph visualization) and antlr4 (parser generator). It is possible to use pip. Open a terminal window and type:
 
 * pip install pydstool
 * pip install graphviz
