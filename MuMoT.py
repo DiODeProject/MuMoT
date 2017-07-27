@@ -197,8 +197,8 @@ class MuMoTmodel: # class describing a model
         name = 'MuMoT Model' + str(id(self))
         self._pyDSmodel = dst.args(name = name)
         self._paramDict = {} # TODO make local?
-        initialRateValue = 0.1
-        rateLimits = (-10.0, 10.0)
+        initialRateValue = 1
+        rateLimits = (-100.0, 100.0)
         rateStep = 0.1
         for rate in self._rates:
             self._paramDict[str(rate)] = initialRateValue # TODO choose initial values sensibly
@@ -259,8 +259,9 @@ class MuMoTmodel: # class describing a model
             self._pyDScontArgs.MaxStepSize  = 2
             self._pyDScontArgs.MinStepSize  = 1e-5
             self._pyDScontArgs.StepSize     = 2e-2
-            self._pyDScontArgs.LocBifPoints = 'LP'                     # detect limit points / saddle-node bifurcations
+            self._pyDScontArgs.LocBifPoints = 'LP'                    # TODO WAS 'LP' (detect limit points / saddle-node bifurcations)
             self._pyDScontArgs.SaveEigen    = True                     # to tell unstable from stable branches
+#            self._pyDScontArgs.CalcStab     = True
 
             plt.ion()
 #            self._bifurcation2Dfig = plt.figure(1)                     # TODO: add to __init__()
@@ -522,3 +523,4 @@ def _deriveODEsFromRules(reactants, rules):
     
 def _raiseModelError(expected, read, rule):
     raise SyntaxError("Expected " + expected + " but read '" + read + "' in rule: " + rule)
+
