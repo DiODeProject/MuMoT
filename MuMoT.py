@@ -31,6 +31,7 @@ from IPython.utils import io
 import datetime
 import warnings
 from matplotlib.cbook import MatplotlibDeprecationWarning
+#from numpy.oldnumeric.fix_default_axis import _args3
 #from matplotlib.offsetbox import kwargs
 
 get_ipython().magic('alias_magic model latex')
@@ -46,6 +47,8 @@ class MuMoTmodel: # class describing a model
     _rates = None # set of rates
     _ratesLaTeX = None # dictionary of LaTeX strings describing rates
     _equations = None # dictionary of ODE righthand sides with reactant as key
+    _funcs = None # dictionary of lambdified functions for integration, plotting, etc.
+    _args = None # tuple of argument symbols for lambdified functions
     _dot = None # graphviz visualisation of model
     _renderImageFormat = 'png' # image format used for rendering edge labels for model visualisation
     _tmpdirpath = '__mumot_files__' # local path for creation of temporary storage
@@ -197,13 +200,51 @@ class MuMoTmodel: # class describing a model
             display(Math(out))
 
 
+    def stream(self, stateVariable1, stateVariable2, **kwargs):
+        # construct interactive stream plot
+        
+        if self._systemSize != None:
+            pass
+        else:
+            print('Cannot construct streamplot until system size is set, using substitute()')
+            return    
+        
+        if Symbol(stateVariable1) in self._reactants and Symbol(stateVariable2) in self._reactants:
+            if stateVariable1 != stateVariable2:
+                initialRateValue = 4 # TODO was 1 (choose initial values sensibly)
+                rateLimits = (-100.0, 100.0) # TODO choose limit values sensibly
+                rateStep = 0.1 # TODO choose rate step sensibly                
+
+                # construct controller
+                paramValues = []
+                paramNames = []        
+                for rate in self._rates:
+                    paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+                    paramNames.append(str(rate))
+                viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False)
+
+                # construct view
+                modelView = MuMoTstreamView(self, viewController, stateVariable1, stateVariable2, **kwargs)
+                
+                viewController.setView(modelView)
+                viewController.setReplotFunction(modelView._plot_stream)               
+                
+                return viewController
+                
+            else:
+                print('State variables cannot be the same')
+                return
+        else:
+            print('Invalid reactant provided as state variable')
+            return
+
     def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, **kwargs):
         # construct interactive PyDSTool plot
    
         if self._systemSize != None:
             pass
         else:
-            print('Cannot attempt bifurcation plot until system size is set, using substitute()')
+            print('Cannot construct bifurcation plot until system size is set, using substitute()')
             return    
 
         paramDict = {}
@@ -309,7 +350,42 @@ class MuMoTmodel: # class describing a model
 #             # 3-d bifurcation diagram
 #             assert false
 
-
+    def _getFuncs(self):
+        # lambdify sympy equations for numerical integration, plotting, etc.
+        if self._systemSize == None:
+            assert false
+        if self._funcs == None:
+            argList = []
+            for reactant in self._reactants:
+                argList.append(reactant)
+            for rate in self._rates:
+                argList.append(rate)
+            argList.append(self._systemSize)
+            self._args = tuple(argList)
+            self._funcs = {}
+            for equation in self._equations:
+                f = lambdify(self._args, self._equations[equation], "math")
+                self._funcs[equation] = f
+            
+        return self._funcs
+    
+    def _getArgTuple(self, argNames, argValues, stateVariable1 = None, stateVariable2 = None, X = None, Y = None):
+        # get tuple to evalute functions returned by _getFuncs with
+        # TODO how to return a tuple usable for numerical integration, for which stateVariable1 == stateVariable2 == None?
+        argNamesSymb = list(map(Symbol, argNames))
+        argDict = dict(zip(argNamesSymb, argValues)) # TODO could memo-ize this for speed-up, e.g. in stream(...)
+        argList = []
+        for arg in self._args:
+            if arg == stateVariable1:
+                argList.append(X)
+            elif arg == stateVariable2:
+                argList.append(Y)
+            elif arg == self._systemSize:
+                argList.append(1) # TODO: system size set to 1
+            else:
+                argList.append(argDict[arg])
+            
+        return tuple(argList)
                                  
     def _localLaTeXimageFile(self, source):
         # render LaTeX source to local image file
@@ -397,7 +473,7 @@ class MuMoTcontroller: # class describing a controller for a model view
         self._paramLabelDict = paramLabelDict
         self._widgets = []
         for pair in zip(paramNames, paramValues):
-            widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], max = pair[1][2], step = pair[1][3], description = r'\(' + self._paramLabelDict[pair[0]] + r'\)', continuous_update = continuousReplot) # TODO: rendering of LaTeX 'description' field
+            widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], max = pair[1][2], step = pair[1][3], description = r'\(' + self._paramLabelDict[pair[0]] + r'\)', continuous_update = continuousReplot)
             # widget.on_trait_change(replotFunction, 'value')
             self._widgets.append(widget)
             display(widget)
@@ -421,21 +497,68 @@ class MuMoTcontroller: # class describing a controller for a model view
 class MuMoTview: # class describing a view on a model
     _mumotModel = None
     _figure = None
+    _figureNum = None
     _widgets = None
     _controller = None
     _logs = None
     
     def __init__(self, model, controller):
         global figureCounter
-        self._figure = figureCounter
+        self._figureNum = figureCounter
         figureCounter += 1
         self._mumotModel = model
         self._controller = controller
         self._logs = []
         
+        plt.ion()
+        with warnings.catch_warnings(): # ignore warnings when plt.hold has been deprecated in installed libraries - still need to try plt.hold(True) in case older libraries in use
+            warnings.filterwarnings("ignore",category=MatplotlibDeprecationWarning)
+            warnings.filterwarnings("ignore",category=UserWarning)
+            plt.hold(True)  
+        self._figure = plt.figure(self._figureNum) 
+
+    def _log(self, analysis):
+        print("Starting", analysis, "with parameters ", end='')
+        for i in zip(self._controller._paramNames, self._controller._paramValues):
+            print('(' + i[0] + '=' + repr(i[1]) + '), ', end='')
+        print("at", datetime.datetime.now())
+        
+                        
     def showLogs(self):
         for log in self._logs:
             log.show()
+
+class MuMoTstreamView(MuMoTview): # streamplot view on model
+    _stateVariable1 = None # 1st state variable (x-dimension)
+    _stateVariable2 = None # 2nd state variable (y-dimension)
+    
+    def __init__(self, model, controller, stateVariable1, stateVariable2, **kwargs):
+        super().__init__(model, controller)
+
+        self._stateVariable1 = Symbol(stateVariable1)
+        self._stateVariable2 = Symbol(stateVariable2)
+
+        self._plot_stream()
+        
+    def _plot_stream(self):
+        for i in np.arange(0, len(self._controller._paramValues)):
+            # UGLY!
+            self._controller._paramValues[i] = self._controller._widgets[i].value
+        with io.capture_output() as log:
+            self._log("streamplot")
+            funcs = self._mumotModel._getFuncs()
+            Y, X = np.mgrid[0:1:100j, 0:1:100j] # TODO system size defined to be one
+            Ydot, Xdot = np.mgrid[0:1:100j, 0:1:100j] # TODO system size defined to be one
+            for x in np.arange(0, 100): # TODO choose granularity according to user keyword
+                for y in np.arange(0, 100): # TODO choose granularity according to user keyword
+                    xTuple = self._mumotModel._getArgTuple(self._controller._paramNames, self._controller._paramValues, self._stateVariable1, self._stateVariable2, X[x,y], Y[x,y])
+                    Xdot[x,y] = funcs[self._stateVariable1](*xTuple)
+                    yTuple = self._mumotModel._getArgTuple(self._controller._paramNames, self._controller._paramValues, self._stateVariable1, self._stateVariable2, X[x,y], Y[x,y])
+                    Ydot[x,y] = funcs[self._stateVariable2](*yTuple)
+        self._logs.append(log)
+        plt.figure(self._figureNum)
+        plt.clf()
+        plt.streamplot(X, Y, Xdot, Ydot, color = 'blue')
         
 class MuMoTbifurcationView(MuMoTview): # bifurcation view on model 
     _pyDSmodel = None
@@ -446,13 +569,6 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
 
     def __init__(self, model, controller, paramDict, bifurcationParameter, stateVariable1, stateVariable2, **kwargs):
         super().__init__(model, controller)
-        
-        plt.ion()
-        with warnings.catch_warnings(): # ignore warnings when plt.hold has been deprecated in installed libraries - still need to try plt.hold(True) in case older libraries in use
-            warnings.filterwarnings("ignore",category=MatplotlibDeprecationWarning)
-            warnings.filterwarnings("ignore",category=UserWarning)
-            plt.hold(True)  
-        plt.figure(self._figure)
 
         with io.capture_output() as log:      
             name = 'MuMoT Model' + str(id(self))
@@ -475,8 +591,6 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
             else:
                 print('Cannot attempt bifurcation plot until system size is set, using substitute()')
                 return
-            
-            print(stateVariable2)
             
             if stateVariable2 == None:
                 # 2-d bifurcation diagram
@@ -529,10 +643,7 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
     def _plot_bifurcation(self):
         self._controller._errorMessage.value= ''
         with io.capture_output() as log:
-            print("Starting bifurcation analysis with parameters ", end='')
-            for i in zip(self._controller._paramNames, self._controller._paramValues):
-                print('(' + i[0] + '=' + repr(i[1]) + '), ', end='')
-            print("at", datetime.datetime.now())
+            self._log("bifurcation analysis")
             self._pyDScont.newCurve(self._pyDScontArgs)
             try:
                 try:
@@ -554,7 +665,7 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
                 self._controller._errorMessage.value = self._controller._errorMessage.value + 'Unknown plotType argument: using default pyDS tool plotting<br>' 
             if self._stateVariable2 == None:
                 # 2-d bifurcation diagram
-                self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figure)
+                self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figureNum)
 #                self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
             else:
                 pass
