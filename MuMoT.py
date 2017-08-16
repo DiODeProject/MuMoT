@@ -199,44 +199,50 @@ class MuMoTmodel: # class describing a model
             out = out[0:len(out) - 2] # delete the last ' + '
             display(Math(out))
 
-
-    def stream(self, stateVariable1, stateVariable2, **kwargs):
-        # construct interactive stream plot
         
+    def stream(self, stateVariable1, stateVariable2, **kwargs):
         if self._systemSize != None:
             pass
         else:
             print('Cannot construct streamplot until system size is set, using substitute()')
             return    
+
+        # construct controller
+        viewController = self._field2d_controller(stateVariable1, stateVariable2, True, **kwargs)
         
-        if Symbol(stateVariable1) in self._reactants and Symbol(stateVariable2) in self._reactants:
-            if stateVariable1 != stateVariable2:
-                initialRateValue = 4 # TODO was 1 (choose initial values sensibly)
-                rateLimits = (-100.0, 100.0) # TODO choose limit values sensibly
-                rateStep = 0.1 # TODO choose rate step sensibly                
-
-                # construct controller
-                paramValues = []
-                paramNames = []        
-                for rate in self._rates:
-                    paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-                    paramNames.append(str(rate))
-                viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False)
-
-                # construct view
-                modelView = MuMoTstreamView(self, viewController, stateVariable1, stateVariable2, **kwargs)
+        # construct view
+        modelView = MuMoTstreamView(self, viewController, stateVariable1, stateVariable2, **kwargs)
                 
-                viewController.setView(modelView)
-                viewController.setReplotFunction(modelView._plot_stream)               
-                
-                return viewController
-                
+        viewController.setView(modelView)
+        viewController.setReplotFunction(modelView._plot_field)         
+        
+        return viewController
+        
+    def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
+        # TODO resolve valid 2d or 3d plot invocation
+        
+        if stateVariable3 == None:
+            if self._systemSize != None:
+                pass
             else:
-                print('State variables cannot be the same')
-                return
+                print('Cannot construct streamplot until system size is set, using substitute()')
+                return    
+    
+            # construct controller
+            viewController = self._field2d_controller(stateVariable1, stateVariable2, True, **kwargs)
+            
+            # construct view
+            modelView = MuMoTvectorView(self, viewController, stateVariable1, stateVariable2, **kwargs)
+                    
+            viewController.setView(modelView)
+            viewController.setReplotFunction(modelView._plot_field)         
+            
         else:
-            print('Invalid reactant provided as state variable')
-            return
+            assert false
+        
+        return viewController
+            
+        
 
     def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, **kwargs):
         # construct interactive PyDSTool plot
@@ -350,6 +356,34 @@ class MuMoTmodel: # class describing a model
 #             # 3-d bifurcation diagram
 #             assert false
 
+    def _field2d_controller(self, stateVariable1, stateVariable2, contRefresh, **kwargs):
+        # controller for 2d field-based plot (stream or 2d vector)
+                
+        if Symbol(stateVariable1) in self._reactants and Symbol(stateVariable2) in self._reactants:
+            if stateVariable1 != stateVariable2:
+                initialRateValue = 4 # TODO was 1 (choose initial values sensibly)
+                rateLimits = (-100.0, 100.0) # TODO choose limit values sensibly
+                rateStep = 0.1 # TODO choose rate step sensibly                
+
+                # construct controller
+                paramValues = []
+                paramNames = []        
+                for rate in self._rates:
+                    paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+                    paramNames.append(str(rate))
+                viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh)
+
+      
+                
+                return viewController
+                
+            else:
+                print('State variables cannot be the same')
+                return
+        else:
+            print('Invalid reactant provided as state variable')
+            return
+
     def _getFuncs(self):
         # lambdify sympy equations for numerical integration, plotting, etc.
         if self._systemSize == None:
@@ -369,11 +403,9 @@ class MuMoTmodel: # class describing a model
             
         return self._funcs
     
-    def _getArgTuple(self, argNames, argValues, stateVariable1 = None, stateVariable2 = None, X = None, Y = None):
+    def _getArgTuple(self, argNames, argValues, argDict, stateVariable1 = None, stateVariable2 = None, X = None, Y = None):
         # get tuple to evalute functions returned by _getFuncs with
         # TODO how to return a tuple usable for numerical integration, for which stateVariable1 == stateVariable2 == None?
-        argNamesSymb = list(map(Symbol, argNames))
-        argDict = dict(zip(argNamesSymb, argValues)) # TODO could memo-ize this for speed-up, e.g. in stream(...)
         argList = []
         for arg in self._args:
             if arg == stateVariable1:
@@ -528,9 +560,14 @@ class MuMoTview: # class describing a view on a model
         for log in self._logs:
             log.show()
 
-class MuMoTstreamView(MuMoTview): # streamplot view on model
+class MuMoTfieldView(MuMoTview): # field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
     _stateVariable1 = None # 1st state variable (x-dimension)
     _stateVariable2 = None # 2nd state variable (y-dimension)
+    _X = None # X ordinates array
+    _Y = None # Y ordinates array
+    _X = None # X derivatives array
+    _Y = None # Y derivatives array
+    _speed = None # speed array
     
     def __init__(self, model, controller, stateVariable1, stateVariable2, **kwargs):
         super().__init__(model, controller)
@@ -538,27 +575,42 @@ class MuMoTstreamView(MuMoTview): # streamplot view on model
         self._stateVariable1 = Symbol(stateVariable1)
         self._stateVariable2 = Symbol(stateVariable2)
 
-        self._plot_stream()
-        
-    def _plot_stream(self):
+        self._plot_field()
+    
+    def _plot_field(self):
+        plt.figure(self._figureNum)
+        plt.clf()
+    
+    def _get_field2d(self, kind, meshPoints):
         for i in np.arange(0, len(self._controller._paramValues)):
             # UGLY!
             self._controller._paramValues[i] = self._controller._widgets[i].value
         with io.capture_output() as log:
-            self._log("streamplot")
+            self._log(kind)
             funcs = self._mumotModel._getFuncs()
-            Y, X = np.mgrid[0:1:100j, 0:1:100j] # TODO system size defined to be one
-            Ydot, Xdot = np.mgrid[0:1:100j, 0:1:100j] # TODO system size defined to be one
-            for x in np.arange(0, 100): # TODO choose granularity according to user keyword
-                for y in np.arange(0, 100): # TODO choose granularity according to user keyword
-                    xTuple = self._mumotModel._getArgTuple(self._controller._paramNames, self._controller._paramValues, self._stateVariable1, self._stateVariable2, X[x,y], Y[x,y])
-                    Xdot[x,y] = funcs[self._stateVariable1](*xTuple)
-                    yTuple = self._mumotModel._getArgTuple(self._controller._paramNames, self._controller._paramValues, self._stateVariable1, self._stateVariable2, X[x,y], Y[x,y])
-                    Ydot[x,y] = funcs[self._stateVariable2](*yTuple)
+            argNamesSymb = list(map(Symbol, self._controller._paramNames))
+            argDict = dict(zip(argNamesSymb, self._controller._paramValues))
+            self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] # TODO system size defined to be one
+            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
+            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
+            self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
         self._logs.append(log)
-        plt.figure(self._figureNum)
-        plt.clf()
-        plt.streamplot(X, Y, Xdot, Ydot, color = 'blue')
+
+class MuMoTstreamView(MuMoTfieldView):
+    def _plot_field(self):
+        super()._plot_field()
+        self._get_field2d("stream plot", 100) # TODO: allow user to set mesh points with keyword
+        plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') # TODO: define colormap by user keyword
+#        plt.set_aspect('equal') # TODO
+
+
+class MuMoTvectorView(MuMoTfieldView):
+    def _plot_field(self):
+        super()._plot_field()
+        self._get_field2d("vector plot", 10) # TODO: allow user to set mesh points with keyword
+        plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') # TODO: define colormap by user keyword
+#        plt.set_aspect('equal') # TODO
+
         
 class MuMoTbifurcationView(MuMoTview): # bifurcation view on model 
     _pyDSmodel = None
