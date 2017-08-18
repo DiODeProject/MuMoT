@@ -69,6 +69,7 @@ class MuMoTmodel: # class describing a model
     _rates = None # set of rates
     _ratesLaTeX = None # dictionary of LaTeX strings describing rates
     _equations = None # dictionary of ODE righthand sides with reactant as key
+    _solutions = None # set of solutions to equations
     _funcs = None # dictionary of lambdified functions for integration, plotting, etc.
     _args = None # tuple of argument symbols for lambdified functions
     _dot = None # graphviz visualisation of model
@@ -222,48 +223,35 @@ class MuMoTmodel: # class describing a model
             display(Math(out))
 
         
-    def stream(self, stateVariable1, stateVariable2, **kwargs):
-        if self._systemSize != None:
-            pass
-        else:
-            print('Cannot construct streamplot until system size is set, using substitute()')
-            return    
-
-        # construct controller
-        viewController = self._field2d_controller(stateVariable1, stateVariable2, True, **kwargs)
-        
-        # construct view
-        modelView = MuMoTstreamView(self, viewController, stateVariable1, stateVariable2, **kwargs)
-                
-        viewController.setView(modelView)
-        viewController.setReplotFunction(modelView._plot_field)         
-        
-        return viewController
-        
-    def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
-        # TODO resolve valid 2d or 3d plot invocation
-        
-        if stateVariable3 == None:
-            if self._systemSize != None:
-                pass
-            else:
-                print('Cannot construct streamplot until system size is set, using substitute()')
-                return    
-    
+    def stream(self, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
+        if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             # construct controller
-            viewController = self._field2d_controller(stateVariable1, stateVariable2, True, **kwargs)
+            viewController = self._controller(True, **kwargs)
             
             # construct view
-            modelView = MuMoTvectorView(self, viewController, stateVariable1, stateVariable2, **kwargs)
+            modelView = MuMoTstreamView(self, viewController, stateVariable1, stateVariable2, **kwargs)
                     
             viewController.setView(modelView)
             viewController.setReplotFunction(modelView._plot_field)         
             
+            return viewController
         else:
-            assert false
+            return None
         
-        return viewController
+    def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
+        if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
+            # construct controller
+            viewController = self._controller(True, **kwargs)
             
+            # construct view
+            modelView = MuMoTvectorView(self, viewController, stateVariable1, stateVariable2, stateVariable3, **kwargs)
+                    
+            viewController.setView(modelView)
+            viewController.setReplotFunction(modelView._plot_field)         
+                        
+            return viewController
+        else:
+            return None
         
 
     def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, **kwargs):
@@ -423,38 +411,44 @@ class MuMoTmodel: # class describing a model
 #             # 3-d bifurcation diagram
 #             assert false
 
-    def _field2d_controller(self, stateVariable1, stateVariable2, contRefresh, **kwargs):
-        # controller for 2d field-based plot (stream or 2d vector)
-                
-        if Symbol(stateVariable1) in self._reactants and Symbol(stateVariable2) in self._reactants:
-            if stateVariable1 != stateVariable2:
-                initialRateValue = 4 # TODO was 1 (choose initial values sensibly)
-                rateLimits = (-100.0, 100.0) # TODO choose limit values sensibly
-                rateStep = 0.1 # TODO choose rate step sensibly                
+    def _get_solutions(self):
+        if self._solutions == None:
+            self._solutions = solve(iter(self._equations.values()), self._reactants, force = False, positive = False, set = False)
+        return self._solutions
 
-                # construct controller
-                paramValues = []
-                paramNames = []        
-                for rate in self._rates:
-                    paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-                    paramNames.append(str(rate))
-                viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh)
+    def _controller(self, contRefresh, **kwargs):
+        # general controller constructor with all rates as free parameters
 
-      
-                
-                return viewController
-                
+        initialRateValue = 4 # TODO was 1 (choose initial values sensibly)
+        rateLimits = (-100.0, 100.0) # TODO choose limit values sensibly
+        rateStep = 0.1 # TODO choose rate step sensibly                
+
+        # construct controller
+        paramValues = []
+        paramNames = []        
+        for rate in self._rates:
+            paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+            paramNames.append(str(rate))
+        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh)
+
+        return viewController
+
+    def _check_state_variables(self, stateVariable1, stateVariable2, stateVariable3 = None):
+        if Symbol(stateVariable1) in self._reactants and Symbol(stateVariable2) in self._reactants and (stateVariable3 == None or Symbol(stateVariable3) in self._reactants):
+            if stateVariable1 != stateVariable2 and stateVariable1 != stateVariable3 and stateVariable2 != stateVariable3:
+                return True
             else:
                 print('State variables cannot be the same')
-                return
+                return False
         else:
             print('Invalid reactant provided as state variable')
-            return
+            return False
+
 
     def _getFuncs(self):
         # lambdify sympy equations for numerical integration, plotting, etc.
         if self._systemSize == None:
-            assert false
+            assert false #TODO is this necessary?
         if self._funcs == None:
             argList = []
             for reactant in self._reactants:
@@ -470,9 +464,8 @@ class MuMoTmodel: # class describing a model
             
         return self._funcs
     
-    def _getArgTuple(self, argNames, argValues, argDict, stateVariable1 = None, stateVariable2 = None, X = None, Y = None):
-        # get tuple to evalute functions returned by _getFuncs with
-        # TODO how to return a tuple usable for numerical integration, for which stateVariable1 == stateVariable2 == None?
+    def _getArgTuple2d(self, argNames, argValues, argDict, stateVariable1, stateVariable2, X, Y):
+        # get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
         argList = []
         for arg in self._args:
             if arg == stateVariable1:
@@ -485,6 +478,43 @@ class MuMoTmodel: # class describing a model
                 argList.append(argDict[arg])
             
         return tuple(argList)
+
+    def _getArgTuple3d(self, argNames, argValues, argDict, stateVariable1, stateVariable2, stateVariable3, X, Y, Z):
+        # get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
+        argList = []
+        for arg in self._args:
+            if arg == stateVariable1:
+                argList.append(X)
+            elif arg == stateVariable2:
+                argList.append(Y)
+            elif arg == stateVariable3:
+                argList.append(Z)                
+            elif arg == self._systemSize:
+                argList.append(1) # TODO: system size set to 1
+            else:
+                argList.append(argDict[arg])
+            
+        return tuple(argList)
+
+    def _getArgTuple(self, argNames, argValues, argDict, reactants, reactantValues):
+        # get tuple to evalute functions returned by _getFuncs with
+        assert false # need to work this out
+        argList = []
+        for arg in self._args:
+            if arg == stateVariable1:
+                argList.append(X)
+            elif arg == stateVariable2:
+                argList.append(Y)
+            elif arg == stateVariable3:
+                argList.append(Z)                
+            elif arg == self._systemSize:
+                argList.append(1) # TODO: system size set to 1
+            else:
+                argList.append(argDict[arg])
+            
+        return tuple(argList)
+
+
                                  
     def _localLaTeXimageFile(self, source):
         # render LaTeX source to local image file
@@ -599,6 +629,11 @@ class MuMoTcontroller: # class describing a controller for a model view
     def showLogs(self):
         self._view.showLogs()
 
+    def _update_params_from_widgets(self):
+        for i in np.arange(0, len(self._paramValues)):
+            # UGLY!
+            self._paramValues[i] = self._widgets[i].value        
+
 # class MuMoTmultiagentController(MuMoTcontroller): # class describing a controller for multiagent views
 #     _probabilities = None
 #     _scaling = 0
@@ -645,43 +680,83 @@ class MuMoTview: # class describing a view on a model
 class MuMoTfieldView(MuMoTview): # field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
     _stateVariable1 = None # 1st state variable (x-dimension)
     _stateVariable2 = None # 2nd state variable (y-dimension)
+    _stateVariable3 = None # 3rd state variable (z-dimension)
     _X = None # X ordinates array
     _Y = None # Y ordinates array
+    _Z = None # Z ordinates array
     _X = None # X derivatives array
     _Y = None # Y derivatives array
+    _Z = None # Z derivatives array
     _speed = None # speed array
+    _mask = {} # class-global dictionary of memoised masks with mesh size as key
     
-    def __init__(self, model, controller, stateVariable1, stateVariable2, **kwargs):
+    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
         super().__init__(model, controller)
 
         self._stateVariable1 = Symbol(stateVariable1)
         self._stateVariable2 = Symbol(stateVariable2)
+        if stateVariable3 != None:
+            self._stateVariable3 = Symbol(stateVariable3)
+        _mask = {}
 
         self._plot_field()
-    
+            
+
     def _plot_field(self):
         plt.figure(self._figureNum)
         plt.clf()
     
     def _get_field2d(self, kind, meshPoints):
-        for i in np.arange(0, len(self._controller._paramValues)):
-            # UGLY!
-            self._controller._paramValues[i] = self._controller._widgets[i].value
+        self._controller._update_params_from_widgets()
         with io.capture_output() as log:
             self._log(kind)
             funcs = self._mumotModel._getFuncs()
             argNamesSymb = list(map(Symbol, self._controller._paramNames))
             argDict = dict(zip(argNamesSymb, self._controller._paramValues))
             self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] # TODO system size defined to be one
-            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
-            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
+            mask = self._mask.get(meshPoints)
+            if mask is None:
+                mask = np.zeros(self._X.shape, dtype=bool)
+                upperright = np.triu_indices(meshPoints) # TODO: allow user to set mesh points with keyword 
+                mask[upperright] = True
+                np.fill_diagonal(mask, False)
+                mask = np.flipud(mask)
+                self._mask[meshPoints] = mask
+            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
+            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
+            self._Xdot = np.ma.array(self._Xdot, mask=mask)
+            self._Ydot = np.ma.array(self._Ydot, mask=mask)        
+        self._logs.append(log)
+        
+    def _get_field3d(self, kind, meshPoints):
+        self._controller._update_params_from_widgets()
+        with io.capture_output() as log:
+            self._log(kind)
+            funcs = self._mumotModel._getFuncs()
+            argNamesSymb = list(map(Symbol, self._controller._paramNames))
+            argDict = dict(zip(argNamesSymb, self._controller._paramValues))
+            self._Z, self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] # TODO system size defined to be one
+#             mask = self._mask.get(meshPoints)
+#             if mask is None:
+#                 mask = np.zeros(self._X.shape, dtype=bool)
+#                 upperright = np.triu_indices(meshPoints) # TODO: allow user to set mesh points with keyword 
+#                 mask[upperright] = True
+#                 np.fill_diagonal(mask, False)
+#                 mask = np.flipud(mask)
+#                 self._mask[meshPoints] = mask
+            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable2, self._X, self._Y, self._Z))
+            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
+#             self._Xdot = np.ma.array(self._Xdot, mask=mask)
+#             self._Ydot = np.ma.array(self._Ydot, mask=mask)        
         self._logs.append(log)
 
 class MuMoTstreamView(MuMoTfieldView):
     def _plot_field(self):
         super()._plot_field()
-        self._get_field2d("stream plot", 100) # TODO: allow user to set mesh points with keyword
+        self._get_field2d("2d stream plot", 100) # TODO: allow user to set mesh points with keyword
         plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') # TODO: define colormap by user keyword
 #        plt.set_aspect('equal') # TODO
 
@@ -689,10 +764,14 @@ class MuMoTstreamView(MuMoTfieldView):
 class MuMoTvectorView(MuMoTfieldView):
     def _plot_field(self):
         super()._plot_field()
-        self._get_field2d("vector plot", 10) # TODO: allow user to set mesh points with keyword
-        plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') # TODO: define colormap by user keyword
-#        plt.set_aspect('equal') # TODO
-
+        if self._stateVariable3 == None:
+            self._get_field2d("2d vector plot", 10) # TODO: allow user to set mesh points with keyword
+            plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') # TODO: define colormap by user keyword
+    #        plt.set_aspect('equal') # TODO
+        else:
+            self._get_field3d("3d vector plot", 10)
+            plt.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, units='width', color = 'black') # TODO: define colormap by user keyword
+#           plt.set_aspect('equal') # TODO
         
 class MuMoTbifurcationView(MuMoTview): # bifurcation view on model 
     _pyDSmodel = None
@@ -806,9 +885,7 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
         self._logs.append(log)
 
     def _replot_bifurcation(self):
-        for i in np.arange(0, len(self._controller._paramValues)):
-            # UGLY!
-            self._controller._paramValues[i] = self._controller._widgets[i].value
+        self._controller._update_params_from_widgets()
         for name, value in zip(self._controller._paramNames, self._controller._paramValues):
             self._pyDSmodel.pars[name] = value
         self._pyDScont.plot.clearall()
