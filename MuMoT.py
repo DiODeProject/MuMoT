@@ -39,6 +39,28 @@ get_ipython().magic('matplotlib nbagg')
 
 figureCounter = 1 # global figure counter for model views
 
+# class with default parameters
+class MuMoTdefault:
+    initialRateValue = 2 # TODO: was 1 (choose initial values sensibly)
+    rateLimits = (0.0, 20.0) # TODO: choose limit values sensibly
+    rateStep = 0.1 # TODO: choose rate step sensibly
+    @staticmethod
+    def setRateDefaults(self, initRate=initialRateValue, limits=rateLimits, step=rateStep):
+        self.initialRateValue = initRate
+        self.rateLimits = limits
+        self.rateStep = step
+    
+    maxTime = 10
+    timeLimits = (1, 100)
+    timeStep = 1
+    @staticmethod
+    def setTimeDefaults(self, initTime=maxTime, limits=timeLimits, step=timeStep):
+        self.maxTime = initTime
+        self.timeLimits = limits
+        self.timeStep = step
+    
+    
+
 class MuMoTmodel: # class describing a model
     _rules = None # list of rules
     _reactants = None # set of reactants
@@ -278,6 +300,51 @@ class MuMoTmodel: # class describing a model
         
         return viewController
 
+    def networkAgents(self, netType="full", initialState="Auto", maxTime="Auto", **kwargs):
+        if initialState=="Auto":
+            #initialState = [100] + [0]*(len(reactantList)-1)
+            first = True
+            initialState = {}
+            for reactant in self._reactants:
+                if first:
+                    print("Automatic Initial State sets 100 agents in state " + str(reactant) )
+                    initialState[reactant] = 100
+                    first = False
+                else:
+                    initialState[reactant] = 0
+        else:
+            print("TO-DO: check if the Initial State has valid length and positive values")
+        print("Initial State is " + str(initialState) )
+        
+        # construct controller
+        paramValues = []
+        paramNames = [] 
+        #paramValues.extend( [initialState, netType, maxTime] )
+        for rate in self._rates:
+            paramValues.append((MuMoTdefault.initialRateValue, MuMoTdefault.rateLimits[0], MuMoTdefault.rateLimits[1], MuMoTdefault.rateStep))
+            paramNames.append(str(rate))
+
+        if (maxTime == "Auto" or maxTime <= 0):
+            maxTime = MuMoTdefault.maxTime
+#             timeLimitMax = max(maxTime, MuMoTdefault.timeLimits[1])
+#         paramNames.append("maxTime")
+#         paramValues.append( (maxTime, MuMoTdefault.timeLimits[0], timeLimitMax, MuMoTdefault.timeStep) )
+        
+        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False)
+        
+        paramDict = {}
+#         paramDict['reactants'] = self._reactants
+#         paramDict['rules'] = self._rules
+        paramDict['maxTime'] = maxTime
+        paramDict['initialState'] = initialState
+        paramDict['netType'] = netType
+        modelView = MuMoTnetworkView(self, viewController, paramDict, **kwargs)
+        
+        viewController.setView(modelView)
+#         viewController.setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
+        viewController.setReplotFunction(modelView._plot_timeEvolution)
+        
+        return viewController
 
 #         if stateVariable2 == None:
 #             # 2-d bifurcation diagram
@@ -498,17 +565,23 @@ class MuMoTcontroller: # class describing a controller for a model view
     _paramNames = None
     _paramLabelDict = None
     _widgets = None
+    _ratesDict = None
 
     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot):
         self._paramValues = []
         self._paramNames = []
         self._paramLabelDict = paramLabelDict
         self._widgets = []
+        self._ratesDict = {}
         for pair in zip(paramNames, paramValues):
-            widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], max = pair[1][2], step = pair[1][3], description = r'\(' + self._paramLabelDict[pair[0]] + r'\)', continuous_update = continuousReplot)
+            widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
+                                         max = pair[1][2], step = pair[1][3], 
+                                         description = r'\(' + self._paramLabelDict[pair[0]] + r'\)', 
+                                         continuous_update = continuousReplot)
             # widget.on_trait_change(replotFunction, 'value')
             self._widgets.append(widget)
             display(widget)
+            self._ratesDict[pair[0]] = pair[1][0]
         widget = widgets.HTML(value = '')
         self._errorMessage = widget
         display(self._errorMessage)
@@ -525,6 +598,15 @@ class MuMoTcontroller: # class describing a controller for a model view
 
     def showLogs(self):
         self._view.showLogs()
+
+# class MuMoTmultiagentController(MuMoTcontroller): # class describing a controller for multiagent views
+#     _probabilities = None
+#     _scaling = 0
+#     
+#     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, reactants, rules):
+#         MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot)
+        
+    
 
 class MuMoTview: # class describing a view on a model
     _mumotModel = None
@@ -741,6 +823,190 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
 #        self._pyDScont.update(self._pyDScontArgs)                         # TODO: what does this do?
         self._plot_bifurcation()
 
+class MuMoTnetworkView(MuMoTview): # agent on networks view on model 
+    _probabilities = None
+#     _reactants = None
+#     _rules = None
+    _scaling = 0
+    _agentsState = None
+    _graph = None
+    _maxTime = None
+    _plotType = None
+
+    def __init__(self, model, controller, paramDict, **kwargs):
+        super().__init__(model, controller)
+
+        with io.capture_output() as log:      
+#             name = 'MuMoT Model' + str(id(self))
+#             self._reactants = paramDict['reactants']
+#             self._rules = paramDict['rules']
+            self._maxTime = paramDict['maxTime']
+            self._initialState = paramDict['initialState']
+            
+        self._logs.append(log)
+
+        if kwargs != None:
+            self._plotType = kwargs.get('plotType', 'plain')
+        else:
+            self._plotType = 'plain'
+
+        self._plot_timeEvolution()
+    
+    def _plot_timeEvolution(self):
+        with io.capture_output() as log:
+            self._log("Networked multiagent")
+            for i in np.arange(0, len(self._controller._paramValues)):
+                self._controller._paramValues[i] = self._controller._widgets[i].value
+                self._controller._ratesDict[self._controller._paramNames[i]] = self._controller._widgets[i].value 
+    #         print(self._controller._paramValues)
+            self.generateProbabilitiesMap(self._mumotModel._reactants, self._mumotModel._rules)
+            print(self._probabilities)
+            self.computeScalingFactor()
+            self.applyScalingFactor()
+            print(self._probabilities)
+            logs = self.iterateAgentStep(self._initialState, self._maxTime)
+            # Plotting evo figure
+            plt.figure(self._figureNum)
+            plt.clf()
+            for state,pop in logs[1].items():
+                print("Plotting:"+str(pop))
+                plt.plot(pop, label=state)
+            plt.figure(self._figureNum)
+            plt.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
+        self._logs.append(log)
+        
+    def iterateAgentStep(self, initialState, maxTime):
+        # Create logging structs
+        historyState = []
+        historyState.append(initialState)
+        evo = {}
+        for state,pop in initialState.items():
+            evo[state] = []
+            evo[state].append(pop)
+        # init the agents list
+        agents = []
+        for state, pop in initialState.items():
+            agents.extend( [state]*pop )
+        for i in np.arange(0, maxTime):
+            print("Time: " + str(i))
+            #print("Agents: " + str(agents))
+            currentState = {}
+            for state in initialState.keys():
+                currentState[state] = 0
+            tmp_agents = copy.deepcopy(agents)
+            for idx, a in enumerate(agents):
+                neighs = tmp_agents # TODO: compute the neighs
+                agents[idx] = self.oneStep(a, neighs)
+                currentState[ agents[idx] ] = currentState.get(agents[idx],0) + 1
+            historyState.append(currentState)
+            for state,pop in currentState.items():
+                evo[state].append(pop)
+        print(historyState)
+        print(evo)
+        return (historyState,evo)
+    
+    # one timestep for one agent
+    def oneStep(self, agent, neighs):
+        #probSets = copy.deepcopy(self._probabilities[agent])
+        rnd = np.random.rand()
+        lastVal = 0
+        probSets = self._probabilities[agent]
+        # counting how many neighbours for each state (to be uses for the interaction probabilities)
+        neighCount = {x:neighs.count(x) for x in probSets.keys()}
+#         print("Agent " + str(agent) + " with probSet=" + str(probSets))
+#         print("nc:"+str(neighCount))
+        for react, probSet in probSets.items():
+            for prob in probSet:
+                if react == 'void':
+                    popScaling = 1
+                else:
+                    popScaling = neighCount[react]/len(neighs) 
+                val = popScaling * prob[1]
+                if (rnd < val + lastVal):
+                    # A state change happened!
+                    #print("Reaction: " + str(prob[0]) + " by agent " + str(agent) + " that becomes " + str(prob[2]) )
+                    return prob[2]
+                else:
+                    lastVal += val
+        # No state change happened
+        return agent
+    
+    def generateProbabilitiesMap(self, reactants, rules):
+        # deriving the transition probabilities map from reaction rules
+        self._probabilities = {}
+        for reactant in reactants:
+            probSets = {}
+            probSets['void'] = []
+            for rule in rules:
+                assignedDestReactants = []
+                for react in rule.lhsReactants:
+                    if react == reactant:
+                        numReagents = len(rule.lhsReactants)
+                        # if individual transition (i.e. no interaction needed)
+                        if numReagents == 1:
+                            probSets['void'].append( [rule.rate, self._controller._ratesDict[str(rule.rate)], rule.rhsReactants[0]] )
+                        
+                        # if interaction transition
+                        elif numReagents == 2:
+                            # checking if the considered reactant is active or passive in the interaction (i.e. change state afterwards)
+                            if reactant not in rule.rhsReactants:
+                                # determining the otherReactant, which is NOT the considered one
+                                if rule.lhsReactants[0] == reactant:
+                                    otherReact = rule.lhsReactants[1]
+                                else:
+                                    otherReact = rule.lhsReactants[0]
+                                # determining the destReactant
+                                if rule.rhsReactants[0] in assignedDestReactants or rule.rhsReactants[0] == otherReact :
+                                    destReact = rule.rhsReactants[1]
+                                else:
+                                    destReact = rule.rhsReactants[0]
+                                assignedDestReactants.append(destReact)
+                                
+                                if probSets.get(otherReact) == None:
+                                    probSets[otherReact] = []
+                                    
+                                probSets[otherReact].append( [rule.rate, self._controller._ratesDict[str(rule.rate)], destReact] )
+                            #else:
+                                # TO-DO treat in a special way the 'self' interaction!
+                                #print("Reactant " + str(reactant) + " has active role in reaction " + str(rule.rate))
+                                
+                            
+                        elif numReagents > 2:
+                            print('More than two reagents in one rule. Unhandled situation, please use at max two reagents per reaction rule')
+                            return 1
+                        
+            self._probabilities[reactant] = probSets
+#             print("React " + str(reactant))
+#             print(probSets)
+        
+    def computeScalingFactor(self):
+        # Determining the minimum speed of the process (thus the max-scaling factor)
+        maxRatesAll = 0
+        for probSets in self._probabilities.values():
+            voidRates = 0
+            maxRates = 0
+            for react, probSet in probSets.items():
+                tmpRates = 0
+                for prob in probSet:
+                    #print("adding P=" + str(prob[1]))
+                    if react == 'void':
+                        voidRates += prob[1]
+                    else:
+                        tmpRates += prob[1]
+                if tmpRates > maxRates:
+                    maxRates = tmpRates
+            #print("max Rates=" + str(maxRates) + " void Rates=" + str(voidRates))
+            if (maxRates + voidRates) > maxRatesAll:
+                maxRatesAll = maxRates + voidRates
+        self._scaling = 1/maxRatesAll
+        print("Scaling factor s=" + str(self._scaling))
+
+    def applyScalingFactor(self):
+        # Multiply all rates by the scaling factor
+        for probSets in self._probabilities.values():
+            for probSet in probSets.values():
+                for prob in probSet:
+                    prob[1] *= self._scaling
 
 def parseModel(modelDescription):
     # TODO: add system size to model description
