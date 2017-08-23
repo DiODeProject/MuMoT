@@ -14,9 +14,10 @@
 #  graphviz (pip install graphviz; graphviz http://www.graphviz.org/Download.php)
 
 
-from IPython.display import display, Math, Latex
+from IPython.display import display, clear_output, Math, Latex, Javascript
 import ipywidgets.widgets as widgets
 from matplotlib import pyplot as plt
+import matplotlib.cm as cm
 import numpy as np
 from sympy import *
 import PyDSTool as dst
@@ -31,6 +32,8 @@ from IPython.utils import io
 import datetime
 import warnings
 from matplotlib.cbook import MatplotlibDeprecationWarning
+import networkx as nx #@UnresolvedImport
+from enum import Enum
 #from numpy.oldnumeric.fix_default_axis import _args3
 #from matplotlib.offsetbox import kwargs
 
@@ -39,26 +42,44 @@ get_ipython().magic('matplotlib nbagg')
 
 figureCounter = 1 # global figure counter for model views
 
+MAX_RANDOM_SEED = 4294967295
+
+# enum possible Network types
+class NetworkType(Enum):
+    FULLY_CONNECTED = 0
+    ERSOS_RENYI = 1
+    BARABASI_ALBERT = 2
+    SPACE = 3
+    DYNAMIC = 4
+
 # class with default parameters
 class MuMoTdefault:
     initialRateValue = 2 # TODO: was 1 (choose initial values sensibly)
     rateLimits = (0.0, 20.0) # TODO: choose limit values sensibly
     rateStep = 0.1 # TODO: choose rate step sensibly
     @staticmethod
-    def setRateDefaults(self, initRate=initialRateValue, limits=rateLimits, step=rateStep):
-        self.initialRateValue = initRate
-        self.rateLimits = limits
-        self.rateStep = step
+    def setRateDefaults(initRate=initialRateValue, limits=rateLimits, step=rateStep):
+        MuMoTdefault.initialRateValue = initRate
+        MuMoTdefault.rateLimits = limits
+        MuMoTdefault.rateStep = step
     
     maxTime = 10
     timeLimits = (1, 100)
     timeStep = 1
     @staticmethod
-    def setTimeDefaults(self, initTime=maxTime, limits=timeLimits, step=timeStep):
-        self.maxTime = initTime
-        self.timeLimits = limits
-        self.timeStep = step
-    
+    def setTimeDefaults(initTime=maxTime, limits=timeLimits, step=timeStep):
+        MuMoTdefault.maxTime = initTime
+        MuMoTdefault.timeLimits = limits
+        MuMoTdefault.timeStep = step
+        
+    agents = 100
+    agentsLimits = (0, 1000)
+    agentsStep = 1
+    @staticmethod
+    def setAgentsDefaults(initAgents=agents, limits=agentsLimits, step=agentsStep):
+        MuMoTdefault.agents = initAgents
+        MuMoTdefault.agentsLimits = limits
+        MuMoTdefault.agentsStep = step
     
 
 class MuMoTmodel: # class describing a model
@@ -288,21 +309,23 @@ class MuMoTmodel: # class describing a model
         
         return viewController
 
-    def networkAgents(self, netType="full", initialState="Auto", maxTime="Auto", **kwargs):
+    def networkAgents(self, netType="full", initialState="Auto", maxTime="Auto", randomSeed="Auto", **kwargs):
+        specialParams = {}
         if initialState=="Auto":
             #initialState = [100] + [0]*(len(reactantList)-1)
             first = True
             initialState = {}
             for reactant in self._reactants:
                 if first:
-                    print("Automatic Initial State sets 100 agents in state " + str(reactant) )
-                    initialState[reactant] = 100
+                    print("Automatic Initial State sets " + str(MuMoTdefault.agents) + " agents in state " + str(reactant) )
+                    initialState[reactant] = MuMoTdefault.agents
                     first = False
                 else:
                     initialState[reactant] = 0
         else:
             print("TO-DO: check if the Initial State has valid length and positive values")
         print("Initial State is " + str(initialState) )
+        specialParams['initialState'] = initialState
         
         # construct controller
         paramValues = []
@@ -314,16 +337,18 @@ class MuMoTmodel: # class describing a model
 
         if (maxTime == "Auto" or maxTime <= 0):
             maxTime = MuMoTdefault.maxTime
-#             timeLimitMax = max(maxTime, MuMoTdefault.timeLimits[1])
-#         paramNames.append("maxTime")
-#         paramValues.append( (maxTime, MuMoTdefault.timeLimits[0], timeLimitMax, MuMoTdefault.timeStep) )
-        
-        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False)
+            timeLimitMax = max(maxTime, MuMoTdefault.timeLimits[1])
+        paramNames.append("maxTime")
+        paramValues.append( (maxTime, MuMoTdefault.timeLimits[0], timeLimitMax, MuMoTdefault.timeStep) )
+        if (randomSeed == "Auto" or randomSeed <= 0):
+            specialParams['randomSeed'] = np.random.randint(MAX_RANDOM_SEED)
+            print("Automatic Random Seed set to " + str(specialParams['randomSeed']) )
+        viewController = MuMoTmultiagentController(paramValues, paramNames, self._ratesLaTeX, False, specialParams)
         
         paramDict = {}
 #         paramDict['reactants'] = self._reactants
 #         paramDict['rules'] = self._rules
-        paramDict['maxTime'] = maxTime
+#         paramDict['maxTime'] = maxTime
         paramDict['initialState'] = initialState
         paramDict['netType'] = netType
         modelView = MuMoTnetworkView(self, viewController, paramDict, **kwargs)
@@ -595,23 +620,25 @@ class MuMoTcontroller: # class describing a controller for a model view
     _paramNames = None
     _paramLabelDict = None
     _widgets = None
-    _ratesDict = None
+    _widgetDict = None
 
     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot):
         self._paramValues = []
         self._paramNames = []
         self._paramLabelDict = paramLabelDict
         self._widgets = []
-        self._ratesDict = {}
+#         self._ratesDict = {}
+        self._widgetDict = {}
         for pair in zip(paramNames, paramValues):
             widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
                                          max = pair[1][2], step = pair[1][3], 
-                                         description = r'\(' + self._paramLabelDict[pair[0]] + r'\)', 
+                                         description = r'\(' + self._paramLabelDict.get(pair[0],pair[0]) + r'\)', 
                                          continuous_update = continuousReplot)
+            self._widgetDict[pair[0]] = widget
             # widget.on_trait_change(replotFunction, 'value')
             self._widgets.append(widget)
             display(widget)
-            self._ratesDict[pair[0]] = pair[1][0]
+#             self._ratesDict[pair[0]] = pair[1][0]
         widget = widgets.HTML(value = '')
         self._errorMessage = widget
         display(self._errorMessage)
@@ -632,16 +659,358 @@ class MuMoTcontroller: # class describing a controller for a model view
     def _update_params_from_widgets(self):
         for i in np.arange(0, len(self._paramValues)):
             # UGLY!
-            self._paramValues[i] = self._widgets[i].value        
-
-# class MuMoTmultiagentController(MuMoTcontroller): # class describing a controller for multiagent views
-#     _probabilities = None
-#     _scaling = 0
-#     
-#     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, reactants, rules):
-#         MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot)
+            self._paramValues[i] = self._widgets[i].value
+            
+    def _downloadFile(self, data_to_download):
+        js_download = """
+        var csv = '%s';
         
+        var filename = 'results.csv';
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        if (navigator.msSaveBlob) { // IE 10+
+            navigator.msSaveBlob(blob, filename);
+        } else {
+            var link = document.createElement("a");
+            if (link.download !== undefined) { // feature detection
+                // Browsers that support HTML5 download attribute
+                var url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+        """ % str(data_to_download)
+        #str(data_to_download) 
+        #data_to_download.to_csv(index=False).replace('\n','\\n').replace("'","\'")
+        
+        return Javascript(js_download)
+
+class MuMoTmultiagentController(MuMoTcontroller): # class describing a controller for multiagent views
+    _progressBar = None
+    _initialState = None
+    _fileToDownload = None
+    _probabilities = None
+    _graph = None
     
+    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, specialParams):
+        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot)
+        advancedWidgets = []
+        
+        self._initialState = specialParams['initialState']
+        for state,pop in self._initialState.items():
+            widget = widgets.IntSlider(value = pop,
+                                         min = min(pop, MuMoTdefault.agentsLimits[0]), 
+                                         max = max(pop, MuMoTdefault.agentsLimits[1]),
+                                         step = MuMoTdefault.agentsStep,
+                                         description = "State " + str(state), 
+                                         continuous_update = continuousReplot)
+            self._widgetDict['init'+str(state)] = widget
+            self._widgets.append(widget)
+            advancedWidgets.append(widget)
+            
+        ## Network type dropdown selector
+        netDropdown = widgets.Dropdown( # TODO: use a sorted dictionary so that the order is preserved
+            options={'Full graph': NetworkType.FULLY_CONNECTED, 
+                     'Erdos-Renyi': NetworkType.ERSOS_RENYI,
+                     'Barabasi-Albert': NetworkType.BARABASI_ALBERT,
+                     # TODO: add network topology generated by random points in space 
+                     'Moving particles': NetworkType.DYNAMIC
+                     },
+            description='Network topology:',
+            value = NetworkType.FULLY_CONNECTED, 
+            disabled=False
+        )
+        self._widgetDict['netType'] = netDropdown
+        #self._widgets.append(netDropdown)
+        netDropdown.on_trait_change(self.updateNetParam, 'value')
+        advancedWidgets.append(netDropdown)
+        
+        ## Network connectivity slider
+        widget = widgets.FloatSlider(value = 0,
+                                    min = 0, 
+                                    max = 1,
+                            description = 'Network connectivity parameter', 
+                            continuous_update = continuousReplot,
+                            disabled=True
+        )
+        self._widgetDict['netParam'] = widget
+        self._widgets.append(widget)
+        advancedWidgets.append(widget)
+        
+        ## Agent speed
+        widget = widgets.FloatSlider(value = 0.01, min = 0, max = 1, step=0.01,
+                            description = 'Particle speed', 
+                            continuous_update = continuousReplot,
+                            disabled=True
+        )
+        self._widgetDict['speed'] = widget
+        self._widgets.append(widget)
+        advancedWidgets.append(widget)
+        
+        ## Random walk correlatedness
+        widget = widgets.FloatSlider(value = 0.5, min = 0, max = 1, step=0.01,
+                            description = 'Correlatedness of the random walk', 
+                            continuous_update = continuousReplot,
+                            disabled=True
+        )
+        self._widgetDict['correlated'] = widget
+        self._widgets.append(widget)
+        advancedWidgets.append(widget)
+        
+        ## Random seed input field
+        widget = widgets.IntText(
+            value=specialParams['randomSeed'],
+            description='Random seed:',
+            disabled=False
+        )
+        self._widgetDict['randomSeed'] = widget
+        self._widgets.append(widget)
+        advancedWidgets.append(widget)
+        #display(widget)
+        
+        ## Time scaling slider
+        widget =  widgets.FloatSlider(value = 1,
+                                    min = 0.001, 
+                                    max = 1,
+                            description = 'Time scaling', 
+                            continuous_update = continuousReplot
+        )
+        self._widgetDict['scaling'] = widget
+        self._widgets.append(widget)
+        advancedWidgets.append(widget)
+        
+        ## Toggle buttons for plotting style 
+        plotToggle = widgets.ToggleButtons( # TODO: use a sorted dictionary so that the order is preserved
+            options={'Temporal evolution' : 'evo', 'Network' : 'graph', 'Final distribution' : 'final'},
+            description='Plot:',
+            disabled=False,
+            button_style='', # 'success', 'info', 'warning', 'danger' or ''
+            tooltips=['Population change over time', 'Network topology', 'Number of agents in each state at final timestep'],
+        #     icons=['check'] * 3
+        )
+        self._widgetDict['plotType'] = plotToggle
+        self._widgets.append(plotToggle)
+        advancedWidgets.append(plotToggle)
+        
+        ## Particle display checkboxes
+        widget = widgets.Checkbox(
+            value=True,
+            description='Show particle trace',
+            disabled = not (self._widgetDict['netType'].value == NetworkType.DYNAMIC)
+        )
+        self._widgetDict['trace'] = widget
+        self._widgets.append(widget)
+        advancedWidgets.append(widget)
+        widget = widgets.Checkbox(
+            value=True,
+            description='Show communication links',
+            disabled = not (self._widgetDict['netType'].value == NetworkType.DYNAMIC)
+        )
+        self._widgetDict['interactions'] = widget
+        self._widgets.append(widget)
+        advancedWidgets.append(widget)
+        
+        self.updateNetParam()
+        
+        advancedPage = widgets.Box(children=advancedWidgets)
+        advancedOpts = widgets.Accordion(children=[advancedPage])
+        advancedOpts.set_title(0, 'Advanced options')
+        display(advancedOpts)        
+        
+        self._progressBar = widgets.IntProgress(
+            value=0,
+            min=0,
+            max=self._widgetDict['maxTime'].value,
+            step=1,
+            description='Loading:',
+            bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
+            orientation='horizontal'
+        )
+        display(self._progressBar)
+    
+    def _update_params_from_widgets(self): # overwritten parent's method. Old method is not used becuase substituted by widgetDict
+        for state in self._initialState.keys():
+            self._initialState[state] = self._widgetDict['init'+str(state)].value
+        numNodes = sum(self._initialState.values())
+        np.random.seed(self._widgetDict['randomSeed'].value)
+        netParam = self._widgetDict['netParam'].value
+        self.generateGraph(graphType=self._widgetDict['netType'].value, numNodes=numNodes, netParam=netParam)
+    
+    def updateNetParam(self):
+        # oder of assignment is important (firt, update the min and max, later, the value)
+        # TODO: the update of value happens two times (changing min-max and value) and therefore the calculatio are done two times
+        if (self._widgetDict['netType'].value == NetworkType.FULLY_CONNECTED):
+            self._widgetDict['netParam'].min = 0
+            self._widgetDict['netParam'].max = 1
+            self._widgetDict['netParam'].step = 1
+            self._widgetDict['netParam'].value = 0
+            self._widgetDict['netParam'].disabled = True
+            self._widgetDict['netParam'].description = "None"
+        elif (self._widgetDict['netType'].value == NetworkType.ERSOS_RENYI):
+            self._widgetDict['netParam'].disabled = False
+            self._widgetDict['netParam'].min = 0.1
+            self._widgetDict['netParam'].max = 1
+            self._widgetDict['netParam'].step = 0.1
+            self._widgetDict['netParam'].value = 0.5
+            self._widgetDict['netParam'].description = "Network connectivity parameter (link probability)"
+        elif (self._widgetDict['netType'].value == NetworkType.BARABASI_ALBERT):
+            self._widgetDict['netParam'].disabled = False
+            maxVal = sum(self._initialState.values())-1
+            self._widgetDict['netParam'].min = 1
+            self._widgetDict['netParam'].max = maxVal
+            self._widgetDict['netParam'].step = 1
+            self._widgetDict['netParam'].value = min(maxVal, 3)
+            self._widgetDict['netParam'].description = "Network connectivity parameter (new edges)"            
+        elif (self._widgetDict['netType'].value == NetworkType.SPACE):
+            self._widgetDict['netParam'].value = -1
+        
+        if (self._widgetDict['netType'].value == NetworkType.DYNAMIC):
+            self._widgetDict['netParam'].disabled = False
+            self._widgetDict['netParam'].min = 0.0
+            self._widgetDict['netParam'].max = 1
+            self._widgetDict['netParam'].step = 0.05
+            self._widgetDict['netParam'].value = 0.1
+            self._widgetDict['netParam'].description = "Interaction range"
+            self._widgetDict['speed'].disabled = False
+            self._widgetDict['correlated'].disabled = False
+            self._widgetDict['trace'].disabled = False
+            self._widgetDict['interactions'].disabled = False
+        else:
+            self._widgetDict['speed'].disabled = True
+            self._widgetDict['correlated'].disabled = True
+            self._widgetDict['trace'].disabled = True
+            self._widgetDict['interactions'].disabled = True
+            
+    
+    def downloadTimeEvolution(self):
+        return self._downloadFile(self._fileToDownload)
+    
+    def convertRatesIntoProbabilities(self, reactants, rules):
+        self.generateProbabilitiesMap(reactants, rules)
+        #print(self._probabilities)
+        self.computeScalingFactor()
+        self.applyScalingFactor()
+        #print(self._probabilities)
+    
+    def generateProbabilitiesMap(self, reactants, rules):
+        # deriving the transition probabilities map from reaction rules
+        self._probabilities = {}
+        for reactant in reactants:
+            probSets = {}
+            probSets['void'] = []
+            for rule in rules:
+                assignedDestReactants = []
+                for react in rule.lhsReactants:
+                    if react == reactant:
+                        numReagents = len(rule.lhsReactants)
+                        # if individual transition (i.e. no interaction needed)
+                        if numReagents == 1:
+                            probSets['void'].append( [rule.rate, self._widgetDict[str(rule.rate)].value, rule.rhsReactants[0]] )
+                        
+                        # if interaction transition
+                        elif numReagents == 2:
+                            # checking if the considered reactant is active or passive in the interaction (i.e. change state afterwards)
+                            if reactant not in rule.rhsReactants:
+                                # determining the otherReactant, which is NOT the considered one
+                                if rule.lhsReactants[0] == reactant:
+                                    otherReact = rule.lhsReactants[1]
+                                else:
+                                    otherReact = rule.lhsReactants[0]
+                                # determining the destReactant
+                                if rule.rhsReactants[0] in assignedDestReactants or rule.rhsReactants[0] == otherReact :
+                                    destReact = rule.rhsReactants[1]
+                                else:
+                                    destReact = rule.rhsReactants[0]
+                                assignedDestReactants.append(destReact)
+                                
+                                if probSets.get(otherReact) == None:
+                                    probSets[otherReact] = []
+                                    
+                                probSets[otherReact].append( [rule.rate, self._widgetDict[str(rule.rate)].value, destReact] )
+                            #else:
+                                # TO-DO treat in a special way the 'self' interaction!
+                                #print("Reactant " + str(reactant) + " has active role in reaction " + str(rule.rate))
+                                
+                            
+                        elif numReagents > 2:
+                            print('More than two reagents in one rule. Unhandled situation, please use at max two reagents per reaction rule')
+                            return 1
+                        
+            self._probabilities[reactant] = probSets
+#             print("React " + str(reactant))
+#             print(probSets)
+
+    def computeScalingFactor(self):
+        # Determining the minimum speed of the process (thus the max-scaling factor)
+        maxRatesAll = 0
+        for probSets in self._probabilities.values():
+            voidRates = 0
+            maxRates = 0
+            for react, probSet in probSets.items():
+                tmpRates = 0
+                for prob in probSet:
+                    #print("adding P=" + str(prob[1]))
+                    if react == 'void':
+                        voidRates += prob[1]
+                    else:
+                        tmpRates += prob[1]
+                if tmpRates > maxRates:
+                    maxRates = tmpRates
+            #print("max Rates=" + str(maxRates) + " void Rates=" + str(voidRates))
+            if (maxRates + voidRates) > maxRatesAll:
+                maxRatesAll = maxRates + voidRates
+        #self._scaling = 1/maxRatesAll
+        if maxRatesAll>0: scaling = 1/maxRatesAll 
+        else: scaling = 1
+        if (self._widgetDict['scaling'].value > scaling):
+            self._widgetDict['scaling'].value = scaling  
+        if (self._widgetDict['scaling'].max > scaling):
+            self._widgetDict['scaling'].max = scaling
+            self._widgetDict['scaling'].min = scaling/100
+            self._widgetDict['scaling'].step = scaling/100
+        print("Scaling factor s=" + str(self._widgetDict['scaling'].value))
+        
+    def applyScalingFactor(self):
+        # Multiply all rates by the scaling factor
+        for probSets in self._probabilities.values():
+            for probSet in probSets.values():
+                for prob in probSet:
+                    prob[1] *= self._widgetDict['scaling'].value
+                    
+    def generateGraph(self, graphType, numNodes, netParam=None):
+        if (graphType == NetworkType.FULLY_CONNECTED):
+            print("Generating full graph")
+            self._graph = nx.complete_graph(numNodes) #np.repeat(0, self.numNodes)
+        elif (graphType == NetworkType.ERSOS_RENYI):
+            print("Generating Erdos-Renyi graph (connected)")
+            if netParam is not None and netParam > 0 and netParam <= 1: 
+                self._graph = nx.erdos_renyi_graph(numNodes, netParam, np.random.randint(MAX_RANDOM_SEED))
+                i = 0
+                while ( not nx.is_connected( self._graph ) ):
+                    print("Graph was not connected; Resampling!")
+                    i = i+1
+                    self._graph = nx.erdos_renyi_graph(numNodes, netParam, np.random.randint(MAX_RANDOM_SEED)*i*2211)
+            else:
+                print ("ERROR! Invalid network parameter (link probability) for E-R networks. It must be between 0 and 1; input is " + str(netParam) )
+                return
+        elif (graphType == NetworkType.BARABASI_ALBERT):
+            print("Generating Barabasi-Albert graph")
+            netParam = int(netParam)
+            if netParam is not None and netParam > 0 and netParam <= numNodes: 
+                self._graph = nx.barabasi_albert_graph(numNodes, netParam, np.random.randint(MAX_RANDOM_SEED))
+            else:
+                print ("ERROR! Invalid network parameter (number of edges per new node) for B-A networks. It must be an integer between 1 and " + str(numNodes) + "; input is " + str(netParam))
+                return
+        elif (graphType == NetworkType.SPACE):
+            ## TODO: implement network generate by placing points (with local communication range) randomly in 2D space
+            print("ERROR: Graphs of type SPACE are not implemented yet.")
+            return
+#         elif (graphType == NetworkType.DYNAMIC):
+#             ## TODO: implement particles
+#             return
 
 class MuMoTview: # class describing a view on a model
     _mumotModel = None
@@ -901,58 +1270,70 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
         self._plot_bifurcation()
 
 class MuMoTnetworkView(MuMoTview): # agent on networks view on model 
-    _probabilities = None
-#     _reactants = None
-#     _rules = None
-    _scaling = 0
-    _agentsState = None
-    _graph = None
-    _maxTime = None
     _plotType = None
+    _colors = None
+    
+    _arena_width = 1
+    _arena_height = 1
 
     def __init__(self, model, controller, paramDict, **kwargs):
         super().__init__(model, controller)
 
-        with io.capture_output() as log:      
-#             name = 'MuMoT Model' + str(id(self))
-#             self._reactants = paramDict['reactants']
-#             self._rules = paramDict['rules']
-            self._maxTime = paramDict['maxTime']
-            self._initialState = paramDict['initialState']
+        with io.capture_output() as log:
+            colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))
+            self._colors = {}
+            i = 0
+            for state in self._mumotModel._reactants:
+                self._colors[state] = colors[i] 
+                i += 1
             
         self._logs.append(log)
 
-        if kwargs != None:
+        if kwargs != None: # TODO: Currently not used (updated through _widgetDict). To rethink plot type in a better way
             self._plotType = kwargs.get('plotType', 'plain')
         else:
             self._plotType = 'plain'
-
+            
         self._plot_timeEvolution()
+    
+    def _log(self, analysis):
+        print("Starting", analysis, "with parameters ", end='')
+        for w in self._controller._widgetDict.values():
+            print('(' + w.description + '=' + str(w.value) + '), ', end='')
+        print("at", datetime.datetime.now())
     
     def _plot_timeEvolution(self):
         with io.capture_output() as log:
+            self._controller._update_params_from_widgets()
+            self._plotType = self._controller._widgetDict['plotType'].value
+            print("Plot Type: " + str(self._plotType) ) 
+            
+#                 self._controller._ratesDict[self._controller._paramNames[i]] = self._controller._widgets[i].value 
             self._log("Networked multiagent")
-            for i in np.arange(0, len(self._controller._paramValues)):
-                self._controller._paramValues[i] = self._controller._widgets[i].value
-                self._controller._ratesDict[self._controller._paramNames[i]] = self._controller._widgets[i].value 
-    #         print(self._controller._paramValues)
-            self.generateProbabilitiesMap(self._mumotModel._reactants, self._mumotModel._rules)
-            print(self._probabilities)
-            self.computeScalingFactor()
-            self.applyScalingFactor()
-            print(self._probabilities)
-            logs = self.iterateAgentStep(self._initialState, self._maxTime)
-            # Plotting evo figure
+            self._controller.convertRatesIntoProbabilities(self._mumotModel._reactants, self._mumotModel._rules)
+            # Clearing the plot
             plt.figure(self._figureNum)
             plt.clf()
-            for state,pop in logs[1].items():
-                print("Plotting:"+str(pop))
-                plt.plot(pop, label=state)
             plt.figure(self._figureNum)
-            plt.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
+            maxTime = self._controller._widgetDict['maxTime'].value
+            if (self._plotType == 'evo'):
+                totAgents = sum(self._controller._initialState.values())
+                plt.axis([0, maxTime, 0, totAgents])
+                
+            
+            logs = self.iterateAgentSteps(self._controller._initialState, maxTime)
+            self._controller._fileToDownload = logs[1]
+            markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
+            plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
+#             plt.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
+            
+#             for state,pop in logs[1].items():
+#                 print("Plotting:"+str(pop))
+#                 plt.plot(pop, label=state)
+            
         self._logs.append(log)
         
-    def iterateAgentStep(self, initialState, maxTime):
+    def iterateAgentSteps(self, initialState, maxTime):
         # Create logging structs
         historyState = []
         historyState.append(initialState)
@@ -960,26 +1341,104 @@ class MuMoTnetworkView(MuMoTview): # agent on networks view on model
         for state,pop in initialState.items():
             evo[state] = []
             evo[state].append(pop)
+        if self._controller._widgetDict['trace'].value:
+            positionHistory = []
+            for _ in np.arange(sum(initialState.values())):
+                positionHistory.append( [] )
         # init the agents list
         agents = []
         for state, pop in initialState.items():
             agents.extend( [state]*pop )
-        for i in np.arange(0, maxTime):
-            print("Time: " + str(i))
+        agents = np.random.permutation(agents).tolist() # random shuffling of elements (useful to avoid initial clusters in networks)
+        self._controller._progressBar.max = maxTime
+        
+        dynamic = self._controller._widgetDict['netType'].value == NetworkType.DYNAMIC
+        if dynamic:
+            positions = []
+            for a in agents:
+                x = np.random.rand()
+                y = np.random.rand()
+                o = np.random.rand() * np.pi * 2.0
+                positions.append( (x,y,o) ) 
+        else:
+            if self._plotType == "graph":
+                pos_layout = nx.circular_layout(self._controller._graph)
+        
+        for i in np.arange(1, maxTime+1):
+            #print("Time: " + str(i))
+            self._controller._progressBar.value = i
+            self._controller._progressBar.description = "Loading " + str(round(i/maxTime*100)) + "%:"
             #print("Agents: " + str(agents))
             currentState = {}
             for state in initialState.keys():
                 currentState[state] = 0
             tmp_agents = copy.deepcopy(agents)
+            if dynamic: 
+                tmp_positions = copy.deepcopy(positions)
+                communication_range = self._controller._widgetDict['netParam'].value
+                speed = self._controller._widgetDict['speed'].value
+                correlatedness = self._controller._widgetDict['correlated'].value
             for idx, a in enumerate(agents):
-                neighs = tmp_agents # TODO: compute the neighs
-                agents[idx] = self.oneStep(a, neighs)
+                if dynamic:
+                    neighNodes = self.getNeighbours(idx, tmp_positions, communication_range)
+                    if self._controller._widgetDict['trace'].value: positionHistory[idx].append( positions[idx] )
+#                     print("Agent " + str(idx) + " moved from " + str(positions[idx]) )
+                    positions[idx] = self.updatePosition( positions[idx][0], positions[idx][1], 
+                                                          positions[idx][2], speed, correlatedness)
+#                     print("to position " + str(positions[idx]) )
+                    
+                else:
+                    neighNodes = list(nx.all_neighbors(self._controller._graph, idx))
+                neighAgents = [tmp_agents[x] for x in neighNodes]
+#                 print("Neighs of agent " + str(idx) + " are " + str(neighNodes) + " with states " + str(neighAgents) )
+                agents[idx] = self.oneStep(a, neighAgents)
                 currentState[ agents[idx] ] = currentState.get(agents[idx],0) + 1
             historyState.append(currentState)
             for state,pop in currentState.items():
                 evo[state].append(pop)
-        print(historyState)
-        print(evo)
+            
+            ## Plotting
+            if (self._plotType == "evo"):
+                for state,pop in evo.items():
+                    plt.plot(pop, color=self._colors[state]) #label=state,
+    #                 display(plt.gcf())
+    #                 clear_output(wait=True)
+            elif (self._plotType == "graph"):
+                plt.clf()
+                if dynamic:
+                    plt.axis([0, 1, 0, 1])
+#                     xs = [p[0] for p in positions]
+#                     ys = [p[1] for p in positions]
+#                     plt.plot(xs, ys, 'o' )
+                    xs = {}
+                    ys = {}
+                    for state in initialState.keys():
+                        xs[state] = []
+                        ys[state] = []
+                    for a in np.arange(len(positions)):
+                        xs[agents[a]].append( positions[a][0] )
+                        ys[agents[a]].append( positions[a][1] )
+                        
+                        if self._controller._widgetDict['interactions'].value:
+                            for n in self.getNeighbours(a, positions, communication_range): 
+                                plt.plot((positions[a][0], positions[n][0]),(positions[a][1], positions[n][1]), '-', c='y')
+                        
+                        if self._controller._widgetDict['trace'].value:
+                            trace_xs = [p[0] for p in positionHistory[a] ]
+                            trace_ys = [p[1] for p in positionHistory[a] ]
+                            plt.plot( trace_xs, trace_ys, '-', c='0.6') 
+                    for state in currentState.keys():
+                        plt.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
+                    plt.axes().set_aspect('equal')
+                else:
+                    stateColors=[]
+                    for n in self._controller._graph.nodes():
+                        stateColors.append( self._colors.get( agents[n], 'w') ) 
+                    nx.draw(self._controller._graph, pos_layout, node_color=stateColors, with_labels=True)
+                
+        self._controller._progressBar.description = "Completed 100%:"
+        print("State distribution each timestep: " + str(historyState))
+        print("Temporal evolution per state: " + str(evo))
         return (historyState,evo)
     
     # one timestep for one agent
@@ -987,7 +1446,7 @@ class MuMoTnetworkView(MuMoTview): # agent on networks view on model
         #probSets = copy.deepcopy(self._probabilities[agent])
         rnd = np.random.rand()
         lastVal = 0
-        probSets = self._probabilities[agent]
+        probSets = self._controller._probabilities[agent]
         # counting how many neighbours for each state (to be uses for the interaction probabilities)
         neighCount = {x:neighs.count(x) for x in probSets.keys()}
 #         print("Agent " + str(agent) + " with probSet=" + str(probSets))
@@ -997,7 +1456,7 @@ class MuMoTnetworkView(MuMoTview): # agent on networks view on model
                 if react == 'void':
                     popScaling = 1
                 else:
-                    popScaling = neighCount[react]/len(neighs) 
+                    popScaling = neighCount[react]/len(neighs) if len(neighs) > 0 else 0
                 val = popScaling * prob[1]
                 if (rnd < val + lastVal):
                     # A state change happened!
@@ -1008,82 +1467,47 @@ class MuMoTnetworkView(MuMoTview): # agent on networks view on model
         # No state change happened
         return agent
     
-    def generateProbabilitiesMap(self, reactants, rules):
-        # deriving the transition probabilities map from reaction rules
-        self._probabilities = {}
-        for reactant in reactants:
-            probSets = {}
-            probSets['void'] = []
-            for rule in rules:
-                assignedDestReactants = []
-                for react in rule.lhsReactants:
-                    if react == reactant:
-                        numReagents = len(rule.lhsReactants)
-                        # if individual transition (i.e. no interaction needed)
-                        if numReagents == 1:
-                            probSets['void'].append( [rule.rate, self._controller._ratesDict[str(rule.rate)], rule.rhsReactants[0]] )
-                        
-                        # if interaction transition
-                        elif numReagents == 2:
-                            # checking if the considered reactant is active or passive in the interaction (i.e. change state afterwards)
-                            if reactant not in rule.rhsReactants:
-                                # determining the otherReactant, which is NOT the considered one
-                                if rule.lhsReactants[0] == reactant:
-                                    otherReact = rule.lhsReactants[1]
-                                else:
-                                    otherReact = rule.lhsReactants[0]
-                                # determining the destReactant
-                                if rule.rhsReactants[0] in assignedDestReactants or rule.rhsReactants[0] == otherReact :
-                                    destReact = rule.rhsReactants[1]
-                                else:
-                                    destReact = rule.rhsReactants[0]
-                                assignedDestReactants.append(destReact)
-                                
-                                if probSets.get(otherReact) == None:
-                                    probSets[otherReact] = []
-                                    
-                                probSets[otherReact].append( [rule.rate, self._controller._ratesDict[str(rule.rate)], destReact] )
-                            #else:
-                                # TO-DO treat in a special way the 'self' interaction!
-                                #print("Reactant " + str(reactant) + " has active role in reaction " + str(rule.rate))
-                                
-                            
-                        elif numReagents > 2:
-                            print('More than two reagents in one rule. Unhandled situation, please use at max two reagents per reaction rule')
-                            return 1
-                        
-            self._probabilities[reactant] = probSets
-#             print("React " + str(reactant))
-#             print(probSets)
+    def updatePosition(self, x, y, o, speed, correlatedness):
+        # random component
+        rand_o = np.random.rand() * np.pi * 2.0
+        rand_x = speed * np.cos(rand_o) * (1-correlatedness)
+        rand_y = speed * np.sin(rand_o) * (1-correlatedness)
+        # persistance component 
+        corr_x = speed * np.cos(o) * correlatedness
+        corr_y = speed * np.sin(o) * correlatedness
+        # movement
+        move_x = rand_x + corr_x
+        move_y = rand_y + corr_y
+        # new orientation
+        o = np.arctan2(move_y, move_x)
+        # new position
+        x = x + move_x
+        y = y + move_y
         
-    def computeScalingFactor(self):
-        # Determining the minimum speed of the process (thus the max-scaling factor)
-        maxRatesAll = 0
-        for probSets in self._probabilities.values():
-            voidRates = 0
-            maxRates = 0
-            for react, probSet in probSets.items():
-                tmpRates = 0
-                for prob in probSet:
-                    #print("adding P=" + str(prob[1]))
-                    if react == 'void':
-                        voidRates += prob[1]
-                    else:
-                        tmpRates += prob[1]
-                if tmpRates > maxRates:
-                    maxRates = tmpRates
-            #print("max Rates=" + str(maxRates) + " void Rates=" + str(voidRates))
-            if (maxRates + voidRates) > maxRatesAll:
-                maxRatesAll = maxRates + voidRates
-        self._scaling = 1/maxRatesAll
-        print("Scaling factor s=" + str(self._scaling))
+        # Implement the periodic boundary conditions
+        x = x % self._arena_width
+        y = y % self._arena_height
+        #### CODE FOR A BOUNDED ARENA
+        # if a.position.x < 0: a.position.x = 0
+        # elif a.position.x > self.dimensions.x: a.position.x = self.dimensions.x 
+        # if a.position.y < 0: a.position.y = 0
+        # elif a.position.y > self.dimensions.y: a.position.x = self.dimensions.x 
+        return (x,y,o)
 
-    def applyScalingFactor(self):
-        # Multiply all rates by the scaling factor
-        for probSets in self._probabilities.values():
-            for probSet in probSets.values():
-                for prob in probSet:
-                    prob[1] *= self._scaling
+    # return the (index) list of neighbours of 'agent'
+    def getNeighbours(self, agent, positions, distance_range):
+        neighbour_list = []
+        for neigh in np.arange(len(positions)):
+            if (not neigh == agent) and (self.distance_on_torus(positions[agent][0], positions[agent][1], positions[neigh][0], positions[neigh][1]) < distance_range):
+                neighbour_list.append(neigh)
+        return neighbour_list
+    
+    # returns the minimum distance calucalted on the torus given by periodic boundary conditions
+    def distance_on_torus( self, x_1, y_1, x_2, y_2 ):
+        return np.sqrt(min(abs(x_1 - x_2), self._arena_width - abs(x_1 - x_2))**2 + 
+                    min(abs(y_1 - y_2), self._arena_height - abs(y_1 - y_2))**2)
+
+                    
 
 def parseModel(modelDescription):
     # TODO: add system size to model description
@@ -1128,7 +1552,7 @@ def parseModel(modelDescription):
                     if token != "+" and token != "->" and token != ":":
                         state = 'B'
                         if '^' in token:
-                             raise SyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
+                            raise SyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
                         reactantCount += 1
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
@@ -1154,7 +1578,7 @@ def parseModel(modelDescription):
                     if token != "+" and token != "->" and token != ":":
                         state = 'D'
                         if '^' in token:
-                             raise SyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
+                            raise SyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
                         reactantCount -= 1
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
@@ -1236,4 +1660,5 @@ def _deriveODEsFromRules(reactants, rules):
     
 def _raiseModelError(expected, read, rule):
     raise SyntaxError("Expected " + expected + " but read '" + read + "' in rule: " + rule)
+
 
