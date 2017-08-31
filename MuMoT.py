@@ -32,8 +32,10 @@ from IPython.utils import io
 import datetime
 import warnings
 from matplotlib.cbook import MatplotlibDeprecationWarning
+from mpl_toolkits.mplot3d import axes3d
 import networkx as nx #@UnresolvedImport
 from enum import Enum
+#from __builtin__ import None
 #from numpy.oldnumeric.fix_default_axis import _args3
 #from matplotlib.offsetbox import kwargs
 
@@ -246,6 +248,10 @@ class MuMoTmodel: # class describing a model
         
     def stream(self, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
+            if stateVariable3 != None:
+                print("3d stream plots not currently supported")
+                
+                return None
             # construct controller
             viewController = self._controller(True, **kwargs)
             
@@ -1057,7 +1063,7 @@ class MuMoTfieldView(MuMoTview): # field view on model (specialised by MuMoTvect
     _Y = None # Y derivatives array
     _Z = None # Z derivatives array
     _speed = None # speed array
-    _mask = {} # class-global dictionary of memoised masks with mesh size as key
+    _mask = {} # class-global dictionary of memoised masks with (mesh size, dimension) as key
     
     def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
         super().__init__(model, controller)
@@ -1083,14 +1089,14 @@ class MuMoTfieldView(MuMoTview): # field view on model (specialised by MuMoTvect
             argNamesSymb = list(map(Symbol, self._controller._paramNames))
             argDict = dict(zip(argNamesSymb, self._controller._paramValues))
             self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] # TODO system size defined to be one
-            mask = self._mask.get(meshPoints)
+            mask = self._mask.get((meshPoints, 2))
             if mask is None:
                 mask = np.zeros(self._X.shape, dtype=bool)
                 upperright = np.triu_indices(meshPoints) # TODO: allow user to set mesh points with keyword 
                 mask[upperright] = True
                 np.fill_diagonal(mask, False)
                 mask = np.flipud(mask)
-                self._mask[meshPoints] = mask
+                self._mask[(meshPoints, 2)] = mask
             self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
@@ -1106,20 +1112,26 @@ class MuMoTfieldView(MuMoTview): # field view on model (specialised by MuMoTvect
             argNamesSymb = list(map(Symbol, self._controller._paramNames))
             argDict = dict(zip(argNamesSymb, self._controller._paramValues))
             self._Z, self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] # TODO system size defined to be one
-#             mask = self._mask.get(meshPoints)
-#             if mask is None:
-#                 mask = np.zeros(self._X.shape, dtype=bool)
+            mask = self._mask.get((meshPoints, 3))
+            if mask is None:
+#                mask = np.zeros(self._X.shape, dtype=bool)
 #                 upperright = np.triu_indices(meshPoints) # TODO: allow user to set mesh points with keyword 
 #                 mask[upperright] = True
 #                 np.fill_diagonal(mask, False)
 #                 mask = np.flipud(mask)
-#                 self._mask[meshPoints] = mask
-            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable2, self._X, self._Y, self._Z))
-            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
-#             self._Xdot = np.ma.array(self._Xdot, mask=mask)
-#             self._Ydot = np.ma.array(self._Ydot, mask=mask)        
+                mask = self._X + self._Y + self._Z >= 1
+#                mask = mask.astype(int)
+                self._mask[(meshPoints, 3)] = mask
+            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple3d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple3d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple3d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2 + self._Zdot ** 2))
+#            self._Xdot = self._Xdot * mask
+#            self._Ydot = self._Ydot * mask
+#            self._Zdot = self._Zdot * mask
+            self._Xdot = np.ma.array(self._Xdot, mask=mask)
+            self._Ydot = np.ma.array(self._Ydot, mask=mask)        
+            self._Zdot = np.ma.array(self._Zdot, mask=mask)
         self._logs.append(log)
 
 class MuMoTstreamView(MuMoTfieldView):
@@ -1139,7 +1151,8 @@ class MuMoTvectorView(MuMoTfieldView):
     #        plt.set_aspect('equal') # TODO
         else:
             self._get_field3d("3d vector plot", 10)
-            plt.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, units='width', color = 'black') # TODO: define colormap by user keyword
+            ax = self._figure.gca(projection = '3d')
+            ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length = 0.01, color = 'black') # TODO: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
 #           plt.set_aspect('equal') # TODO
         
 class MuMoTbifurcationView(MuMoTview): # bifurcation view on model 
