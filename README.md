@@ -17,3 +17,12 @@ You need to install the following tools: PyDSTool, graphviz (graph visualization
 
 # Test
 To test your installation run the 'MuMoTdemo.ipynb' and 'MuMoTtest.ipynb' notebooks.
+
+# Documentation
+Read the documentation at [https://diodeproject.github.io/MuMoT/](https://diodeproject.github.io/MuMoT/)
+
+# House rules
+* Update the [Doxygen](http://www.stack.nl/~dimitri/doxygen/index.html) documentation when making substantive changes
+* Update 'MuMoTtest.ipynb' to add tests for new functionality
+* Write code using Python [naming conventions](https://www.python.org/dev/peps/pep-0008/#naming-conventions)
+
