@@ -35,6 +35,7 @@ from matplotlib.cbook import MatplotlibDeprecationWarning
 from mpl_toolkits.mplot3d import axes3d
 import networkx as nx #@UnresolvedImport
 from enum import Enum
+import ast
 #from __builtin__ import None
 #from numpy.oldnumeric.fix_default_axis import _args3
 #from matplotlib.offsetbox import kwargs
@@ -56,32 +57,32 @@ class NetworkType(Enum):
 
 # class with default parameters
 class MuMoTdefault:
-    initialRateValue = 2 # TODO: was 1 (choose initial values sensibly)
-    rateLimits = (0.0, 20.0) # TODO: choose limit values sensibly
-    rateStep = 0.1 # TODO: choose rate step sensibly
+    _initialRateValue = 2 # TODO: was 1 (choose initial values sensibly)
+    _rateLimits = (0.0, 20.0) # TODO: choose limit values sensibly
+    _rateStep = 0.1 # TODO: choose rate step sensibly
     @staticmethod
-    def setRateDefaults(initRate=initialRateValue, limits=rateLimits, step=rateStep):
-        MuMoTdefault.initialRateValue = initRate
-        MuMoTdefault.rateLimits = limits
-        MuMoTdefault.rateStep = step
+    def setRateDefaults(initRate=_initialRateValue, limits=_rateLimits, step=_rateStep):
+        MuMoTdefault._initialRateValue = initRate
+        MuMoTdefault._rateLimits = limits
+        MuMoTdefault._rateStep = step
     
-    maxTime = 10
-    timeLimits = (1, 100)
-    timeStep = 1
+    _maxTime = 10
+    _timeLimits = (1, 100)
+    _timeStep = 1
     @staticmethod
-    def setTimeDefaults(initTime=maxTime, limits=timeLimits, step=timeStep):
-        MuMoTdefault.maxTime = initTime
-        MuMoTdefault.timeLimits = limits
-        MuMoTdefault.timeStep = step
+    def setTimeDefaults(initTime=_maxTime, limits=_timeLimits, step=_timeStep):
+        MuMoTdefault._maxTime = initTime
+        MuMoTdefault._timeLimits = limits
+        MuMoTdefault._timeStep = step
         
-    agents = 100
-    agentsLimits = (0, 1000)
-    agentsStep = 1
+    _agents = 100
+    _agentsLimits = (0, 1000)
+    _agentsStep = 1
     @staticmethod
-    def setAgentsDefaults(initAgents=agents, limits=agentsLimits, step=agentsStep):
-        MuMoTdefault.agents = initAgents
-        MuMoTdefault.agentsLimits = limits
-        MuMoTdefault.agentsStep = step
+    def setAgentsDefaults(initAgents=_agents, limits=_agentsLimits, step=_agentsStep):
+        MuMoTdefault._agents = initAgents
+        MuMoTdefault._agentsLimits = limits
+        MuMoTdefault._agentsStep = step
     
 
 class MuMoTmodel: # class describing a model
@@ -323,8 +324,8 @@ class MuMoTmodel: # class describing a model
             initialState = {}
             for reactant in self._reactants:
                 if first:
-                    print("Automatic Initial State sets " + str(MuMoTdefault.agents) + " agents in state " + str(reactant) )
-                    initialState[reactant] = MuMoTdefault.agents
+                    print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
+                    initialState[reactant] = MuMoTdefault._agents
                     first = False
                 else:
                     initialState[reactant] = 0
@@ -338,14 +339,14 @@ class MuMoTmodel: # class describing a model
         paramNames = [] 
         #paramValues.extend( [initialState, netType, maxTime] )
         for rate in self._rates:
-            paramValues.append((MuMoTdefault.initialRateValue, MuMoTdefault.rateLimits[0], MuMoTdefault.rateLimits[1], MuMoTdefault.rateStep))
+            paramValues.append((MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep))
             paramNames.append(str(rate))
 
         if (maxTime == "Auto" or maxTime <= 0):
-            maxTime = MuMoTdefault.maxTime
-            timeLimitMax = max(maxTime, MuMoTdefault.timeLimits[1])
+            maxTime = MuMoTdefault._maxTime
+            timeLimitMax = max(maxTime, MuMoTdefault._timeLimits[1])
         paramNames.append("maxTime")
-        paramValues.append( (maxTime, MuMoTdefault.timeLimits[0], timeLimitMax, MuMoTdefault.timeStep) )
+        paramValues.append( (maxTime, MuMoTdefault._timeLimits[0], timeLimitMax, MuMoTdefault._timeStep) )
         if (randomSeed == "Auto" or randomSeed <= 0):
             specialParams['randomSeed'] = np.random.randint(MAX_RANDOM_SEED)
             print("Automatic Random Seed set to " + str(specialParams['randomSeed']) )
@@ -368,18 +369,37 @@ class MuMoTmodel: # class describing a model
     def SSA(self, initialState="Auto", maxTime="Auto", randomSeed="Auto", **kwargs):
         specialParams = {}
         if initialState=="Auto":
-            #initialState = [100] + [0]*(len(reactantList)-1)
             first = True
             initialState = {}
             for reactant in self._reactants:
                 if first:
-                    print("Automatic Initial State sets " + str(MuMoTdefault.agents) + " agents in state " + str(reactant) )
-                    initialState[reactant] = MuMoTdefault.agents
+                    print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
+                    initialState[reactant] = MuMoTdefault._agents
                     first = False
                 else:
                     initialState[reactant] = 0
         else:
             print("TODO: check if the Initial State has valid length and positive values")
+#             initialState = ast.literal_eval(initialState) # translate from string to dict
+#             print(initialState)
+#             print(self._reactants)
+#             for state in initialState.keys():
+#                 print(state)
+#                 print(str(state) + " == " + str(self._reactants) + " " + str(state in self._reactants) )
+#             for state in self._reactants:
+#                 print(state)
+#                 print(str(state) + " == " + str(initialState.keys()) + " " + str( "'"+str(state)+"'" in initialState.keys()) )
+            initialState = {}
+            first = True
+            for reactant in self._reactants:
+                if first:
+                    print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
+                    initialState[reactant] = MuMoTdefault._agents
+                    first = False
+                else:
+                    initialState[reactant] = 0
+#             print(initialState)
+#             print(initialState.keys())
         print("Initial State is " + str(initialState) )
         specialParams['initialState'] = initialState
         
@@ -388,23 +408,20 @@ class MuMoTmodel: # class describing a model
         paramNames = [] 
         #paramValues.extend( [initialState, netType, maxTime] )
         for rate in self._rates:
-            paramValues.append((MuMoTdefault.initialRateValue, MuMoTdefault.rateLimits[0], MuMoTdefault.rateLimits[1], MuMoTdefault.rateStep))
+            paramValues.append((MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep))
             paramNames.append(str(rate))
 
         if (maxTime == "Auto" or maxTime <= 0):
-            maxTime = MuMoTdefault.maxTime
-            timeLimitMax = max(maxTime, MuMoTdefault.timeLimits[1])
+            maxTime = MuMoTdefault._maxTime
+            timeLimitMax = max(maxTime, MuMoTdefault._timeLimits[1])
         paramNames.append("maxTime")
-        paramValues.append( (maxTime, MuMoTdefault.timeLimits[0], timeLimitMax, MuMoTdefault.timeStep) )
+        paramValues.append( (maxTime, MuMoTdefault._timeLimits[0], timeLimitMax, MuMoTdefault._timeStep) )
         if (randomSeed == "Auto" or randomSeed <= 0):
             specialParams['randomSeed'] = np.random.randint(MAX_RANDOM_SEED)
             print("Automatic Random Seed set to " + str(specialParams['randomSeed']) )
         viewController = MuMoTSSAController(paramValues, paramNames, self._ratesLaTeX, False, specialParams)
         
         paramDict = {}
-#         paramDict['reactants'] = self._reactants
-#         paramDict['rules'] = self._rules
-#         paramDict['maxTime'] = maxTime
         paramDict['initialState'] = initialState
         modelView = MuMoTSSAView(self, viewController, paramDict, **kwargs)
         
@@ -423,7 +440,7 @@ class MuMoTmodel: # class describing a model
 #                 pass
 # #                self._paramValues.append(1)
 # #                self._paramNames.append(str(self._systemSize))
-# #                widget = widgets.FloatSlider(value = 1, min = rateLimits[0], max = rateLimits[1], step = rateStep, description = str(self._systemSize), continuous_update = False)
+# #                widget = widgets.FloatSlider(value = 1, min = _rateLimits[0], max = _rateLimits[1], step = _rateStep, description = str(self._systemSize), continuous_update = False)
 # #                widget.on_trait_change(self._replot_bifurcation2D, 'value')
 # #                self._widgets.append(widget)
 # #                display(widget)
@@ -432,9 +449,9 @@ class MuMoTmodel: # class describing a model
 #                 return
 #             for rate in self._rates:
 #                 if str(rate) != bifurcationParameter:
-#                     self._paramValues.append(initialRateValue)
+#                     self._paramValues.append(_initialRateValue)
 #                     self._paramNames.append(str(rate))
-#                     widget = widgets.FloatSlider(value = initialRateValue, min = rateLimits[0], max = rateLimits[1], step = rateStep, description = str(rate), continuous_update = False)
+#                     widget = widgets.FloatSlider(value = _initialRateValue, min = _rateLimits[0], max = _rateLimits[1], step = _rateStep, description = str(rate), continuous_update = False)
 #                     widget.on_trait_change(self._replot_bifurcation2D, 'value')
 #                     self._widgets.append(widget)
 #                     display(widget)
@@ -758,9 +775,9 @@ class MuMoTSSAController(MuMoTcontroller): # class describing a controller for m
         self._initialState = specialParams['initialState']
         for state,pop in self._initialState.items():
             widget = widgets.IntSlider(value = pop,
-                                         min = min(pop, MuMoTdefault.agentsLimits[0]), 
-                                         max = max(pop, MuMoTdefault.agentsLimits[1]),
-                                         step = MuMoTdefault.agentsStep,
+                                         min = min(pop, MuMoTdefault._agentsLimits[0]), 
+                                         max = max(pop, MuMoTdefault._agentsLimits[1]),
+                                         step = MuMoTdefault._agentsStep,
                                          description = "State " + str(state), 
                                          continuous_update = continuousReplot)
             self._widgetDict['init'+str(state)] = widget
@@ -844,9 +861,9 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         self._initialState = specialParams['initialState']
         for state,pop in self._initialState.items():
             widget = widgets.IntSlider(value = pop,
-                                         min = min(pop, MuMoTdefault.agentsLimits[0]), 
-                                         max = max(pop, MuMoTdefault.agentsLimits[1]),
-                                         step = MuMoTdefault.agentsStep,
+                                         min = min(pop, MuMoTdefault._agentsLimits[0]), 
+                                         max = max(pop, MuMoTdefault._agentsLimits[1]),
+                                         step = MuMoTdefault._agentsStep,
                                          description = "State " + str(state), 
                                          continuous_update = continuousReplot)
             self._widgetDict['init'+str(state)] = widget
@@ -867,7 +884,7 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         )
         self._widgetDict['netType'] = netDropdown
         #self._widgets.append(netDropdown)
-        netDropdown.on_trait_change(self.updateNetParam, 'value')
+        netDropdown.on_trait_change(self._update_net_params, 'value')
         advancedWidgets.append(netDropdown)
         
         ## Network connectivity slider
@@ -955,7 +972,7 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
-        self.updateNetParam()
+        self._update_net_params()
         
         advancedPage = widgets.Box(children=advancedWidgets)
         advancedOpts = widgets.Accordion(children=[advancedPage])
@@ -980,9 +997,9 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         numNodes = sum(self._initialState.values())
         np.random.seed(self._widgetDict['randomSeed'].value)
         netParam = self._widgetDict['netParam'].value
-        self.generateGraph(graphType=self._widgetDict['netType'].value, numNodes=numNodes, netParam=netParam)
+        self._generateGraph(graphType=self._widgetDict['netType'].value, numNodes=numNodes, netParam=netParam)
     
-    def updateNetParam(self):
+    def _update_net_params(self):
         # oder of assignment is important (firt, update the min and max, later, the value)
         # TODO: the update of value happens two times (changing min-max and value) and therefore the calculatio are done two times
         if (self._widgetDict['netType'].value == NetworkType.FULLY_CONNECTED):
@@ -1031,15 +1048,15 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
     def downloadTimeEvolution(self):
         return self._downloadFile(self._fileToDownload)
     
-    def convertRatesIntoProbabilities(self, reactants, rules):
-        self.generateProbabilitiesMap(reactants, rules)
+    def _convertRatesIntoProbabilities(self, reactants, rules):
+        self._generateProbabilitiesMap(reactants, rules)
         #print(self._probabilities)
-        self.computeScalingFactor()
-        self.applyScalingFactor()
+        self._computeScalingFactor()
+        self._applyScalingFactor()
         #print(self._probabilities)
     
-    def generateProbabilitiesMap(self, reactants, rules):
-        # deriving the transition probabilities map from reaction rules
+    # deriving the transition probabilities map from reaction rules
+    def _generateProbabilitiesMap(self, reactants, rules):
         self._probabilities = {}
         assignedDestReactants = {}
         for reactant in reactants:
@@ -1092,7 +1109,7 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
             print("React " + str(reactant))
             print(probSets)
 
-    def computeScalingFactor(self):
+    def _computeScalingFactor(self):
         # Determining the minimum speed of the process (thus the max-scaling factor)
         maxRatesAll = 0
         for probSets in self._probabilities.values():
@@ -1122,14 +1139,14 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
             self._widgetDict['scaling'].step = scaling/100
         print("Scaling factor s=" + str(self._widgetDict['scaling'].value))
         
-    def applyScalingFactor(self):
+    def _applyScalingFactor(self):
         # Multiply all rates by the scaling factor
         for probSets in self._probabilities.values():
             for probSet in probSets.values():
                 for prob in probSet:
                     prob[1] *= self._widgetDict['scaling'].value
                     
-    def generateGraph(self, graphType, numNodes, netParam=None):
+    def _generateGraph(self, graphType, numNodes, netParam=None):
         if (graphType == NetworkType.FULLY_CONNECTED):
             print("Generating full graph")
             self._graph = nx.complete_graph(numNodes) #np.repeat(0, self.numNodes)
@@ -1322,7 +1339,7 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
                 pass
     #                self._paramValues.append(1)
     #                self._paramNames.append(str(self._systemSize))
-    #                widget = widgets.FloatSlider(value = 1, min = rateLimits[0], max = rateLimits[1], step = rateStep, description = str(self._systemSize), continuous_update = False)
+    #                widget = widgets.FloatSlider(value = 1, min = _rateLimits[0], max = _rateLimits[1], step = _rateStep, description = str(self._systemSize), continuous_update = False)
     #                widget.on_trait_change(self._replot_bifurcation2D, 'value')
     #                self._widgets.append(widget)
     #                display(widget)
@@ -1466,7 +1483,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
             
 #                 self._controller._ratesDict[self._controller._paramNames[i]] = self._controller._widgets[i].value 
             self._log("Multiagent simulation")
-            self._controller.convertRatesIntoProbabilities(self._mumotModel._reactants, self._mumotModel._rules)
+            self._controller._convertRatesIntoProbabilities(self._mumotModel._reactants, self._mumotModel._rules)
             # Clearing the plot
             plt.figure(self._figureNum)
             plt.clf()
@@ -1477,7 +1494,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
                 plt.axis([0, maxTime, 0, totAgents])
                 
             
-            logs = self.iterateAgentSteps(self._controller._initialState, maxTime)
+            logs = self._iterateAgentSteps(self._controller._initialState, maxTime)
             self._controller._fileToDownload = logs[1]
             markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
             plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
@@ -1489,7 +1506,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
             
         self._logs.append(log)
         
-    def iterateAgentSteps(self, initialState, maxTime):
+    def _iterateAgentSteps(self, initialState, maxTime):
         # Create logging structs
         historyState = []
         historyState.append(initialState)
@@ -1536,10 +1553,10 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
                 correlatedness = self._controller._widgetDict['correlated'].value
             for idx, a in enumerate(agents):
                 if dynamic:
-                    neighNodes = self.getNeighbours(idx, tmp_positions, communication_range)
+                    neighNodes = self._getNeighbours(idx, tmp_positions, communication_range)
                     if self._controller._widgetDict['trace'].value: positionHistory[idx].append( positions[idx] )
 #                     print("Agent " + str(idx) + " moved from " + str(positions[idx]) )
-                    positions[idx] = self.updatePosition( positions[idx][0], positions[idx][1], 
+                    positions[idx] = self._updatePosition( positions[idx][0], positions[idx][1], 
                                                           positions[idx][2], speed, correlatedness)
 #                     print("to position " + str(positions[idx]) )
                     
@@ -1547,7 +1564,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
                     neighNodes = list(nx.all_neighbors(self._controller._graph, idx))
                 neighAgents = [tmp_agents[x] for x in neighNodes]
 #                 print("Neighs of agent " + str(idx) + " are " + str(neighNodes) + " with states " + str(neighAgents) )
-                agents[idx] = self.oneStep(a, neighAgents)
+                agents[idx] = self._oneStep(a, neighAgents)
                 currentState[ agents[idx] ] = currentState.get(agents[idx],0) + 1
             historyState.append(currentState)
             for state,pop in currentState.items():
@@ -1576,7 +1593,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
                         ys[agents[a]].append( positions[a][1] )
                         
                         if self._controller._widgetDict['interactions'].value:
-                            for n in self.getNeighbours(a, positions, communication_range): 
+                            for n in self._getNeighbours(a, positions, communication_range): 
                                 plt.plot((positions[a][0], positions[n][0]),(positions[a][1], positions[n][1]), '-', c='y')
                         
                         if self._controller._widgetDict['trace'].value:
@@ -1598,7 +1615,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
         return (historyState,evo)
     
     # one timestep for one agent
-    def oneStep(self, agent, neighs):
+    def _oneStep(self, agent, neighs):
         #probSets = copy.deepcopy(self._probabilities[agent])
         rnd = np.random.rand()
         lastVal = 0
@@ -1623,7 +1640,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
         # No state change happened
         return agent
     
-    def updatePosition(self, x, y, o, speed, correlatedness):
+    def _updatePosition(self, x, y, o, speed, correlatedness):
         # random component
         rand_o = np.random.rand() * np.pi * 2.0
         rand_x = speed * np.cos(rand_o) * (1-correlatedness)
@@ -1651,15 +1668,15 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
         return (x,y,o)
 
     # return the (index) list of neighbours of 'agent'
-    def getNeighbours(self, agent, positions, distance_range):
+    def _getNeighbours(self, agent, positions, distance_range):
         neighbour_list = []
         for neigh in np.arange(len(positions)):
-            if (not neigh == agent) and (self.distance_on_torus(positions[agent][0], positions[agent][1], positions[neigh][0], positions[neigh][1]) < distance_range):
+            if (not neigh == agent) and (self._distance_on_torus(positions[agent][0], positions[agent][1], positions[neigh][0], positions[neigh][1]) < distance_range):
                 neighbour_list.append(neigh)
         return neighbour_list
     
     # returns the minimum distance calucalted on the torus given by periodic boundary conditions
-    def distance_on_torus( self, x_1, y_1, x_2, y_2 ):
+    def _distance_on_torus( self, x_1, y_1, x_2, y_2 ):
         return np.sqrt(min(abs(x_1 - x_2), self._arena_width - abs(x_1 - x_2))**2 + 
                     min(abs(y_1 - y_2), self._arena_height - abs(y_1 - y_2))**2)
 
@@ -1678,7 +1695,7 @@ class MuMoTSSAView(MuMoTview): # agent on networks view on model
             for state in self._mumotModel._reactants:
                 self._colors[state] = colors[i] 
                 i += 1
-            
+        
         self._logs.append(log)
 
         if kwargs != None: # TODO: Currently not used (updated through _widgetDict). To rethink plot type in a better way
@@ -1743,7 +1760,7 @@ class MuMoTSSAView(MuMoTview): # agent on networks view on model
             # update progress bar
             self._controller._progressBar.value = t
             self._controller._progressBar.description = "Loading " + str(round(t/maxTime*100)) + "%:"
-            print("Time: " + str(t))
+#             print("Time: " + str(t))
             
             # update transition probabilities accounting for the current state
             probabilitiesOfChange = []
