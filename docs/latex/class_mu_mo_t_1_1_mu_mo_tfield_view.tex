@@ -1,13 +1,211 @@
 \hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view}{}\section{Mu\+Mo\+Tfield\+View Class Reference}
 \label{class_mu_mo_t_1_1_mu_mo_tfield_view}\index{Mu\+Mo\+Tfield\+View@{Mu\+Mo\+Tfield\+View}}
+
+
+field view on model (specialised by \hyperlink{class_mu_mo_t_1_1_mu_mo_tvector_view}{Mu\+Mo\+Tvector\+View} and \hyperlink{class_mu_mo_t_1_1_mu_mo_tstream_view}{Mu\+Mo\+Tstream\+View})  
+
+
 Inheritance diagram for Mu\+Mo\+Tfield\+View\+:\begin{figure}[H]
 \begin{center}
 \leavevmode
 \includegraphics[height=3.000000cm]{class_mu_mo_t_1_1_mu_mo_tfield_view}
 \end{center}
 \end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_adb85cdc492587d5ec0fcc2bebbae5adc}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, model, controller, state\+Variable1, state\+Variable2, state\+Variable3=None, kwargs)
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_a50d59419298116f738a98c864afb9d89}{\+\_\+plot\+\_\+field} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_a854f5f5badcda687eff8a999e6700cb7}{\+\_\+get\+\_\+field2d} (self, kind, mesh\+Points)
+\begin{DoxyCompactList}\small\item\em get 2-\/dimensional field for plotting \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_a7e92a660924e058d070dd1799c27f126}{\+\_\+get\+\_\+field3d} (self, kind, mesh\+Points)
+\begin{DoxyCompactList}\small\item\em get 3-\/dimensional field for plotting \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_a0f5fba57766067c941f5a96b22545ed4}{\+\_\+\+Xdot}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_a31f5ad9d4a349b00e06772177200c217}{\+\_\+\+Ydot}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_a4008c2e6651cb1bf1c9c1af3e962a25d}{\+\_\+\+Zdot}
+\end{DoxyCompactItemize}
+\subsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_aa14fa36730691becc6f3136899545416}{\+\_\+state\+Variable1} = None
+\begin{DoxyCompactList}\small\item\em 1st state variable (x-\/dimension) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_a9d3705d1d9182e10751ff693573d6d16}{\+\_\+state\+Variable2} = None
+\begin{DoxyCompactList}\small\item\em 2nd state variable (y-\/dimension) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_ad2f8dc44173a16468bd9d3ab335f9b27}{\+\_\+state\+Variable3} = None
+\begin{DoxyCompactList}\small\item\em 3rd state variable (z-\/dimension) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_abb529af75494ab2513e57b8434c7c975}{\+\_\+X} = None
+\begin{DoxyCompactList}\small\item\em X ordinates array. \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_a17bd9f55d983ee8d5a6f22088d0397e8}{\+\_\+Y} = None
+\begin{DoxyCompactList}\small\item\em Y ordinates array. \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_a7b96cbb62a4ad08851fa147958f0d6e4}{\+\_\+Z} = None
+\begin{DoxyCompactList}\small\item\em Z ordinates array. \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_a3293b40663039bb46c8c977a9948436e}{\+\_\+speed} = None
+\begin{DoxyCompactList}\small\item\em speed array \end{DoxyCompactList}\item 
+dictionary \hyperlink{class_mu_mo_t_1_1_mu_mo_tfield_view_acbf4bc8fa26c3cf9e1d2741cc3dea058}{\+\_\+mask} = \{\}
+\begin{DoxyCompactList}\small\item\em class-\/global dictionary of memoised masks with (mesh size, dimension) as key \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+field view on model (specialised by \hyperlink{class_mu_mo_t_1_1_mu_mo_tvector_view}{Mu\+Mo\+Tvector\+View} and \hyperlink{class_mu_mo_t_1_1_mu_mo_tstream_view}{Mu\+Mo\+Tstream\+View}) 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_adb85cdc492587d5ec0fcc2bebbae5adc}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_adb85cdc492587d5ec0fcc2bebbae5adc}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
+{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{model,  }\item[{}]{controller,  }\item[{}]{state\+Variable1,  }\item[{}]{state\+Variable2,  }\item[{}]{state\+Variable3 = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_a854f5f5badcda687eff8a999e6700cb7}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_a854f5f5badcda687eff8a999e6700cb7}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+get\+\_\+field2d@{\+\_\+get\+\_\+field2d}}
+\index{\+\_\+get\+\_\+field2d@{\+\_\+get\+\_\+field2d}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+get\+\_\+field2d()}{\_get\_field2d()}}
+{\footnotesize\ttfamily def \+\_\+get\+\_\+field2d (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{kind,  }\item[{}]{mesh\+Points }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+get 2-\/dimensional field for plotting 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_a7e92a660924e058d070dd1799c27f126}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_a7e92a660924e058d070dd1799c27f126}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+get\+\_\+field3d@{\+\_\+get\+\_\+field3d}}
+\index{\+\_\+get\+\_\+field3d@{\+\_\+get\+\_\+field3d}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+get\+\_\+field3d()}{\_get\_field3d()}}
+{\footnotesize\ttfamily def \+\_\+get\+\_\+field3d (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{kind,  }\item[{}]{mesh\+Points }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+get 3-\/dimensional field for plotting 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_a50d59419298116f738a98c864afb9d89}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_a50d59419298116f738a98c864afb9d89}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+plot\+\_\+field@{\+\_\+plot\+\_\+field}}
+\index{\+\_\+plot\+\_\+field@{\+\_\+plot\+\_\+field}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+plot\+\_\+field()}{\_plot\_field()}}
+{\footnotesize\ttfamily def \+\_\+plot\+\_\+field (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+\subsection{Field Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_acbf4bc8fa26c3cf9e1d2741cc3dea058}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_acbf4bc8fa26c3cf9e1d2741cc3dea058}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+mask@{\+\_\+mask}}
+\index{\+\_\+mask@{\+\_\+mask}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+mask}{\_mask}}
+{\footnotesize\ttfamily dictionary \+\_\+mask = \{\}\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+class-\/global dictionary of memoised masks with (mesh size, dimension) as key 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_a3293b40663039bb46c8c977a9948436e}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_a3293b40663039bb46c8c977a9948436e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+speed@{\+\_\+speed}}
+\index{\+\_\+speed@{\+\_\+speed}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+speed}{\_speed}}
+{\footnotesize\ttfamily \+\_\+speed = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+speed array 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_aa14fa36730691becc6f3136899545416}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_aa14fa36730691becc6f3136899545416}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+state\+Variable1@{\+\_\+state\+Variable1}}
+\index{\+\_\+state\+Variable1@{\+\_\+state\+Variable1}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+state\+Variable1}{\_stateVariable1}}
+{\footnotesize\ttfamily \+\_\+state\+Variable1 = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+1st state variable (x-\/dimension) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_a9d3705d1d9182e10751ff693573d6d16}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_a9d3705d1d9182e10751ff693573d6d16}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+state\+Variable2@{\+\_\+state\+Variable2}}
+\index{\+\_\+state\+Variable2@{\+\_\+state\+Variable2}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+state\+Variable2}{\_stateVariable2}}
+{\footnotesize\ttfamily \+\_\+state\+Variable2 = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+2nd state variable (y-\/dimension) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_ad2f8dc44173a16468bd9d3ab335f9b27}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_ad2f8dc44173a16468bd9d3ab335f9b27}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+state\+Variable3@{\+\_\+state\+Variable3}}
+\index{\+\_\+state\+Variable3@{\+\_\+state\+Variable3}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+state\+Variable3}{\_stateVariable3}}
+{\footnotesize\ttfamily \+\_\+state\+Variable3 = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+3rd state variable (z-\/dimension) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_abb529af75494ab2513e57b8434c7c975}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_abb529af75494ab2513e57b8434c7c975}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+X@{\+\_\+X}}
+\index{\+\_\+X@{\+\_\+X}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+X}{\_X}}
+{\footnotesize\ttfamily \+\_\+X = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+X ordinates array. 
+
+X derivatives array. \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_a0f5fba57766067c941f5a96b22545ed4}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_a0f5fba57766067c941f5a96b22545ed4}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+\+Xdot@{\+\_\+\+Xdot}}
+\index{\+\_\+\+Xdot@{\+\_\+\+Xdot}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+\+Xdot}{\_Xdot}}
+{\footnotesize\ttfamily \+\_\+\+Xdot\hspace{0.3cm}{\ttfamily [private]}}
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000026}{Todo}]system size defined to be one \end{DoxyRefDesc}
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000027}{Todo}]\+: allow user to set mesh points with keyword \end{DoxyRefDesc}
+
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000028}{Todo}]system size defined to be one \end{DoxyRefDesc}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_a17bd9f55d983ee8d5a6f22088d0397e8}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_a17bd9f55d983ee8d5a6f22088d0397e8}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+Y@{\+\_\+Y}}
+\index{\+\_\+Y@{\+\_\+Y}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+Y}{\_Y}}
+{\footnotesize\ttfamily \+\_\+Y = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Y ordinates array. 
+
+Y derivatives array. \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_a31f5ad9d4a349b00e06772177200c217}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_a31f5ad9d4a349b00e06772177200c217}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+\+Ydot@{\+\_\+\+Ydot}}
+\index{\+\_\+\+Ydot@{\+\_\+\+Ydot}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+\+Ydot}{\_Ydot}}
+{\footnotesize\ttfamily \+\_\+\+Ydot\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_a7b96cbb62a4ad08851fa147958f0d6e4}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_a7b96cbb62a4ad08851fa147958f0d6e4}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+Z@{\+\_\+Z}}
+\index{\+\_\+Z@{\+\_\+Z}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+Z}{\_Z}}
+{\footnotesize\ttfamily \+\_\+Z = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Z ordinates array. 
+
+Z derivatives array. \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tfield_view_a4008c2e6651cb1bf1c9c1af3e962a25d}\label{class_mu_mo_t_1_1_mu_mo_tfield_view_a4008c2e6651cb1bf1c9c1af3e962a25d}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}!\+\_\+\+Zdot@{\+\_\+\+Zdot}}
+\index{\+\_\+\+Zdot@{\+\_\+\+Zdot}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tfield\+View}}
+\subsubsection{\texorpdfstring{\+\_\+\+Zdot}{\_Zdot}}
+{\footnotesize\ttfamily \+\_\+\+Zdot\hspace{0.3cm}{\ttfamily [private]}}
+
 
 
 The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
 \item 
-/\+Users/marshall/\+Google Drive/\+Home/\+Git/\+Mu\+Mo\+T/Mu\+Mo\+T.\+py\end{DoxyCompactItemize}
+\hyperlink{_mu_mo_t_8py}{Mu\+Mo\+T.\+py}\end{DoxyCompactItemize}

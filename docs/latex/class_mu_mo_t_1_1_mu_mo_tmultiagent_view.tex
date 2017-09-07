@@ -1,0 +1,359 @@
+\hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view}{}\section{Mu\+Mo\+Tmultiagent\+View Class Reference}
+\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view}\index{Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+Tmultiagent\+View}}
+
+
+self.\+\_\+py\+D\+Scont.\+new\+Curve(self.\+\_\+py\+D\+Scont\+Args) self.\+\_\+py\+D\+Scont\mbox{[}\textquotesingle{}E\+Q1\textquotesingle{}\mbox{]}.reset(self.\+\_\+py\+D\+Smodel.\+pars) self.\+\_\+py\+D\+Sode.\+set(pars = self.\+\_\+py\+D\+Smodel.\+pars) self.\+\_\+py\+D\+Scont\mbox{[}\textquotesingle{}E\+Q1\textquotesingle{}\mbox{]}.reset() self.\+\_\+py\+D\+Scont.\+update(self.\+\_\+py\+D\+Scont\+Args) \#\#  
+
+
+Inheritance diagram for Mu\+Mo\+Tmultiagent\+View\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_mu_mo_t_1_1_mu_mo_tmultiagent_view}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a4c1643fc901cb2c6e32ac1dac1571c5c}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, model, controller, param\+Dict, kwargs)
+\end{DoxyCompactItemize}
+\subsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+dictionary \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a11c4a8ddcf95c6593dedd96d8052e6de}{xs} = \{\}
+\item 
+dictionary \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a33cb91153ac5093db96e5a51490a2688}{ys} = \{\}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ae0323a9039add2978bf5b49550572c7c}{c}
+\item 
+list \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a7499a80aaa71437a9a52e15807a09dc0}{trace\+\_\+xs} = \mbox{[}p\mbox{[}0\mbox{]} for p in position\+History\mbox{[}a\mbox{]} \mbox{]}
+\item 
+list \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a2ebf396b2ffd60c12ada6dd589c3e216}{trace\+\_\+ys} = \mbox{[}p\mbox{[}1\mbox{]} for p in position\+History\mbox{[}a\mbox{]} \mbox{]}
+\item 
+list \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_af439c5b29ba7f58f96f3b90cdd83648b}{state\+Colors} = \mbox{[}$\,$\mbox{]}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_acf0720944bad86d351ddcc7f2a3b9467}{pos\+\_\+layout}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ac064787e06c92df108217ae8e408e017}{node\+\_\+color}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_af61c8db681f18f2d8d0839f5cb4bacc6}{state\+Colors}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad55aeef6b29ba6c9a5f77e76b016da92}{with\+\_\+labels}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a2661f439a4a94ffdcd5e47ae1da0bb1d}{description}
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8b4ffd0e4999bd45c6ca33fe0f40d1e3}{\+\_\+log} (self, analysis)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ace35072dcd3e51e67107f62b4de0d5fe}{\+\_\+plot\+\_\+time\+Evolution} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a2aeccd8cc467046f91ce45a4faef700b}{\+\_\+run\+Multiagent} (self, initial\+State, \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_aa820f7e11b025b06f4eeb0ad7581ad34}{max\+Time})
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a51d421aacb4cd83af5f1c2e60c3dff9c}{\+\_\+single\+Run} (self, random\+Seed)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a63242960a1d4db3a17cc8657a8ee7da1}{\+\_\+convert\+Rates\+Into\+Probabilities} (self, reactants, rules)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad360a89687fc9a0298c853d76b8b8d95}{\+\_\+init\+Probabilities\+Map} (self, reactants, rules)
+\begin{DoxyCompactList}\small\item\em derive the transition probabilities map from reaction rules \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a064b5783c9e87092a7059fb632b56585}{\+\_\+compute\+Scaling\+Factor} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_acc41eb1ddfc93fea7e67aa85c9d7f6fc}{\+\_\+apply\+Scaling\+Factor} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a0d226d5fb0e02291c96e1ff63a08047e}{\+\_\+init\+Graph} (self, graph\+Type, num\+Nodes, net\+Param=None)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a4b9b689b183e0a18c7f60e48b6beafef}{\+\_\+init\+Multiagent} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a80b7d1f8c2f44ea9f4154b79f0baacfb}{\+\_\+step\+Multiagent} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a87f5913cd055f8e4eaa70b058ad7d77b}{\+\_\+step\+One\+Agent} (self, agent, neighs)
+\begin{DoxyCompactList}\small\item\em one timestep for one agent \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aba4da96cc2e7682af895cda4b1310790}{\+\_\+update\+Position} (self, x, y, o, speed, correlatedness)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad3df4b96d9dec10c8b806eb6697c6028}{\+\_\+get\+Neighbours} (self, agent, positions, distance\+\_\+range)
+\begin{DoxyCompactList}\small\item\em return the (index) list of neighbours of \textquotesingle{}agent\textquotesingle{} \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aa88fd0656cfcc7c9671c2bcc61d7726e}{\+\_\+distance\+\_\+on\+\_\+torus} (self, x\+\_\+1, y\+\_\+1, x\+\_\+2, y\+\_\+2)
+\begin{DoxyCompactList}\small\item\em returns the minimum distance calucalted on the torus given by periodic boundary conditions \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5feff4ca83ee97d6e09874496a4975d4}{\+\_\+plot\+Type}
+\begin{DoxyCompactList}\small\item\em Plotting. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a6aaed74c935ed5380691798f75527a18}{\+\_\+colors} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aaf2c34c5022e4e3c872dbee11e50ea9b}{\+\_\+probabilities} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a752f43042d51a40fed348b434aad0fd8}{\+\_\+graph} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5032de31aad9de4528138249999e7d5f}{\+\_\+agents} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8be9986760a86837e04718906d18d596}{\+\_\+positions} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a05b076329fdf9f52deb0a1674d1b14e0}{\+\_\+reactants\+List} = None
+\item 
+int \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a372c083f5428e7f8a68298ec9dcca941}{\+\_\+arena\+\_\+width} = 1
+\item 
+int \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a12711c70e125709b78f820722ba74d09}{\+\_\+arena\+\_\+height} = 1
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+self.\+\_\+py\+D\+Scont.\+new\+Curve(self.\+\_\+py\+D\+Scont\+Args) self.\+\_\+py\+D\+Scont\mbox{[}\textquotesingle{}E\+Q1\textquotesingle{}\mbox{]}.reset(self.\+\_\+py\+D\+Smodel.\+pars) self.\+\_\+py\+D\+Sode.\+set(pars = self.\+\_\+py\+D\+Smodel.\+pars) self.\+\_\+py\+D\+Scont\mbox{[}\textquotesingle{}E\+Q1\textquotesingle{}\mbox{]}.reset() self.\+\_\+py\+D\+Scont.\+update(self.\+\_\+py\+D\+Scont\+Args) \#\# 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000002}{Todo}]\+: what does this do? \end{DoxyRefDesc}
+agent on networks view on model 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a4c1643fc901cb2c6e32ac1dac1571c5c}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a4c1643fc901cb2c6e32ac1dac1571c5c}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
+{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{model,  }\item[{}]{controller,  }\item[{}]{param\+Dict,  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_acc41eb1ddfc93fea7e67aa85c9d7f6fc}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_acc41eb1ddfc93fea7e67aa85c9d7f6fc}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+apply\+Scaling\+Factor@{\+\_\+apply\+Scaling\+Factor}}
+\index{\+\_\+apply\+Scaling\+Factor@{\+\_\+apply\+Scaling\+Factor}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+apply\+Scaling\+Factor()}{\_applyScalingFactor()}}
+{\footnotesize\ttfamily def \+\_\+apply\+Scaling\+Factor (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a064b5783c9e87092a7059fb632b56585}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a064b5783c9e87092a7059fb632b56585}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+compute\+Scaling\+Factor@{\+\_\+compute\+Scaling\+Factor}}
+\index{\+\_\+compute\+Scaling\+Factor@{\+\_\+compute\+Scaling\+Factor}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+compute\+Scaling\+Factor()}{\_computeScalingFactor()}}
+{\footnotesize\ttfamily def \+\_\+compute\+Scaling\+Factor (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a63242960a1d4db3a17cc8657a8ee7da1}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a63242960a1d4db3a17cc8657a8ee7da1}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+convert\+Rates\+Into\+Probabilities@{\+\_\+convert\+Rates\+Into\+Probabilities}}
+\index{\+\_\+convert\+Rates\+Into\+Probabilities@{\+\_\+convert\+Rates\+Into\+Probabilities}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+convert\+Rates\+Into\+Probabilities()}{\_convertRatesIntoProbabilities()}}
+{\footnotesize\ttfamily def \+\_\+convert\+Rates\+Into\+Probabilities (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{reactants,  }\item[{}]{rules }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aa88fd0656cfcc7c9671c2bcc61d7726e}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aa88fd0656cfcc7c9671c2bcc61d7726e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+distance\+\_\+on\+\_\+torus@{\+\_\+distance\+\_\+on\+\_\+torus}}
+\index{\+\_\+distance\+\_\+on\+\_\+torus@{\+\_\+distance\+\_\+on\+\_\+torus}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+distance\+\_\+on\+\_\+torus()}{\_distance\_on\_torus()}}
+{\footnotesize\ttfamily def \+\_\+distance\+\_\+on\+\_\+torus (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{x\+\_\+1,  }\item[{}]{y\+\_\+1,  }\item[{}]{x\+\_\+2,  }\item[{}]{y\+\_\+2 }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+returns the minimum distance calucalted on the torus given by periodic boundary conditions 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad3df4b96d9dec10c8b806eb6697c6028}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad3df4b96d9dec10c8b806eb6697c6028}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+get\+Neighbours@{\+\_\+get\+Neighbours}}
+\index{\+\_\+get\+Neighbours@{\+\_\+get\+Neighbours}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+get\+Neighbours()}{\_getNeighbours()}}
+{\footnotesize\ttfamily def \+\_\+get\+Neighbours (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{agent,  }\item[{}]{positions,  }\item[{}]{distance\+\_\+range }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+return the (index) list of neighbours of \textquotesingle{}agent\textquotesingle{} 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a0d226d5fb0e02291c96e1ff63a08047e}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a0d226d5fb0e02291c96e1ff63a08047e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+init\+Graph@{\+\_\+init\+Graph}}
+\index{\+\_\+init\+Graph@{\+\_\+init\+Graph}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+init\+Graph()}{\_initGraph()}}
+{\footnotesize\ttfamily def \+\_\+init\+Graph (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{graph\+Type,  }\item[{}]{num\+Nodes,  }\item[{}]{net\+Param = {\ttfamily None} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a4b9b689b183e0a18c7f60e48b6beafef}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a4b9b689b183e0a18c7f60e48b6beafef}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+init\+Multiagent@{\+\_\+init\+Multiagent}}
+\index{\+\_\+init\+Multiagent@{\+\_\+init\+Multiagent}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+init\+Multiagent()}{\_initMultiagent()}}
+{\footnotesize\ttfamily def \+\_\+init\+Multiagent (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad360a89687fc9a0298c853d76b8b8d95}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad360a89687fc9a0298c853d76b8b8d95}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+init\+Probabilities\+Map@{\+\_\+init\+Probabilities\+Map}}
+\index{\+\_\+init\+Probabilities\+Map@{\+\_\+init\+Probabilities\+Map}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+init\+Probabilities\+Map()}{\_initProbabilitiesMap()}}
+{\footnotesize\ttfamily def \+\_\+init\+Probabilities\+Map (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{reactants,  }\item[{}]{rules }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+derive the transition probabilities map from reaction rules 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8b4ffd0e4999bd45c6ca33fe0f40d1e3}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8b4ffd0e4999bd45c6ca33fe0f40d1e3}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+log@{\+\_\+log}}
+\index{\+\_\+log@{\+\_\+log}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+log()}{\_log()}}
+{\footnotesize\ttfamily def \+\_\+log (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{analysis }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ace35072dcd3e51e67107f62b4de0d5fe}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ace35072dcd3e51e67107f62b4de0d5fe}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+plot\+\_\+time\+Evolution@{\+\_\+plot\+\_\+time\+Evolution}}
+\index{\+\_\+plot\+\_\+time\+Evolution@{\+\_\+plot\+\_\+time\+Evolution}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+plot\+\_\+time\+Evolution()}{\_plot\_timeEvolution()}}
+{\footnotesize\ttfamily def \+\_\+plot\+\_\+time\+Evolution (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a2aeccd8cc467046f91ce45a4faef700b}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a2aeccd8cc467046f91ce45a4faef700b}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+run\+Multiagent@{\+\_\+run\+Multiagent}}
+\index{\+\_\+run\+Multiagent@{\+\_\+run\+Multiagent}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+run\+Multiagent()}{\_runMultiagent()}}
+{\footnotesize\ttfamily def \+\_\+run\+Multiagent (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{initial\+State,  }\item[{}]{max\+Time }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a51d421aacb4cd83af5f1c2e60c3dff9c}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a51d421aacb4cd83af5f1c2e60c3dff9c}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+single\+Run@{\+\_\+single\+Run}}
+\index{\+\_\+single\+Run@{\+\_\+single\+Run}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+single\+Run()}{\_singleRun()}}
+{\footnotesize\ttfamily def \+\_\+single\+Run (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{random\+Seed }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a80b7d1f8c2f44ea9f4154b79f0baacfb}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a80b7d1f8c2f44ea9f4154b79f0baacfb}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+step\+Multiagent@{\+\_\+step\+Multiagent}}
+\index{\+\_\+step\+Multiagent@{\+\_\+step\+Multiagent}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+step\+Multiagent()}{\_stepMultiagent()}}
+{\footnotesize\ttfamily def \+\_\+step\+Multiagent (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a87f5913cd055f8e4eaa70b058ad7d77b}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a87f5913cd055f8e4eaa70b058ad7d77b}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+step\+One\+Agent@{\+\_\+step\+One\+Agent}}
+\index{\+\_\+step\+One\+Agent@{\+\_\+step\+One\+Agent}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+step\+One\+Agent()}{\_stepOneAgent()}}
+{\footnotesize\ttfamily def \+\_\+step\+One\+Agent (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{agent,  }\item[{}]{neighs }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+one timestep for one agent 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aba4da96cc2e7682af895cda4b1310790}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aba4da96cc2e7682af895cda4b1310790}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+update\+Position@{\+\_\+update\+Position}}
+\index{\+\_\+update\+Position@{\+\_\+update\+Position}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+update\+Position()}{\_updatePosition()}}
+{\footnotesize\ttfamily def \+\_\+update\+Position (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{x,  }\item[{}]{y,  }\item[{}]{o,  }\item[{}]{speed,  }\item[{}]{correlatedness }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+\subsection{Field Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5032de31aad9de4528138249999e7d5f}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5032de31aad9de4528138249999e7d5f}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+agents@{\+\_\+agents}}
+\index{\+\_\+agents@{\+\_\+agents}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+agents}{\_agents}}
+{\footnotesize\ttfamily \+\_\+agents = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a12711c70e125709b78f820722ba74d09}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a12711c70e125709b78f820722ba74d09}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+arena\+\_\+height@{\+\_\+arena\+\_\+height}}
+\index{\+\_\+arena\+\_\+height@{\+\_\+arena\+\_\+height}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+arena\+\_\+height}{\_arena\_height}}
+{\footnotesize\ttfamily int \+\_\+arena\+\_\+height = 1\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a372c083f5428e7f8a68298ec9dcca941}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a372c083f5428e7f8a68298ec9dcca941}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+arena\+\_\+width@{\+\_\+arena\+\_\+width}}
+\index{\+\_\+arena\+\_\+width@{\+\_\+arena\+\_\+width}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+arena\+\_\+width}{\_arena\_width}}
+{\footnotesize\ttfamily int \+\_\+arena\+\_\+width = 1\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a6aaed74c935ed5380691798f75527a18}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a6aaed74c935ed5380691798f75527a18}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+colors@{\+\_\+colors}}
+\index{\+\_\+colors@{\+\_\+colors}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+colors}{\_colors}}
+{\footnotesize\ttfamily \+\_\+colors = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a752f43042d51a40fed348b434aad0fd8}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a752f43042d51a40fed348b434aad0fd8}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+graph@{\+\_\+graph}}
+\index{\+\_\+graph@{\+\_\+graph}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+graph}{\_graph}}
+{\footnotesize\ttfamily \+\_\+graph = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5feff4ca83ee97d6e09874496a4975d4}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5feff4ca83ee97d6e09874496a4975d4}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+plot\+Type@{\+\_\+plot\+Type}}
+\index{\+\_\+plot\+Type@{\+\_\+plot\+Type}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+plot\+Type}{\_plotType}}
+{\footnotesize\ttfamily \+\_\+plot\+Type\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Plotting. 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000041}{Todo}]\+: Currently not used (updated through \+\_\+widget\+Dict).\end{DoxyRefDesc}
+To rethink plot type in a better way \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8be9986760a86837e04718906d18d596}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8be9986760a86837e04718906d18d596}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+positions@{\+\_\+positions}}
+\index{\+\_\+positions@{\+\_\+positions}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+positions}{\_positions}}
+{\footnotesize\ttfamily \+\_\+positions = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aaf2c34c5022e4e3c872dbee11e50ea9b}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aaf2c34c5022e4e3c872dbee11e50ea9b}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+probabilities@{\+\_\+probabilities}}
+\index{\+\_\+probabilities@{\+\_\+probabilities}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+probabilities}{\_probabilities}}
+{\footnotesize\ttfamily \+\_\+probabilities = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a05b076329fdf9f52deb0a1674d1b14e0}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a05b076329fdf9f52deb0a1674d1b14e0}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+reactants\+List@{\+\_\+reactants\+List}}
+\index{\+\_\+reactants\+List@{\+\_\+reactants\+List}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+reactants\+List}{\_reactantsList}}
+{\footnotesize\ttfamily \+\_\+reactants\+List = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ae0323a9039add2978bf5b49550572c7c}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ae0323a9039add2978bf5b49550572c7c}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!c@{c}}
+\index{c@{c}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{c}{c}}
+{\footnotesize\ttfamily c\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a2661f439a4a94ffdcd5e47ae1da0bb1d}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a2661f439a4a94ffdcd5e47ae1da0bb1d}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!description@{description}}
+\index{description@{description}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{description}{description}}
+{\footnotesize\ttfamily description\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ac064787e06c92df108217ae8e408e017}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ac064787e06c92df108217ae8e408e017}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!node\+\_\+color@{node\+\_\+color}}
+\index{node\+\_\+color@{node\+\_\+color}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{node\+\_\+color}{node\_color}}
+{\footnotesize\ttfamily node\+\_\+color\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_acf0720944bad86d351ddcc7f2a3b9467}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_acf0720944bad86d351ddcc7f2a3b9467}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!pos\+\_\+layout@{pos\+\_\+layout}}
+\index{pos\+\_\+layout@{pos\+\_\+layout}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{pos\+\_\+layout}{pos\_layout}}
+{\footnotesize\ttfamily pos\+\_\+layout\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_af439c5b29ba7f58f96f3b90cdd83648b}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_af439c5b29ba7f58f96f3b90cdd83648b}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!state\+Colors@{state\+Colors}}
+\index{state\+Colors@{state\+Colors}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{state\+Colors}{stateColors}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily list state\+Colors = \mbox{[}$\,$\mbox{]}\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_af61c8db681f18f2d8d0839f5cb4bacc6}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_af61c8db681f18f2d8d0839f5cb4bacc6}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!state\+Colors@{state\+Colors}}
+\index{state\+Colors@{state\+Colors}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{state\+Colors}{stateColors}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily state\+Colors\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a7499a80aaa71437a9a52e15807a09dc0}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a7499a80aaa71437a9a52e15807a09dc0}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!trace\+\_\+xs@{trace\+\_\+xs}}
+\index{trace\+\_\+xs@{trace\+\_\+xs}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{trace\+\_\+xs}{trace\_xs}}
+{\footnotesize\ttfamily list trace\+\_\+xs = \mbox{[}p\mbox{[}0\mbox{]} for p in position\+History\mbox{[}a\mbox{]} \mbox{]}\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a2ebf396b2ffd60c12ada6dd589c3e216}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a2ebf396b2ffd60c12ada6dd589c3e216}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!trace\+\_\+ys@{trace\+\_\+ys}}
+\index{trace\+\_\+ys@{trace\+\_\+ys}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{trace\+\_\+ys}{trace\_ys}}
+{\footnotesize\ttfamily list trace\+\_\+ys = \mbox{[}p\mbox{[}1\mbox{]} for p in position\+History\mbox{[}a\mbox{]} \mbox{]}\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad55aeef6b29ba6c9a5f77e76b016da92}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad55aeef6b29ba6c9a5f77e76b016da92}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!with\+\_\+labels@{with\+\_\+labels}}
+\index{with\+\_\+labels@{with\+\_\+labels}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{with\+\_\+labels}{with\_labels}}
+{\footnotesize\ttfamily with\+\_\+labels\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a11c4a8ddcf95c6593dedd96d8052e6de}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a11c4a8ddcf95c6593dedd96d8052e6de}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!xs@{xs}}
+\index{xs@{xs}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{xs}{xs}}
+{\footnotesize\ttfamily dictionary xs = \{\}\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a33cb91153ac5093db96e5a51490a2688}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a33cb91153ac5093db96e5a51490a2688}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!ys@{ys}}
+\index{ys@{ys}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{ys}{ys}}
+{\footnotesize\ttfamily dictionary ys = \{\}\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\hyperlink{_mu_mo_t_8py}{Mu\+Mo\+T.\+py}\end{DoxyCompactItemize}

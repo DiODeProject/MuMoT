@@ -1,13 +1,234 @@
 \hypertarget{class_mu_mo_t_1_1_mu_mo_tview}{}\section{Mu\+Mo\+Tview Class Reference}
 \label{class_mu_mo_t_1_1_mu_mo_tview}\index{Mu\+Mo\+Tview@{Mu\+Mo\+Tview}}
+
+
+class describing a view on a model  
+
+
 Inheritance diagram for Mu\+Mo\+Tview\+:\begin{figure}[H]
 \begin{center}
 \leavevmode
-\includegraphics[height=3.000000cm]{class_mu_mo_t_1_1_mu_mo_tview}
+\includegraphics[height=2.781457cm]{class_mu_mo_t_1_1_mu_mo_tview}
 \end{center}
 \end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a2d1dec64cbd846ffc0fda20aeeae4430}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, model, controller)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_aca4d648d909f4722c7e07197675500bb}{show\+Logs} (self)
+\end{DoxyCompactItemize}
+\subsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_afcc7a4b78ecd8fa7e713f8cfa0f51017}{value}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a2661f439a4a94ffdcd5e47ae1da0bb1d}{description}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a37d874d1d45bc2e5bfa013cddacb8e68}{logs} = self.\+\_\+single\+Run(random\+Seeds\mbox{[}i\mbox{]})
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a69ffe654c8e97fdcbffcf35a1ded8157}{system\+Size} = sum(self.\+\_\+controller.\+\_\+initial\+State.\+values())
+\begin{DoxyCompactList}\small\item\em Plot. \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_aa820f7e11b025b06f4eeb0ad7581ad34}{max\+Time} = self.\+\_\+controller.\+\_\+widget\+Dict\mbox{[}\textquotesingle{}max\+Time\textquotesingle{}\mbox{]}.\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_afcc7a4b78ecd8fa7e713f8cfa0f51017}{value}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a23acc33d21869c517c7eb8114b3d8072}{pop}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a37dbdc30935031c05304482e1be89d8f}{color}
+\item 
+list \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a6a57a88c0fcb681f5721c6b1bce2dd96}{markers} = \mbox{[}plt.\+Line2D(\mbox{[}0,0\mbox{]},\mbox{[}0,0\mbox{]},\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a37dbdc30935031c05304482e1be89d8f}{color}=\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a37dbdc30935031c05304482e1be89d8f}{color}, marker=\textquotesingle{}\textquotesingle{}, linestyle=\textquotesingle{}-\/\textquotesingle{}) for \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a37dbdc30935031c05304482e1be89d8f}{color} in color\+Map.\+values()\mbox{]}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a411167eeca51189fabe03f884c7bf92c}{bbox\+\_\+to\+\_\+anchor}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_aeee9f371db14fda0de35d16324a167df}{loc}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a15c45102c35a6e8e18adffce8cfdb703}{borderaxespad}
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a8b4ffd0e4999bd45c6ca33fe0f40d1e3}{\+\_\+log} (self, analysis)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a4d4a00545816bf68f912f5ea5a449c48}{\+\_\+multirun} (self, iterations, random\+Seeds)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a51d421aacb4cd83af5f1c2e60c3dff9c}{\+\_\+single\+Run} (self, random\+Seed)
+\begin{DoxyCompactList}\small\item\em overwrite this method for views that allow the \textquotesingle{}multirun\textquotesingle{} command (the attribute \+\_\+reactants\+List is also necessary) \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_aeacd9541246371f0db5cc3e3779762fa}{\+\_\+mumot\+Model} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_abf6d9f6be3898e307415d4598cde264d}{\+\_\+figure} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a5748371a5f2e09033908d21bb12f94c0}{\+\_\+figure\+Num} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a397d0ee37a222317a1bab7deb1270a13}{\+\_\+widgets} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a15f56ca9811d1e67d721fa64f9b0dc1e}{\+\_\+controller} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_ac0ad5d0ca27f2668c0676334ee73ff52}{\+\_\+logs} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a5feff4ca83ee97d6e09874496a4975d4}{\+\_\+plot\+Type} = None
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+class describing a view on a model 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a2d1dec64cbd846ffc0fda20aeeae4430}\label{class_mu_mo_t_1_1_mu_mo_tview_a2d1dec64cbd846ffc0fda20aeeae4430}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
+{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{model,  }\item[{}]{controller }\end{DoxyParamCaption})}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a8b4ffd0e4999bd45c6ca33fe0f40d1e3}\label{class_mu_mo_t_1_1_mu_mo_tview_a8b4ffd0e4999bd45c6ca33fe0f40d1e3}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+log@{\+\_\+log}}
+\index{\+\_\+log@{\+\_\+log}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+log()}{\_log()}}
+{\footnotesize\ttfamily def \+\_\+log (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{analysis }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a4d4a00545816bf68f912f5ea5a449c48}\label{class_mu_mo_t_1_1_mu_mo_tview_a4d4a00545816bf68f912f5ea5a449c48}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+multirun@{\+\_\+multirun}}
+\index{\+\_\+multirun@{\+\_\+multirun}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+multirun()}{\_multirun()}}
+{\footnotesize\ttfamily def \+\_\+multirun (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{iterations,  }\item[{}]{random\+Seeds }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a51d421aacb4cd83af5f1c2e60c3dff9c}\label{class_mu_mo_t_1_1_mu_mo_tview_a51d421aacb4cd83af5f1c2e60c3dff9c}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+single\+Run@{\+\_\+single\+Run}}
+\index{\+\_\+single\+Run@{\+\_\+single\+Run}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+single\+Run()}{\_singleRun()}}
+{\footnotesize\ttfamily def \+\_\+single\+Run (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{random\+Seed }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+overwrite this method for views that allow the \textquotesingle{}multirun\textquotesingle{} command (the attribute \+\_\+reactants\+List is also necessary) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_aca4d648d909f4722c7e07197675500bb}\label{class_mu_mo_t_1_1_mu_mo_tview_aca4d648d909f4722c7e07197675500bb}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!show\+Logs@{show\+Logs}}
+\index{show\+Logs@{show\+Logs}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{show\+Logs()}{showLogs()}}
+{\footnotesize\ttfamily def show\+Logs (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+\subsection{Field Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a15f56ca9811d1e67d721fa64f9b0dc1e}\label{class_mu_mo_t_1_1_mu_mo_tview_a15f56ca9811d1e67d721fa64f9b0dc1e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+controller@{\+\_\+controller}}
+\index{\+\_\+controller@{\+\_\+controller}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+controller}{\_controller}}
+{\footnotesize\ttfamily \+\_\+controller = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_abf6d9f6be3898e307415d4598cde264d}\label{class_mu_mo_t_1_1_mu_mo_tview_abf6d9f6be3898e307415d4598cde264d}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+figure@{\+\_\+figure}}
+\index{\+\_\+figure@{\+\_\+figure}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+figure}{\_figure}}
+{\footnotesize\ttfamily \+\_\+figure = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a5748371a5f2e09033908d21bb12f94c0}\label{class_mu_mo_t_1_1_mu_mo_tview_a5748371a5f2e09033908d21bb12f94c0}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+figure\+Num@{\+\_\+figure\+Num}}
+\index{\+\_\+figure\+Num@{\+\_\+figure\+Num}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+figure\+Num}{\_figureNum}}
+{\footnotesize\ttfamily \+\_\+figure\+Num = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_ac0ad5d0ca27f2668c0676334ee73ff52}\label{class_mu_mo_t_1_1_mu_mo_tview_ac0ad5d0ca27f2668c0676334ee73ff52}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+logs@{\+\_\+logs}}
+\index{\+\_\+logs@{\+\_\+logs}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+logs}{\_logs}}
+{\footnotesize\ttfamily \+\_\+logs = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_aeacd9541246371f0db5cc3e3779762fa}\label{class_mu_mo_t_1_1_mu_mo_tview_aeacd9541246371f0db5cc3e3779762fa}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+mumot\+Model@{\+\_\+mumot\+Model}}
+\index{\+\_\+mumot\+Model@{\+\_\+mumot\+Model}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+mumot\+Model}{\_mumotModel}}
+{\footnotesize\ttfamily \+\_\+mumot\+Model = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a5feff4ca83ee97d6e09874496a4975d4}\label{class_mu_mo_t_1_1_mu_mo_tview_a5feff4ca83ee97d6e09874496a4975d4}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+plot\+Type@{\+\_\+plot\+Type}}
+\index{\+\_\+plot\+Type@{\+\_\+plot\+Type}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+plot\+Type}{\_plotType}}
+{\footnotesize\ttfamily \+\_\+plot\+Type = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a397d0ee37a222317a1bab7deb1270a13}\label{class_mu_mo_t_1_1_mu_mo_tview_a397d0ee37a222317a1bab7deb1270a13}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+widgets@{\+\_\+widgets}}
+\index{\+\_\+widgets@{\+\_\+widgets}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+widgets}{\_widgets}}
+{\footnotesize\ttfamily \+\_\+widgets = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a411167eeca51189fabe03f884c7bf92c}\label{class_mu_mo_t_1_1_mu_mo_tview_a411167eeca51189fabe03f884c7bf92c}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!bbox\+\_\+to\+\_\+anchor@{bbox\+\_\+to\+\_\+anchor}}
+\index{bbox\+\_\+to\+\_\+anchor@{bbox\+\_\+to\+\_\+anchor}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{bbox\+\_\+to\+\_\+anchor}{bbox\_to\_anchor}}
+{\footnotesize\ttfamily bbox\+\_\+to\+\_\+anchor\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a15c45102c35a6e8e18adffce8cfdb703}\label{class_mu_mo_t_1_1_mu_mo_tview_a15c45102c35a6e8e18adffce8cfdb703}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!borderaxespad@{borderaxespad}}
+\index{borderaxespad@{borderaxespad}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{borderaxespad}{borderaxespad}}
+{\footnotesize\ttfamily borderaxespad\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a37dbdc30935031c05304482e1be89d8f}\label{class_mu_mo_t_1_1_mu_mo_tview_a37dbdc30935031c05304482e1be89d8f}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!color@{color}}
+\index{color@{color}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{color}{color}}
+{\footnotesize\ttfamily color\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a2661f439a4a94ffdcd5e47ae1da0bb1d}\label{class_mu_mo_t_1_1_mu_mo_tview_a2661f439a4a94ffdcd5e47ae1da0bb1d}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!description@{description}}
+\index{description@{description}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{description}{description}}
+{\footnotesize\ttfamily description\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_aeee9f371db14fda0de35d16324a167df}\label{class_mu_mo_t_1_1_mu_mo_tview_aeee9f371db14fda0de35d16324a167df}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!loc@{loc}}
+\index{loc@{loc}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{loc}{loc}}
+{\footnotesize\ttfamily loc\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a37d874d1d45bc2e5bfa013cddacb8e68}\label{class_mu_mo_t_1_1_mu_mo_tview_a37d874d1d45bc2e5bfa013cddacb8e68}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!logs@{logs}}
+\index{logs@{logs}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{logs}{logs}}
+{\footnotesize\ttfamily logs = self.\+\_\+single\+Run(random\+Seeds\mbox{[}i\mbox{]})\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a6a57a88c0fcb681f5721c6b1bce2dd96}\label{class_mu_mo_t_1_1_mu_mo_tview_a6a57a88c0fcb681f5721c6b1bce2dd96}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!markers@{markers}}
+\index{markers@{markers}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{markers}{markers}}
+{\footnotesize\ttfamily list markers = \mbox{[}plt.\+Line2D(\mbox{[}0,0\mbox{]},\mbox{[}0,0\mbox{]},\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a37dbdc30935031c05304482e1be89d8f}{color}=\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a37dbdc30935031c05304482e1be89d8f}{color}, marker=\textquotesingle{}\textquotesingle{}, linestyle=\textquotesingle{}-\/\textquotesingle{}) for \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a37dbdc30935031c05304482e1be89d8f}{color} in color\+Map.\+values()\mbox{]}\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_aa820f7e11b025b06f4eeb0ad7581ad34}\label{class_mu_mo_t_1_1_mu_mo_tview_aa820f7e11b025b06f4eeb0ad7581ad34}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!max\+Time@{max\+Time}}
+\index{max\+Time@{max\+Time}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{max\+Time}{maxTime}}
+{\footnotesize\ttfamily max\+Time = self.\+\_\+controller.\+\_\+widget\+Dict\mbox{[}\textquotesingle{}max\+Time\textquotesingle{}\mbox{]}.\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_afcc7a4b78ecd8fa7e713f8cfa0f51017}{value}\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a23acc33d21869c517c7eb8114b3d8072}\label{class_mu_mo_t_1_1_mu_mo_tview_a23acc33d21869c517c7eb8114b3d8072}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!pop@{pop}}
+\index{pop@{pop}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{pop}{pop}}
+{\footnotesize\ttfamily pop\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a69ffe654c8e97fdcbffcf35a1ded8157}\label{class_mu_mo_t_1_1_mu_mo_tview_a69ffe654c8e97fdcbffcf35a1ded8157}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!system\+Size@{system\+Size}}
+\index{system\+Size@{system\+Size}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{system\+Size}{systemSize}}
+{\footnotesize\ttfamily system\+Size = sum(self.\+\_\+controller.\+\_\+initial\+State.\+values())\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Plot. 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_afcc7a4b78ecd8fa7e713f8cfa0f51017}\label{class_mu_mo_t_1_1_mu_mo_tview_afcc7a4b78ecd8fa7e713f8cfa0f51017}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!value@{value}}
+\index{value@{value}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{value}{value}}
+{\footnotesize\ttfamily value\hspace{0.3cm}{\ttfamily [static]}}
+
 
 
 The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
 \item 
-/\+Users/marshall/\+Google Drive/\+Home/\+Git/\+Mu\+Mo\+T/Mu\+Mo\+T.\+py\end{DoxyCompactItemize}
+\hyperlink{_mu_mo_t_8py}{Mu\+Mo\+T.\+py}\end{DoxyCompactItemize}
