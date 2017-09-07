@@ -1,4 +1,5 @@
-
+# @package MuMoT
+# @file MuMoT.py
 # coding: utf-8
 
 # In[ ]:

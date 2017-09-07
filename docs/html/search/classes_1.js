@@ -6,7 +6,9 @@ var searchData=
   ['mumotfieldview',['MuMoTfieldView',['../class_mu_mo_t_1_1_mu_mo_tfield_view.html',1,'MuMoT']]],
   ['mumotmodel',['MuMoTmodel',['../class_mu_mo_t_1_1_mu_mo_tmodel.html',1,'MuMoT']]],
   ['mumotmultiagentcontroller',['MuMoTmultiagentController',['../class_mu_mo_t_1_1_mu_mo_tmultiagent_controller.html',1,'MuMoT']]],
-  ['mumotnetworkview',['MuMoTnetworkView',['../class_mu_mo_t_1_1_mu_mo_tnetwork_view.html',1,'MuMoT']]],
+  ['mumotmultiagentview',['MuMoTmultiagentView',['../class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html',1,'MuMoT']]],
+  ['mumotssacontroller',['MuMoTSSAController',['../class_mu_mo_t_1_1_mu_mo_t_s_s_a_controller.html',1,'MuMoT']]],
+  ['mumotssaview',['MuMoTSSAView',['../class_mu_mo_t_1_1_mu_mo_t_s_s_a_view.html',1,'MuMoT']]],
   ['mumotstreamview',['MuMoTstreamView',['../class_mu_mo_t_1_1_mu_mo_tstream_view.html',1,'MuMoT']]],
   ['mumotvectorview',['MuMoTvectorView',['../class_mu_mo_t_1_1_mu_mo_tvector_view.html',1,'MuMoT']]],
   ['mumotview',['MuMoTview',['../class_mu_mo_t_1_1_mu_mo_tview.html',1,'MuMoT']]]
