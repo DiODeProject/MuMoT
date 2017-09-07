@@ -2,15 +2,15 @@ var searchData=
 [
   ['setagentsdefaults',['setAgentsDefaults',['../class_mu_mo_t_1_1_mu_mo_tdefault.html#a390063ec9e63f433bf06fa72f608b7e4',1,'MuMoT::MuMoTdefault']]],
   ['setratedefaults',['setRateDefaults',['../class_mu_mo_t_1_1_mu_mo_tdefault.html#a3ce665e68925e7c173896a5101b16dfa',1,'MuMoT::MuMoTdefault']]],
-  ['setreplotfunction',['setReplotFunction',['../namespace_mu_mo_t.html#a74fe87995d70867d5327558b573a7663',1,'MuMoT']]],
+  ['setreplotfunction',['setReplotFunction',['../class_mu_mo_t_1_1_mu_mo_tcontroller.html#aafc1e69cab41071217fe6676a8089249',1,'MuMoT::MuMoTcontroller']]],
   ['settimedefaults',['setTimeDefaults',['../class_mu_mo_t_1_1_mu_mo_tdefault.html#a4be4721ce31fd644cb66ae8af0dd41fe',1,'MuMoT::MuMoTdefault']]],
-  ['setview',['setView',['../namespace_mu_mo_t.html#a5581723fe21a31b8c96cd4ed5e801b97',1,'MuMoT']]],
-  ['show',['show',['../namespace_mu_mo_t.html#a9e566211156997421188fcbf31c9af64',1,'MuMoT']]],
-  ['showlogs',['showLogs',['../namespace_mu_mo_t.html#aca4d648d909f4722c7e07197675500bb',1,'MuMoT']]],
-  ['showodes',['showODEs',['../namespace_mu_mo_t.html#a997e6d609d68d1021f69c63aca57ea98',1,'MuMoT']]],
-  ['showrates',['showRates',['../namespace_mu_mo_t.html#af80d70e0df74fa91a0d080b85a3b25f8',1,'MuMoT']]],
-  ['showreactants',['showReactants',['../namespace_mu_mo_t.html#abfc09208df74b0612b5571e5156da2c8',1,'MuMoT']]],
-  ['ssa',['SSA',['../namespace_mu_mo_t.html#a37158edc925436266f76cbc2a74afcb9',1,'MuMoT']]],
-  ['stream',['stream',['../namespace_mu_mo_t.html#a9cefa7d2a2add86634777e2bad0363a8',1,'MuMoT']]],
-  ['substitute',['substitute',['../namespace_mu_mo_t.html#adc8f925bf788b5b3263492c4611fa617',1,'MuMoT']]]
+  ['setview',['setView',['../class_mu_mo_t_1_1_mu_mo_tcontroller.html#a40e22e664ecb6e379377ee1cea60073c',1,'MuMoT::MuMoTcontroller']]],
+  ['show',['show',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#ab4f4398c3f210fe4ea6e720401357691',1,'MuMoT::MuMoTmodel']]],
+  ['showlogs',['showLogs',['../class_mu_mo_t_1_1_mu_mo_tcontroller.html#aca4d648d909f4722c7e07197675500bb',1,'MuMoT.MuMoTcontroller.showLogs()'],['../class_mu_mo_t_1_1_mu_mo_tview.html#aca4d648d909f4722c7e07197675500bb',1,'MuMoT.MuMoTview.showLogs()']]],
+  ['showodes',['showODEs',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#aa3a519a3aac92f7c132c63fb12d3de13',1,'MuMoT::MuMoTmodel']]],
+  ['showrates',['showRates',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#a9c88600ec8eda7be7b7faeacd99f1682',1,'MuMoT::MuMoTmodel']]],
+  ['showreactants',['showReactants',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#a2feaf6de25201c1e6503cd2ed131a1f2',1,'MuMoT::MuMoTmodel']]],
+  ['ssa',['SSA',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#ac3c78f7f98887f29a4f0d50dd023c465',1,'MuMoT::MuMoTmodel']]],
+  ['stream',['stream',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#ae2925a9a37b83608167da0794fe1a2a8',1,'MuMoT::MuMoTmodel']]],
+  ['substitute',['substitute',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#a2eec4a3b8deda7c717c06ed89c24d570',1,'MuMoT::MuMoTmodel']]]
 ];

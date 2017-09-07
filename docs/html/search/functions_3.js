@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['multiagent',['multiagent',['../namespace_mu_mo_t.html#a216306531856784e222e197b969ca8b5',1,'MuMoT']]],
-  ['multirun',['multirun',['../namespace_mu_mo_t.html#a5f588d13e4c113e7e9a6f862112558cc',1,'MuMoT']]]
+  ['multiagent',['multiagent',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#a55f7cab206306b09d38863395f186dbc',1,'MuMoT::MuMoTmodel']]],
+  ['multirun',['multirun',['../class_mu_mo_t_1_1_mu_mo_tcontroller.html#aa74bfc216071ff6b768c7a584917bfc6',1,'MuMoT::MuMoTcontroller']]]
 ];

@@ -1,5 +1,4 @@
-# @package MuMoT
-# @file MuMoT.py
+""" @package MuMoT
 # coding: utf-8
 
 # In[ ]:
@@ -13,7 +12,7 @@
 #  antlr4 (for generating LaTeX parser; http://www.antlr.org)
 #  latex2sympy (no current pip installer; https://github.com/augustt198/latex2sympy; depends on antlr4 (pip install antlr4-python3-runtime)
 #  graphviz (pip install graphviz; graphviz http://www.graphviz.org/Download.php)
-
+"""
 
 from IPython.display import display, clear_output, Math, Latex, Javascript
 import ipywidgets.widgets as widgets
@@ -58,9 +57,9 @@ class NetworkType(Enum):
 
 # class with default parameters
 class MuMoTdefault:
-    _initialRateValue = 2 # TODO: was 1 (choose initial values sensibly)
-    _rateLimits = (0.0, 20.0) # TODO: choose limit values sensibly
-    _rateStep = 0.1 # TODO: choose rate step sensibly
+    _initialRateValue = 2 ## @todo: was 1 (choose initial values sensibly)
+    _rateLimits = (0.0, 20.0) ## @todo: choose limit values sensibly
+    _rateStep = 0.1 ## @todo: choose rate step sensibly
     @staticmethod
     def setRateDefaults(initRate=_initialRateValue, limits=_rateLimits, step=_rateStep):
         MuMoTdefault._initialRateValue = initRate
@@ -86,26 +85,41 @@ class MuMoTdefault:
         MuMoTdefault._agentsStep = step
     
 
-class MuMoTmodel: # class describing a model
-    _rules = None # list of rules
-    _reactants = None # set of reactants
-    _systemSize = None # parameter that determines system size, set by using substitute()
-    _reactantsLaTeX = None # list of LaTeX strings describing reactants (TODO: depracated?)
-    _rates = None # set of rates
-    _ratesLaTeX = None # dictionary of LaTeX strings describing rates
-    _equations = None # dictionary of ODE righthand sides with reactant as key
-    _solutions = None # set of solutions to equations
-    _funcs = None # dictionary of lambdified functions for integration, plotting, etc.
-    _args = None # tuple of argument symbols for lambdified functions
-    _dot = None # graphviz visualisation of model
-    _renderImageFormat = 'png' # image format used for rendering edge labels for model visualisation
-    _tmpdirpath = '__mumot_files__' # local path for creation of temporary storage
-    _tmpdir = None # temporary storage for image files, etc. used in visualising model
-    _tmpfiles = None # list of temporary files created
+## class describing a model
+class MuMoTmodel:
+    ## list of rules
+    _rules = None 
+    ## set of reactants
+    _reactants = None
+    ## parameter that determines system size, set by using substitute()
+    _systemSize = None
+    ## list of LaTeX strings describing reactants (@todo: depracated?)
+    _reactantsLaTeX = None
+    ## set of rates
+    _rates = None 
+    ## dictionary of LaTeX strings describing rates
+    _ratesLaTeX = None 
+    ## dictionary of ODE righthand sides with reactant as key
+    _equations = None
+    ## set of solutions to equations
+    _solutions = None 
+    ## dictionary of lambdified functions for integration, plotting, etc.
+    _funcs = None
+    ## tuple of argument symbols for lambdified functions
+    _args = None 
+    ## graphviz visualisation of model
+    _dot = None
+    ## image format used for rendering edge labels for model visualisation
+    _renderImageFormat = 'png'
+    ## local path for creation of temporary storage
+    _tmpdirpath = '__mumot_files__'
+    ## temporary storage for image files, etc. used in visualising model
+    _tmpdir = None 
+    ## list of temporary files created
+    _tmpfiles = None 
     
-    
+    ## create new model with variable substitutions listed as comma separated string of assignments
     def substitute(self, subsString):
-        # create new model with variable substitutions listed as comma separated string of assignments
         subs = []
         subsStrings = subsString.split(',')
         for subString in subsStrings:
@@ -141,16 +155,16 @@ class MuMoTmodel: # class describing a model
         rates = map(latex, list(newModel._rates))
         for (rate, latexStr) in zip(newModel._rates, rates):
             newModel._ratesLaTeX[repr(rate)] = latexStr
-        # TODO: what else should be copied to new model?
+        ## @todo: what else should be copied to new model?
 
         return newModel
 
 
+    ## build a graphical representation of the model
+    # if result cannot be plotted check for installation of libltdl - eg on Mac see if XQuartz requires update or do:<br>
+    #  `brew install libtool --universal` <br>
+    #  `brew link libtool`
     def visualise(self):
-        # build a graphical representation of the model
-        # if result cannot be plotted check for installation of libltdl - e.g. on Mac see if XQuartz requires update or do:
-        #  brew install libtool --universal
-        #  brew link libtool
         if self._dot == None:
             dot = Digraph(comment = "Model", engine = 'circo')
             for reactant in self._reactants:
@@ -203,9 +217,8 @@ class MuMoTmodel: # class describing a model
                 
         return self._dot
 
-
+    ## show a sorted LaTeX representation of the model's reactants
     def showReactants(self):
-        # show a sorted LaTeX representation of the model's reactants
         if self._reactantsLaTeX == None:
             self._reactantsLaTeX = []
             reactants = map(latex, list(self._reactants))
@@ -216,24 +229,22 @@ class MuMoTmodel: # class describing a model
             display(Math(reactant))
 
 
-
+    ## show a sorted LaTeX representation of the model's rate parameters
     def showRates(self):
-        # show a sorted LaTeX representation of the model's rate parameters
         for rate in self._ratesLaTeX:
             display(Math(self._ratesLaTeX[rate]))
+
     
-    
+    ## show a LaTeX representation of the model system of ODEs
     def showODEs(self):
-        # show a LaTeX representation of the model system of ODEs
         for reactant in self._reactants:
             out = "\\displaystyle \\frac{\\textrm{d}" + latex(reactant) + "}{\\textrm{d}t} := " + latex(self._equations[reactant])
             display(Math(out))
     
-    
+    # show a LaTeX representation of the model <br>
+    # if rules have | after them update notebook (allegedly, or switch browser): <br>
+    # `pip install --upgrade notebook`
     def show(self):
-        # show a LaTeX representation of the model
-        # if rules have | after them update notebook (allegedly, or switch browser):
-        # pip install --upgrade notebook
         for rule in self._rules:
             out = ""
             for reactant in rule.lhsReactants:
@@ -247,7 +258,7 @@ class MuMoTmodel: # class describing a model
             out = out[0:len(out) - 2] # delete the last ' + '
             display(Math(out))
 
-        
+    ## construct interactive stream plot        
     def stream(self, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             if stateVariable3 != None:
@@ -266,7 +277,8 @@ class MuMoTmodel: # class describing a model
             return viewController
         else:
             return None
-        
+
+    ## construct interactive vector plot        
     def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             # construct controller
@@ -282,10 +294,8 @@ class MuMoTmodel: # class describing a model
         else:
             return None
         
-
+    ## construct interactive PyDSTool plot
     def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, **kwargs):
-        # construct interactive PyDSTool plot
-   
         if self._systemSize != None:
             pass
         else:
@@ -293,12 +303,12 @@ class MuMoTmodel: # class describing a model
             return    
 
         paramDict = {}
-        initialRateValue = 4 # TODO was 1 (choose initial values sensibly)
-        rateLimits = (-100.0, 100.0) # TODO choose limit values sensibly
-        rateStep = 0.1 # TODO choose rate step sensibly
+        initialRateValue = 4 ## @todo was 1 (choose initial values sensibly)
+        rateLimits = (-100.0, 100.0) ## @todo choose limit values sensibly
+        rateStep = 0.1 ## @todo choose rate step sensibly
         for rate in self._rates:
-            paramDict[str(rate)] = initialRateValue # TODO choose initial values sensibly
-        paramDict[str(self._systemSize)] = 1 # TODO choose system size sensibly
+            paramDict[str(rate)] = initialRateValue ## @todo choose initial values sensibly
+        paramDict[str(self._systemSize)] = 1 ## @todo choose system size sensibly
 
         # construct controller
         paramValues = []
@@ -438,7 +448,7 @@ class MuMoTmodel: # class describing a model
 #             # create widgets
 # 
 #             if self._systemSize != None:
-#                 # TODO: shouldn't allow system size to be varied?
+#                 # @todo: shouldn't allow system size to be varied?
 #                 pass
 # #                self._paramValues.append(1)
 # #                self._paramNames.append(str(self._systemSize))
@@ -458,38 +468,38 @@ class MuMoTmodel: # class describing a model
 #                     self._widgets.append(widget)
 #                     display(widget)
 #             widget = widgets.HTML(value = '')
-#             self._errorMessage = widget                                # TODO: add to __init__()
+#             self._errorMessage = widget                                # @todo: add to __init__()
 #             display(self._errorMessage)
 #             
 #             # Prepare the system to start close to a steady state
-#             self._bifurcationParameter = bifurcationParameter          # TODO: remove hack (bifurcation parameter for multiple possible bifurcations needs to be stored in self)
-#             self._stateVariable1 = stateVariable1                      # TODO: remove hack (state variable for multiple possible bifurcations needs to be stored in self)
-# #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       # Lower bound of the bifurcation parameter (TODO: set dynamically)
-# #            self._pyDSode.set(pars = self._pyDSmodel.pars )       # Lower bound of the bifurcation parameter (TODO: set dynamically)
-# #            self._pyDSode.pars = {bifurcationParameter: 0}             # Lower bound of the bifurcation parameter (TODO: set dynamically?)
-#             initconds = {stateVariable1: self._paramDict[str(self._systemSize)] / len(self._reactants)} # TODO: guess where steady states are?
+#             self._bifurcationParameter = bifurcationParameter          # @todo: remove hack (bifurcation parameter for multiple possible bifurcations needs to be stored in self)
+#             self._stateVariable1 = stateVariable1                      # @todo: remove hack (state variable for multiple possible bifurcations needs to be stored in self)
+# #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       # Lower bound of the bifurcation parameter (@todo: set dynamically)
+# #            self._pyDSode.set(pars = self._pyDSmodel.pars )       # Lower bound of the bifurcation parameter (@todo: set dynamically)
+# #            self._pyDSode.pars = {bifurcationParameter: 0}             # Lower bound of the bifurcation parameter (@todo: set dynamically?)
+#             initconds = {stateVariable1: self._paramDict[str(self._systemSize)] / len(self._reactants)} # @todo: guess where steady states are?
 #             for reactant in self._reactants:
 #                 if str(reactant) != stateVariable1:
 #                     initconds[str(reactant)] = self._paramDict[str(self._systemSize)] / len(self._reactants)
 # #            self._pyDSmodel.ics = initconds
-#             self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    # TODO: replace            
+#             self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    # @todo: replace            
 # #            self._pyDSode.set(ics = initconds)
-#             self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  # TODO: add to __init__()
-#             self._pyDSode.set(pars = {bifurcationParameter: 5} )                       # TODO remove magic number
-#             self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class (TODO: add to __init__())
-#             # TODO: add self._pyDScontArgs to __init__()
+#             self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  # @todo: add to __init__()
+#             self._pyDSode.set(pars = {bifurcationParameter: 5} )                       # @todo remove magic number
+#             self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class (@todo: add to __init__())
+#             # @todo: add self._pyDScontArgs to __init__()
 #             self._pyDScontArgs = dst.args(name='EQ1', type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labeled 'EQ1'.
 #             self._pyDScontArgs.freepars     = [bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
-#             self._pyDScontArgs.MaxNumPoints = 450                      # The following 3 parameters are set after trial-and-error TODO: how to automate this?
+#             self._pyDScontArgs.MaxNumPoints = 450                      # The following 3 parameters are set after trial-and-error @todo: how to automate this?
 #             self._pyDScontArgs.MaxStepSize  = 1e-1
 #             self._pyDScontArgs.MinStepSize  = 1e-5
 #             self._pyDScontArgs.StepSize     = 2e-3
-#             self._pyDScontArgs.LocBifPoints = ['LP', 'BP']                    # TODO WAS 'LP' (detect limit points / saddle-node bifurcations)
+#             self._pyDScontArgs.LocBifPoints = ['LP', 'BP']                    # @todo WAS 'LP' (detect limit points / saddle-node bifurcations)
 #             self._pyDScontArgs.SaveEigen    = True                     # to tell unstable from stable branches
 # #            self._pyDScontArgs.CalcStab     = True
 # 
 #             plt.ion()
-# #            self._bifurcation2Dfig = plt.figure(1)                     # TODO: add to __init__()
+# #            self._bifurcation2Dfig = plt.figure(1)                     # @todo: add to __init__()
 #             self._pyDScont.newCurve(self._pyDScontArgs)
 #             try:
 #                 try:
@@ -497,7 +507,7 @@ class MuMoTmodel: # class describing a model
 #                 except:
 #                     self._errorMessage.value = 'Continuation failure'
 #                 try:
-#                     self._pyDScont['EQ1'].forward()                                  # TODO: how to choose direction?
+#                     self._pyDScont['EQ1'].forward()                                  # @todo: how to choose direction?
 #                 except:
 #                     self._errorMessage.value = 'Continuation failure'
 #                     self._errorMessage.value = ''
@@ -515,12 +525,11 @@ class MuMoTmodel: # class describing a model
             self._solutions = solve(iter(self._equations.values()), self._reactants, force = False, positive = False, set = False)
         return self._solutions
 
+    ## general controller constructor with all rates as free parameters
     def _controller(self, contRefresh, **kwargs):
-        # general controller constructor with all rates as free parameters
-
-        initialRateValue = 4 # TODO was 1 (choose initial values sensibly)
-        rateLimits = (-100.0, 100.0) # TODO choose limit values sensibly
-        rateStep = 0.1 # TODO choose rate step sensibly                
+        initialRateValue = 4 ## @todo was 1 (choose initial values sensibly)
+        rateLimits = (-100.0, 100.0) ## @todo choose limit values sensibly
+        rateStep = 0.1 ## @todo choose rate step sensibly                
 
         # construct controller
         paramValues = []
@@ -544,10 +553,10 @@ class MuMoTmodel: # class describing a model
             return False
 
 
+    ## lambdify sympy equations for numerical integration, plotting, etc.
     def _getFuncs(self):
-        # lambdify sympy equations for numerical integration, plotting, etc.
         if self._systemSize == None:
-            assert false #TODO is this necessary?
+            assert false ## @todo is this necessary?
         if self._funcs == None:
             argList = []
             for reactant in self._reactants:
@@ -563,8 +572,8 @@ class MuMoTmodel: # class describing a model
             
         return self._funcs
     
+    ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
     def _getArgTuple2d(self, argNames, argValues, argDict, stateVariable1, stateVariable2, X, Y):
-        # get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
         argList = []
         for arg in self._args:
             if arg == stateVariable1:
@@ -572,14 +581,14 @@ class MuMoTmodel: # class describing a model
             elif arg == stateVariable2:
                 argList.append(Y)
             elif arg == self._systemSize:
-                argList.append(1) # TODO: system size set to 1
+                argList.append(1) ## @todo: system size set to 1
             else:
                 argList.append(argDict[arg])
             
         return tuple(argList)
 
+    ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
     def _getArgTuple3d(self, argNames, argValues, argDict, stateVariable1, stateVariable2, stateVariable3, X, Y, Z):
-        # get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
         argList = []
         for arg in self._args:
             if arg == stateVariable1:
@@ -589,14 +598,14 @@ class MuMoTmodel: # class describing a model
             elif arg == stateVariable3:
                 argList.append(Z)                
             elif arg == self._systemSize:
-                argList.append(1) # TODO: system size set to 1
+                argList.append(1) ## @todo: system size set to 1
             else:
                 argList.append(argDict[arg])
             
         return tuple(argList)
 
+    ## get tuple to evalute functions returned by _getFuncs with
     def _getArgTuple(self, argNames, argValues, argDict, reactants, reactantValues):
-        # get tuple to evalute functions returned by _getFuncs with
         assert false # need to work this out
         argList = []
         for arg in self._args:
@@ -607,16 +616,15 @@ class MuMoTmodel: # class describing a model
             elif arg == stateVariable3:
                 argList.append(Z)                
             elif arg == self._systemSize:
-                argList.append(1) # TODO: system size set to 1
+                argList.append(1) ## @todo: system size set to 1
             else:
                 argList.append(argDict[arg])
             
         return tuple(argList)
 
 
-                                 
+    ## render LaTeX source to local image file                                 
     def _localLaTeXimageFile(self, source):
-        # render LaTeX source to local image file
         tmpfile = tempfile.NamedTemporaryFile(dir = self._tmpdir.name, suffix = '.' + self._renderImageFormat, delete = False)
         self._tmpfiles.append(tmpfile)
         preview(source, euler = False, output = self._renderImageFormat, viewer = 'file', filename = tmpfile.name)
@@ -664,7 +672,7 @@ class MuMoTmodel: # class describing a model
         self._equations = {}
         self._pyDSmodel = None
         self._dot = None
-        # TODO the following not currently working on OS X
+        ## @todo the following not currently working on OS X
 #        if not os.path.idsir(self._tmpdirpath):
 #            os.mkdir(self._tmpdirpath)
 #            os.system('chmod' + self._tmpdirpath + 'u+rwx')
@@ -674,12 +682,13 @@ class MuMoTmodel: # class describing a model
         self._tmpfiles = []
         
     def __del__(self):
-        # TODO: check when this is invoked
+        ## @todo: check when this is invoked
         for tmpfile in self._tmpfiles:
             del tmpfile
         del self._tmpdir
 
-class _Rule: # class describing a single reaction rule
+## class describing a single reaction rule
+class _Rule:
     lhsReactants = []
     rhsReactants = []
     rate = ""
@@ -688,7 +697,8 @@ class _Rule: # class describing a single reaction rule
         self.rhsReactants = []
         self.rate = ""
 
-class MuMoTcontroller: # class describing a controller for a model view
+## class describing a controller for a model view
+class MuMoTcontroller:
     _view = None
     _paramValues = None
     _paramNames = None
@@ -696,6 +706,7 @@ class MuMoTcontroller: # class describing a controller for a model view
     _widgets = None
     _widgetDict = None
     _errorMessage = None
+    ## progress bar @todo: is this best put in base class when it is not always used?
     _progressBar = None
 
     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot):
@@ -800,8 +811,9 @@ class MuMoTcontroller: # class describing a controller for a model view
         
         return Javascript(js_download)
 
-class MuMoTSSAController(MuMoTcontroller): # class describing a controller for multiagent views
-    _fileToDownload = None
+## class describing a controller for multiagent views
+class MuMoTSSAController(MuMoTcontroller):
+    _filetodownload = None
     _initialState = None
 
     
@@ -821,7 +833,7 @@ class MuMoTSSAController(MuMoTcontroller): # class describing a controller for m
             self._widgets.append(widget)
             advancedWidgets.append(widget)
             
-        ## Random seed input field
+        # Random seed input field
         widget = widgets.IntText(
             value=specialParams['randomSeed'],
             description='Random seed:',
@@ -831,8 +843,8 @@ class MuMoTSSAController(MuMoTcontroller): # class describing a controller for m
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
-        ## Toggle buttons for plotting style 
-        plotToggle = widgets.ToggleButtons( # TODO: use a sorted dictionary so that the order is preserved
+        # Toggle buttons for plotting style 
+        plotToggle = widgets.ToggleButtons( ## @todo: use a sorted dictionary so that the order is preserved
             options={'Temporal evolution' : 'evo', 'Final distribution' : 'final'},
             description='Plot:',
             disabled=False,
@@ -863,14 +875,16 @@ class MuMoTSSAController(MuMoTcontroller): # class describing a controller for m
         
     
         
-    def _update_params_from_widgets(self): # overwritten parent's method. Old method is not used becuase substituted by widgetDict
+    ## overwritten parent's method. Old method is not used becuase substituted by widgetDict
+    def _update_params_from_widgets(self):
         for state in self._initialState.keys():
             self._initialState[state] = self._widgetDict['init'+str(state)].value
         #numNodes = sum(self._initialState.values())
         np.random.seed(self._widgetDict['randomSeed'].value)
 
-class MuMoTmultiagentController(MuMoTcontroller): # class describing a controller for multiagent views
-    _fileToDownload = None
+## class describing a controller for multiagent views
+class MuMoTmultiagentController(MuMoTcontroller):
+    _filetodownload = None
     _initialState = None
 
     
@@ -890,12 +904,12 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
             self._widgets.append(widget)
             advancedWidgets.append(widget)
             
-        ## Network type dropdown selector
-        netDropdown = widgets.Dropdown( # TODO: use a sorted dictionary so that the order is preserved
+        # Network type dropdown selector
+        netDropdown = widgets.Dropdown( ## @todo: use a sorted dictionary so that the order is preserved
             options={'Full graph': NetworkType.FULLY_CONNECTED, 
                      'Erdos-Renyi': NetworkType.ERSOS_RENYI,
                      'Barabasi-Albert': NetworkType.BARABASI_ALBERT,
-                     # TODO: add network topology generated by random points in space 
+                     ## @todo: add network topology generated by random points in space 
                      'Moving particles': NetworkType.DYNAMIC
                      },
             description='Network topology:',
@@ -907,7 +921,7 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         netDropdown.on_trait_change(self._update_net_params, 'value')
         advancedWidgets.append(netDropdown)
         
-        ## Network connectivity slider
+        # Network connectivity slider
         widget = widgets.FloatSlider(value = 0,
                                     min = 0, 
                                     max = 1,
@@ -919,7 +933,7 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
-        ## Agent speed
+        # Agent speed
         widget = widgets.FloatSlider(value = 0.01, min = 0, max = 1, step=0.01,
                             description = 'Particle speed', 
                             continuous_update = continuousReplot,
@@ -929,7 +943,7 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
-        ## Random walk correlatedness
+        # Random walk correlatedness
         widget = widgets.FloatSlider(value = 0.5, min = 0, max = 1, step=0.01,
                             description = 'Correlatedness of the random walk', 
                             continuous_update = continuousReplot,
@@ -939,7 +953,7 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
-        ## Random seed input field
+        # Random seed input field
         widget = widgets.IntText(
             value=specialParams['randomSeed'],
             description='Random seed:',
@@ -950,7 +964,7 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         advancedWidgets.append(widget)
         #display(widget)
         
-        ## Time scaling slider
+        # Time scaling slider
         widget =  widgets.FloatSlider(value = 1,
                                     min = 0.001, 
                                     max = 1,
@@ -961,8 +975,8 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
-        ## Toggle buttons for plotting style 
-        plotToggle = widgets.ToggleButtons( # TODO: use a sorted dictionary so that the order is preserved
+        # Toggle buttons for plotting style 
+        plotToggle = widgets.ToggleButtons( ## @todo: use a sorted dictionary so that the order is preserved
             options={'Temporal evolution' : 'evo', 'Network' : 'graph', 'Final distribution' : 'final'},
             description='Plot:',
             disabled=False,
@@ -974,7 +988,7 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         self._widgets.append(plotToggle)
         advancedWidgets.append(plotToggle)
         
-        ## Particle display checkboxes
+        # Particle display checkboxes
         widget = widgets.Checkbox(
             value=True,
             description='Show particle trace',
@@ -1011,7 +1025,8 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         )
         display(self._progressBar)
     
-    def _update_params_from_widgets(self): # overwritten parent's method. Old method is not used becuase substituted by widgetDict
+    ## overwritten parent's method. Old method is not used becuase substituted by widgetDict
+    def _update_params_from_widgets(self):
         for state in self._initialState.keys():
             self._initialState[state] = self._widgetDict['init'+str(state)].value
         numNodes = sum(self._initialState.values())
@@ -1020,8 +1035,8 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
         self._view._initGraph(graphType=self._widgetDict['netType'].value, numNodes=numNodes, netParam=netParam)
     
     def _update_net_params(self):
-        # oder of assignment is important (firt, update the min and max, later, the value)
-        # TODO: the update of value happens two times (changing min-max and value) and therefore the calculatio are done two times
+        # oder of assignment is important (first, update the min and max, later, the value)
+        ## @todo: the update of value happens two times (changing min-max and value) and therefore the calculatio are done two times
         if (self._widgetDict['netType'].value == NetworkType.FULLY_CONNECTED):
             self._widgetDict['netParam'].min = 0
             self._widgetDict['netParam'].max = 1
@@ -1073,12 +1088,13 @@ class MuMoTmultiagentController(MuMoTcontroller): # class describing a controlle
             self._widgetDict['scaling'].step = scaling/100 
     
     def downloadTimeEvolution(self):
-        return self._downloadFile(self._fileToDownload)
+        return self._downloadFile(self._filetodownload)
     
 
 
 
-class MuMoTview: # class describing a view on a model
+## class describing a view on a model
+class MuMoTview:
     _mumotModel = None
     _figure = None
     _figureNum = None
@@ -1115,7 +1131,7 @@ class MuMoTview: # class describing a view on a model
             
     def _multirun(self, iterations, randomSeeds):
         if not hasattr(self, '_reactantsList'):
-            # TODO: check if reactantsList is the only solution to manage colors (if changed, this attibute might be not necessary in multiagentView
+            ## @todo: check if reactantsList is the only solution to manage colors (if changed, this attibute might be not necessary in multiagentView
             print("ERROR! in multirun arguments. The specified view does not have the attribute _reactantsList which is required.")
             return
         colors = cm.rainbow(np.linspace(0, 1, len(self._reactantsList) ))
@@ -1163,18 +1179,30 @@ class MuMoTview: # class describing a view on a model
         print("ERROR! The command multirun is not supported for this view.")
         return None
 
-class MuMoTfieldView(MuMoTview): # field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
-    _stateVariable1 = None # 1st state variable (x-dimension)
-    _stateVariable2 = None # 2nd state variable (y-dimension)
-    _stateVariable3 = None # 3rd state variable (z-dimension)
-    _X = None # X ordinates array
-    _Y = None # Y ordinates array
-    _Z = None # Z ordinates array
-    _X = None # X derivatives array
-    _Y = None # Y derivatives array
-    _Z = None # Z derivatives array
-    _speed = None # speed array
-    _mask = {} # class-global dictionary of memoised masks with (mesh size, dimension) as key
+## field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
+class MuMoTfieldView(MuMoTview):
+    ## 1st state variable (x-dimension)
+    _stateVariable1 = None
+    ## 2nd state variable (y-dimension)
+    _stateVariable2 = None
+    ## 3rd state variable (z-dimension) 
+    _stateVariable3 = None
+    ## X ordinates array
+    _X = None
+    ## Y ordinates array
+    _Y = None 
+    ## Z ordinates array
+    _Z = None
+    ## X derivatives array 
+    _X = None
+    ## Y derivatives array
+    _Y = None
+    ## Z derivatives array
+    _Z = None 
+    ## speed array
+    _speed = None 
+    ## class-global dictionary of memoised masks with (mesh size, dimension) as key
+    _mask = {} 
     
     def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
         super().__init__(model, controller)
@@ -1191,7 +1219,8 @@ class MuMoTfieldView(MuMoTview): # field view on model (specialised by MuMoTvect
     def _plot_field(self):
         plt.figure(self._figureNum)
         plt.clf()
-    
+
+    ## get 2-dimensional field for plotting
     def _get_field2d(self, kind, meshPoints):
         self._controller._update_params_from_widgets()
         with io.capture_output() as log:
@@ -1199,11 +1228,11 @@ class MuMoTfieldView(MuMoTview): # field view on model (specialised by MuMoTvect
             funcs = self._mumotModel._getFuncs()
             argNamesSymb = list(map(Symbol, self._controller._paramNames))
             argDict = dict(zip(argNamesSymb, self._controller._paramValues))
-            self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] # TODO system size defined to be one
+            self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] ## @todo system size defined to be one
             mask = self._mask.get((meshPoints, 2))
             if mask is None:
                 mask = np.zeros(self._X.shape, dtype=bool)
-                upperright = np.triu_indices(meshPoints) # TODO: allow user to set mesh points with keyword 
+                upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
                 mask[upperright] = True
                 np.fill_diagonal(mask, False)
                 mask = np.flipud(mask)
@@ -1214,7 +1243,8 @@ class MuMoTfieldView(MuMoTview): # field view on model (specialised by MuMoTvect
             self._Xdot = np.ma.array(self._Xdot, mask=mask)
             self._Ydot = np.ma.array(self._Ydot, mask=mask)        
         self._logs.append(log)
-        
+
+    ## get 3-dimensional field for plotting        
     def _get_field3d(self, kind, meshPoints):
         self._controller._update_params_from_widgets()
         with io.capture_output() as log:
@@ -1222,11 +1252,11 @@ class MuMoTfieldView(MuMoTview): # field view on model (specialised by MuMoTvect
             funcs = self._mumotModel._getFuncs()
             argNamesSymb = list(map(Symbol, self._controller._paramNames))
             argDict = dict(zip(argNamesSymb, self._controller._paramValues))
-            self._Z, self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] # TODO system size defined to be one
+            self._Z, self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] ## @todo system size defined to be one
             mask = self._mask.get((meshPoints, 3))
             if mask is None:
 #                mask = np.zeros(self._X.shape, dtype=bool)
-#                 upperright = np.triu_indices(meshPoints) # TODO: allow user to set mesh points with keyword 
+#                 upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
 #                 mask[upperright] = True
 #                 np.fill_diagonal(mask, False)
 #                 mask = np.flipud(mask)
@@ -1245,28 +1275,30 @@ class MuMoTfieldView(MuMoTview): # field view on model (specialised by MuMoTvect
             self._Zdot = np.ma.array(self._Zdot, mask=mask)
         self._logs.append(log)
 
+## stream plot view on model
 class MuMoTstreamView(MuMoTfieldView):
     def _plot_field(self):
         super()._plot_field()
-        self._get_field2d("2d stream plot", 100) # TODO: allow user to set mesh points with keyword
-        plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') # TODO: define colormap by user keyword
-#        plt.set_aspect('equal') # TODO
+        self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
+        plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
+#        plt.set_aspect('equal') ## @todo
 
-
+## vector plot view on model
 class MuMoTvectorView(MuMoTfieldView):
     def _plot_field(self):
         super()._plot_field()
         if self._stateVariable3 == None:
-            self._get_field2d("2d vector plot", 10) # TODO: allow user to set mesh points with keyword
-            plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') # TODO: define colormap by user keyword
-    #        plt.set_aspect('equal') # TODO
+            self._get_field2d("2d vector plot", 10) ## @todo: allow user to set mesh points with keyword
+            plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') ## @todo: define colormap by user keyword
+    #        plt.set_aspect('equal') ## @todo
         else:
             self._get_field3d("3d vector plot", 10)
             ax = self._figure.gca(projection = '3d')
-            ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length = 0.01, color = 'black') # TODO: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
-#           plt.set_aspect('equal') # TODO
+            ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length = 0.01, color = 'black') ## @todo: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
+#           plt.set_aspect('equal') ## @todo
         
-class MuMoTbifurcationView(MuMoTview): # bifurcation view on model 
+## bifurcation view on model 
+class MuMoTbifurcationView(MuMoTview):
     _pyDSmodel = None
     _bifurcationParameter = None
     _stateVariable1 = None
@@ -1285,7 +1317,7 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
             self._pyDSmodel.varspecs = varspecs
     
             if model._systemSize != None:
-                # TODO: shouldn't allow system size to be varied?
+                ## @todo: shouldn't allow system size to be varied?
                 pass
     #                self._paramValues.append(1)
     #                self._paramNames.append(str(self._systemSize))
@@ -1301,7 +1333,7 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
                 # 2-d bifurcation diagram
                 pass
             else:
-                # 3-d bifurcation diagram (TODO: currently unsupported)
+                ## 3-d bifurcation diagram (@todo: currently unsupported)
                 self._stateVariable2 = stateVariable2
                 assert false
                 
@@ -1309,10 +1341,10 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
             self._bifurcationParameter = bifurcationParameter
             self._stateVariable1 = stateVariable1
             self._stateVariable2= stateVariable2
-    #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       # Lower bound of the bifurcation parameter (TODO: set dynamically)
-    #            self._pyDSode.set(pars = self._pyDSmodel.pars )       # Lower bound of the bifurcation parameter (TODO: set dynamically)
-    #            self._pyDSode.pars = {bifurcationParameter: 0}             # Lower bound of the bifurcation parameter (TODO: set dynamically?)
-            initconds = {stateVariable1: self._pyDSmodel.pars[str(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)} # TODO: guess where steady states are?
+    #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
+    #            self._pyDSode.set(pars = self._pyDSmodel.pars )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
+    #            self._pyDSode.pars = {bifurcationParameter: 0}             ## Lower bound of the bifurcation parameter (@todo: set dynamically?)
+            initconds = {stateVariable1: self._pyDSmodel.pars[str(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)} ## @todo: guess where steady states are?
             for reactant in self._mumotModel._reactants:
                 if str(reactant) != stateVariable1:
                     initconds[str(reactant)] = self._pyDSmodel.pars[str(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)
@@ -1320,16 +1352,16 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
             self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }           
     #            self._pyDSode.set(ics = initconds)
             self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
-            self._pyDSode.set(pars = {bifurcationParameter: 5} )                       # TODO remove magic number
+            self._pyDSode.set(pars = {bifurcationParameter: 5} )                       ## @@todo remove magic number
             self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class 
-            # TODO: add self._pyDScontArgs to __init__()
+            ## @todo: add self._pyDScontArgs to __init__()
             self._pyDScontArgs = dst.args(name='EQ1', type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labeled 'EQ1'.
             self._pyDScontArgs.freepars     = [bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
-            self._pyDScontArgs.MaxNumPoints = 450                      # The following 3 parameters are set after trial-and-error TODO: how to automate this?
+            self._pyDScontArgs.MaxNumPoints = 450                      ## The following 3 parameters are set after trial-and-error @todo: how to automate this?
             self._pyDScontArgs.MaxStepSize  = 1e-1
             self._pyDScontArgs.MinStepSize  = 1e-5
             self._pyDScontArgs.StepSize     = 2e-3
-            self._pyDScontArgs.LocBifPoints = ['LP', 'BP']                    # TODO WAS 'LP' (detect limit points / saddle-node bifurcations)
+            self._pyDScontArgs.LocBifPoints = ['LP', 'BP']                    ## @todo WAS 'LP' (detect limit points / saddle-node bifurcations)
             self._pyDScontArgs.SaveEigen    = True                     # to tell unstable from stable branches
 #            self._pyDScontArgs.CalcStab     = True
         self._logs.append(log)
@@ -1356,14 +1388,14 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
                 except:
                     self._controller._errorMessage.value = self._controller._errorMessage.value + 'Continuation failure (backward)<br>'
                 try:
-                    self._pyDScont['EQ1'].forward()                                  # TODO: how to choose direction?
+                    self._pyDScont['EQ1'].forward()                                  ## @todo: how to choose direction?
                 except:
                     self._controller._errorMessage.value = self._controller._errorMessage.value + 'Continuation failure (forward)<br>'
             except ZeroDivisionError:
                 self._controller._errorMessage.value = self._controller._errorMessage.value + 'Division by zero<br>'
     #            self._pyDScont['EQ1'].info()
         if self._plotType.lower() == 'mumot':
-            # use internal plotting routines (TODO: not yet supported)
+            ## use internal plotting routines (@todo: not yet supported)
             assert false
         else:
             if self._plotType.lower() != 'pyds':
@@ -1381,18 +1413,19 @@ class MuMoTbifurcationView(MuMoTview): # bifurcation view on model
         for name, value in zip(self._controller._paramNames, self._controller._paramValues):
             self._pyDSmodel.pars[name] = value
         self._pyDScont.plot.clearall()
-#        self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    # TODO: replace           
-        self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  # TODO: add to __init__()
-        self._pyDSode.set(pars = {self._bifurcationParameter: 5} )                       # TODO remove magic number
-        self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class (TODO: add to __init__())
+#        self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    ## @todo: replace           
+        self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  ## @todo: add to __init__()
+        self._pyDSode.set(pars = {self._bifurcationParameter: 5} )                       ## @todo remove magic number
+        self._pyDScont = dst.ContClass(self._pyDSode)              ## Set up continuation class (@todo: add to __init__())
 ##        self._pyDScont.newCurve(self._pyDScontArgs)
 #        self._pyDScont['EQ1'].reset(self._pyDSmodel.pars)
 #        self._pyDSode.set(pars = self._pyDSmodel.pars)
 #        self._pyDScont['EQ1'].reset()
-#        self._pyDScont.update(self._pyDScontArgs)                         # TODO: what does this do?
+#        self._pyDScont.update(self._pyDScontArgs)                         ## @todo: what does this do?
         self._plot_bifurcation()
 
-class MuMoTmultiagentView(MuMoTview): # agent on networks view on model 
+## agent on networks view on model 
+class MuMoTmultiagentView(MuMoTview):
     _colors = None
     _probabilities = None
     _graph = None
@@ -1416,7 +1449,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
             
         self._logs.append(log)
 
-        if kwargs != None: # TODO: Currently not used (updated through _widgetDict). To rethink plot type in a better way
+        if kwargs != None: ## @todo: Currently not used (updated through _widgetDict). To rethink plot type in a better way
             self._plotType = kwargs.get('plotType', 'plain')
         else:
             self._plotType = 'plain'
@@ -1447,7 +1480,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
                 plt.axis([0, maxTime, 0, totAgents])
                 
             logs = self._runMultiagent(self._controller._initialState, maxTime)
-            self._controller._fileToDownload = logs[1]
+            self._controller._filetodownload = logs[1]
             markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
             plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
 #             plt.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
@@ -1585,7 +1618,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
         self._applyScalingFactor()
         #print(self._probabilities)
     
-    # deriving the transition probabilities map from reaction rules
+    ## derive the transition probabilities map from reaction rules
     def _initProbabilitiesMap(self, reactants, rules):
         self._probabilities = {}
         assignedDestReactants = {}
@@ -1628,7 +1661,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
                                     
                                 probSets[otherReact].append( [rule.rate, self._controller._widgetDict[str(rule.rate)].value, destReact] )
                             #else:
-                                # TODO: treat in a special way the 'self' interaction!
+                                ## @todo: treat in a special way the 'self' interaction!
                                 #print("Reactant " + str(reactant) + " has active role in reaction " + str(rule.rate))
                             
                         elif numReagents > 2:
@@ -1696,11 +1729,11 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
                 print ("ERROR! Invalid network parameter (number of edges per new node) for B-A networks. It must be an integer between 1 and " + str(numNodes) + "; input is " + str(netParam))
                 return
         elif (graphType == NetworkType.SPACE):
-            ## TODO: implement network generate by placing points (with local communication range) randomly in 2D space
+            ## @todo: implement network generate by placing points (with local communication range) randomly in 2D space
             print("ERROR: Graphs of type SPACE are not implemented yet.")
             return
 #         elif (graphType == NetworkType.DYNAMIC):
-#             ## TODO: implement particles
+#             ## @todo: implement particles
 #             return
 
     def _initMultiagent(self):
@@ -1748,7 +1781,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
         
         return currentState
 
-    # one timestep for one agent
+    ## one timestep for one agent
     def _stepOneAgent(self, agent, neighs):
         #probSets = copy.deepcopy(self._probabilities[agent])
         rnd = np.random.rand()
@@ -1801,7 +1834,7 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
         # elif a.position.y > self.dimensions.y: a.position.x = self.dimensions.x 
         return (x,y,o)
 
-    # return the (index) list of neighbours of 'agent'
+    ## return the (index) list of neighbours of 'agent'
     def _getNeighbours(self, agent, positions, distance_range):
         neighbour_list = []
         for neigh in np.arange(len(positions)):
@@ -1809,17 +1842,21 @@ class MuMoTmultiagentView(MuMoTview): # agent on networks view on model
                 neighbour_list.append(neigh)
         return neighbour_list
     
-    # returns the minimum distance calucalted on the torus given by periodic boundary conditions
+    ## returns the minimum distance calucalted on the torus given by periodic boundary conditions
     def _distance_on_torus( self, x_1, y_1, x_2, y_2 ):
         return np.sqrt(min(abs(x_1 - x_2), self._arena_width - abs(x_1 - x_2))**2 + 
                     min(abs(y_1 - y_2), self._arena_height - abs(y_1 - y_2))**2)
     
 
-class MuMoTSSAView(MuMoTview): # agent on networks view on model 
+## agent on networks view on model 
+class MuMoTSSAView(MuMoTview): 
     _colors = None
-    _reactantsList = None # storing a reactant list to keep a fixed order
-    _reactantsMatrix = None # a matrix form of the left-handside of the rules
-    _ruleChanges = None # the effect of each rule
+    ## storing a reactant list to keep a fixed order
+    _reactantsList = None 
+    ## a matrix form of the left-handside of the rules
+    _reactantsMatrix = None 
+    ## the effect of each rule
+    _ruleChanges = None 
 
     def __init__(self, model, controller, paramDict, **kwargs):
         super().__init__(model, controller)
@@ -1834,7 +1871,7 @@ class MuMoTSSAView(MuMoTview): # agent on networks view on model
         
         self._logs.append(log)
 
-        if kwargs != None: # TODO: Currently not used (updated through _widgetDict). To rethink plot type in a better way
+        if kwargs != None: ## @todo: Currently not used (updated through _widgetDict). To rethink plot type in a better way
             self._plotType = kwargs.get('plotType', 'plain')
         else:
             self._plotType = 'plain'
@@ -1864,7 +1901,7 @@ class MuMoTSSAView(MuMoTview): # agent on networks view on model
                 plt.axis([0, maxTime, 0, totAgents])
            
             logs = self._runSSA(self._controller._initialState, maxTime)
-            self._controller._fileToDownload = logs[1]
+            self._controller._filetodownload = logs[1]
             markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
             plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
 #             plt.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
@@ -2011,8 +2048,9 @@ class MuMoTSSAView(MuMoTview): # agent on networks view on model
         return (historyState,evo)
     
 
+## create model from text description
 def parseModel(modelDescription):
-    # TODO: add system size to model description
+    ## @todo: add system size to model description
     if "get_ipython" in modelDescription:
         # hack to extract model description from input cell tagged with %%model magic
         modelDescr = modelDescription.split("\"")[0].split("'")[5]
@@ -2133,7 +2171,7 @@ def parseModel(modelDescription):
     return model
 
 def _deriveODEsFromRules(reactants, rules):
-    # TODO: replace with principled derivation via Master Equation and van Kampen expansion
+    ## @todo: replace with principled derivation via Master Equation and van Kampen expansion
     equations = {}
     terms = []
     for rule in rules:

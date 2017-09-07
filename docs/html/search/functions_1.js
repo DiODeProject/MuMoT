@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['bifurcation',['bifurcation',['../namespace_mu_mo_t.html#ae466ad8ef36436d24ce26c73e79bf20c',1,'MuMoT']]]
+  ['bifurcation',['bifurcation',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#a41de1154182c3807821a722c4b91e824',1,'MuMoT::MuMoTmodel']]]
 ];

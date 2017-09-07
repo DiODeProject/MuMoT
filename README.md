@@ -23,8 +23,10 @@ Read the documentation at [https://diodeproject.github.io/MuMoT/](https://diodep
 
 # House rules
 * Update the [Doxygen](http://www.stack.nl/~dimitri/doxygen/index.html) documentation when making substantive changes
-  * [Download](http://www.stack.nl/~dimitri/doxygen/download.html) Doxygen
-  * Run locally with `Doxyfile` configuration file from repository
+  * include [Python comment blocks](http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#pythonblocks) for classes, functions, etc.
+  * use @todo for reminders
+  * [download](http://www.stack.nl/~dimitri/doxygen/download.html) Doxygen
+  * run locally with `Doxyfile` configuration file from repository
   * commit the contents of `docs/`
 
 * Update `MuMoTtest.ipynb` to add tests for new functionality
