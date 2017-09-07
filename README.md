@@ -29,6 +29,6 @@ Read the documentation at [https://diodeproject.github.io/MuMoT/](https://diodep
   * run locally with `Doxyfile` configuration file from repository
   * commit the contents of `docs/`
 
-* Update `MuMoTtest.ipynb` to add tests for new functionality
+* Update `MuMoTtest.ipynb` to add tests for new functionality - always run this notebook before committing
 * Write code using Python [naming conventions](https://www.python.org/dev/peps/pep-0008/#naming-conventions)
 
