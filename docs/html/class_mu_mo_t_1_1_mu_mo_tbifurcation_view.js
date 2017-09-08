@@ -1,6 +1,6 @@
 var class_mu_mo_t_1_1_mu_mo_tbifurcation_view =
 [
-    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a570265b374c8b36ed2bd84bdd5393631", null ],
+    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a7b55446edcef0a16d6840cd227f200b8", null ],
     [ "_plot_bifurcation", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a385e5f82733060fec5122635ae6a8e67", null ],
     [ "_replot_bifurcation", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a13b207330e0a4fe5bb7c3b863bbd0820", null ],
     [ "_bifurcationParameter", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a17d5bd0e623faea6f50fc3b7f01d0d38", null ],
@@ -11,6 +11,7 @@ var class_mu_mo_t_1_1_mu_mo_tbifurcation_view =
     [ "_pyDSode", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a45f0a60363e440604d8e5b08930eb7b5", null ],
     [ "_stateVariable1", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#aa14fa36730691becc6f3136899545416", null ],
     [ "_stateVariable2", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a9d3705d1d9182e10751ff693573d6d16", null ],
+    [ "_stateVariable3", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#ad2f8dc44173a16468bd9d3ab335f9b27", null ],
     [ "figure", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a391e34f2de441d79152a7b3d6e4c9c86", null ],
     [ "freepars", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a15cf90b3888db001a8299a477d50af98", null ],
     [ "ics", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a08c7b0edb053705a8c47fe487b6f53bd", null ],

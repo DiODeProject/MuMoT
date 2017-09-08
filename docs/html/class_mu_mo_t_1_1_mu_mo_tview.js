@@ -1,6 +1,6 @@
 var class_mu_mo_t_1_1_mu_mo_tview =
 [
-    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tview.html#a2d1dec64cbd846ffc0fda20aeeae4430", null ],
+    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tview.html#afc93b937eb36816d9e603a372788f55b", null ],
     [ "_log", "class_mu_mo_t_1_1_mu_mo_tview.html#a8b4ffd0e4999bd45c6ca33fe0f40d1e3", null ],
     [ "_multirun", "class_mu_mo_t_1_1_mu_mo_tview.html#a4d4a00545816bf68f912f5ea5a449c48", null ],
     [ "_singleRun", "class_mu_mo_t_1_1_mu_mo_tview.html#a51d421aacb4cd83af5f1c2e60c3dff9c", null ],
@@ -10,8 +10,9 @@ var class_mu_mo_t_1_1_mu_mo_tview =
     [ "_figureNum", "class_mu_mo_t_1_1_mu_mo_tview.html#a5748371a5f2e09033908d21bb12f94c0", null ],
     [ "_logs", "class_mu_mo_t_1_1_mu_mo_tview.html#ac0ad5d0ca27f2668c0676334ee73ff52", null ],
     [ "_mumotModel", "class_mu_mo_t_1_1_mu_mo_tview.html#aeacd9541246371f0db5cc3e3779762fa", null ],
+    [ "_paramNames", "class_mu_mo_t_1_1_mu_mo_tview.html#ac7734326ac8dbbf9bd0d2c9838633195", null ],
+    [ "_paramValues", "class_mu_mo_t_1_1_mu_mo_tview.html#a04608181fa27d9aad4983d3694f7ab17", null ],
     [ "_plotType", "class_mu_mo_t_1_1_mu_mo_tview.html#a5feff4ca83ee97d6e09874496a4975d4", null ],
-    [ "_widgets", "class_mu_mo_t_1_1_mu_mo_tview.html#a397d0ee37a222317a1bab7deb1270a13", null ],
     [ "bbox_to_anchor", "class_mu_mo_t_1_1_mu_mo_tview.html#a411167eeca51189fabe03f884c7bf92c", null ],
     [ "borderaxespad", "class_mu_mo_t_1_1_mu_mo_tview.html#a15c45102c35a6e8e18adffce8cfdb703", null ],
     [ "color", "class_mu_mo_t_1_1_mu_mo_tview.html#a37dbdc30935031c05304482e1be89d8f", null ],

@@ -12,6 +12,7 @@ var class_mu_mo_t_1_1_mu_mo_tcontroller =
     [ "_paramNames", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#ac7734326ac8dbbf9bd0d2c9838633195", null ],
     [ "_paramValues", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a04608181fa27d9aad4983d3694f7ab17", null ],
     [ "_progressBar", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a018864aa22d2adb0d3958fb0adbce8e2", null ],
+    [ "_progressBar_multi", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a1da52cde6b2b94a1005eaa6898d2f8c5", null ],
     [ "_view", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a27dd8543b5188cdfe40f622d267fe2c5", null ],
     [ "_widgetDict", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a76e960ae74fc597cd22f7132507eaa20", null ],
     [ "_widgets", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a397d0ee37a222317a1bab7deb1270a13", null ]

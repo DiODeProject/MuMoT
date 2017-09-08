@@ -14,7 +14,6 @@ var searchData=
   ['space',['SPACE',['../class_mu_mo_t_1_1_network_type.html#a03813c265f977cc034eb42fd3370bf3d',1,'MuMoT::NetworkType']]],
   ['ssa',['SSA',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#ac3c78f7f98887f29a4f0d50dd023c465',1,'MuMoT::MuMoTmodel']]],
   ['stability',['stability',['../class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a1df8fcdacfec00fc258a3c72772c2f18',1,'MuMoT::MuMoTbifurcationView']]],
-  ['statecolors',['stateColors',['../class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#af439c5b29ba7f58f96f3b90cdd83648b',1,'MuMoT.MuMoTmultiagentView.stateColors()'],['../class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#af61c8db681f18f2d8d0839f5cb4bacc6',1,'MuMoT.MuMoTmultiagentView.stateColors()']]],
   ['stepsize',['StepSize',['../class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a9c25479455e9bdd389f37c4bccfefea1',1,'MuMoT::MuMoTbifurcationView']]],
   ['stream',['stream',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#ae2925a9a37b83608167da0794fe1a2a8',1,'MuMoT::MuMoTmodel']]],
   ['substitute',['substitute',['../class_mu_mo_t_1_1_mu_mo_tmodel.html#a2eec4a3b8deda7c717c06ed89c24d570',1,'MuMoT::MuMoTmodel']]],

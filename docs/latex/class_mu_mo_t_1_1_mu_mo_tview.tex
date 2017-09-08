@@ -14,7 +14,7 @@ Inheritance diagram for Mu\+Mo\+Tview\+:\begin{figure}[H]
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a2d1dec64cbd846ffc0fda20aeeae4430}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, model, controller)
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_afc93b937eb36816d9e603a372788f55b}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, model, controller, figure=None, params=None)
 \item 
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_aca4d648d909f4722c7e07197675500bb}{show\+Logs} (self)
 \end{DoxyCompactItemize}
@@ -51,35 +51,37 @@ def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a8b4ffd0e4999bd45c6ca33fe0f40d1e3}{
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a4d4a00545816bf68f912f5ea5a449c48}{\+\_\+multirun} (self, iterations, random\+Seeds)
 \item 
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a51d421aacb4cd83af5f1c2e60c3dff9c}{\+\_\+single\+Run} (self, random\+Seed)
-\begin{DoxyCompactList}\small\item\em overwrite this method for views that allow the \textquotesingle{}multirun\textquotesingle{} command (the attribute \+\_\+reactants\+List is also necessary) \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em overwrite this method for views that allow the \textquotesingle{}multirun\textquotesingle{} command \end{DoxyCompactList}\end{DoxyCompactItemize}
 \subsection*{Static Private Attributes}
 \begin{DoxyCompactItemize}
 \item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_aeacd9541246371f0db5cc3e3779762fa}{\+\_\+mumot\+Model} = None
-\item 
+\begin{DoxyCompactList}\small\item\em Model view is on. \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_abf6d9f6be3898e307415d4598cde264d}{\+\_\+figure} = None
-\item 
+\begin{DoxyCompactList}\small\item\em Figure/axis object to plot view to. \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a5748371a5f2e09033908d21bb12f94c0}{\+\_\+figure\+Num} = None
-\item 
-\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a397d0ee37a222317a1bab7deb1270a13}{\+\_\+widgets} = None
-\item 
+\begin{DoxyCompactList}\small\item\em Unique figure number. \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a15f56ca9811d1e67d721fa64f9b0dc1e}{\+\_\+controller} = None
-\item 
+\begin{DoxyCompactList}\small\item\em Controller that controls this view. \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_ac0ad5d0ca27f2668c0676334ee73ff52}{\+\_\+logs} = None
-\item 
+\begin{DoxyCompactList}\small\item\em Summary logs of view behaviour. \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a5feff4ca83ee97d6e09874496a4975d4}{\+\_\+plot\+Type} = None
-\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Plotting method to use. \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_ac7734326ac8dbbf9bd0d2c9838633195}{\+\_\+param\+Names} = None
+\begin{DoxyCompactList}\small\item\em parameter names when used without controller \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a04608181fa27d9aad4983d3694f7ab17}{\+\_\+param\+Values} = None
+\begin{DoxyCompactList}\small\item\em parameter values when used without controller \end{DoxyCompactList}\end{DoxyCompactItemize}
 
 
 \subsection{Detailed Description}
 class describing a view on a model 
 
 \subsection{Constructor \& Destructor Documentation}
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a2d1dec64cbd846ffc0fda20aeeae4430}\label{class_mu_mo_t_1_1_mu_mo_tview_a2d1dec64cbd846ffc0fda20aeeae4430}} 
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_afc93b937eb36816d9e603a372788f55b}\label{class_mu_mo_t_1_1_mu_mo_tview_afc93b937eb36816d9e603a372788f55b}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
 \index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
 \subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
-{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{model,  }\item[{}]{controller }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{model,  }\item[{}]{controller,  }\item[{}]{figure = {\ttfamily None},  }\item[{}]{params = {\ttfamily None} }\end{DoxyParamCaption})}
 
 
 
@@ -104,7 +106,7 @@ class describing a view on a model
 
 
 
-overwrite this method for views that allow the \textquotesingle{}multirun\textquotesingle{} command (the attribute \+\_\+reactants\+List is also necessary) 
+overwrite this method for views that allow the \textquotesingle{}multirun\textquotesingle{} command 
 
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_aca4d648d909f4722c7e07197675500bb}\label{class_mu_mo_t_1_1_mu_mo_tview_aca4d648d909f4722c7e07197675500bb}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!show\+Logs@{show\+Logs}}
@@ -121,11 +123,24 @@ overwrite this method for views that allow the \textquotesingle{}multirun\textqu
 \subsubsection{\texorpdfstring{\+\_\+controller}{\_controller}}
 {\footnotesize\ttfamily \+\_\+controller = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
 
+
+
+Controller that controls this view. 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000021}{Todo}]
+\begin{DoxyItemize}
+\item could become None 
+\end{DoxyItemize}\end{DoxyRefDesc}
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_abf6d9f6be3898e307415d4598cde264d}\label{class_mu_mo_t_1_1_mu_mo_tview_abf6d9f6be3898e307415d4598cde264d}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+figure@{\+\_\+figure}}
 \index{\+\_\+figure@{\+\_\+figure}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
 \subsubsection{\texorpdfstring{\+\_\+figure}{\_figure}}
 {\footnotesize\ttfamily \+\_\+figure = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Figure/axis object to plot view to. 
 
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a5748371a5f2e09033908d21bb12f94c0}\label{class_mu_mo_t_1_1_mu_mo_tview_a5748371a5f2e09033908d21bb12f94c0}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+figure\+Num@{\+\_\+figure\+Num}}
@@ -133,11 +148,19 @@ overwrite this method for views that allow the \textquotesingle{}multirun\textqu
 \subsubsection{\texorpdfstring{\+\_\+figure\+Num}{\_figureNum}}
 {\footnotesize\ttfamily \+\_\+figure\+Num = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
 
+
+
+Unique figure number. 
+
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_ac0ad5d0ca27f2668c0676334ee73ff52}\label{class_mu_mo_t_1_1_mu_mo_tview_ac0ad5d0ca27f2668c0676334ee73ff52}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+logs@{\+\_\+logs}}
 \index{\+\_\+logs@{\+\_\+logs}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
 \subsubsection{\texorpdfstring{\+\_\+logs}{\_logs}}
 {\footnotesize\ttfamily \+\_\+logs = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Summary logs of view behaviour. 
 
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_aeacd9541246371f0db5cc3e3779762fa}\label{class_mu_mo_t_1_1_mu_mo_tview_aeacd9541246371f0db5cc3e3779762fa}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+mumot\+Model@{\+\_\+mumot\+Model}}
@@ -145,18 +168,42 @@ overwrite this method for views that allow the \textquotesingle{}multirun\textqu
 \subsubsection{\texorpdfstring{\+\_\+mumot\+Model}{\_mumotModel}}
 {\footnotesize\ttfamily \+\_\+mumot\+Model = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
 
+
+
+Model view is on. 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_ac7734326ac8dbbf9bd0d2c9838633195}\label{class_mu_mo_t_1_1_mu_mo_tview_ac7734326ac8dbbf9bd0d2c9838633195}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+param\+Names@{\+\_\+param\+Names}}
+\index{\+\_\+param\+Names@{\+\_\+param\+Names}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+param\+Names}{\_paramNames}}
+{\footnotesize\ttfamily \+\_\+param\+Names = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+parameter names when used without controller 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a04608181fa27d9aad4983d3694f7ab17}\label{class_mu_mo_t_1_1_mu_mo_tview_a04608181fa27d9aad4983d3694f7ab17}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+param\+Values@{\+\_\+param\+Values}}
+\index{\+\_\+param\+Values@{\+\_\+param\+Values}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+param\+Values}{\_paramValues}}
+{\footnotesize\ttfamily \+\_\+param\+Values = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+parameter values when used without controller 
+
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a5feff4ca83ee97d6e09874496a4975d4}\label{class_mu_mo_t_1_1_mu_mo_tview_a5feff4ca83ee97d6e09874496a4975d4}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+plot\+Type@{\+\_\+plot\+Type}}
 \index{\+\_\+plot\+Type@{\+\_\+plot\+Type}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
 \subsubsection{\texorpdfstring{\+\_\+plot\+Type}{\_plotType}}
 {\footnotesize\ttfamily \+\_\+plot\+Type = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
 
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a397d0ee37a222317a1bab7deb1270a13}\label{class_mu_mo_t_1_1_mu_mo_tview_a397d0ee37a222317a1bab7deb1270a13}} 
-\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+widgets@{\+\_\+widgets}}
-\index{\+\_\+widgets@{\+\_\+widgets}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
-\subsubsection{\texorpdfstring{\+\_\+widgets}{\_widgets}}
-{\footnotesize\ttfamily \+\_\+widgets = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
 
+
+Plotting method to use. 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000022}{Todo}]move to bifurcation\+View -\/ rename use of this in S\+SA and mutiagent views \end{DoxyRefDesc}
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a411167eeca51189fabe03f884c7bf92c}\label{class_mu_mo_t_1_1_mu_mo_tview_a411167eeca51189fabe03f884c7bf92c}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!bbox\+\_\+to\+\_\+anchor@{bbox\+\_\+to\+\_\+anchor}}
 \index{bbox\+\_\+to\+\_\+anchor@{bbox\+\_\+to\+\_\+anchor}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}

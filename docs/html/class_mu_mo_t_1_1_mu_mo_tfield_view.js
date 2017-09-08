@@ -1,6 +1,7 @@
 var class_mu_mo_t_1_1_mu_mo_tfield_view =
 [
-    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#adb85cdc492587d5ec0fcc2bebbae5adc", null ],
+    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#a78d68546a28ea07c46f5f4a44ddfa49a", null ],
+    [ "_get_field", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#aefbf0e354438e17ab6d48e2d368f8540", null ],
     [ "_get_field2d", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#a854f5f5badcda687eff8a999e6700cb7", null ],
     [ "_get_field3d", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#a7e92a660924e058d070dd1799c27f126", null ],
     [ "_plot_field", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#a50d59419298116f738a98c864afb9d89", null ],

@@ -1,17 +1,5 @@
 var NAVTREEINDEX1 =
 {
-"functions_t.html":[3,3,0,14],
-"functions_v.html":[3,3,0,15],
-"functions_vars.html":[3,3,2],
-"functions_w.html":[3,3,0,16],
-"functions_x.html":[3,3,0,17],
-"functions_y.html":[3,3,0,18],
-"hierarchy.html":[3,2],
-"index.html":[],
-"md__r_e_a_d_m_e.html":[0],
-"namespace_mu_mo_t.html":[2,0,0],
-"namespace_mu_mo_t.html":[3,0,0],
-"namespacemembers.html":[2,1,0],
 "namespacemembers_func.html":[2,1,1],
 "namespacemembers_vars.html":[2,1,2],
 "namespaces.html":[2,0],

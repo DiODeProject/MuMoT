@@ -369,7 +369,7 @@ class MuMoTmodel:
 #         paramDict['maxTime'] = maxTime
         paramDict['initialState'] = initialState
         paramDict['netType'] = netType
-        modelView = MuMoTmultiagentView(self, viewController, paramDict, **kwargs)
+        modelView = MuMoTmultiagentView(self, viewController, **kwargs)
         viewController.setView(modelView)
         modelView._plot_timeEvolution()
 #         viewController.setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
@@ -434,7 +434,7 @@ class MuMoTmodel:
         
         paramDict = {}
         paramDict['initialState'] = initialState
-        modelView = MuMoTSSAView(self, viewController, paramDict, **kwargs)
+        modelView = MuMoTSSAView(self, viewController, **kwargs)
         viewController.setView(modelView)
         modelView._plot_timeEvolution()
         
@@ -785,6 +785,7 @@ class MuMoTcontroller:
         for i in np.arange(0, len(self._paramValues)):
             # UGLY!
             self._paramValues[i] = self._widgets[i].value
+            re
             
     def _downloadFile(self, data_to_download):
         js_download = """
@@ -1098,32 +1099,55 @@ class MuMoTmultiagentController(MuMoTcontroller):
 
 ## class describing a view on a model
 class MuMoTview:
+    ## Model view is on
     _mumotModel = None
+    ## Figure/axis object to plot view to
     _figure = None
+    ## Unique figure number
     _figureNum = None
-    _widgets = None
+#    _widgets = None
+    ## Controller that controls this view @todo - could become None
     _controller = None
+    ## Summary logs of view behaviour
     _logs = None
+    ## Plotting method to use @todo move to bifurcationView - rename use of this in SSA and mutiagent views
     _plotType = None
+    ## parameter names when used without controller
+    _paramNames = None
+    ## parameter values when used without controller
+    _paramValues = None
+
     
-    def __init__(self, model, controller):
+    def __init__(self, model, controller, figure = None, params = None):
         global figureCounter
         self._figureNum = figureCounter
         figureCounter += 1
         self._mumotModel = model
         self._controller = controller
         self._logs = []
+        if params != None:
+            self._paramNames, self._paramValues = zip(*params)
         
         plt.ion()
         with warnings.catch_warnings(): # ignore warnings when plt.hold has been deprecated in installed libraries - still need to try plt.hold(True) in case older libraries in use
             warnings.filterwarnings("ignore",category=MatplotlibDeprecationWarning)
             warnings.filterwarnings("ignore",category=UserWarning)
             plt.hold(True)  
-        self._figure = plt.figure(self._figureNum) 
+        if figure == None:
+            self._figure = plt.figure(self._figureNum) 
+        else:
+            self._figure = figure
 
     def _log(self, analysis):
         print("Starting", analysis, "with parameters ", end='')
-        for i in zip(self._controller._paramNames, self._controller._paramValues):
+        if self._controller != None:
+            paramNames = self._controller._paramNames
+            paramValues = self._controller._paramValues
+        else:
+            paramNames = self._paramNames
+            paramValues = self._paramValues
+
+        for i in zip(paramNames, paramValues):
             print('(' + i[0] + '=' + repr(i[1]) + '), ', end='')
         print("at", datetime.datetime.now())
         
@@ -1203,8 +1227,8 @@ class MuMoTfieldView(MuMoTview):
     ## class-global dictionary of memoised masks with (mesh size, dimension) as key
     _mask = {} 
     
-    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
-        super().__init__(model, controller)
+    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
+        super().__init__(model, controller, figure, params)
 
         self._stateVariable1 = Symbol(stateVariable1)
         self._stateVariable2 = Symbol(stateVariable2)
@@ -1219,14 +1243,26 @@ class MuMoTfieldView(MuMoTview):
         plt.figure(self._figureNum)
         plt.clf()
 
+    ## helper for _get_field_2d() and _get_field_3d()
+    def _get_field(self):
+        if self._controller != None:
+            self._controller._update_params_from_widgets()
+            paramNames = self._controller._paramNames
+            paramValues = self._controller._paramValues            
+        else:
+            paramNames = self._paramNames
+            paramValues = self._paramValues            
+        funcs = self._mumotModel._getFuncs()
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        
+        return (funcs, argNamesSymb, argDict, paramNames, paramValues)
+
     ## get 2-dimensional field for plotting
     def _get_field2d(self, kind, meshPoints):
-        self._controller._update_params_from_widgets()
         with io.capture_output() as log:
             self._log(kind)
-            funcs = self._mumotModel._getFuncs()
-            argNamesSymb = list(map(Symbol, self._controller._paramNames))
-            argDict = dict(zip(argNamesSymb, self._controller._paramValues))
+            (funcs, argNamesSymb, argDict, paramNames, paramValues) = self._get_field()
             self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] ## @todo system size defined to be one
             mask = self._mask.get((meshPoints, 2))
             if mask is None:
@@ -1236,8 +1272,8 @@ class MuMoTfieldView(MuMoTview):
                 np.fill_diagonal(mask, False)
                 mask = np.flipud(mask)
                 self._mask[(meshPoints, 2)] = mask
-            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
-            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
+            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
+            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
             self._Xdot = np.ma.array(self._Xdot, mask=mask)
             self._Ydot = np.ma.array(self._Ydot, mask=mask)        
@@ -1245,12 +1281,9 @@ class MuMoTfieldView(MuMoTview):
 
     ## get 3-dimensional field for plotting        
     def _get_field3d(self, kind, meshPoints):
-        self._controller._update_params_from_widgets()
         with io.capture_output() as log:
             self._log(kind)
-            funcs = self._mumotModel._getFuncs()
-            argNamesSymb = list(map(Symbol, self._controller._paramNames))
-            argDict = dict(zip(argNamesSymb, self._controller._paramValues))
+            (funcs, argNamesSymb, argDict, paramNames, paramValues) = self._get_field()
             self._Z, self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] ## @todo system size defined to be one
             mask = self._mask.get((meshPoints, 3))
             if mask is None:
@@ -1262,9 +1295,9 @@ class MuMoTfieldView(MuMoTview):
                 mask = self._X + self._Y + self._Z >= 1
 #                mask = mask.astype(int)
                 self._mask[(meshPoints, 3)] = mask
-            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple3d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple3d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple3d(self._controller._paramNames, self._controller._paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
             self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2 + self._Zdot ** 2))
 #            self._Xdot = self._Xdot * mask
 #            self._Ydot = self._Ydot * mask
@@ -1303,8 +1336,8 @@ class MuMoTbifurcationView(MuMoTview):
     _stateVariable1 = None
     _stateVariable2 = None
 
-    def __init__(self, model, controller, paramDict, bifurcationParameter, stateVariable1, stateVariable2, **kwargs):
-        super().__init__(model, controller)
+    def __init__(self, model, controller, paramDict, bifurcationParameter, stateVariable1, stateVariable2, figure = None, params = None, **kwargs):
+        super().__init__(model, controller, figure, params)
 
         with io.capture_output() as log:      
             name = 'MuMoT Model' + str(id(self))
@@ -1333,7 +1366,7 @@ class MuMoTbifurcationView(MuMoTview):
                 pass
             else:
                 ## 3-d bifurcation diagram (@todo: currently unsupported)
-                self._stateVariable2 = stateVariable2
+                self._stateVariable3 = stateVariable3
                 assert false
                 
             # Prepare the system to start close to a steady state
@@ -1434,8 +1467,8 @@ class MuMoTmultiagentView(MuMoTview):
     _arena_height = 1
     _plot = None
 
-    def __init__(self, model, controller, paramDict, **kwargs):
-        super().__init__(model, controller)
+    def __init__(self, model, controller, figure = None, **kwargs):
+        super().__init__(model, controller, figure)
 
         with io.capture_output() as log:
             colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
@@ -1452,7 +1485,7 @@ class MuMoTmultiagentView(MuMoTview):
         else:
             self._plotType = 'plain'
             
-    
+    ## todo make consistent with parent implementation (paramValues vs widgets)    
     def _log(self, analysis):
         print("Starting", analysis, "with parameters ", end='')
         for w in self._controller._widgetDict.values():
@@ -1866,8 +1899,8 @@ class MuMoTSSAView(MuMoTview):
     ## the effect of each rule
     _ruleChanges = None 
 
-    def __init__(self, model, controller, paramDict, **kwargs):
-        super().__init__(model, controller)
+    def __init__(self, model, controller, figure = None, **kwargs):
+        super().__init__(model, controller, figure)
 
         with io.capture_output() as log:
             colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
@@ -1884,6 +1917,7 @@ class MuMoTSSAView(MuMoTview):
         else:
             self._plotType = 'plain'
     
+    ## todo make consistent with parent implementation (paramValues vs widgets)
     def _log(self, analysis):
         print("Starting", analysis, "with parameters ", end='')
         for w in self._controller._widgetDict.values():
