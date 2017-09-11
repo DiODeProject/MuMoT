@@ -700,25 +700,32 @@ class _Rule:
 ## class describing a controller for a model view
 class MuMoTcontroller:
     _view = None
-    _paramValues = None
+    ## ordered list of parameter names, to control _view
     _paramNames = None
+    ## ordered list of parameter values, to control _view
+    _paramValues = None
+    ## dictionary of LaTeX labels for widgets, with parameter name as key
     _paramLabelDict = None
+    ## list of widgets
     _widgets = None
+    ## dictionary of controller widgets, with parameter name as key
     _widgetDict = None
+    ## widget for simple error messages to be displayed to user during interaction
     _errorMessage = None
     ## progress bar @todo: is this best put in base class when it is not always used?
     _progressBar = None
-    _progressBar_multi = None # used two progress bars, otherwise the previous cell bar (where controller is created) does not react anymore 
+    ## used two progress bars, otherwise the previous cell bar (where controller is created) does not react anymore  @todo: is this best put in base class when it is not always used?
+    _progressBar_multi = None 
 
     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot):
         self._paramValues = []
         self._paramNames = []
         self._paramLabelDict = paramLabelDict
         self._widgets = []
-        
 #         self._ratesDict = {}
         self._widgetDict = {}
-        for pair in zip(paramNames, paramValues):
+        unsortedPairs = zip(paramNames, paramValues)
+        for pair in sorted(unsortedPairs):
             widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
                                          max = pair[1][2], step = pair[1][3], 
                                          description = r'\(' + self._paramLabelDict.get(pair[0],pair[0]) + r'\)', 
