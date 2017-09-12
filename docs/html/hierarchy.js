@@ -3,6 +3,7 @@ var hierarchy =
     [ "_Rule", "class_mu_mo_t_1_1___rule.html", null ],
     [ "MuMoTcontroller", "class_mu_mo_t_1_1_mu_mo_tcontroller.html", [
       [ "MuMoTmultiagentController", "class_mu_mo_t_1_1_mu_mo_tmultiagent_controller.html", null ],
+      [ "MuMoTmultiController", "class_mu_mo_t_1_1_mu_mo_tmulti_controller.html", null ],
       [ "MuMoTSSAController", "class_mu_mo_t_1_1_mu_mo_t_s_s_a_controller.html", null ]
     ] ],
     [ "MuMoTdefault", "class_mu_mo_t_1_1_mu_mo_tdefault.html", null ],

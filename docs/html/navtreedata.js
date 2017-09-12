@@ -30,7 +30,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "_mu_mo_t_8py.html",
-"namespacemembers_func.html"
+"functions_e.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

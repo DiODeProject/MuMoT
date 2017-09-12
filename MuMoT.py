@@ -20,6 +20,7 @@ from matplotlib import pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 from sympy import *
+import math
 import PyDSTool as dst
 from graphviz import Digraph
 from process_latex import process_sympy
@@ -35,7 +36,7 @@ from matplotlib.cbook import MatplotlibDeprecationWarning
 from mpl_toolkits.mplot3d import axes3d
 import networkx as nx #@UnresolvedImport
 from enum import Enum
-import ast
+#import ast
 #from __builtin__ import None
 #from numpy.oldnumeric.fix_default_axis import _args3
 #from matplotlib.offsetbox import kwargs
@@ -46,6 +47,11 @@ get_ipython().magic('matplotlib nbagg')
 figureCounter = 1 # global figure counter for model views
 
 MAX_RANDOM_SEED = 4294967295
+INITIAL_RATE_VALUE = 10.0
+RATE_BOUND = 100.0
+RATE_STEP = 0.1
+MULTIPLOT_COLUMNS = 2
+
 
 # enum possible Network types
 class NetworkType(Enum):
@@ -526,10 +532,10 @@ class MuMoTmodel:
         return self._solutions
 
     ## general controller constructor with all rates as free parameters
-    def _controller(self, contRefresh, **kwargs):
-        initialRateValue = 4 ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (-100.0, 100.0) ## @todo choose limit values sensibly
-        rateStep = 0.1 ## @todo choose rate step sensibly                
+    def _controller(self, contRefresh, displayController = True, **kwargs):
+        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
+        rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
+        rateStep = RATE_STEP ## @todo choose rate step sensibly                
 
         # construct controller
         paramValues = []
@@ -537,7 +543,7 @@ class MuMoTmodel:
         for rate in self._rates:
             paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
             paramNames.append(str(rate))
-        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh)
+        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, **kwargs)
 
         return viewController
 
@@ -710,6 +716,8 @@ class MuMoTcontroller:
     _widgets = None
     ## dictionary of controller widgets, with parameter name as key
     _widgetDict = None
+    ## replot function widgets have been assigned (for use by MuMoTmultiController)
+    _replotFunction = None
     ## widget for simple error messages to be displayed to user during interaction
     _errorMessage = None
     ## progress bar @todo: is this best put in base class when it is not always used?
@@ -717,13 +725,15 @@ class MuMoTcontroller:
     ## used two progress bars, otherwise the previous cell bar (where controller is created) does not react anymore  @todo: is this best put in base class when it is not always used?
     _progressBar_multi = None 
 
-    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot):
+    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, **kwargs):
+        silent = kwargs.get('silent', False)
         self._paramValues = []
         self._paramNames = []
         self._paramLabelDict = paramLabelDict
         self._widgets = []
 #         self._ratesDict = {}
         self._widgetDict = {}
+        self._silent = silent
         unsortedPairs = zip(paramNames, paramValues)
         for pair in sorted(unsortedPairs):
             widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
@@ -733,16 +743,19 @@ class MuMoTcontroller:
             self._widgetDict[pair[0]] = widget
             # widget.on_trait_change(replotFunction, 'value')
             self._widgets.append(widget)
-            display(widget)
+            if not(silent):
+                display(widget)
 #             self._ratesDict[pair[0]] = pair[1][0]
         widget = widgets.HTML(value = '')
         self._errorMessage = widget
-        display(self._errorMessage)
+        if not(silent):
+            display(self._errorMessage)
         self._paramNames = paramNames
         for triple in paramValues:
             self._paramValues.append(triple[0])
             
     def setReplotFunction(self, replotFunction):
+        self._replotFunction = replotFunction
         for widget in self._widgets:
             widget.on_trait_change(replotFunction, 'value')
 
@@ -1123,27 +1136,19 @@ class MuMoTview:
     _paramNames = None
     ## parameter values when used without controller
     _paramValues = None
-
+    ## silent flag (TRUE = do not try to acquire figure handle from pyplot)
+    _silent = None
     
-    def __init__(self, model, controller, figure = None, params = None):
-        global figureCounter
-        self._figureNum = figureCounter
-        figureCounter += 1
+    def __init__(self, model, controller, figure = None, params = None, **kwargs):
+        self._silent = kwargs.get('silent', False)
         self._mumotModel = model
         self._controller = controller
         self._logs = []
         if params != None:
             self._paramNames, self._paramValues = zip(*params)
         
-        plt.ion()
-        with warnings.catch_warnings(): # ignore warnings when plt.hold has been deprecated in installed libraries - still need to try plt.hold(True) in case older libraries in use
-            warnings.filterwarnings("ignore",category=MatplotlibDeprecationWarning)
-            warnings.filterwarnings("ignore",category=UserWarning)
-            plt.hold(True)  
-        if figure == None:
-            self._figure = plt.figure(self._figureNum) 
-        else:
-            self._figure = figure
+        if not(self._silent):
+            _buildFig(self, figure)
 
     def _log(self, analysis):
         print("Starting", analysis, "with parameters ", end='')
@@ -1209,6 +1214,85 @@ class MuMoTview:
         print("ERROR! The command multirun is not supported for this view.")
         return None
 
+## multi-view view
+class MuMoTmultiController(MuMoTcontroller):
+    ## view list
+    _views = None
+    ## replot function list to invoke on views
+    _replotFunctions = None
+    ## unlike other controllers, a multi view controller has a figure/axis object to plot collected views to
+    _figure = None
+    ## unlike other controllers, a multi view controller has a unique figure number for collected views
+    _figureNum = None
+    ## axes are used for subplots ('shareAxes = True')
+    _axes = None
+    ## subplot rows
+    _numRows = None
+    ## subplot columns
+    _numColumns = None
+    ## use common axes for all plots (False = use subplots)
+    _shareAxes = None
+
+    def __init__(self, controllers, **kwargs):
+        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
+        rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
+        rateStep = RATE_STEP ## @todo choose rate step sensibly                
+
+        self._views = []
+        self._replotFunctions = []
+        paramNames = []
+        paramValues = []
+        paramValueDict = {}
+        paramLabelDict = {}
+        for controller in controllers:
+            for name, value in zip(controller._paramNames, controller._paramValues):
+                paramValueDict[name] = value
+            paramLabelDict.update(controller._paramLabelDict)
+            self._views.append(controller._view)
+        for name, value in paramValueDict.items():
+            paramNames.append(name)
+            paramValues.append((value, rateLimits[0], rateLimits[1], rateStep))
+
+            
+        for view in self._views:
+            self._replotFunctions.append(view._controller._replotFunction)
+            view._controller = self
+        
+        super().__init__(paramValues, paramNames, paramLabelDict, False, **kwargs)
+        
+        for widget in self._widgets:
+            widget.on_trait_change(self._replot, 'value')
+        
+        self._shareAxes = kwargs.get('shareAxes', False)
+        if self._shareAxes:
+            _buildFig(self)
+            for view in self._views:
+                view._figure = self._figure
+        else:
+            self._numColumns = MULTIPLOT_COLUMNS
+            self._numRows = math.ceil(len(self._views) / self._numColumns)
+            self._figure, self._axes = plt.subplots(self._numRows, self._numColumns)
+                
+        self._replot()
+
+    def _replot(self):
+        if self._shareAxes:
+            plt.figure(self._figureNum)
+            plt.clf()
+            # hold should already be on
+            for func in self._replotFunctions:
+                func()
+        else:
+            subplotNum = 0
+            for func in self._replotFunctions:
+                if self._numRows > 1: # this is really annoying, Python developers!
+                    self._axes[math.floor(subplotNum / self._numColumns)][subplotNum % self._numColumns].cla()
+                else:
+                    self._axes[subplotNum].cla()                    
+                func()
+                subplotNum += 1
+
+
 ## field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
 class MuMoTfieldView(MuMoTview):
     ## 1st state variable (x-dimension)
@@ -1235,7 +1319,8 @@ class MuMoTfieldView(MuMoTview):
     _mask = {} 
     
     def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
-        super().__init__(model, controller, figure, params)
+        silent = kwargs.get('silent', False)
+        super().__init__(model, controller, figure, params, **kwargs)
 
         self._stateVariable1 = Symbol(stateVariable1)
         self._stateVariable2 = Symbol(stateVariable2)
@@ -1243,12 +1328,14 @@ class MuMoTfieldView(MuMoTview):
             self._stateVariable3 = Symbol(stateVariable3)
         _mask = {}
 
-        self._plot_field()
+        if not(silent):
+            self._plot_field()
             
 
     def _plot_field(self):
-        plt.figure(self._figureNum)
-        plt.clf()
+        if not(self._silent):
+            plt.figure(self._figureNum)
+            plt.clf()
 
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
@@ -2257,3 +2344,18 @@ def _raiseModelError(expected, read, rule):
     raise SyntaxError("Expected " + expected + " but read '" + read + "' in rule: " + rule)
 
 
+## generic method for constructing figures in MuMoTview and MuMoTmultiController classes
+def _buildFig(object, figure = None):
+    global figureCounter
+    object._figureNum = figureCounter
+    figureCounter += 1
+    plt.ion()
+    with warnings.catch_warnings(): # ignore warnings when plt.hold has been deprecated in installed libraries - still need to try plt.hold(True) in case older libraries in use
+        warnings.filterwarnings("ignore",category=MatplotlibDeprecationWarning)
+        warnings.filterwarnings("ignore",category=UserWarning)
+        plt.hold(True)  
+    if figure == None:
+        object._figure = plt.figure(object._figureNum) 
+    else:
+        object._figure = figure
+    

@@ -1,6 +1,6 @@
 var class_mu_mo_t_1_1_mu_mo_tcontroller =
 [
-    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a73251532d0348adaeafe8a178cfc6a73", null ],
+    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a833cd489e067743a190b434eea451095", null ],
     [ "_downloadFile", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#ab703aa8fe14c83d5f12fa82d4e2c42d9", null ],
     [ "_update_params_from_widgets", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#add4eacb8e812feeca1d4b2538e3bd6e0", null ],
     [ "multirun", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#aa74bfc216071ff6b768c7a584917bfc6", null ],
@@ -13,6 +13,8 @@ var class_mu_mo_t_1_1_mu_mo_tcontroller =
     [ "_paramValues", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a04608181fa27d9aad4983d3694f7ab17", null ],
     [ "_progressBar", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a018864aa22d2adb0d3958fb0adbce8e2", null ],
     [ "_progressBar_multi", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a1da52cde6b2b94a1005eaa6898d2f8c5", null ],
+    [ "_replotFunction", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a04e66f2b7e3c67b0e96f318acbfa7f0e", null ],
+    [ "_silent", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a909146a3c119c927727c7d533042b184", null ],
     [ "_view", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a27dd8543b5188cdfe40f622d267fe2c5", null ],
     [ "_widgetDict", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a76e960ae74fc597cd22f7132507eaa20", null ],
     [ "_widgets", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a397d0ee37a222317a1bab7deb1270a13", null ]

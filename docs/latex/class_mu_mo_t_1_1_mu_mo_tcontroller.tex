@@ -14,7 +14,7 @@ Inheritance diagram for Mu\+Mo\+Tcontroller\+:\begin{figure}[H]
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_a73251532d0348adaeafe8a178cfc6a73}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, param\+Values, param\+Names, param\+Label\+Dict, continuous\+Replot)
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_a833cd489e067743a190b434eea451095}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, param\+Values, param\+Names, param\+Label\+Dict, continuous\+Replot, kwargs)
 \item 
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_aafc1e69cab41071217fe6676a8089249}{set\+Replot\+Function} (self, replot\+Function)
 \item 
@@ -31,6 +31,11 @@ def \hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_add4eacb8e812feeca1d4b2538e3b
 \item 
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_ab703aa8fe14c83d5f12fa82d4e2c42d9}{\+\_\+download\+File} (self, data\+\_\+to\+\_\+download)
 \end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_a909146a3c119c927727c7d533042b184}{\+\_\+silent}
+\end{DoxyCompactItemize}
 \subsection*{Static Private Attributes}
 \begin{DoxyCompactItemize}
 \item 
@@ -46,6 +51,8 @@ def \hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_ab703aa8fe14c83d5f12fa82d4e2c
 \begin{DoxyCompactList}\small\item\em list of widgets \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_a76e960ae74fc597cd22f7132507eaa20}{\+\_\+widget\+Dict} = None
 \begin{DoxyCompactList}\small\item\em dictionary of controller widgets, with parameter name as key \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_a04e66f2b7e3c67b0e96f318acbfa7f0e}{\+\_\+replot\+Function} = None
+\begin{DoxyCompactList}\small\item\em replot function widgets have been assigned (for use by \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_controller}{Mu\+Mo\+Tmulti\+Controller}) \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_afb9cc1f1f0c08393b454f526842425cc}{\+\_\+error\+Message} = None
 \begin{DoxyCompactList}\small\item\em widget for simple error messages to be displayed to user during interaction \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_a018864aa22d2adb0d3958fb0adbce8e2}{\+\_\+progress\+Bar} = None
@@ -58,11 +65,11 @@ def \hyperlink{class_mu_mo_t_1_1_mu_mo_tcontroller_ab703aa8fe14c83d5f12fa82d4e2c
 class describing a controller for a model view 
 
 \subsection{Constructor \& Destructor Documentation}
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tcontroller_a73251532d0348adaeafe8a178cfc6a73}\label{class_mu_mo_t_1_1_mu_mo_tcontroller_a73251532d0348adaeafe8a178cfc6a73}} 
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tcontroller_a833cd489e067743a190b434eea451095}\label{class_mu_mo_t_1_1_mu_mo_tcontroller_a833cd489e067743a190b434eea451095}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
 \index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
 \subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
-{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{param\+Values,  }\item[{}]{param\+Names,  }\item[{}]{param\+Label\+Dict,  }\item[{}]{continuous\+Replot }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{param\+Values,  }\item[{}]{param\+Names,  }\item[{}]{param\+Label\+Dict,  }\item[{}]{continuous\+Replot,  }\item[{}]{kwargs }\end{DoxyParamCaption})}
 
 
 
@@ -170,6 +177,22 @@ used two progress bars, otherwise the previous cell bar (where controller is cre
 
 \begin{DoxyRefDesc}{Todo}
 \item[\hyperlink{todo__todo000019}{Todo}]\+: is this best put in base class when it is not always used? \end{DoxyRefDesc}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tcontroller_a04e66f2b7e3c67b0e96f318acbfa7f0e}\label{class_mu_mo_t_1_1_mu_mo_tcontroller_a04e66f2b7e3c67b0e96f318acbfa7f0e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+replot\+Function@{\+\_\+replot\+Function}}
+\index{\+\_\+replot\+Function@{\+\_\+replot\+Function}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
+\subsubsection{\texorpdfstring{\+\_\+replot\+Function}{\_replotFunction}}
+{\footnotesize\ttfamily \+\_\+replot\+Function = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+replot function widgets have been assigned (for use by \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_controller}{Mu\+Mo\+Tmulti\+Controller}) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tcontroller_a909146a3c119c927727c7d533042b184}\label{class_mu_mo_t_1_1_mu_mo_tcontroller_a909146a3c119c927727c7d533042b184}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+silent@{\+\_\+silent}}
+\index{\+\_\+silent@{\+\_\+silent}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
+\subsubsection{\texorpdfstring{\+\_\+silent}{\_silent}}
+{\footnotesize\ttfamily \+\_\+silent\hspace{0.3cm}{\ttfamily [private]}}
+
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tcontroller_a27dd8543b5188cdfe40f622d267fe2c5}\label{class_mu_mo_t_1_1_mu_mo_tcontroller_a27dd8543b5188cdfe40f622d267fe2c5}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+view@{\+\_\+view}}
 \index{\+\_\+view@{\+\_\+view}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}

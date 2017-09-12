@@ -110,8 +110,8 @@ Inheritance diagram for MuMoTview:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:afc93b937eb36816d9e603a372788f55b"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_tview.html#afc93b937eb36816d9e603a372788f55b">__init__</a> (self, model, controller, figure=None, params=None)</td></tr>
-<tr class="separator:afc93b937eb36816d9e603a372788f55b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a367325b3bd7ca4a7b7ec4107f9aa6a16"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_tview.html#a367325b3bd7ca4a7b7ec4107f9aa6a16">__init__</a> (self, model, controller, figure=None, params=None, kwargs)</td></tr>
+<tr class="separator:a367325b3bd7ca4a7b7ec4107f9aa6a16"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aca4d648d909f4722c7e07197675500bb"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_tview.html#aca4d648d909f4722c7e07197675500bb">showLogs</a> (self)</td></tr>
 <tr class="separator:aca4d648d909f4722c7e07197675500bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -177,12 +177,15 @@ Static Private Attributes</h2></td></tr>
 <tr class="memitem:a04608181fa27d9aad4983d3694f7ab17"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_tview.html#a04608181fa27d9aad4983d3694f7ab17">_paramValues</a> = None</td></tr>
 <tr class="memdesc:a04608181fa27d9aad4983d3694f7ab17"><td class="mdescLeft">&#160;</td><td class="mdescRight">parameter values when used without controller  <a href="#a04608181fa27d9aad4983d3694f7ab17">More...</a><br /></td></tr>
 <tr class="separator:a04608181fa27d9aad4983d3694f7ab17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a909146a3c119c927727c7d533042b184"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_tview.html#a909146a3c119c927727c7d533042b184">_silent</a> = None</td></tr>
+<tr class="memdesc:a909146a3c119c927727c7d533042b184"><td class="mdescLeft">&#160;</td><td class="mdescRight">silent flag (TRUE = do not try to acquire figure handle from pyplot)  <a href="#a909146a3c119c927727c7d533042b184">More...</a><br /></td></tr>
+<tr class="separator:a909146a3c119c927727c7d533042b184"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>class describing a view on a model </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="afc93b937eb36816d9e603a372788f55b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afc93b937eb36816d9e603a372788f55b">&#9670;&nbsp;</a></span>__init__()</h2>
+<a id="a367325b3bd7ca4a7b7ec4107f9aa6a16"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a367325b3bd7ca4a7b7ec4107f9aa6a16">&#9670;&nbsp;</a></span>__init__()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -215,7 +218,13 @@ Static Private Attributes</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">&#160;</td>
-          <td class="paramname"><em>params</em> = <code>None</code>&#160;</td>
+          <td class="paramname"><em>params</em> = <code>None</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>kwargs</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -557,6 +566,30 @@ Static Private Attributes</h2></td></tr>
 
 <p>Plotting method to use. </p>
 <dl class="todo"><dt><b><a class="el" href="todo.html#_todo000023">Todo:</a></b></dt><dd>move to bifurcationView - rename use of this in SSA and mutiagent views </dd></dl>
+
+</div>
+</div>
+<a id="a909146a3c119c927727c7d533042b184"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a909146a3c119c927727c7d533042b184">&#9670;&nbsp;</a></span>_silent</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">_silent = None</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>silent flag (TRUE = do not try to acquire figure handle from pyplot) </p>
 
 </div>
 </div>

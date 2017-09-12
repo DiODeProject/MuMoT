@@ -14,7 +14,7 @@ Inheritance diagram for Mu\+Mo\+Tview\+:\begin{figure}[H]
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_afc93b937eb36816d9e603a372788f55b}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, model, controller, figure=None, params=None)
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a367325b3bd7ca4a7b7ec4107f9aa6a16}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, model, controller, figure=None, params=None, kwargs)
 \item 
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_aca4d648d909f4722c7e07197675500bb}{show\+Logs} (self)
 \end{DoxyCompactItemize}
@@ -70,18 +70,20 @@ def \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a51d421aacb4cd83af5f1c2e60c3dff9c}{
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_ac7734326ac8dbbf9bd0d2c9838633195}{\+\_\+param\+Names} = None
 \begin{DoxyCompactList}\small\item\em parameter names when used without controller \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a04608181fa27d9aad4983d3694f7ab17}{\+\_\+param\+Values} = None
-\begin{DoxyCompactList}\small\item\em parameter values when used without controller \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em parameter values when used without controller \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tview_a909146a3c119c927727c7d533042b184}{\+\_\+silent} = None
+\begin{DoxyCompactList}\small\item\em silent flag (T\+R\+UE = do not try to acquire figure handle from pyplot) \end{DoxyCompactList}\end{DoxyCompactItemize}
 
 
 \subsection{Detailed Description}
 class describing a view on a model 
 
 \subsection{Constructor \& Destructor Documentation}
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_afc93b937eb36816d9e603a372788f55b}\label{class_mu_mo_t_1_1_mu_mo_tview_afc93b937eb36816d9e603a372788f55b}} 
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a367325b3bd7ca4a7b7ec4107f9aa6a16}\label{class_mu_mo_t_1_1_mu_mo_tview_a367325b3bd7ca4a7b7ec4107f9aa6a16}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
 \index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
 \subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
-{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{model,  }\item[{}]{controller,  }\item[{}]{figure = {\ttfamily None},  }\item[{}]{params = {\ttfamily None} }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{model,  }\item[{}]{controller,  }\item[{}]{figure = {\ttfamily None},  }\item[{}]{params = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
 
 
 
@@ -204,6 +206,16 @@ Plotting method to use.
 
 \begin{DoxyRefDesc}{Todo}
 \item[\hyperlink{todo__todo000023}{Todo}]move to bifurcation\+View -\/ rename use of this in S\+SA and mutiagent views \end{DoxyRefDesc}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a909146a3c119c927727c7d533042b184}\label{class_mu_mo_t_1_1_mu_mo_tview_a909146a3c119c927727c7d533042b184}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+silent@{\+\_\+silent}}
+\index{\+\_\+silent@{\+\_\+silent}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
+\subsubsection{\texorpdfstring{\+\_\+silent}{\_silent}}
+{\footnotesize\ttfamily \+\_\+silent = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+silent flag (T\+R\+UE = do not try to acquire figure handle from pyplot) 
+
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tview_a411167eeca51189fabe03f884c7bf92c}\label{class_mu_mo_t_1_1_mu_mo_tview_a411167eeca51189fabe03f884c7bf92c}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!bbox\+\_\+to\+\_\+anchor@{bbox\+\_\+to\+\_\+anchor}}
 \index{bbox\+\_\+to\+\_\+anchor@{bbox\+\_\+to\+\_\+anchor}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
