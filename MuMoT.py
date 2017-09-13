@@ -1234,63 +1234,83 @@ class MuMoTmultiController(MuMoTcontroller):
     _shareAxes = None
 
     def __init__(self, controllers, **kwargs):
+        global figureCounter
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
         rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly                
 
+        self._shareAxes = kwargs.get('shareAxes', False)
+        self._silent = kwargs.get('silent', False)
         self._views = []
         self._replotFunctions = []
         paramNames = []
         paramValues = []
         paramValueDict = {}
         paramLabelDict = {}
+        subPlotNum = 1
         for controller in controllers:
             for name, value in zip(controller._paramNames, controller._paramValues):
                 paramValueDict[name] = value
             paramLabelDict.update(controller._paramLabelDict)
-            self._views.append(controller._view)
+            if controller._view == None: ## presume this controller is a multi controller (@todo check?)
+                for view in controller._views:
+                    self._views.append(view)                    
+                    if view._controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
+                        for func in view._controller._replotFunctions:
+                            self._replotFunctions.append((func, subPlotNum))                    
+                    else:
+                        self._replotFunctions.append((view._controller._replotFunction, subPlotNum))                    
+            else:
+                self._views.append(controller._view)
+                if controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
+                    for func in controller._replotFunctions:
+                        self._replotFunctions.append((func, subPlotNum))                    
+                else:
+                    self._replotFunctions.append((controller._replotFunction, subPlotNum))                    
+            subPlotNum += 1
+
         for name, value in paramValueDict.items():
             paramNames.append(name)
             paramValues.append((value, rateLimits[0], rateLimits[1], rateStep))
-
             
-        for view in self._views:
-            self._replotFunctions.append(view._controller._replotFunction)
-            view._controller = self
+#         for view in self._views:
+#             if view._controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
+#                 for func in view._controller._replotFunctions:
+#                     self._replotFunctions.append(func)                    
+#             else:
+#                 self._replotFunctions.append(view._controller._replotFunction)
+#             view._controller = self
         
         super().__init__(paramValues, paramNames, paramLabelDict, False, **kwargs)
         
         for widget in self._widgets:
             widget.on_trait_change(self._replot, 'value')
-        
-        self._shareAxes = kwargs.get('shareAxes', False)
-        if self._shareAxes:
-            _buildFig(self)
-            for view in self._views:
-                view._figure = self._figure
-        else:
+
+        if not(self._shareAxes):
             self._numColumns = MULTIPLOT_COLUMNS
             self._numRows = math.ceil(len(self._views) / self._numColumns)
-            self._figure, self._axes = plt.subplots(self._numRows, self._numColumns)
-                
-        self._replot()
+
+        for view in self._views:
+            view._figure = self._figure
+            view._figureNum = self._figureNum
+
+        if not(self._silent):              
+            _buildFig(self)
+            self._replot()
 
     def _replot(self):
+        plt.figure(self._figureNum)
+        plt.clf()
         if self._shareAxes:
-            plt.figure(self._figureNum)
-            plt.clf()
             # hold should already be on
-            for func in self._replotFunctions:
+            for func, subPlotNum in self._replotFunctions:
                 func()
         else:
-            subplotNum = 0
-            for func in self._replotFunctions:
-                if self._numRows > 1: # this is really annoying, Python developers!
-                    self._axes[math.floor(subplotNum / self._numColumns)][subplotNum % self._numColumns].cla()
-                else:
-                    self._axes[subplotNum].cla()                    
+#            subplotNum = 1
+            for func, subPlotNum in self._replotFunctions:
+                plt.subplot(self._numRows, self._numColumns, subPlotNum)
                 func()
-                subplotNum += 1
+#                subplotNum += 1
 
 
 ## field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
@@ -1333,7 +1353,7 @@ class MuMoTfieldView(MuMoTview):
             
 
     def _plot_field(self):
-        if not(self._silent):
+        if not(self._silent): ## @todo is this necessary?
             plt.figure(self._figureNum)
             plt.clf()
 
