@@ -9,6 +9,7 @@ var namespace_mu_mo_t =
     [ "MuMoTmultiagentController", "class_mu_mo_t_1_1_mu_mo_tmultiagent_controller.html", "class_mu_mo_t_1_1_mu_mo_tmultiagent_controller" ],
     [ "MuMoTmultiagentView", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view" ],
     [ "MuMoTmultiController", "class_mu_mo_t_1_1_mu_mo_tmulti_controller.html", "class_mu_mo_t_1_1_mu_mo_tmulti_controller" ],
+    [ "MuMoTmultiView", "class_mu_mo_t_1_1_mu_mo_tmulti_view.html", "class_mu_mo_t_1_1_mu_mo_tmulti_view" ],
     [ "MuMoTSSAController", "class_mu_mo_t_1_1_mu_mo_t_s_s_a_controller.html", "class_mu_mo_t_1_1_mu_mo_t_s_s_a_controller" ],
     [ "MuMoTSSAView", "class_mu_mo_t_1_1_mu_mo_t_s_s_a_view.html", "class_mu_mo_t_1_1_mu_mo_t_s_s_a_view" ],
     [ "MuMoTstreamView", "class_mu_mo_t_1_1_mu_mo_tstream_view.html", "class_mu_mo_t_1_1_mu_mo_tstream_view" ],

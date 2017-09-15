@@ -2,6 +2,7 @@ var class_mu_mo_t_1_1_mu_mo_tcontroller =
 [
     [ "__init__", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#a833cd489e067743a190b434eea451095", null ],
     [ "_downloadFile", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#ab703aa8fe14c83d5f12fa82d4e2c42d9", null ],
+    [ "_setErrorWidget", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#aef34ced86f7a9b37af011c0536798897", null ],
     [ "_update_params_from_widgets", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#add4eacb8e812feeca1d4b2538e3bd6e0", null ],
     [ "multirun", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#aa74bfc216071ff6b768c7a584917bfc6", null ],
     [ "setReplotFunction", "class_mu_mo_t_1_1_mu_mo_tcontroller.html#aafc1e69cab41071217fe6676a8089249", null ],

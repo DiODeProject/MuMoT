@@ -36,6 +36,7 @@ from matplotlib.cbook import MatplotlibDeprecationWarning
 from mpl_toolkits.mplot3d import axes3d
 import networkx as nx #@UnresolvedImport
 from enum import Enum
+#from matplotlib.offsetbox import kwargs
 #import ast
 #from __builtin__ import None
 #from numpy.oldnumeric.fix_default_axis import _args3
@@ -746,9 +747,11 @@ class MuMoTcontroller:
             if not(silent):
                 display(widget)
 #             self._ratesDict[pair[0]] = pair[1][0]
-        widget = widgets.HTML(value = '')
+        widget = widgets.HTML()
+        widget.value = 'foo' + str(widget) # @todo why doesn't this work?
         self._errorMessage = widget
         if not(silent):
+            print('bar' + str(self._errorMessage))
             display(self._errorMessage)
         self._paramNames = paramNames
         for triple in paramValues:
@@ -801,11 +804,15 @@ class MuMoTcontroller:
         if downloadData:
             return self._downloadFile(dataRes)
 
+
+    def _setErrorWidget(self, errorWidget):
+        self._errorMessage = errorWidget
+
     def _update_params_from_widgets(self):
         for i in np.arange(0, len(self._paramValues)):
             # UGLY!
             self._paramValues[i] = self._widgets[i].value
-            re
+#            re @todo what was this!?
             
     def _downloadFile(self, data_to_download):
         js_download = """
@@ -1146,9 +1153,25 @@ class MuMoTview:
         self._logs = []
         if params != None:
             self._paramNames, self._paramValues = zip(*params)
+
         
         if not(self._silent):
             _buildFig(self, figure)
+
+    def _resetErrorMessage(self):
+        if self._controller != None:
+            if not (self._silent):
+                self._controller._errorMessage.value= ''
+
+    def _showErrorMessage(self, message):
+        if self._controller != None:
+            self._controller._errorMessage.value = self._controller._errorMessage.value + message
+        else:
+            print(message)
+            
+            
+    def _setLog(self, log):
+        self._logs = log
 
     def _log(self, analysis):
         print("Starting", analysis, "with parameters ", end='')
@@ -1214,16 +1237,10 @@ class MuMoTview:
         print("ERROR! The command multirun is not supported for this view.")
         return None
 
-## multi-view view
-class MuMoTmultiController(MuMoTcontroller):
+## multi-view view (tied closely to MuMoTmultiController)
+class MuMoTmultiView(MuMoTview):
     ## view list
     _views = None
-    ## replot function list to invoke on views
-    _replotFunctions = None
-    ## unlike other controllers, a multi view controller has a figure/axis object to plot collected views to
-    _figure = None
-    ## unlike other controllers, a multi view controller has a unique figure number for collected views
-    _figureNum = None
     ## axes are used for subplots ('shareAxes = True')
     _axes = None
     ## subplot rows
@@ -1233,37 +1250,75 @@ class MuMoTmultiController(MuMoTcontroller):
     ## use common axes for all plots (False = use subplots)
     _shareAxes = None
 
+    def __init__(self, controller, views, **kwargs):
+        super().__init__(None, controller, **kwargs)
+        self._views = views
+        for view in self._views:
+            view._figure = self._figure
+            view._figureNum = self._figureNum
+            view._setLog(self._logs)
+            view._controller = controller
+        self._shareAxes = kwargs.get('shareAxes', False)        
+        if not(self._shareAxes):
+            self._numColumns = MULTIPLOT_COLUMNS
+            self._numRows = math.ceil(len(self._views) / self._numColumns)
+        
+    def _plot(self):
+        plt.figure(self._figureNum)
+        plt.clf()
+        if self._shareAxes:
+            # hold should already be on
+            for func, subPlotNum in self._controller._replotFunctions:
+                func()
+        else:
+#            subplotNum = 1
+            for func, subPlotNum in self._controller._replotFunctions:
+                plt.subplot(self._numRows, self._numColumns, subPlotNum)
+                func()
+#                subplotNum += 1
+
+
+    def _setLog(self, log):
+        for view in self._views:
+            view._setLog(log)
+
+
+## multi-view controller
+class MuMoTmultiController(MuMoTcontroller):
+    ## replot function list to invoke on views
+    _replotFunctions = None
+
     def __init__(self, controllers, **kwargs):
         global figureCounter
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
         rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly                
 
-        self._shareAxes = kwargs.get('shareAxes', False)
         self._silent = kwargs.get('silent', False)
-        self._views = []
         self._replotFunctions = []
         paramNames = []
         paramValues = []
         paramValueDict = {}
         paramLabelDict = {}
+        views = []
         subPlotNum = 1
         for controller in controllers:
             for name, value in zip(controller._paramNames, controller._paramValues):
                 paramValueDict[name] = value
             paramLabelDict.update(controller._paramLabelDict)
-            if controller._view == None: ## presume this controller is a multi controller (@todo check?)
-                for view in controller._views:
-                    self._views.append(view)                    
+            if controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
+                for view in controller._view._views:
+                    views.append(view)         
+                               
                     if view._controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
-                        for func in view._controller._replotFunctions:
+                        for func, foo in view._controller._replotFunctions:
                             self._replotFunctions.append((func, subPlotNum))                    
                     else:
                         self._replotFunctions.append((view._controller._replotFunction, subPlotNum))                    
             else:
-                self._views.append(controller._view)
+                views.append(controller._view)
                 if controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
-                    for func in controller._replotFunctions:
+                    for func, foo in controller._replotFunctions:
                         self._replotFunctions.append((func, subPlotNum))                    
                 else:
                     self._replotFunctions.append((controller._replotFunction, subPlotNum))                    
@@ -1282,35 +1337,21 @@ class MuMoTmultiController(MuMoTcontroller):
 #             view._controller = self
         
         super().__init__(paramValues, paramNames, paramLabelDict, False, **kwargs)
+
+        self._view = MuMoTmultiView(self, views, **kwargs)
+                
+        for controller in controllers:
+            controller._setErrorWidget(self._errorMessage)
+#             if controller._view == None: ## presume this controller is a multi controller (@todo check?)
+#                 controller._widgets = self._widgets
         
         for widget in self._widgets:
-            widget.on_trait_change(self._replot, 'value')
+            widget.on_trait_change(self._view._plot, 'value')
 
-        if not(self._shareAxes):
-            self._numColumns = MULTIPLOT_COLUMNS
-            self._numRows = math.ceil(len(self._views) / self._numColumns)
+        silent = kwargs.get('silent', False)
+        if not(silent):
+            self._view._plot()
 
-        for view in self._views:
-            view._figure = self._figure
-            view._figureNum = self._figureNum
-
-        if not(self._silent):              
-            _buildFig(self)
-            self._replot()
-
-    def _replot(self):
-        plt.figure(self._figureNum)
-        plt.clf()
-        if self._shareAxes:
-            # hold should already be on
-            for func, subPlotNum in self._replotFunctions:
-                func()
-        else:
-#            subplotNum = 1
-            for func, subPlotNum in self._replotFunctions:
-                plt.subplot(self._numRows, self._numColumns, subPlotNum)
-                func()
-#                subplotNum += 1
 
 
 ## field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
@@ -1356,6 +1397,8 @@ class MuMoTfieldView(MuMoTview):
         if not(self._silent): ## @todo is this necessary?
             plt.figure(self._figureNum)
             plt.clf()
+            self._resetErrorMessage()
+        self._showErrorMessage(str(self))
 
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
@@ -1524,7 +1567,7 @@ class MuMoTbifurcationView(MuMoTview):
             
 
     def _plot_bifurcation(self):
-        self._controller._errorMessage.value= ''
+        self._resetErrorMessage()
         with io.capture_output() as log:
             self._log("bifurcation analysis")
             self._pyDScont.newCurve(self._pyDScontArgs)
@@ -1532,20 +1575,20 @@ class MuMoTbifurcationView(MuMoTview):
                 try:
                     self._pyDScont['EQ1'].backward()
                 except:
-                    self._controller._errorMessage.value = self._controller._errorMessage.value + 'Continuation failure (backward)<br>'
+                    self._showErrorMessage('Continuation failure (backward)<br>')
                 try:
                     self._pyDScont['EQ1'].forward()                                  ## @todo: how to choose direction?
                 except:
-                    self._controller._errorMessage.value = self._controller._errorMessage.value + 'Continuation failure (forward)<br>'
+                    self._showErrorMessage('Continuation failure (forward)<br>')
             except ZeroDivisionError:
-                self._controller._errorMessage.value = self._controller._errorMessage.value + 'Division by zero<br>'
+                self._showErrorMessage('Division by zero<br>')                
     #            self._pyDScont['EQ1'].info()
         if self._plotType.lower() == 'mumot':
             ## use internal plotting routines (@todo: not yet supported)
             assert false
         else:
             if self._plotType.lower() != 'pyds':
-                self._controller._errorMessage.value = self._controller._errorMessage.value + 'Unknown plotType argument: using default pyDS tool plotting<br>' 
+                self._showErrorMessage('Unknown plotType argument: using default pyDS tool plotting<br>')    
             if self._stateVariable2 == None:
                 # 2-d bifurcation diagram
                 self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figureNum)
@@ -1824,7 +1867,8 @@ class MuMoTmultiagentView(MuMoTview):
                                 if rule.lhsReactants.count(reactant) == 2: 
                                     ## @todo: treat in a special way the 'self' interaction!
                                     warningMsg = "WARNING!! Reactant " + str(reactant) + " has a self-reaction " + str(rule.rate) + " which is not currently properly handled."
-                                    self._controller._errorMessage.value += warningMsg + "<br>"
+                                    self._showErrorMessage(warningMsg + "<br>")
+                                    
                                     print(warningMsg)
                             
                         elif numReagents > 2:

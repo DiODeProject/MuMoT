@@ -26,6 +26,5 @@ var class_mu_mo_t_1_1_mu_mo_tbifurcation_view =
     [ "stability", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a1df8fcdacfec00fc258a3c72772c2f18", null ],
     [ "StepSize", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a9c25479455e9bdd389f37c4bccfefea1", null ],
     [ "True", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a643a20c0c59588a0f741a6095e2025fd", null ],
-    [ "type", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a7aead736a07eaf25623ad7bfa1f0ee2d", null ],
-    [ "value", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#afcc7a4b78ecd8fa7e713f8cfa0f51017", null ]
+    [ "type", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a7aead736a07eaf25623ad7bfa1f0ee2d", null ]
 ];

@@ -8,6 +8,7 @@ var _mu_mo_t_8py =
     [ "MuMoTSSAController", "class_mu_mo_t_1_1_mu_mo_t_s_s_a_controller.html", "class_mu_mo_t_1_1_mu_mo_t_s_s_a_controller" ],
     [ "MuMoTmultiagentController", "class_mu_mo_t_1_1_mu_mo_tmultiagent_controller.html", "class_mu_mo_t_1_1_mu_mo_tmultiagent_controller" ],
     [ "MuMoTview", "class_mu_mo_t_1_1_mu_mo_tview.html", "class_mu_mo_t_1_1_mu_mo_tview" ],
+    [ "MuMoTmultiView", "class_mu_mo_t_1_1_mu_mo_tmulti_view.html", "class_mu_mo_t_1_1_mu_mo_tmulti_view" ],
     [ "MuMoTmultiController", "class_mu_mo_t_1_1_mu_mo_tmulti_controller.html", "class_mu_mo_t_1_1_mu_mo_tmulti_controller" ],
     [ "MuMoTfieldView", "class_mu_mo_t_1_1_mu_mo_tfield_view.html", "class_mu_mo_t_1_1_mu_mo_tfield_view" ],
     [ "MuMoTstreamView", "class_mu_mo_t_1_1_mu_mo_tstream_view.html", "class_mu_mo_t_1_1_mu_mo_tstream_view" ],

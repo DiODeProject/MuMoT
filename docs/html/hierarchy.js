@@ -15,6 +15,7 @@ var hierarchy =
         [ "MuMoTvectorView", "class_mu_mo_t_1_1_mu_mo_tvector_view.html", null ]
       ] ],
       [ "MuMoTmultiagentView", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html", null ],
+      [ "MuMoTmultiView", "class_mu_mo_t_1_1_mu_mo_tmulti_view.html", null ],
       [ "MuMoTSSAView", "class_mu_mo_t_1_1_mu_mo_t_s_s_a_view.html", null ]
     ] ],
     [ "Enum", null, [

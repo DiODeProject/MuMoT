@@ -102,7 +102,8 @@ Inheritance diagram for MuMoTview:</div>
 <area href="class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html" title="bifurcation view on model " alt="MuMoTbifurcationView" shape="rect" coords="0,56,143,80"/>
 <area href="class_mu_mo_t_1_1_mu_mo_tfield_view.html" title="field view on model (specialised by MuMoTvectorView and MuMoTstreamView) " alt="MuMoTfieldView" shape="rect" coords="153,56,296,80"/>
 <area href="class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html" title="self._pyDScont.newCurve(self._pyDScontArgs) self._pyDScont[&#39;EQ1&#39;].reset(self._pyDSmodel.pars) self._pyDSode.set(pars = self._pyDSmodel.pars) self._pyDScont[&#39;EQ1&#39;].reset() self._pyDScont.update(self._pyDScontArgs) ## " alt="MuMoTmultiagentView" shape="rect" coords="306,56,449,80"/>
-<area href="class_mu_mo_t_1_1_mu_mo_t_s_s_a_view.html" title="agent on networks view on model " alt="MuMoTSSAView" shape="rect" coords="459,56,602,80"/>
+<area href="class_mu_mo_t_1_1_mu_mo_tmulti_view.html" title="multi-view view (tied closely to MuMoTmultiController) " alt="MuMoTmultiView" shape="rect" coords="459,56,602,80"/>
+<area href="class_mu_mo_t_1_1_mu_mo_t_s_s_a_view.html" title="agent on networks view on model " alt="MuMoTSSAView" shape="rect" coords="612,56,755,80"/>
 <area href="class_mu_mo_t_1_1_mu_mo_tstream_view.html" title="stream plot view on model " alt="MuMoTstreamView" shape="rect" coords="76,112,219,136"/>
 <area href="class_mu_mo_t_1_1_mu_mo_tvector_view.html" title="vector plot view on model " alt="MuMoTvectorView" shape="rect" coords="229,112,372,136"/>
 </map>
@@ -143,6 +144,12 @@ Static Public Attributes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
+<tr class="memitem:a6822b561e2f9b618639714cd1545772e"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_tview.html#a6822b561e2f9b618639714cd1545772e">_resetErrorMessage</a> (self)</td></tr>
+<tr class="separator:a6822b561e2f9b618639714cd1545772e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23d2499d6c6334e35bc4cd7de3dd4d3c"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_tview.html#a23d2499d6c6334e35bc4cd7de3dd4d3c">_showErrorMessage</a> (self, message)</td></tr>
+<tr class="separator:a23d2499d6c6334e35bc4cd7de3dd4d3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abfc1e19ed53c088799d1f499bc010f7f"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_tview.html#abfc1e19ed53c088799d1f499bc010f7f">_setLog</a> (self, log)</td></tr>
+<tr class="separator:abfc1e19ed53c088799d1f499bc010f7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b4ffd0e4999bd45c6ca33fe0f40d1e3"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_tview.html#a8b4ffd0e4999bd45c6ca33fe0f40d1e3">_log</a> (self, analysis)</td></tr>
 <tr class="separator:a8b4ffd0e4999bd45c6ca33fe0f40d1e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4d4a00545816bf68f912f5ea5a449c48"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_tview.html#a4d4a00545816bf68f912f5ea5a449c48">_multirun</a> (self, iterations, randomSeeds)</td></tr>
@@ -299,6 +306,104 @@ Static Private Attributes</h2></td></tr>
           <td></td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>randomSeeds</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a6822b561e2f9b618639714cd1545772e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6822b561e2f9b618639714cd1545772e">&#9670;&nbsp;</a></span>_resetErrorMessage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">def _resetErrorMessage </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>self</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="abfc1e19ed53c088799d1f499bc010f7f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abfc1e19ed53c088799d1f499bc010f7f">&#9670;&nbsp;</a></span>_setLog()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">def _setLog </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>self</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>log</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a23d2499d6c6334e35bc4cd7de3dd4d3c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a23d2499d6c6334e35bc4cd7de3dd4d3c">&#9670;&nbsp;</a></span>_showErrorMessage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">def _showErrorMessage </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>self</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>message</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
