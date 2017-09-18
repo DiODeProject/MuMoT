@@ -810,8 +810,12 @@ class MuMoTcontroller:
 
     def _update_params_from_widgets(self):
         for i in np.arange(0, len(self._paramValues)):
-            # UGLY!
-            self._paramValues[i] = self._widgets[i].value
+            # slightly less ugly!
+            self._paramValues[i] = self._widgetDict[self._paramNames[i]].value
+
+#         for i in np.arange(0, len(self._paramValues)):
+#             # UGLY!
+#             self._paramValues[i] = self._widgets[i].value
 #            re @todo what was this!?
             
     def _downloadFile(self, data_to_download):
