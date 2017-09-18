@@ -14,7 +14,7 @@ Inheritance diagram for Mu\+Mo\+Tmulti\+View\+:\begin{figure}[H]
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_view_abf80dedbd77821fd7d069315a0bf3f92}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, controller, views, kwargs)
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_view_aa355c85c06db29c1df7b6505493d5354}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, controller, views, sub\+Plot\+Num, kwargs)
 \end{DoxyCompactItemize}
 \subsection*{Private Member Functions}
 \begin{DoxyCompactItemize}
@@ -30,6 +30,8 @@ def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_view_abfc1e19ed53c088799d1f499bc01
 \begin{DoxyCompactList}\small\item\em view list \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_view_a302b03ed97754a48ed830efba51e8d37}{\+\_\+axes} = None
 \begin{DoxyCompactList}\small\item\em axes are used for subplots (\textquotesingle{}share\+Axes = True\textquotesingle{}) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_view_a9b9e6dc4ee0823b917bb0ee0d636f84d}{\+\_\+sub\+Plot\+Num} = None
+\begin{DoxyCompactList}\small\item\em number of subplots \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_view_a7943427bc009bd206f958f785e744381}{\+\_\+num\+Rows} = None
 \begin{DoxyCompactList}\small\item\em subplot rows \end{DoxyCompactList}\item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_view_ac14e35edb2af762045879408234589d5}{\+\_\+num\+Columns} = None
@@ -43,11 +45,11 @@ def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_view_abfc1e19ed53c088799d1f499bc01
 multi-\/view view (tied closely to \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_controller}{Mu\+Mo\+Tmulti\+Controller}) 
 
 \subsection{Constructor \& Destructor Documentation}
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmulti_view_abf80dedbd77821fd7d069315a0bf3f92}\label{class_mu_mo_t_1_1_mu_mo_tmulti_view_abf80dedbd77821fd7d069315a0bf3f92}} 
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmulti_view_aa355c85c06db29c1df7b6505493d5354}\label{class_mu_mo_t_1_1_mu_mo_tmulti_view_aa355c85c06db29c1df7b6505493d5354}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmulti\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmulti\+View}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
 \index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmulti\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmulti\+View}}
 \subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
-{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{controller,  }\item[{}]{views,  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{controller,  }\item[{}]{views,  }\item[{}]{sub\+Plot\+Num,  }\item[{}]{kwargs }\end{DoxyParamCaption})}
 
 
 
@@ -106,6 +108,16 @@ subplot rows
 
 
 use common axes for all plots (False = use subplots) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmulti_view_a9b9e6dc4ee0823b917bb0ee0d636f84d}\label{class_mu_mo_t_1_1_mu_mo_tmulti_view_a9b9e6dc4ee0823b917bb0ee0d636f84d}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmulti\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmulti\+View}!\+\_\+sub\+Plot\+Num@{\+\_\+sub\+Plot\+Num}}
+\index{\+\_\+sub\+Plot\+Num@{\+\_\+sub\+Plot\+Num}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmulti\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmulti\+View}}
+\subsubsection{\texorpdfstring{\+\_\+sub\+Plot\+Num}{\_subPlotNum}}
+{\footnotesize\ttfamily \+\_\+sub\+Plot\+Num = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+number of subplots 
 
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmulti_view_af533f289cf818694f54ab8bd57083537}\label{class_mu_mo_t_1_1_mu_mo_tmulti_view_af533f289cf818694f54ab8bd57083537}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmulti\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmulti\+View}!\+\_\+views@{\+\_\+views}}

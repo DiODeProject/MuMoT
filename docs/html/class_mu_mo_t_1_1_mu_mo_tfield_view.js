@@ -5,6 +5,7 @@ var class_mu_mo_t_1_1_mu_mo_tfield_view =
     [ "_get_field2d", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#a854f5f5badcda687eff8a999e6700cb7", null ],
     [ "_get_field3d", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#a7e92a660924e058d070dd1799c27f126", null ],
     [ "_plot_field", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#a50d59419298116f738a98c864afb9d89", null ],
+    [ "_axes3d", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#a506ccaeadc9c6f4102cf4e06f5a6be2a", null ],
     [ "_mask", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#acbf4bc8fa26c3cf9e1d2741cc3dea058", null ],
     [ "_speed", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#a3293b40663039bb46c8c977a9948436e", null ],
     [ "_stateVariable1", "class_mu_mo_t_1_1_mu_mo_tfield_view.html#aa14fa36730691becc6f3136899545416", null ],

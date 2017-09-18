@@ -1132,6 +1132,8 @@ class MuMoTview:
     _figure = None
     ## Unique figure number
     _figureNum = None
+    ## 3d axes? (False => 2d)
+    _axes3d = None
 #    _widgets = None
     ## Controller that controls this view @todo - could become None
     _controller = None
@@ -1151,6 +1153,7 @@ class MuMoTview:
         self._mumotModel = model
         self._controller = controller
         self._logs = []
+        self._axes3d = False
         if params != None:
             self._paramNames, self._paramValues = zip(*params)
 
@@ -1243,6 +1246,8 @@ class MuMoTmultiView(MuMoTview):
     _views = None
     ## axes are used for subplots ('shareAxes = True')
     _axes = None
+    ## number of subplots
+    _subPlotNum = None
     ## subplot rows
     _numRows = None
     ## subplot columns
@@ -1250,9 +1255,10 @@ class MuMoTmultiView(MuMoTview):
     ## use common axes for all plots (False = use subplots)
     _shareAxes = None
 
-    def __init__(self, controller, views, **kwargs):
+    def __init__(self, controller, views, subPlotNum, **kwargs):
         super().__init__(None, controller, **kwargs)
         self._views = views
+        self._subPlotNum = subPlotNum
         for view in self._views:
             view._figure = self._figure
             view._figureNum = self._figureNum
@@ -1261,19 +1267,23 @@ class MuMoTmultiView(MuMoTview):
         self._shareAxes = kwargs.get('shareAxes', False)        
         if not(self._shareAxes):
             self._numColumns = MULTIPLOT_COLUMNS
-            self._numRows = math.ceil(len(self._views) / self._numColumns)
+            self._numRows = math.ceil(self._subPlotNum / self._numColumns)
         
     def _plot(self):
         plt.figure(self._figureNum)
         plt.clf()
         if self._shareAxes:
             # hold should already be on
-            for func, subPlotNum in self._controller._replotFunctions:
+            for func, subPlotNum, axes3d in self._controller._replotFunctions:
                 func()
         else:
 #            subplotNum = 1
-            for func, subPlotNum in self._controller._replotFunctions:
-                plt.subplot(self._numRows, self._numColumns, subPlotNum)
+            for func, subPlotNum, axes3d in self._controller._replotFunctions:
+                if axes3d:
+#                    self._figure.add_subplot(self._numRows, self._numColumns, subPlotNum, projection = '3d')
+                    plt.subplot(self._numRows, self._numColumns, subPlotNum, projection = '3d')
+                else:
+                    plt.subplot(self._numRows, self._numColumns, subPlotNum)
                 func()
 #                subplotNum += 1
 
@@ -1310,18 +1320,18 @@ class MuMoTmultiController(MuMoTcontroller):
                 for view in controller._view._views:
                     views.append(view)         
                                
-                    if view._controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
-                        for func, foo in view._controller._replotFunctions:
-                            self._replotFunctions.append((func, subPlotNum))                    
-                    else:
-                        self._replotFunctions.append((view._controller._replotFunction, subPlotNum))                    
+#                if view._controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
+                for func, foo, axes3d in controller._replotFunctions:
+                    self._replotFunctions.append((func, subPlotNum, axes3d))                    
+#                else:
+#                    self._replotFunctions.append((view._controller._replotFunction, subPlotNum, view._axes3d))                    
             else:
                 views.append(controller._view)
-                if controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
-                    for func, foo in controller._replotFunctions:
-                        self._replotFunctions.append((func, subPlotNum))                    
-                else:
-                    self._replotFunctions.append((controller._replotFunction, subPlotNum))                    
+#                 if controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
+#                     for func, foo in controller._replotFunctions:
+#                         self._replotFunctions.append((func, subPlotNum))                    
+#                 else:
+                self._replotFunctions.append((controller._replotFunction, subPlotNum, controller._view._axes3d))                    
             subPlotNum += 1
 
         for name, value in paramValueDict.items():
@@ -1338,7 +1348,7 @@ class MuMoTmultiController(MuMoTcontroller):
         
         super().__init__(paramValues, paramNames, paramLabelDict, False, **kwargs)
 
-        self._view = MuMoTmultiView(self, views, **kwargs)
+        self._view = MuMoTmultiView(self, views, subPlotNum - 1, **kwargs)
                 
         for controller in controllers:
             controller._setErrorWidget(self._errorMessage)
@@ -1386,6 +1396,7 @@ class MuMoTfieldView(MuMoTview):
         self._stateVariable1 = Symbol(stateVariable1)
         self._stateVariable2 = Symbol(stateVariable2)
         if stateVariable3 != None:
+            self._axes3d = True
             self._stateVariable3 = Symbol(stateVariable3)
         _mask = {}
 
