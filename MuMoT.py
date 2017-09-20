@@ -324,7 +324,7 @@ class MuMoTmodel:
             if str(rate) != bifurcationParameter:
                 paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
                 paramNames.append(str(rate))
-        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False)
+        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False, **kwargs)
 
         # construct view
         modelView = MuMoTbifurcationView(self, viewController, paramDict, bifurcationParameter, stateVariable1, stateVariable2, **kwargs)
@@ -1509,7 +1509,7 @@ class MuMoTbifurcationView(MuMoTview):
     _stateVariable2 = None
 
     def __init__(self, model, controller, paramDict, bifurcationParameter, stateVariable1, stateVariable2, figure = None, params = None, **kwargs):
-        super().__init__(model, controller, figure, params)
+        super().__init__(model, controller, figure, params, **kwargs)
 
         with io.capture_output() as log:      
             name = 'MuMoT Model' + str(id(self))
@@ -1606,7 +1606,10 @@ class MuMoTbifurcationView(MuMoTview):
                 self._showErrorMessage('Unknown plotType argument: using default pyDS tool plotting<br>')    
             if self._stateVariable2 == None:
                 # 2-d bifurcation diagram
-                self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figureNum)
+                if self._silent == True:
+                    self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True)
+                else:
+                    self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figureNum)
 #                self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
             else:
                 pass
