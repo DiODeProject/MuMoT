@@ -1,6 +1,6 @@
 var class_mu_mo_t_1_1_mu_mo_tbifurcation_view =
 [
-    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a7b55446edcef0a16d6840cd227f200b8", null ],
+    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#ac1764fc6547304e629425a5329dc7083", null ],
     [ "_plot_bifurcation", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a385e5f82733060fec5122635ae6a8e67", null ],
     [ "_replot_bifurcation", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a13b207330e0a4fe5bb7c3b863bbd0820", null ],
     [ "_bifurcationParameter", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a17d5bd0e623faea6f50fc3b7f01d0d38", null ],
@@ -11,7 +11,7 @@ var class_mu_mo_t_1_1_mu_mo_tbifurcation_view =
     [ "_pyDSode", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a45f0a60363e440604d8e5b08930eb7b5", null ],
     [ "_stateVariable1", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#aa14fa36730691becc6f3136899545416", null ],
     [ "_stateVariable2", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a9d3705d1d9182e10751ff693573d6d16", null ],
-    [ "_stateVariable3", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#ad2f8dc44173a16468bd9d3ab335f9b27", null ],
+    [ "axes", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#addecde06ced656af71c7c68c4e780fe8", null ],
     [ "figure", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a391e34f2de441d79152a7b3d6e4c9c86", null ],
     [ "freepars", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a15cf90b3888db001a8299a477d50af98", null ],
     [ "ics", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a08c7b0edb053705a8c47fe487b6f53bd", null ],
@@ -21,6 +21,7 @@ var class_mu_mo_t_1_1_mu_mo_tbifurcation_view =
     [ "MaxStepSize", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a0a7557ffe670b6a318afa8bd9851d2fc", null ],
     [ "MinStepSize", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a5fe506ca005e76a55ccd505a36e17fe6", null ],
     [ "name", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#ab74e6bf80237ddc4109968cedc58c151", null ],
+    [ "None", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#ac7485dcc8d256a6f197ed7802687f252", null ],
     [ "pars", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a372cc7d4f485e77e35668d40b507d0e5", null ],
     [ "SaveEigen", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a040a7ecbcbaca807aeaec6d5c81801d5", null ],
     [ "stability", "class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a1df8fcdacfec00fc258a3c72772c2f18", null ],

@@ -309,13 +309,10 @@ class MuMoTmodel:
             print('Cannot construct bifurcation plot until system size is set, using substitute()')
             return    
 
-        paramDict = {}
-        initialRateValue = 4 ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (-100.0, 100.0) ## @todo choose limit values sensibly
-        rateStep = 0.1 ## @todo choose rate step sensibly
-        for rate in self._rates:
-            paramDict[str(rate)] = initialRateValue ## @todo choose initial values sensibly
-        paramDict[str(self._systemSize)] = 1 ## @todo choose system size sensibly
+        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
+        rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
+        rateStep = RATE_STEP ## @todo choose rate step sensibly                
+
 
         # construct controller
         paramValues = []
@@ -327,7 +324,7 @@ class MuMoTmodel:
         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False, **kwargs)
 
         # construct view
-        modelView = MuMoTbifurcationView(self, viewController, paramDict, bifurcationParameter, stateVariable1, stateVariable2, **kwargs)
+        modelView = MuMoTbifurcationView(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, **kwargs)
         
         viewController.setView(modelView)
         viewController.setReplotFunction(modelView._replot_bifurcation)
@@ -1508,8 +1505,17 @@ class MuMoTbifurcationView(MuMoTview):
     _stateVariable1 = None
     _stateVariable2 = None
 
-    def __init__(self, model, controller, paramDict, bifurcationParameter, stateVariable1, stateVariable2, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, figure = None, params = None, **kwargs):
         super().__init__(model, controller, figure, params, **kwargs)
+
+        paramDict = {}
+        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
+        rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
+        rateStep = RATE_STEP ## @todo choose rate step sensibly
+        for rate in self._mumotModel._rates:
+            paramDict[str(rate)] = initialRateValue ## @todo choose initial values sensibly
+        paramDict[str(self._mumotModel._systemSize)] = 1 ## @todo choose system size sensibly
+
 
         with io.capture_output() as log:      
             name = 'MuMoT Model' + str(id(self))
@@ -1533,18 +1539,14 @@ class MuMoTbifurcationView(MuMoTview):
                 print('Cannot attempt bifurcation plot until system size is set, using substitute()')
                 return
             
-            if stateVariable2 == None:
-                # 2-d bifurcation diagram
-                pass
-            else:
+            if stateVariable2 != None:
                 ## 3-d bifurcation diagram (@todo: currently unsupported)
-                self._stateVariable3 = stateVariable3
                 assert false
                 
             # Prepare the system to start close to a steady state
             self._bifurcationParameter = bifurcationParameter
             self._stateVariable1 = stateVariable1
-            self._stateVariable2= stateVariable2
+            self._stateVariable2 = stateVariable2
     #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
     #            self._pyDSode.set(pars = self._pyDSmodel.pars )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
     #            self._pyDSode.pars = {bifurcationParameter: 0}             ## Lower bound of the bifurcation parameter (@todo: set dynamically?)
@@ -1607,7 +1609,8 @@ class MuMoTbifurcationView(MuMoTview):
             if self._stateVariable2 == None:
                 # 2-d bifurcation diagram
                 if self._silent == True:
-                    self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True)
+                    assert false # @todo: enable when Thomas implements in-housse plotting routines
+                    self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], axes = None, stability = True)
                 else:
                     self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figureNum)
 #                self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
