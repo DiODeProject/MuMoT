@@ -345,7 +345,8 @@ class MuMoTmodel:
                 else:
                     initialState[reactant] = 0
         else:
-            print("TO-DO: check if the Initial State has valid length and positive values")
+            ## @todo: check if the Initial State has valid length and positive values
+            print("TODO: check if the Initial State has valid length and positive values")
         print("Initial State is " + str(initialState) )
         specialParams['initialState'] = initialState
         
@@ -704,10 +705,6 @@ class _Rule:
 ## class describing a controller for a model view
 class MuMoTcontroller:
     _view = None
-    ## ordered list of parameter names, to control _view
-    _paramNames = None
-    ## ordered list of parameter values, to control _view
-    _paramValues = None
     ## dictionary of LaTeX labels for widgets, with parameter name as key
     _paramLabelDict = None
     ## list of widgets
@@ -723,13 +720,10 @@ class MuMoTcontroller:
     ## used two progress bars, otherwise the previous cell bar (where controller is created) does not react anymore  @todo: is this best put in base class when it is not always used?
     _progressBar_multi = None 
 
-    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, **kwargs):
+    def __init__(self, paramValues, paramNames, paramLabelDict={}, continuousReplot=False, **kwargs):
         silent = kwargs.get('silent', False)
-        self._paramValues = []
-        self._paramNames = []
         self._paramLabelDict = paramLabelDict
         self._widgets = []
-#         self._ratesDict = {}
         self._widgetDict = {}
         self._silent = silent
         unsortedPairs = zip(paramNames, paramValues)
@@ -739,20 +733,15 @@ class MuMoTcontroller:
                                          description = r'\(' + self._paramLabelDict.get(pair[0],pair[0]) + r'\)', 
                                          continuous_update = continuousReplot)
             self._widgetDict[pair[0]] = widget
-            # widget.on_trait_change(replotFunction, 'value')
             self._widgets.append(widget)
             if not(silent):
                 display(widget)
-#             self._ratesDict[pair[0]] = pair[1][0]
         widget = widgets.HTML()
         widget.value = 'foo' + str(widget) # @todo why doesn't this work?
         self._errorMessage = widget
         if not(silent):
             print('bar' + str(self._errorMessage))
             display(self._errorMessage)
-        self._paramNames = paramNames
-        for triple in paramValues:
-            self._paramValues.append(triple[0])
             
     def setReplotFunction(self, replotFunction):
         self._replotFunction = replotFunction
@@ -765,7 +754,7 @@ class MuMoTcontroller:
     def showLogs(self):
         self._view.showLogs()
         
-    def multirun(self, iterations, randomSeeds="Auto", plotType="evo", downloadData=False):
+    def multirun(self, iterations, randomSeeds="Auto", visualisationType="evo", downloadData=False):
         # Creating the progress bar (useful to give user progress status for long executions)
         self._progressBar_multi = widgets.FloatProgress(
             value=0,
@@ -777,7 +766,7 @@ class MuMoTcontroller:
             orientation='horizontal'
         )
         display(self._progressBar_multi)
-        self._view._plotType = plotType
+        self._view._visualisationType = visualisationType
         
         # setting the "Auto" value to the random seeds:
         if randomSeeds == "Auto":
@@ -805,15 +794,10 @@ class MuMoTcontroller:
     def _setErrorWidget(self, errorWidget):
         self._errorMessage = errorWidget
 
-    def _update_params_from_widgets(self):
-        for i in np.arange(0, len(self._paramValues)):
-            # slightly less ugly!
-            self._paramValues[i] = self._widgetDict[self._paramNames[i]].value
-
+#     def _update_params_from_widgets(self):
 #         for i in np.arange(0, len(self._paramValues)):
-#             # UGLY!
-#             self._paramValues[i] = self._widgets[i].value
-#            re @todo what was this!?
+#             # slightly less ugly!
+#             self._paramValues[i] = self._widgetDict[self._paramNames[i]].value
             
     def _downloadFile(self, data_to_download):
         js_download = """
@@ -883,7 +867,7 @@ class MuMoTSSAController(MuMoTcontroller):
             tooltips=['Population change over time', 'Population distribution in each state at final timestep'],
         #     icons=['check'] * 3
         )
-        self._widgetDict['plotType'] = plotToggle
+        self._widgetDict['visualisationType'] = plotToggle
         self._widgets.append(plotToggle)
         advancedWidgets.append(plotToggle)
         
@@ -1016,7 +1000,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             tooltips=['Population change over time', 'Network topology', 'Number of agents in each state at final timestep'],
         #     icons=['check'] * 3
         )
-        self._widgetDict['plotType'] = plotToggle
+        self._widgetDict['visualisationType'] = plotToggle
         self._widgets.append(plotToggle)
         advancedWidgets.append(plotToggle)
         
@@ -1140,8 +1124,6 @@ class MuMoTview:
     _controller = None
     ## Summary logs of view behaviour
     _logs = None
-    ## Plotting method to use @todo move to bifurcationView - rename use of this in SSA and mutiagent views
-    _plotType = None
     ## parameter names when used without controller
     _paramNames = None
     ## parameter values when used without controller
@@ -1180,8 +1162,12 @@ class MuMoTview:
     def _log(self, analysis):
         print("Starting", analysis, "with parameters ", end='')
         if self._controller != None:
-            paramNames = self._controller._paramNames
-            paramValues = self._controller._paramValues
+            paramNames = []
+            paramValues = []
+            ## @todo: if the afphabetic order is not good, the view could store the desired order in (paramNames) when the controller is controsucted
+            for name in sorted(self._controller._widgetDict.keys()):
+                paramNames.append(name)
+                paramValues.append(self._controller._widgetDict[name].value)
         else:
             paramNames = self._paramNames
             paramValues = self._paramValues
@@ -1218,9 +1204,9 @@ class MuMoTview:
         plt.figure(figureCounter)
         plt.clf()
         figureCounter += 1
-        if (self._plotType == "evo"):
+        if (self._visualisationType == "evo"):
             if not hasattr(self._controller, '_initialState'):
-                print("ERROR! in multirun arguments. The specified controller does not have the attribute _initialState which is required for plotType 'evo'.")
+                print("ERROR! in multirun arguments. The specified controller does not have the attribute _initialState which is required for visualisationType 'evo'.")
                 return
             systemSize = sum(self._controller._initialState.values())
             maxTime = self._controller._widgetDict['maxTime'].value
@@ -1314,8 +1300,8 @@ class MuMoTmultiController(MuMoTcontroller):
         views = []
         subPlotNum = 1
         for controller in controllers:
-            for name, value in zip(controller._paramNames, controller._paramValues):
-                paramValueDict[name] = value
+            for name, value in controller._widgetDict.items():
+                paramValueDict[name] = value.value
             paramLabelDict.update(controller._paramLabelDict)
             if controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
                 for view in controller._view._views:
@@ -1415,9 +1401,11 @@ class MuMoTfieldView(MuMoTview):
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
         if self._controller != None:
-            self._controller._update_params_from_widgets()
-            paramNames = self._controller._paramNames
-            paramValues = self._controller._paramValues            
+            paramNames = []
+            paramValues = []
+            for name, value in self._controller._widgetDict.items():
+                paramNames.append(name)
+                paramValues.append(value.value)          
         else:
             paramNames = self._paramNames
             paramValues = self._paramValues            
@@ -1504,6 +1492,8 @@ class MuMoTbifurcationView(MuMoTview):
     _bifurcationParameter = None
     _stateVariable1 = None
     _stateVariable2 = None
+    ## Plotting method to use
+    _plottingMethod = None
 
     def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, figure = None, params = None, **kwargs):
         super().__init__(model, controller, figure, params, **kwargs)
@@ -1576,9 +1566,9 @@ class MuMoTbifurcationView(MuMoTview):
 #            self._bifurcation2Dfig = plt.figure(1)                    
 
         if kwargs != None:
-            self._plotType = kwargs.get('plotType', 'pyDS')
+            self._plottingMethod = kwargs.get('plottingMethod', 'pyDS')
         else:
-            self._plotType = 'pyDS'
+            self._plottingMethod = 'pyDS'
 
         self._plot_bifurcation()
             
@@ -1600,12 +1590,12 @@ class MuMoTbifurcationView(MuMoTview):
             except ZeroDivisionError:
                 self._showErrorMessage('Division by zero<br>')                
     #            self._pyDScont['EQ1'].info()
-        if self._plotType.lower() == 'mumot':
+        if self._plottingMethod.lower() == 'mumot':
             ## use internal plotting routines (@todo: not yet supported)
             assert false
         else:
-            if self._plotType.lower() != 'pyds':
-                self._showErrorMessage('Unknown plotType argument: using default pyDS tool plotting<br>')    
+            if self._plottingMethod.lower() != 'pyds':
+                self._showErrorMessage('Unknown plottingMethod argument: using default pyDS tool plotting<br>')    
             if self._stateVariable2 == None:
                 # 2-d bifurcation diagram
                 if self._silent == True:
@@ -1619,9 +1609,8 @@ class MuMoTbifurcationView(MuMoTview):
         self._logs.append(log)
 
     def _replot_bifurcation(self):
-        self._controller._update_params_from_widgets()
-        for name, value in zip(self._controller._paramNames, self._controller._paramValues):
-            self._pyDSmodel.pars[name] = value
+        for name, value in self._controller._widgetDict.items():
+            self._pyDSmodel.pars[name] = value.value
         self._pyDScont.plot.clearall()
 #        self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    ## @todo: replace           
         self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  ## @todo: add to __init__()
@@ -1644,9 +1633,10 @@ class MuMoTmultiagentView(MuMoTview):
     _arena_width = 1
     _arena_height = 1
     _plot = None
+    _visualisationType = None 
 
-    def __init__(self, model, controller, figure = None, **kwargs):
-        super().__init__(model, controller, figure)
+    def __init__(self, model, controller, figure = None, params = None, **kwargs):
+        super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
 
         with io.capture_output() as log:
             colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
@@ -1657,11 +1647,6 @@ class MuMoTmultiagentView(MuMoTview):
                 i += 1
             
         self._logs.append(log)
-
-        if kwargs != None: ## @todo: Currently not used (updated through _widgetDict). To rethink plot type in a better way
-            self._plotType = kwargs.get('plotType', 'plain')
-        else:
-            self._plotType = 'plain'
             
     ## todo make consistent with parent implementation (paramValues vs widgets)    
     def _log(self, analysis):
@@ -1673,10 +1658,9 @@ class MuMoTmultiagentView(MuMoTview):
     def _plot_timeEvolution(self):
         with io.capture_output() as log:
             self._controller._update_params_from_widgets()
-            self._plotType = self._controller._widgetDict['plotType'].value
-            print("Plot Type: " + str(self._plotType) ) 
+            self._visualisationType = self._controller._widgetDict['visualisationType'].value
+            print("Visualisation Type: " + str(self._visualisationType) ) 
             
-#                 self._controller._ratesDict[self._controller._paramNames[i]] = self._controller._widgets[i].value 
             self._log("Multiagent simulation")
             self._convertRatesIntoProbabilities(self._mumotModel._reactants, self._mumotModel._rules)
 
@@ -1685,13 +1669,13 @@ class MuMoTmultiagentView(MuMoTview):
             self._plot.clear()
 
             maxTime = self._controller._widgetDict['maxTime'].value
-            if (self._plotType == 'evo'):
+            if (self._visualisationType == 'evo'):
                 plt.axes().set_aspect('auto')
                 # create the frame
                 totAgents = sum(self._controller._initialState.values())
                 self._plot.axis([0, maxTime, 0, totAgents])
                 self._figure.show()
-            elif self._controller._widgetDict['netType'].value == NetworkType.DYNAMIC and self._plotType == "graph":
+            elif self._controller._widgetDict['netType'].value == NetworkType.DYNAMIC and self._visualisationType == "graph":
                 plt.axes().set_aspect('equal')
                 
             # plot legend
@@ -1732,7 +1716,7 @@ class MuMoTmultiagentView(MuMoTview):
         self._controller._progressBar.max = maxTime
         
         dynamic = self._controller._widgetDict['netType'].value == NetworkType.DYNAMIC
-        if (not dynamic) and self._plotType == "graph":
+        if (not dynamic) and self._visualisationType == "graph":
             pos_layout = nx.circular_layout(self._graph)
         
         for i in np.arange(1, maxTime+1):
@@ -1751,13 +1735,13 @@ class MuMoTmultiagentView(MuMoTview):
                 evo[state].append(pop)
             
             ## Plotting
-            if (self._plotType == "evo"):
+            if (self._visualisationType == "evo"):
                 for state,pop in evo.items():
                     #self._plot.plot(pop, color=self._colors[state]) #label=state,
                     # Plot only the last timestep rather than overlay all
                     self._plot.plot([i-1,i], pop[len(pop)-2:len(pop)], color=self._colors[state])
 
-            elif (self._plotType == "graph"):
+            elif (self._visualisationType == "graph"):
                 self._plot.clear()
                 if dynamic:
                     self._plot.axis([0, 1, 0, 1])
@@ -2077,6 +2061,7 @@ class MuMoTSSAView(MuMoTview):
     _reactantsMatrix = None 
     ## the effect of each rule
     _ruleChanges = None 
+    _visualisationType = None
 
     def __init__(self, model, controller, figure = None, **kwargs):
         super().__init__(model, controller, figure)
@@ -2091,25 +2076,13 @@ class MuMoTSSAView(MuMoTview):
         
         self._logs.append(log)
 
-        if kwargs != None: ## @todo: Currently not used (updated through _widgetDict). To rethink plot type in a better way
-            self._plotType = kwargs.get('plotType', 'plain')
-        else:
-            self._plotType = 'plain'
-    
-    ## todo make consistent with parent implementation (paramValues vs widgets)
-    def _log(self, analysis):
-        print("Starting", analysis, "with parameters ", end='')
-        for w in self._controller._widgetDict.values():
-            print('(' + w.description + '=' + str(w.value) + '), ', end='')
-        print("at", datetime.datetime.now())
     
     def _plot_timeEvolution(self):
         with io.capture_output() as log:
             self._controller._update_params_from_widgets()
-            self._plotType = self._controller._widgetDict['plotType'].value
-            print("Plot Type: " + str(self._plotType) ) 
+            self._visualisationType = self._controller._widgetDict['visualisationType'].value
+            print("Plot Type: " + str(self._visualisationType) ) 
             
-#                 self._controller._ratesDict[self._controller._paramNames[i]] = self._controller._widgets[i].value 
             self._log("Stochastic Simulation Algorithm (SSA)")
             self._createSSAmatrix(self._mumotModel._reactants, self._mumotModel._rules)
             
@@ -2118,7 +2091,7 @@ class MuMoTSSAView(MuMoTview):
             self._plot.clear()
             # Creating main figure frame
             maxTime = self._controller._widgetDict['maxTime'].value
-            if (self._plotType == 'evo'):
+            if (self._visualisationType == 'evo'):
                 totAgents = sum(self._controller._initialState.values())
                 self._plot.axis([0, maxTime, 0, totAgents])
                 self._figure.show()
@@ -2167,13 +2140,13 @@ class MuMoTSSAView(MuMoTview):
             evo['time'].append(t)
              
             ## Plot
-            if (self._plotType == "evo"):
+            if (self._visualisationType == "evo"):
                 for state,pop in evo.items():
                     if (state == 'time'): continue
                     #self._plot.plot(evo['time'], pop, color=self._colors[state]) #label=state,
                     # Plot only the last timestep rather than overlay all
                     self._plot.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
-            elif (self._plotType == "final"):
+            elif (self._visualisationType == "final"):
                 print("TODO: Missing final distribution visualisation.")
             # dinamically update the plot each timestep
             self._figure.canvas.draw()
