@@ -11,5 +11,5 @@ setup(name='MuMoT',
     author_email='james.marshall@shef.ac.uk',
     version='0.0',
     url='https://github.com/DiODeProject/MuMoT',
-    packages=['mumot','mumot.gen']
+    packages=['mumot','mumot.gen'],
     install_requires=requirements)
