@@ -12,4 +12,6 @@ setup(name='MuMoT',
     version='0.0',
     url='https://github.com/DiODeProject/MuMoT',
     packages=['mumot','mumot.gen'],
+    package_dir={'':'.'},
+    license='GPL-3.0 (latex2sympy distributed under MIT licence)',
     install_requires=requirements)
