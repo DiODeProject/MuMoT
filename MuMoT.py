@@ -1521,9 +1521,10 @@ class MuMoTbifurcationView(MuMoTview):
     _bifurcationParameter = None
     _stateVariable1 = None
     _stateVariable2 = None
-
-    #def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2, figure = None, params = None, **kwargs):
-    #    super().__init__(model, controller, figure, params, **kwargs)
+    
+    ## Plotting method to use
+    _plottingMethod = None
+    
     def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, 
                  figure = None, params = None, **kwargs):
         super().__init__(model, controller, figure, params, **kwargs)
@@ -1550,6 +1551,8 @@ class MuMoTbifurcationView(MuMoTview):
             self._ylab = kwargs['ylab']
         else:
             self._ylab=None
+            
+        self._bifInit = kwargs.get('BifParInit', 5)
         
         self._initSV = kwargs.get('initSV', [])
         if self._initSV != []:
@@ -1611,7 +1614,7 @@ class MuMoTbifurcationView(MuMoTview):
             print('Initial conditions chosen for state variables: ',self._pyDSmodel.ics)   
     #            self._pyDSode.set(ics = initconds)
             self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
-            self._pyDSode.set(pars = {bifurcationParameter: kwargs.get('BifParInit', 5)})      ## @@todo remove magic number
+            self._pyDSode.set(pars = {bifurcationParameter: self._bifInit})      ## @@todo remove magic number
             self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class 
             ## @todo: add self._pyDScontArgs to __init__()
             self._pyDScontArgs = dst.args(name='EQ1', type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labeled 'EQ1'.
@@ -1629,11 +1632,11 @@ class MuMoTbifurcationView(MuMoTview):
 #            self._bifurcation2Dfig = plt.figure(1)                    
 
         if kwargs != None:
-            self._plotType = kwargs.get('plotType', 'pyDS')
+            self._plottingMethod = kwargs.get('plottingMethod', 'pyDS')
         else:
-            self._plotType = 'pyDS'
+            self._plottingMethod = 'pyDS'
         
-        #self._plotType = 'mumot'
+        #self._plottingMethod = 'mumot'
         self._plot_bifurcation()
             
 
@@ -1655,7 +1658,7 @@ class MuMoTbifurcationView(MuMoTview):
                 self._showErrorMessage('Division by zero<br>')                
     #            self._pyDScont['EQ1'].info()
         
-            if self._plotType.lower() == 'mumot':
+            if self._plottingMethod.lower() == 'mumot':
                 ## use internal plotting routines: now supported!   
                 #self._stateVariable2 == None:
                 # 2-d bifurcation diagram
@@ -1767,7 +1770,7 @@ class MuMoTbifurcationView(MuMoTview):
                 #    pass
                 #assert false
             else:
-                if self._plotType.lower() != 'pyds':
+                if self._plottingMethod.lower() != 'pyds':
                     self._showErrorMessage('Unknown plotType argument: using default pyDS tool plotting<br>')    
                 if self._stateVariable2 == None:
                     # 2-d bifurcation diagram
@@ -1782,15 +1785,14 @@ class MuMoTbifurcationView(MuMoTview):
         self._logs.append(log)
 
     def _replot_bifurcation(self):
-        self._controller._update_params_from_widgets()
-        for name, value in zip(self._controller._paramNames, self._controller._paramValues):
-            self._pyDSmodel.pars[name] = value
-        
+        for name, value in self._controller._widgetDict.items():
+            self._pyDSmodel.pars[name] = value.value
+ 
         self._pyDScont.plot.clearall()
         
 #        self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    ## @todo: replace           
         self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  ## @todo: add to __init__()
-        self._pyDSode.set(pars = {self._bifurcationParameter: 5} )                       ## @todo remove magic number
+        self._pyDSode.set(pars = {self._bifurcationParameter: self._bifInit} )                       ## @todo remove magic number
         self._pyDScont = dst.ContClass(self._pyDSode)              ## Set up continuation class (@todo: add to __init__())
 ##        self._pyDScont.newCurve(self._pyDScontArgs)
 #        self._pyDScont['EQ1'].reset(self._pyDSmodel.pars)
