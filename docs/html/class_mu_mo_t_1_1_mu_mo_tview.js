@@ -16,7 +16,6 @@ var class_mu_mo_t_1_1_mu_mo_tview =
     [ "_mumotModel", "class_mu_mo_t_1_1_mu_mo_tview.html#aeacd9541246371f0db5cc3e3779762fa", null ],
     [ "_paramNames", "class_mu_mo_t_1_1_mu_mo_tview.html#ac7734326ac8dbbf9bd0d2c9838633195", null ],
     [ "_paramValues", "class_mu_mo_t_1_1_mu_mo_tview.html#a04608181fa27d9aad4983d3694f7ab17", null ],
-    [ "_plotType", "class_mu_mo_t_1_1_mu_mo_tview.html#a5feff4ca83ee97d6e09874496a4975d4", null ],
     [ "_silent", "class_mu_mo_t_1_1_mu_mo_tview.html#a909146a3c119c927727c7d533042b184", null ],
     [ "bbox_to_anchor", "class_mu_mo_t_1_1_mu_mo_tview.html#a411167eeca51189fabe03f884c7bf92c", null ],
     [ "borderaxespad", "class_mu_mo_t_1_1_mu_mo_tview.html#a15c45102c35a6e8e18adffce8cfdb703", null ],

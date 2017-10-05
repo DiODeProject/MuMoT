@@ -1,6 +1,6 @@
 var class_mu_mo_t_1_1_mu_mo_tmultiagent_view =
 [
-    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#a56403a3c4cf6f48d384a21f5ecb01918", null ],
+    [ "__init__", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#a367325b3bd7ca4a7b7ec4107f9aa6a16", null ],
     [ "_applyScalingFactor", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#acc41eb1ddfc93fea7e67aa85c9d7f6fc", null ],
     [ "_computeScalingFactor", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#a064b5783c9e87092a7059fb632b56585", null ],
     [ "_convertRatesIntoProbabilities", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#a63242960a1d4db3a17cc8657a8ee7da1", null ],
@@ -22,7 +22,7 @@ var class_mu_mo_t_1_1_mu_mo_tmultiagent_view =
     [ "_colors", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#a6aaed74c935ed5380691798f75527a18", null ],
     [ "_graph", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#a752f43042d51a40fed348b434aad0fd8", null ],
     [ "_plot", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#acdfed4631d661bc2ad215c25a2ed8260", null ],
-    [ "_plotType", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#a5feff4ca83ee97d6e09874496a4975d4", null ],
     [ "_positions", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#a8be9986760a86837e04718906d18d596", null ],
-    [ "_probabilities", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#aaf2c34c5022e4e3c872dbee11e50ea9b", null ]
+    [ "_probabilities", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#aaf2c34c5022e4e3c872dbee11e50ea9b", null ],
+    [ "_visualisationType", "class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#ae8c8d7969b8ab8f31df9d1d1d10eabb9", null ]
 ];

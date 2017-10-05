@@ -45,7 +45,13 @@ def \hyperlink{namespace_mu_mo_t_a276566fb102dd4e4bf32a9ba4fb8a09b}{\+\_\+derive
 def \hyperlink{namespace_mu_mo_t_a07dd350ff74bc1abafd7f44f972089a2}{\+\_\+raise\+Model\+Error} (expected, read, rule)
 \item 
 def \hyperlink{namespace_mu_mo_t_a4cf5ca1427b0999c933587bfaa89936d}{\+\_\+build\+Fig} (object, figure=None)
-\begin{DoxyCompactList}\small\item\em generic method for constructing figures in \hyperlink{class_mu_mo_t_1_1_mu_mo_tview}{Mu\+Mo\+Tview} and \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_controller}{Mu\+Mo\+Tmulti\+Controller} classes \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em generic method for constructing figures in \hyperlink{class_mu_mo_t_1_1_mu_mo_tview}{Mu\+Mo\+Tview} and \hyperlink{class_mu_mo_t_1_1_mu_mo_tmulti_controller}{Mu\+Mo\+Tmulti\+Controller} classes \end{DoxyCompactList}\item 
+def \hyperlink{namespace_mu_mo_t_a01b242770585ffc6064b5c618f38d87c}{round\+\_\+to\+\_\+1} (x)
+\begin{DoxyCompactList}\small\item\em used for determining significant digits for axes formatting in plots \hyperlink{class_mu_mo_t_1_1_mu_mo_tstream_view}{Mu\+Mo\+Tstream\+View} and \hyperlink{class_mu_mo_t_1_1_mu_mo_tbifurcation_view}{Mu\+Mo\+Tbifurcation\+View} \end{DoxyCompactList}\item 
+def \hyperlink{namespace_mu_mo_t_a35eaa446589326bb98bc0978be4e368f}{\+\_\+fig\+\_\+formatting\+\_\+3D} (figure, xlab=None, ylab=None, zlab=None, ax\+\_\+reformat=False, kwargs)
+\begin{DoxyCompactList}\small\item\em Function for editing properties of 3D plots. \end{DoxyCompactList}\item 
+def \hyperlink{namespace_mu_mo_t_aa6bfa694d197771fda158f6e3b278293}{\+\_\+fig\+\_\+formatting\+\_\+2D} (figure=None, xdata=None, ydata=None, eigenvalues=None, curve\+\_\+replot=False, ax\+\_\+reformat=False, special\+Points=None, xlab=None, ylab=None, curvelab=None, kwargs)
+\begin{DoxyCompactList}\small\item\em Function for formatting 2D plots. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \subsection*{Variables}
 \begin{DoxyCompactItemize}
 \item 
@@ -98,7 +104,27 @@ generic method for constructing figures in \hyperlink{class_mu_mo_t_1_1_mu_mo_tv
 \subsubsection{\texorpdfstring{\+\_\+derive\+O\+D\+Es\+From\+Rules()}{\_deriveODEsFromRules()}}
 {\footnotesize\ttfamily def Mu\+Mo\+T.\+\_\+derive\+O\+D\+Es\+From\+Rules (\begin{DoxyParamCaption}\item[{}]{reactants,  }\item[{}]{rules }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
 
-\mbox{\Hypertarget{namespace_mu_mo_t_a07dd350ff74bc1abafd7f44f972089a2}\label{namespace_mu_mo_t_a07dd350ff74bc1abafd7f44f972089a2}} 
+\mbox{\Hypertarget{namespace_mu_mo_t_aa6bfa694d197771fda158f6e3b278293}\label{namespace_mu_mo_t_aa6bfa694d197771fda158f6e3b278293}} 
+\index{Mu\+MoT@{Mu\+MoT}!\+\_\+fig\+\_\+formatting\+\_\+2D@{\+\_\+fig\+\_\+formatting\+\_\+2D}}
+\index{\+\_\+fig\+\_\+formatting\+\_\+2D@{\+\_\+fig\+\_\+formatting\+\_\+2D}!Mu\+MoT@{Mu\+MoT}}
+\subsubsection{\texorpdfstring{\+\_\+fig\+\_\+formatting\+\_\+2\+D()}{\_fig\_formatting\_2D()}}
+{\footnotesize\ttfamily def Mu\+Mo\+T.\+\_\+fig\+\_\+formatting\+\_\+2D (\begin{DoxyParamCaption}\item[{}]{figure = {\ttfamily None},  }\item[{}]{xdata = {\ttfamily None},  }\item[{}]{ydata = {\ttfamily None},  }\item[{}]{eigenvalues = {\ttfamily None},  }\item[{}]{curve\+\_\+replot = {\ttfamily False},  }\item[{}]{ax\+\_\+reformat = {\ttfamily False},  }\item[{}]{special\+Points = {\ttfamily None},  }\item[{}]{xlab = {\ttfamily None},  }\item[{}]{ylab = {\ttfamily None},  }\item[{}]{curvelab = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Function for formatting 2D plots. 
+
+This function is used in \hyperlink{class_mu_mo_t_1_1_mu_mo_tvector_view}{Mu\+Mo\+Tvector\+View}, \hyperlink{class_mu_mo_t_1_1_mu_mo_tstream_view}{Mu\+Mo\+Tstream\+View} and \hyperlink{class_mu_mo_t_1_1_mu_mo_tbifurcation_view}{Mu\+Mo\+Tbifurcation\+View} \mbox{\Hypertarget{namespace_mu_mo_t_a35eaa446589326bb98bc0978be4e368f}\label{namespace_mu_mo_t_a35eaa446589326bb98bc0978be4e368f}} 
+\index{Mu\+MoT@{Mu\+MoT}!\+\_\+fig\+\_\+formatting\+\_\+3D@{\+\_\+fig\+\_\+formatting\+\_\+3D}}
+\index{\+\_\+fig\+\_\+formatting\+\_\+3D@{\+\_\+fig\+\_\+formatting\+\_\+3D}!Mu\+MoT@{Mu\+MoT}}
+\subsubsection{\texorpdfstring{\+\_\+fig\+\_\+formatting\+\_\+3\+D()}{\_fig\_formatting\_3D()}}
+{\footnotesize\ttfamily def Mu\+Mo\+T.\+\_\+fig\+\_\+formatting\+\_\+3D (\begin{DoxyParamCaption}\item[{}]{figure,  }\item[{}]{xlab = {\ttfamily None},  }\item[{}]{ylab = {\ttfamily None},  }\item[{}]{zlab = {\ttfamily None},  }\item[{}]{ax\+\_\+reformat = {\ttfamily False},  }\item[{}]{kwargs }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Function for editing properties of 3D plots. 
+
+This function is used in \hyperlink{class_mu_mo_t_1_1_mu_mo_tvector_view}{Mu\+Mo\+Tvector\+View}. \mbox{\Hypertarget{namespace_mu_mo_t_a07dd350ff74bc1abafd7f44f972089a2}\label{namespace_mu_mo_t_a07dd350ff74bc1abafd7f44f972089a2}} 
 \index{Mu\+MoT@{Mu\+MoT}!\+\_\+raise\+Model\+Error@{\+\_\+raise\+Model\+Error}}
 \index{\+\_\+raise\+Model\+Error@{\+\_\+raise\+Model\+Error}!Mu\+MoT@{Mu\+MoT}}
 \subsubsection{\texorpdfstring{\+\_\+raise\+Model\+Error()}{\_raiseModelError()}}
@@ -113,6 +139,16 @@ generic method for constructing figures in \hyperlink{class_mu_mo_t_1_1_mu_mo_tv
 
 
 create model from text description 
+
+\mbox{\Hypertarget{namespace_mu_mo_t_a01b242770585ffc6064b5c618f38d87c}\label{namespace_mu_mo_t_a01b242770585ffc6064b5c618f38d87c}} 
+\index{Mu\+MoT@{Mu\+MoT}!round\+\_\+to\+\_\+1@{round\+\_\+to\+\_\+1}}
+\index{round\+\_\+to\+\_\+1@{round\+\_\+to\+\_\+1}!Mu\+MoT@{Mu\+MoT}}
+\subsubsection{\texorpdfstring{round\+\_\+to\+\_\+1()}{round\_to\_1()}}
+{\footnotesize\ttfamily def Mu\+Mo\+T.\+round\+\_\+to\+\_\+1 (\begin{DoxyParamCaption}\item[{}]{x }\end{DoxyParamCaption})}
+
+
+
+used for determining significant digits for axes formatting in plots \hyperlink{class_mu_mo_t_1_1_mu_mo_tstream_view}{Mu\+Mo\+Tstream\+View} and \hyperlink{class_mu_mo_t_1_1_mu_mo_tbifurcation_view}{Mu\+Mo\+Tbifurcation\+View} 
 
 
 

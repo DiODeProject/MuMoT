@@ -14,7 +14,7 @@ Inheritance diagram for Mu\+Mo\+Tmultiagent\+View\+:\begin{figure}[H]
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a56403a3c4cf6f48d384a21f5ecb01918}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, model, controller, figure=None, kwargs)
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a367325b3bd7ca4a7b7ec4107f9aa6a16}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, model, controller, figure=None, params=None, kwargs)
 \end{DoxyCompactItemize}
 \subsection*{Private Member Functions}
 \begin{DoxyCompactItemize}
@@ -49,11 +49,6 @@ def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad3df4b96d9dec10c8b806eb
 \begin{DoxyCompactList}\small\item\em return the (index) list of neighbours of \textquotesingle{}agent\textquotesingle{} \end{DoxyCompactList}\item 
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aa88fd0656cfcc7c9671c2bcc61d7726e}{\+\_\+distance\+\_\+on\+\_\+torus} (self, x\+\_\+1, y\+\_\+1, x\+\_\+2, y\+\_\+2)
 \begin{DoxyCompactList}\small\item\em returns the minimum distance calucalted on the torus given by periodic boundary conditions \end{DoxyCompactList}\end{DoxyCompactItemize}
-\subsection*{Private Attributes}
-\begin{DoxyCompactItemize}
-\item 
-\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5feff4ca83ee97d6e09874496a4975d4}{\+\_\+plot\+Type}
-\begin{DoxyCompactList}\small\item\em Plotting. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \subsection*{Static Private Attributes}
 \begin{DoxyCompactItemize}
 \item 
@@ -72,7 +67,9 @@ int \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a372c083f5428e7f8a68298e
 int \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a12711c70e125709b78f820722ba74d09}{\+\_\+arena\+\_\+height} = 1
 \item 
 \hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_acdfed4631d661bc2ad215c25a2ed8260}{\+\_\+plot} = None
-\end{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ae8c8d7969b8ab8f31df9d1d1d10eabb9}{\+\_\+visualisation\+Type} = None
+\begin{DoxyCompactList}\small\item\em Plotting. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \subsection*{Additional Inherited Members}
 
 
@@ -84,11 +81,11 @@ self.\+\_\+py\+D\+Scont.\+new\+Curve(self.\+\_\+py\+D\+Scont\+Args) self.\+\_\+p
 agent on networks view on model 
 
 \subsection{Constructor \& Destructor Documentation}
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a56403a3c4cf6f48d384a21f5ecb01918}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a56403a3c4cf6f48d384a21f5ecb01918}} 
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a367325b3bd7ca4a7b7ec4107f9aa6a16}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a367325b3bd7ca4a7b7ec4107f9aa6a16}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
 \index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
 \subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
-{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{model,  }\item[{}]{controller,  }\item[{}]{figure = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{model,  }\item[{}]{controller,  }\item[{}]{figure = {\ttfamily None},  }\item[{}]{params = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
 
 
 
@@ -242,31 +239,29 @@ one timestep for one agent
 \subsubsection{\texorpdfstring{\+\_\+plot}{\_plot}}
 {\footnotesize\ttfamily \+\_\+plot = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
 
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5feff4ca83ee97d6e09874496a4975d4}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5feff4ca83ee97d6e09874496a4975d4}} 
-\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+plot\+Type@{\+\_\+plot\+Type}}
-\index{\+\_\+plot\+Type@{\+\_\+plot\+Type}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
-\subsubsection{\texorpdfstring{\+\_\+plot\+Type}{\_plotType}}
-{\footnotesize\ttfamily \+\_\+plot\+Type\hspace{0.3cm}{\ttfamily [private]}}
-
-
-
-Plotting. 
-
-\begin{DoxyRefDesc}{Todo}
-\item[\hyperlink{todo__todo000049}{Todo}]\+: Currently not used (updated through \+\_\+widget\+Dict).\end{DoxyRefDesc}
-To rethink plot type in a better way \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8be9986760a86837e04718906d18d596}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8be9986760a86837e04718906d18d596}} 
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8be9986760a86837e04718906d18d596}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8be9986760a86837e04718906d18d596}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+positions@{\+\_\+positions}}
 \index{\+\_\+positions@{\+\_\+positions}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
 \subsubsection{\texorpdfstring{\+\_\+positions}{\_positions}}
 {\footnotesize\ttfamily \+\_\+positions = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
 
 \begin{DoxyRefDesc}{Todo}
-\item[\hyperlink{todo__todo000051}{Todo}]\+: implement network generate by placing points (with local communication range) randomly in 2D space \end{DoxyRefDesc}
+\item[\hyperlink{todo__todo000049}{Todo}]\+: implement network generate by placing points (with local communication range) randomly in 2D space \end{DoxyRefDesc}
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aaf2c34c5022e4e3c872dbee11e50ea9b}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_aaf2c34c5022e4e3c872dbee11e50ea9b}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+probabilities@{\+\_\+probabilities}}
 \index{\+\_\+probabilities@{\+\_\+probabilities}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
 \subsubsection{\texorpdfstring{\+\_\+probabilities}{\_probabilities}}
 {\footnotesize\ttfamily \+\_\+probabilities = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ae8c8d7969b8ab8f31df9d1d1d10eabb9}\label{class_mu_mo_t_1_1_mu_mo_tmultiagent_view_ae8c8d7969b8ab8f31df9d1d1d10eabb9}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+visualisation\+Type@{\+\_\+visualisation\+Type}}
+\index{\+\_\+visualisation\+Type@{\+\_\+visualisation\+Type}!Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+visualisation\+Type}{\_visualisationType}}
+{\footnotesize\ttfamily \+\_\+visualisation\+Type = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Plotting. 
 
 
 
