@@ -682,12 +682,11 @@ class MuMoTmodel:
         self._equations = {}
         self._pyDSmodel = None
         self._dot = None
-        ## @todo the following not currently working on OS X
-#        if not os.path.idsir(self._tmpdirpath):
-#            os.mkdir(self._tmpdirpath)
-#            os.system('chmod' + self._tmpdirpath + 'u+rwx')
-#            os.system('chmod' + self._tmpdirpath + 'g-rwx')
-#            os.system('chmod' + self._tmpdirpath + 'o+rwx')
+        if not os.path.isdir(self._tmpdirpath):
+            os.mkdir(self._tmpdirpath)
+            os.system('chmod' + self._tmpdirpath + 'u+rwx')
+            os.system('chmod' + self._tmpdirpath + 'g-rwx')
+            os.system('chmod' + self._tmpdirpath + 'o+rwx')
         self._tmpdir = tempfile.TemporaryDirectory(dir = self._tmpdirpath)
         self._tmpfiles = []
         
