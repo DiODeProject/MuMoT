@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['ys',['ys',['../class_mu_mo_t_1_1_mu_mo_tmultiagent_view.html#a33cb91153ac5093db96e5a51490a2688',1,'MuMoT::MuMoTmultiagentView']]]
+  ['xdata',['xdata',['../class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#a3b8f497bab06dd2e00961fa7bd3a660c',1,'MuMoT::MuMoTbifurcationView']]],
+  ['xlab',['xlab',['../class_mu_mo_t_1_1_mu_mo_tvector_view.html#abb76a7390100209788848dbd6bb9fe30',1,'MuMoT.MuMoTvectorView.xlab()'],['../class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#abb76a7390100209788848dbd6bb9fe30',1,'MuMoT.MuMoTbifurcationView.xlab()']]]
 ];

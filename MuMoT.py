@@ -36,11 +36,16 @@ from matplotlib.cbook import MatplotlibDeprecationWarning
 from mpl_toolkits.mplot3d import axes3d
 import networkx as nx #@UnresolvedImport
 from enum import Enum
+
+import matplotlib.ticker as ticker
+from math import log10, floor
+
 #from matplotlib.offsetbox import kwargs
 #import ast
 #from __builtin__ import None
 #from numpy.oldnumeric.fix_default_axis import _args3
 #from matplotlib.offsetbox import kwargs
+
 
 get_ipython().magic('alias_magic model latex')
 get_ipython().magic('matplotlib nbagg')
@@ -1379,7 +1384,17 @@ class MuMoTfieldView(MuMoTview):
     def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
         silent = kwargs.get('silent', False)
         super().__init__(model, controller, figure, params, **kwargs)
-
+        
+        if 'fontsize' in kwargs:
+            self._chooseFontSize = kwargs['fontsize']
+        else:
+            self._chooseFontSize=None
+        
+        self._xlab = kwargs.get('xlab', str(stateVariable1))
+        self._ylab = kwargs.get('ylab', str(stateVariable2))
+        if stateVariable3:
+            self._zlab = kwargs.get('zlab', str(stateVariable3)) 
+        
         self._stateVariable1 = Symbol(stateVariable1)
         self._stateVariable2 = Symbol(stateVariable2)
         if stateVariable3 != None:
@@ -1469,8 +1484,14 @@ class MuMoTstreamView(MuMoTfieldView):
     def _plot_field(self):
         super()._plot_field()
         self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
-        plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
+        fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
+        plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
+        plt.xlim(0,1)
+        plt.ylim(0,1)
+        _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, ax_reformat=False, curve_replot=False,
+                   ylab = self._ylab, fontsize=self._chooseFontSize)
 #        plt.set_aspect('equal') ## @todo
+
 
 ## vector plot view on model
 class MuMoTvectorView(MuMoTfieldView):
@@ -1478,24 +1499,34 @@ class MuMoTvectorView(MuMoTfieldView):
         super()._plot_field()
         if self._stateVariable3 == None:
             self._get_field2d("2d vector plot", 10) ## @todo: allow user to set mesh points with keyword
-            plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') ## @todo: define colormap by user keyword
+            fig_vector=plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') ## @todo: define colormap by user keyword
+            plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
+            plt.xlim(0,1)
+            plt.ylim(0,1)
+            _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, ax_reformat=False, curve_replot=False,
+                   ylab = self._ylab, fontsize=self._chooseFontSize)
     #        plt.set_aspect('equal') ## @todo
         else:
             self._get_field3d("3d vector plot", 10)
             ax = self._figure.gca(projection = '3d')
-            ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length = 0.01, color = 'black') ## @todo: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
+            fig_vec3d=ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length = 0.01, color = 'black') ## @todo: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
+            _fig_formatting_3D(fig_vec3d, xlab= self._xlab, ylab= self._ylab, zlab= self._zlab, 
+                               ax_reformat=True, showPlane=True)
 #           plt.set_aspect('equal') ## @todo
-        
+
+
 ## bifurcation view on model 
 class MuMoTbifurcationView(MuMoTview):
     _pyDSmodel = None
     _bifurcationParameter = None
     _stateVariable1 = None
     _stateVariable2 = None
+    
     ## Plotting method to use
     _plottingMethod = None
-
-    def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, figure = None, params = None, **kwargs):
+    
+    def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, 
+                 figure = None, params = None, **kwargs):
         super().__init__(model, controller, figure, params, **kwargs)
 
         paramDict = {}
@@ -1505,8 +1536,35 @@ class MuMoTbifurcationView(MuMoTview):
         for rate in self._mumotModel._rates:
             paramDict[str(rate)] = initialRateValue ## @todo choose initial values sensibly
         paramDict[str(self._mumotModel._systemSize)] = 1 ## @todo choose system size sensibly
-
-
+        
+        if 'fontsize' in kwargs:
+            self._chooseFontSize = kwargs['fontsize']
+        else:
+            self._chooseFontSize=None
+            
+        if 'xlab' in kwargs:
+            self._xlab = kwargs['xlab']
+        else:
+            self._xlab=None
+            
+        if 'ylab' in kwargs:
+            self._ylab = kwargs['ylab']
+        else:
+            self._ylab=None
+            
+        self._bifInit = kwargs.get('BifParInit', 5)
+        
+        self._initSV = kwargs.get('initSV', [])
+        if self._initSV != []:
+            assert (len(self._initSV) == len(self._mumotModel._reactants)),"Number of state variables and initial conditions must coincide!"     
+        else:
+            if kwargs.get('initRandom', False) == True:
+                for reactant in self._mumotModel._reactants:
+                    self._initSV.append([str(reactant), round(np.random.rand(), 2)])
+            else:
+                for reactant in self._mumotModel._reactants:
+                    self._initSV.append([str(reactant), 0.0])
+                
         with io.capture_output() as log:      
             name = 'MuMoT Model' + str(id(self))
             self._pyDSmodel = dst.args(name = name)
@@ -1531,45 +1589,54 @@ class MuMoTbifurcationView(MuMoTview):
             
             if stateVariable2 != None:
                 ## 3-d bifurcation diagram (@todo: currently unsupported)
-                assert false
+                assert True #was 'false' before. @todo: Specify assertion rule.
                 
             # Prepare the system to start close to a steady state
             self._bifurcationParameter = bifurcationParameter
-            self._stateVariable1 = stateVariable1
-            self._stateVariable2 = stateVariable2
+            self._LabelX = self._bifurcationParameter if self._xlab == None else self._xlab
+            try:
+                stateVariable1.index('-')
+                self._stateVariable1 = stateVariable1[:stateVariable1.index('-')]
+                self._stateVariable2 = stateVariable1[stateVariable1.index('-')+1:]
+                self._LabelY = self._stateVariable1+'-'+self._stateVariable2 if self._ylab == None else self._ylab
+            except ValueError:
+                self._stateVariable1 = stateVariable1
+                self._stateVariable2 = stateVariable2
+                self._LabelY = self._stateVariable1 if self._ylab == None else self._ylab
     #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
     #            self._pyDSode.set(pars = self._pyDSmodel.pars )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
     #            self._pyDSode.pars = {bifurcationParameter: 0}             ## Lower bound of the bifurcation parameter (@todo: set dynamically?)
             initconds = {stateVariable1: self._pyDSmodel.pars[str(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)} ## @todo: guess where steady states are?
-            for reactant in self._mumotModel._reactants:
-                if str(reactant) != stateVariable1:
-                    initconds[str(reactant)] = self._pyDSmodel.pars[str(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)
-                self._pyDSmodel.ics = initconds
-            self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }           
+            
+            self._pyDSmodel.ics   = {}
+            for kk in range(len(self._initSV)):
+                self._pyDSmodel.ics[self._initSV[kk][0]] = self._initSV[kk][1]  #{'A': 0.1, 'B': 0.9 }  
+            print('Initial conditions chosen for state variables: ',self._pyDSmodel.ics)   
     #            self._pyDSode.set(ics = initconds)
             self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
-            self._pyDSode.set(pars = {bifurcationParameter: 5} )                       ## @@todo remove magic number
+            self._pyDSode.set(pars = {bifurcationParameter: self._bifInit})      ## @@todo remove magic number
             self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class 
             ## @todo: add self._pyDScontArgs to __init__()
             self._pyDScontArgs = dst.args(name='EQ1', type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labeled 'EQ1'.
             self._pyDScontArgs.freepars     = [bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
-            self._pyDScontArgs.MaxNumPoints = 450                      ## The following 3 parameters are set after trial-and-error @todo: how to automate this?
+            self._pyDScontArgs.MaxNumPoints = kwargs.get('ContMaxNumPoints',450)    ## The following 3 parameters are set after trial-and-error @todo: how to automate this?
             self._pyDScontArgs.MaxStepSize  = 1e-1
             self._pyDScontArgs.MinStepSize  = 1e-5
             self._pyDScontArgs.StepSize     = 2e-3
-            self._pyDScontArgs.LocBifPoints = ['LP', 'BP']                    ## @todo WAS 'LP' (detect limit points / saddle-node bifurcations)
-            self._pyDScontArgs.SaveEigen    = True                     # to tell unstable from stable branches
+            self._pyDScontArgs.LocBifPoints = ['LP', 'BP']        ## @todo WAS 'LP' (detect limit points / saddle-node bifurcations)
+            self._pyDScontArgs.SaveEigen    = True             # to tell unstable from stable branches
 #            self._pyDScontArgs.CalcStab     = True
         self._logs.append(log)
 
-
+        
 #            self._bifurcation2Dfig = plt.figure(1)                    
 
         if kwargs != None:
             self._plottingMethod = kwargs.get('plottingMethod', 'pyDS')
         else:
             self._plottingMethod = 'pyDS'
-
+        
+        #self._plottingMethod = 'mumot'
         self._plot_bifurcation()
             
 
@@ -1584,37 +1651,148 @@ class MuMoTbifurcationView(MuMoTview):
                 except:
                     self._showErrorMessage('Continuation failure (backward)<br>')
                 try:
-                    self._pyDScont['EQ1'].forward()                                  ## @todo: how to choose direction?
+                    self._pyDScont['EQ1'].forward()              ## @todo: how to choose direction?
                 except:
                     self._showErrorMessage('Continuation failure (forward)<br>')
             except ZeroDivisionError:
                 self._showErrorMessage('Division by zero<br>')                
     #            self._pyDScont['EQ1'].info()
-        if self._plottingMethod.lower() == 'mumot':
-            ## use internal plotting routines (@todo: not yet supported)
-            assert false
-        else:
-            if self._plottingMethod.lower() != 'pyds':
-                self._showErrorMessage('Unknown plottingMethod argument: using default pyDS tool plotting<br>')    
-            if self._stateVariable2 == None:
+        
+            if self._plottingMethod.lower() == 'mumot':
+                ## use internal plotting routines: now supported!   
+                #self._stateVariable2 == None:
                 # 2-d bifurcation diagram
-                if self._silent == True:
-                    assert false # @todo: enable when Thomas implements in-housse plotting routines
-                    self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], axes = None, stability = True)
+                self._specialPoints=[]  #todo: modify to include several equations not only EQ1
+                k_iter=1
+                self.sPoints_X=[] #bifurcation parameter
+                self.sPoints_Y=[] #state variable 1
+                self.sPoints_Labels=[]
+                
+                #while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
+                #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[2])
+                #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[0])
+                #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[1])
+                #    self.sPoints_Labels.append('BP'+str(k_iter))
+                #    k_iter+=1
+                #k_iter=1
+                #while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
+                #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[2])
+                #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[0])
+                #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[1])
+                #    self.sPoints_Labels.append('LP'+str(k_iter))
+                #    k_iter+=1
+    
+                
+                
+                if self._stateVariable2 != None:
+                    self.sPoints_Z=[] #state variable 2
+                    self._YDATA = (self._pyDScont['EQ1'].sol[self._stateVariable1] -
+                              self._pyDScont['EQ1'].sol[self._stateVariable2])
+                    while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
+                        self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
+                        self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
+                        self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable2])
+                        self.sPoints_Labels.append('BP'+str(k_iter))
+                        k_iter+=1
+                    k_iter=1
+                    while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
+                        self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
+                        self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
+                        self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable2])
+                        self.sPoints_Labels.append('LP'+str(k_iter))
+                        k_iter+=1
+                    self._specialPoints=[self.sPoints_X, 
+                                         np.asarray(self.sPoints_Y)-np.asarray(self.sPoints_Z), 
+                                         self.sPoints_Labels]
+                    
                 else:
-                    self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figureNum)
+                    self._YDATA = self._pyDScont['EQ1'].sol[self._stateVariable1]
+                    while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
+                        self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
+                        self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
+                        self.sPoints_Labels.append('BP'+str(k_iter))
+                        k_iter+=1
+                    k_iter=1
+                    while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
+                        self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
+                        self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
+                        self.sPoints_Labels.append('LP'+str(k_iter))
+                        k_iter+=1
+                    
+                    self._specialPoints=[self.sPoints_X, self.sPoints_Y, self.sPoints_Labels]    
+                
+                #The following was an attempt to include also EQ2 if a BP or LP was found using EQ1    
+                #if self._pyDScont['EQ1'].getSpecialPoint('BP1'):
+                #    self._pyDSode.set(pars = {self._bifurcationParameter: 5} )
+                #    self._pyDScontArgs.freepars     = [self._bifurcationParameter]
+                #    self._pyDScontArgs = dst.args(name='EQ2', type='EP-C')
+                #    self._pyDScontArgs.initpoint    = 'EQ1:BP1'
+                #    
+                #   self._pyDScont.newCurve(self._pyDScontArgs)
+                #   try:
+                #        try:
+                #            self._pyDScont['EQ2'].backward()
+                #        except:
+                #            self._showErrorMessage('Continuation failure (backward)<br>')
+                #        try:
+                #            self._pyDScont['EQ2'].forward()
+                #        except:
+                #            self._showErrorMessage('Continuation failure (forward)<br>')
+                #    except ZeroDivisionError:
+                #        self._showErrorMessage('Division by zero<br>')  
+                
+                
+                #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[2])
+                #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[0])
+                #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[1])
+                #    self.sPoints_Labels.append('BP'+str(k_iter))
+                
+                #elif self._pyDScont['EQ2'].getSpecialPoint('LP1'):
+                #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[2])
+                #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[0])
+                #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[1])
+                #    self.sPoints_Labels.append('LP'+str(k_iter))
+                #    k_iter+=1
+                
+                print('Special Points on curve: ', self._specialPoints)
+                
+                plt.clf()
+                _fig_formatting_2D(xdata=[self._pyDScont['EQ1'].sol[self._bifurcationParameter]], 
+                                ydata=[self._YDATA],
+                                xlab = self._LabelX, 
+                                ylab = self._LabelY,
+                                specialPoints=self._specialPoints, 
+                                eigenvalues=[np.array([self._pyDScont['EQ1'].sol[kk].labels['EP']['data'].evals for kk in range(len(self._pyDScont['EQ1'].sol[self._stateVariable1]))])], 
+                                ax_reformat=False, curve_replot=False, fontsize=self._chooseFontSize)
+
 #                self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
+                #else:
+                #    pass
+                #assert false
             else:
-                pass
+                if self._plottingMethod.lower() != 'pyds':
+                    self._showErrorMessage('Unknown plotType argument: using default pyDS tool plotting<br>')    
+                if self._stateVariable2 == None:
+                    # 2-d bifurcation diagram
+                    if self._silent == True:
+                        #assert false # @todo: enable when Thomas implements in-housse plotting routines
+                        self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], axes = None, stability = True)
+                    else:
+                        self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figureNum)
+    #                self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
+                else:
+                    pass
         self._logs.append(log)
 
     def _replot_bifurcation(self):
         for name, value in self._controller._widgetDict.items():
             self._pyDSmodel.pars[name] = value.value
+ 
         self._pyDScont.plot.clearall()
+        
 #        self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    ## @todo: replace           
         self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  ## @todo: add to __init__()
-        self._pyDSode.set(pars = {self._bifurcationParameter: 5} )                       ## @todo remove magic number
+        self._pyDSode.set(pars = {self._bifurcationParameter: self._bifInit} )                       ## @todo remove magic number
         self._pyDScont = dst.ContClass(self._pyDSode)              ## Set up continuation class (@todo: add to __init__())
 ##        self._pyDScont.newCurve(self._pyDScontArgs)
 #        self._pyDScont['EQ1'].reset(self._pyDSmodel.pars)
@@ -1622,6 +1800,7 @@ class MuMoTbifurcationView(MuMoTview):
 #        self._pyDScont['EQ1'].reset()
 #        self._pyDScont.update(self._pyDScontArgs)                         ## @todo: what does this do?
         self._plot_bifurcation()
+
 
 ## agent on networks view on model 
 class MuMoTmultiagentView(MuMoTview):
@@ -2416,4 +2595,411 @@ def _buildFig(object, figure = None):
         object._figure = plt.figure(object._figureNum) 
     else:
         object._figure = figure
+
+## used for determining significant digits for axes formatting in plots MuMoTstreamView and MuMoTbifurcationView 
+def round_to_1(x):
+    return round(x, -int(floor(log10(abs(x)))))
+
+## Function for editing properties of 3D plots. 
+#
+#This function is used in MuMoTvectorView.
+def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=False, **kwargs):
     
+    fig = plt.gcf()
+    #fig.set_size_inches(10,8) 
+    ax = fig.gca(projection='3d')
+    
+    if kwargs.get('showPlane', False) == True:
+        pointsMesh = np.linspace(0, 1, 11)
+        Xdat, Ydat = np.meshgrid(pointsMesh, pointsMesh)
+        Zdat = 1 - Xdat - Ydat
+        Zdat[Zdat<0] = 0
+        ax.plot_surface(Xdat, Ydat, Zdat, rstride=20, cstride=20, color='grey', alpha=0.25)
+    
+    if xlab==None:
+        try:
+            xlabelstr = ax.xaxis.get_label_text()
+            if len(ax.xaxis.get_label_text())==0:
+                xlabelstr = 'choose x-label'
+        except:
+            xlabelstr = 'choose x-label'
+    else:
+        xlabelstr = xlab
+        
+    if ylab==None:
+        try:
+            ylabelstr = ax.yaxis.get_label_text()
+            if len(ax.yaxis.get_label_text())==0:
+                ylabelstr = 'choose y-label'
+        except:
+            ylabelstr = 'choose y-label'
+    else:
+        ylabelstr = ylab
+        
+    if zlab==None:
+        try:
+            zlabelstr = ax.yaxis.get_label_text()
+            if len(ax.zaxis.get_label_text())==0:
+                zlabelstr = 'choose z-label'
+        except:
+            zlabelstr = 'choose z-label'
+    else:
+        zlabelstr = zlab
+    
+    x_lim_left = ax.get_xbound()[0]#ax.xaxis.get_data_interval()[0]
+    x_lim_right = ax.get_xbound()[1]#ax.xaxis.get_data_interval()[1]
+    y_lim_bot = ax.get_ybound()[0]#ax.yaxis.get_data_interval()[0]
+    y_lim_top = ax.get_ybound()[1]
+    z_lim_bot = ax.get_zbound()[0]#ax.zaxis.get_data_interval()[0]
+    z_lim_top = ax.get_zbound()[1]
+    if ax_reformat==False:
+        xmajortickslocs = ax.xaxis.get_majorticklocs()
+        #xminortickslocs = ax.xaxis.get_minorticklocs()
+        ymajortickslocs = ax.yaxis.get_majorticklocs()
+        #yminortickslocs = ax.yaxis.get_minorticklocs()
+        zmajortickslocs = ax.zaxis.get_majorticklocs()
+        #zminortickslocs = ax.zaxis.get_minorticklocs()
+        #plt.cla()
+        ax.set_xticks(xmajortickslocs)
+        #ax.set_xticks(xminortickslocs, minor = True)
+        ax.set_yticks(ymajortickslocs)
+        #ax.set_yticks(yminortickslocs, minor = True)
+        ax.set_zticks(zmajortickslocs)
+        #ax.set_zticks(zminortickslocs, minor = True)
+    else:
+        max_xrange = x_lim_right - x_lim_left
+        max_yrange = y_lim_top - y_lim_bot
+        if kwargs.get('showPlane', False) == True:
+            max_zrange = z_lim_top
+        else:
+            max_zrange = z_lim_top - z_lim_bot
+            
+        if max_xrange < 1.0:
+            xMLocator_major = round_to_1(max_xrange/4)
+        else:
+            xMLocator_major = round_to_1(max_xrange/6)
+        #xMLocator_minor = xMLocator_major/2
+        if max_yrange < 1.0:
+            yMLocator_major = round_to_1(max_yrange/4)
+        else:
+            yMLocator_major = round_to_1(max_yrange/6)
+        #yMLocator_minor = yMLocator_major/2
+        if max_zrange < 1.0:
+            zMLocator_major = round_to_1(max_zrange/4)
+        else:
+            zMLocator_major = round_to_1(max_zrange/6)
+        #zMLocator_minor = yMLocator_major/2
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(xMLocator_major))
+        #ax.xaxis.set_minor_locator(ticker.MultipleLocator(xMLocator_minor))
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(yMLocator_major))
+        #ax.yaxis.set_minor_locator(ticker.MultipleLocator(yMLocator_minor))
+        ax.zaxis.set_major_locator(ticker.MultipleLocator(zMLocator_major))
+        #ax.zaxis.set_minor_locator(ticker.MultipleLocator(zMLocator_minor))
+        
+    ax.set_xlim3d(x_lim_left,x_lim_right)
+    ax.set_ylim3d(y_lim_bot,y_lim_top)
+    if kwargs.get('showPlane', False) == True:
+        ax.set_zlim3d(0,z_lim_top)
+    else:
+        ax.set_zlim3d(z_lim_bot,z_lim_top)
+                    
+    if 'fontsize' in kwargs:
+        if not kwargs['fontsize']==None:
+            chooseFontSize = kwargs['fontsize']
+    elif len(xlabelstr) > 40 or len(ylabelstr) > 40 or len(zlabelstr) > 40:
+        chooseFontSize = 16
+    elif 31 <= len(xlabelstr) <= 40 or 31 <= len(ylabelstr) <= 40 or 31 <= len(zlabelstr) <= 40:
+        chooseFontSize = 20
+    elif 26 <= len(xlabelstr) <= 30 or 26 <= len(ylabelstr) <= 30 or 26 <= len(zlabelstr) <= 30:
+        chooseFontSize = 26
+    else:
+        chooseFontSize = 30
+    
+    ax.xaxis.labelpad = 20
+    ax.yaxis.labelpad = 20
+    ax.zaxis.labelpad = 20
+    ax.set_xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
+    ax.set_ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
+    if len(str(zlabelstr))>1:
+        ax.set_zlabel(r''+str(zlabelstr), fontsize = chooseFontSize, rotation=90)
+    else:
+        ax.set_zlabel(r''+str(zlabelstr), fontsize = chooseFontSize)
+        
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(18) 
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(18)
+    for tick in ax.zaxis.get_major_ticks():
+        tick.set_pad(8)
+        tick.label.set_fontsize(18)      
+        
+    plt.tight_layout(pad=4)
+            
+## Function for formatting 2D plots. 
+#
+#This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
+def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None, 
+                       curve_replot=False, ax_reformat=False, specialPoints=None,
+                       xlab=None, ylab=None, curvelab=None, **kwargs):
+    #print(kwargs)
+    
+    line_color_list = ['k', 'b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange']
+    linestyle_list = ['solid','dashed', 'dashdot', 'dotted', 'solid','dashed', 'dashdot', 'dotted', 'solid']
+    
+    if xdata and ydata:
+        if len(xdata) == len(ydata):
+            #plt.figure(figsize=(8,6), dpi=80)
+            ax = plt.axes()
+            data_x=xdata
+            data_y=ydata
+            
+        else:
+            print('CHECK input:')
+            print('xdata and ydata are lists of arrays and must have same lengths!')
+            print('Array pairs xdata[k] and ydata[k] (k = 0, ..., N-1) must have same lengths too!')
+
+    elif figure:
+        plt.gcf()
+        ax = plt.gca()
+        data_x = [ax.lines[kk].get_xdata() for kk in range(len(ax.lines))]
+        data_y = [ax.lines[kk].get_ydata() for kk in range(len(ax.lines))]
+        
+    else:
+        print('Choose either figure or dataset(s)')
+    #print(data_x)
+    
+    if xlab==None:
+        try:
+            xlabelstr = ax.xaxis.get_label_text()
+            if len(ax.xaxis.get_label_text())==0:
+                xlabelstr = 'choose x-label'
+        except:
+            xlabelstr = 'choose x-label'
+    else:
+        xlabelstr = xlab
+        
+    if ylab==None:
+        try:
+            ylabelstr = ax.yaxis.get_label_text()
+            if len(ax.yaxis.get_label_text())==0:
+                ylabelstr = 'choose y-label'
+        except:
+            ylabelstr = 'choose y-label'
+    else:
+        ylabelstr = ylab
+    
+    if ax_reformat==False and figure!=None:
+        xmajortickslocs = ax.xaxis.get_majorticklocs()
+        xminortickslocs = ax.xaxis.get_minorticklocs()
+        ymajortickslocs = ax.yaxis.get_majorticklocs()
+        yminortickslocs = ax.yaxis.get_minorticklocs()
+        x_lim_left = ax.get_xbound()[0]#ax.xaxis.get_data_interval()[0]
+        x_lim_right = ax.get_xbound()[1]#ax.xaxis.get_data_interval()[1]
+        y_lim_bot = ax.get_ybound()[0]#ax.yaxis.get_data_interval()[0]
+        y_lim_top = ax.get_ybound()[1]#ax.yaxis.get_data_interval()[1]
+        #print(ax.yaxis.get_data_interval())
+        
+    if curve_replot==True:
+        plt.cla()
+    
+    if ax_reformat==False and figure!=None:
+        ax.set_xticks(xmajortickslocs)
+        ax.set_xticks(xminortickslocs, minor = True)
+        ax.set_yticks(ymajortickslocs)
+        ax.set_yticks(yminortickslocs, minor = True)
+        ax.tick_params(axis = 'both', which = 'major', length=5, width=2)
+        ax.tick_params(axis = 'both', which = 'minor', length=3, width=1)
+        plt.xlim(x_lim_left,x_lim_right)
+        plt.ylim(y_lim_bot,y_lim_top)
+        
+    if figure==None or curve_replot==True:
+        if 'LineThickness' in kwargs:
+            LineThickness = kwargs['LineThickness']
+        else:
+            LineThickness = 4
+        
+        if eigenvalues:
+            solX_dict={} #bifurcation parameter
+            solY_dict={} #state variable 1
+            solX_dict['solX_unst']=[] 
+            solY_dict['solY_unst']=[]
+            solX_dict['solX_stab']=[]
+            solY_dict['solY_stab']=[]
+            solX_dict['solX_saddle']=[]
+            solY_dict['solY_saddle']=[]
+            
+            nr_sol_unst=0
+            nr_sol_saddle=0
+            nr_sol_stab=0
+            data_x_tmp=[]
+            data_y_tmp=[]
+            #print(specialPoints)
+            for nn in range(len(data_x)):
+                #sign_change=0
+                for kk in range(len(eigenvalues[nn])):
+                    if kk > 0:
+                        if (np.sign(np.real(eigenvalues[nn][kk][0]))*np.sign(np.real(eigenvalues[nn][kk-1][0])) < 0
+                            or np.sign(np.real(eigenvalues[nn][kk][1]))*np.sign(np.real(eigenvalues[nn][kk-1][1])) < 0):
+                            #print('sign change')
+                            #sign_change+=1
+                            #print(sign_change)
+                            #if specialPoints !=None and specialPoints[0]!=[]:
+                            #    data_x_tmp.append(specialPoints[0][sign_change-1])
+                            #    data_y_tmp.append(specialPoints[1][sign_change-1])
+                            
+                            if nr_sol_unst == 1:
+                                solX_dict['solX_unst'].append(data_x_tmp)
+                                solY_dict['solY_unst'].append(data_y_tmp)
+                            elif nr_sol_saddle == 1:
+                                solX_dict['solX_saddle'].append(data_x_tmp)
+                                solY_dict['solY_saddle'].append(data_y_tmp)
+                            elif nr_sol_stab == 1:
+                                solX_dict['solX_stab'].append(data_x_tmp)
+                                solY_dict['solY_stab'].append(data_y_tmp)
+                            else:
+                                print('Something went wrong!')
+                            
+                            data_x_tmp_first=data_x_tmp[-1]
+                            data_y_tmp_first=data_y_tmp[-1]
+                            nr_sol_stab=0
+                            nr_sol_saddle=0
+                            nr_sol_unst=0
+                            data_x_tmp=[]
+                            data_y_tmp=[]
+                            data_x_tmp.append(data_x_tmp_first)
+                            data_y_tmp.append(data_y_tmp_first)
+                            #if specialPoints !=None and specialPoints[0]!=[]:
+                            #    data_x_tmp.append(specialPoints[0][sign_change-1])
+                            #    data_y_tmp.append(specialPoints[1][sign_change-1])
+                                    
+                    if np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) < 0:  
+                        nr_sol_stab=1
+                    elif np.real(eigenvalues[nn][kk][0]) > 0 and np.real(eigenvalues[nn][kk][1]) < 0:
+                        nr_sol_saddle=1
+                    elif np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) > 0:
+                        nr_sol_saddle=1
+                    else:
+                        nr_sol_unst=1
+                        
+                    data_x_tmp.append(data_x[nn][kk])
+                    data_y_tmp.append(data_y[nn][kk])
+                
+                    if kk == len(eigenvalues[nn])-1:
+                        if nr_sol_unst == 1:
+                            solX_dict['solX_unst'].append(data_x_tmp)
+                            solY_dict['solY_unst'].append(data_y_tmp)
+                        elif nr_sol_saddle == 1:
+                            solX_dict['solX_saddle'].append(data_x_tmp)
+                            solY_dict['solY_saddle'].append(data_y_tmp)
+                        elif nr_sol_stab == 1:
+                            solX_dict['solX_stab'].append(data_x_tmp)
+                            solY_dict['solY_stab'].append(data_y_tmp)
+                        else:
+                            print('Something went wrong!')
+                        
+                
+            if not solX_dict['solX_unst'] == []:            
+                for jj in range(len(solX_dict['solX_unst'])):
+                    plt.plot(solX_dict['solX_unst'][jj], 
+                             solY_dict['solY_unst'][jj], 
+                             c = line_color_list[3], 
+                             ls = linestyle_list[3], lw = LineThickness, label = r'unstable')
+            if not solX_dict['solX_stab'] == []:            
+                for jj in range(len(solX_dict['solX_stab'])):
+                    plt.plot(solX_dict['solX_stab'][jj], 
+                             solY_dict['solY_stab'][jj], 
+                             c = line_color_list[2], 
+                             ls = linestyle_list[0], lw = LineThickness, label = r'stable')
+            if not solX_dict['solX_saddle'] == []:            
+                for jj in range(len(solX_dict['solX_saddle'])):
+                    plt.plot(solX_dict['solX_saddle'][jj], 
+                             solY_dict['solY_saddle'][jj], 
+                             c = line_color_list[1], 
+                             ls = linestyle_list[1], lw = LineThickness, label = r'saddle')
+                                    
+                            
+        else:
+            for nn in range(len(data_x)):
+                try:
+                    plt.plot(data_x[nn], data_y[nn], c = line_color_list[nn], 
+                             ls = linestyle_list[nn], lw = LineThickness, label = r''+str(curvelab[nn]))
+                except:
+                    plt.plot(data_x[nn], data_y[nn], c = line_color_list[nn], 
+                             ls = linestyle_list[nn], lw = LineThickness)
+        
+        
+    if len(xlabelstr) > 40 or len(ylabelstr) > 40:
+        chooseFontSize = 16
+    elif 31 <= len(xlabelstr) <= 40 or 31 <= len(ylabelstr) <= 40:
+        chooseFontSize = 20
+    elif 26 <= len(xlabelstr) <= 30 or 26 <= len(ylabelstr) <= 30:
+        chooseFontSize = 26
+    else:
+        chooseFontSize = 30
+        
+    if 'fontsize' in kwargs:
+        if not kwargs['fontsize']==None:
+            chooseFontSize = kwargs['fontsize']
+
+    plt.xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
+    plt.ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
+    
+    
+    if figure==None or ax_reformat==True:
+        xrange = [np.max(data_x[kk]) - np.min(data_x[kk]) for kk in range(len(data_x))]
+        yrange = [np.max(data_y[kk]) - np.min(data_y[kk]) for kk in range(len(data_y))]
+        max_xrange = max(xrange)
+        max_yrange = max(yrange) 
+        if max_xrange < 1.0:
+            xMLocator_major = round_to_1(max_xrange/5)
+        else:
+            xMLocator_major = round_to_1(max_xrange/10)
+        xMLocator_minor = xMLocator_major/2
+        if max_yrange < 1.0:
+            yMLocator_major = round_to_1(max_yrange/5)
+        else:
+            yMLocator_major = round_to_1(max_yrange/10)
+        yMLocator_minor = yMLocator_major/2
+
+        plt.xlim(np.min(data_x)-xMLocator_minor, np.max(data_x)+xMLocator_minor)
+        plt.ylim(np.min(data_y)-yMLocator_minor, np.max(data_y)+yMLocator_minor)
+
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(xMLocator_major))
+        ax.xaxis.set_minor_locator(ticker.MultipleLocator(xMLocator_minor))
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(yMLocator_major))
+        ax.yaxis.set_minor_locator(ticker.MultipleLocator(yMLocator_minor))
+        for axis in ['top','bottom','left','right']:
+            ax.spines[axis].set_linewidth(2)
+        
+        ax.tick_params('both', length=5, width=2, which='major')
+        ax.tick_params('both', length=3, width=1, which='minor')
+    
+    if eigenvalues:
+        if not specialPoints[0] == []:
+            for jj in range(len(specialPoints[0])):
+                plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=15, 
+                         c=line_color_list[0])    
+            for a,b,c in zip(specialPoints[0], specialPoints[1], specialPoints[2]): 
+                if a > plt.xlim()[0]+(plt.xlim()[1]-plt.xlim()[0])/2:
+                    x_offset = -(plt.xlim()[1]-plt.xlim()[0])*0.02
+                else:
+                    x_offset = (plt.xlim()[1]-plt.xlim()[0])*0.02
+                if b > plt.ylim()[0]+(plt.ylim()[1]-plt.ylim()[0])/2:
+                    y_offset = -(plt.ylim()[1]-plt.ylim()[0])*0.05
+                else:
+                    y_offset = (plt.ylim()[1]-plt.ylim()[0])*0.05
+                plt.text(a+x_offset, b+y_offset, c, fontsize=18)
+    
+    
+    if curvelab != None:
+        if 'legend_loc' in kwargs:
+            legend_loc = kwargs['legend_loc']
+        else:
+            legend_loc = 'upper left'
+        plt.legend(loc=str(legend_loc), fontsize=20, ncol=2)
+        
+    for tick in ax.xaxis.get_major_ticks():
+                    tick.label.set_fontsize(18) 
+    for tick in ax.yaxis.get_major_ticks():
+                    tick.label.set_fontsize(18)
+    plt.tight_layout() 
