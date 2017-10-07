@@ -1388,7 +1388,7 @@ class MuMoTfieldView(MuMoTview):
             self._chooseFontSize = kwargs['fontsize']
         else:
             self._chooseFontSize=None
-        
+        self._showFixedPoints = kwargs.get('showFixedPoints', True)
         self._xlab = kwargs.get('xlab', str(stateVariable1))
         self._ylab = kwargs.get('ylab', str(stateVariable2))
         if stateVariable3:
@@ -1404,7 +1404,72 @@ class MuMoTfieldView(MuMoTview):
         if not(silent):
             self._plot_field()
             
-
+    ## calculates stationary states of 2d system
+    def _get_fixedPoints2d(self):
+        if self._controller != None:
+            paramNames = []
+            paramValues = []
+            for name, value in self._controller._widgetDict.items():
+                paramNames.append(name)
+                paramValues.append(value.value)          
+        else:
+            paramNames = self._paramNames
+            paramValues = self._paramValues           
+            
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        argDict[self._mumotModel._systemSize] = 1
+        
+        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+        eps=1e-8
+        EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
+        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
+        
+        MAT = Matrix([EQ1, EQ2])
+        JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
+        
+        eigList = []
+        for nn in range(len(realEQsol)): 
+            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
+            evSet = JACsub.eigenvals()
+            eigList.append(evSet)
+        return realEQsol, eigList #returns two lists of dictionaries
+    
+    ## calculates stationary states of 3d system
+    def _get_fixedPoints3d(self):
+        if self._controller != None:
+            paramNames = []
+            paramValues = []
+            for name, value in self._controller._widgetDict.items():
+                paramNames.append(name)
+                paramValues.append(value.value)          
+        else:
+            paramNames = self._paramNames
+            paramValues = self._paramValues           
+            
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        argDict[self._mumotModel._systemSize] = 1
+        
+        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+        EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
+        eps=1e-8
+        EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
+        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps and Abs(im(EQsol[kk][self._stateVariable3]))<=eps)]
+        
+        MAT = Matrix([EQ1, EQ2, EQ3])
+        JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
+        
+        eigList = []
+        for nn in range(len(realEQsol)): 
+            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
+            evSet = JACsub.eigenvals()
+            eigList.append(evSet)
+        return realEQsol, eigList #returns two lists of dictionaries
+    
+    
     def _plot_field(self):
         if not(self._silent): ## @todo is this necessary?
             plt.figure(self._figureNum)
@@ -1482,14 +1547,54 @@ class MuMoTfieldView(MuMoTview):
 class MuMoTstreamView(MuMoTfieldView):
     def _plot_field(self):
         super()._plot_field()
+        if self._showFixedPoints==True:
+            realEQsol, eigList = self._get_fixedPoints2d()
+            
+            EV = []
+            EVplot = []
+            for kk in range(len(eigList)):
+                EVsub = []
+                for key in eigList[kk]:
+                    if eigList[kk][key] >1:
+                        for jj in range(eigList[kk][key]):
+                            EVsub.append(key.evalf())
+                    else:
+                        EVsub.append(key.evalf())
+                        
+                EV.append(EVsub)
+                if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+                    EVplot.append(EVsub)
+            #EV = []
+            #EVplot = []
+            #for kk in range(len(eigList)):
+            #    EVsub = []
+            #    for key in eigList[kk]:
+            #        EVsub.append(key.evalf())
+            #    EV.append(EVsub)
+            #    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+            #        EVplot.append(EVsub)
+
+            FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1)], 
+                         [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
+            FixedPoints.append(EVplot)
+        else:
+            FixedPoints = None
+            
         self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
         fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
         plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
         plt.xlim(0,1)
         plt.ylim(0,1)
-        _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, ax_reformat=False, curve_replot=False,
+        
+        _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
                    ylab = self._ylab, fontsize=self._chooseFontSize)
 #        plt.set_aspect('equal') ## @todo
+
+        if self._showFixedPoints==True:
+            with io.capture_output() as log:
+                for kk in range(len(realEQsol)):
+                    print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]))
+            self._logs.append(log)
 
 
 ## vector plot view on model
@@ -1497,21 +1602,91 @@ class MuMoTvectorView(MuMoTfieldView):
     def _plot_field(self):
         super()._plot_field()
         if self._stateVariable3 == None:
+            if self._showFixedPoints==True:
+                realEQsol, eigList = self._get_fixedPoints2d()
+                
+                EV = []
+                EVplot = []
+                for kk in range(len(eigList)):
+                    EVsub = []
+                    for key in eigList[kk]:
+                        if eigList[kk][key] >1:
+                            for jj in range(eigList[kk][key]):
+                                EVsub.append(key.evalf())
+                        else:
+                            EVsub.append(key.evalf())
+                            
+                    EV.append(EVsub)
+                    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+                        EVplot.append(EVsub)
+
+                #EV = []
+                #EVplot = []
+                #for kk in range(len(eigList)):
+                #    EVsub = []
+                #    for key in eigList[kk]:
+                #        EVsub.append(key.evalf())
+                #    EV.append(EVsub)
+                #    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+                #        EVplot.append(EVsub)
+                
+                FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1)], 
+                             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
+                FixedPoints.append(EVplot)
+            else:
+                FixedPoints = None
+            
             self._get_field2d("2d vector plot", 10) ## @todo: allow user to set mesh points with keyword
             fig_vector=plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') ## @todo: define colormap by user keyword
             plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
             plt.xlim(0,1)
             plt.ylim(0,1)
-            _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, ax_reformat=False, curve_replot=False,
+            _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
                    ylab = self._ylab, fontsize=self._chooseFontSize)
     #        plt.set_aspect('equal') ## @todo
+            if self._showFixedPoints==True:
+                with io.capture_output() as log:
+                    for kk in range(len(realEQsol)):
+                        print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]))
+                self._logs.append(log)
+        
         else:
+            if self._showFixedPoints==True:
+                realEQsol, eigList = self._get_fixedPoints3d()
+                EV = []
+                EVplot = []
+                for kk in range(len(eigList)):
+                    EVsub = []
+                    for key in eigList[kk]:
+                        if eigList[kk][key] >1:
+                            for jj in range(eigList[kk][key]):
+                                EVsub.append(key.evalf())
+                        else:
+                            EVsub.append(key.evalf())
+                            
+                    EV.append(EVsub)
+                    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable3]) <= 1):
+                        EVplot.append(EVsub)
+                
+                FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1)], 
+                             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)],
+                             [realEQsol[kk][self._stateVariable3] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable3]) <= 1)]]
+                FixedPoints.append(EVplot)
+            else:
+                FixedPoints = None
+                
             self._get_field3d("3d vector plot", 10)
             ax = self._figure.gca(projection = '3d')
             fig_vec3d=ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length = 0.01, color = 'black') ## @todo: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
-            _fig_formatting_3D(fig_vec3d, xlab= self._xlab, ylab= self._ylab, zlab= self._zlab, 
-                               ax_reformat=True, showPlane=True)
+            _fig_formatting_3D(figure=fig_vec3d, xlab= self._xlab, ylab= self._ylab, zlab= self._zlab, specialPoints=FixedPoints,
+                               showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=True)
 #           plt.set_aspect('equal') ## @todo
+
+            if self._showFixedPoints==True:
+                with io.capture_output() as log:
+                    for kk in range(len(realEQsol)):
+                        print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]))
+                self._logs.append(log)
 
 
 ## bifurcation view on model 
@@ -1626,16 +1801,15 @@ class MuMoTbifurcationView(MuMoTview):
             self._pyDScontArgs.SaveEigen    = True             # to tell unstable from stable branches
 #            self._pyDScontArgs.CalcStab     = True
         self._logs.append(log)
-
         
 #            self._bifurcation2Dfig = plt.figure(1)                    
 
-        if kwargs != None:
-            self._plottingMethod = kwargs.get('plottingMethod', 'pyDS')
-        else:
-            self._plottingMethod = 'pyDS'
+        #if kwargs != None:
+        #    self._plottingMethod = kwargs.get('plottingMethod', 'pyDS')
+        #else:
+        #    self._plottingMethod = 'pyDS'
         
-        #self._plottingMethod = 'mumot'
+        self._plottingMethod = kwargs.get('plottingMethod', 'mumot')
         self._plot_bifurcation()
             
 
@@ -1684,41 +1858,47 @@ class MuMoTbifurcationView(MuMoTview):
                 
                 
                 if self._stateVariable2 != None:
-                    self.sPoints_Z=[] #state variable 2
-                    self._YDATA = (self._pyDScont['EQ1'].sol[self._stateVariable1] -
-                              self._pyDScont['EQ1'].sol[self._stateVariable2])
-                    while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
-                        self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
-                        self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
-                        self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable2])
-                        self.sPoints_Labels.append('BP'+str(k_iter))
-                        k_iter+=1
-                    k_iter=1
-                    while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
-                        self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
-                        self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
-                        self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable2])
-                        self.sPoints_Labels.append('LP'+str(k_iter))
-                        k_iter+=1
-                    self._specialPoints=[self.sPoints_X, 
-                                         np.asarray(self.sPoints_Y)-np.asarray(self.sPoints_Z), 
-                                         self.sPoints_Labels]
+                    try:
+                        self.sPoints_Z=[] #state variable 2
+                        self._YDATA = (self._pyDScont['EQ1'].sol[self._stateVariable1] -
+                                  self._pyDScont['EQ1'].sol[self._stateVariable2])
+                        while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
+                            self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
+                            self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
+                            self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable2])
+                            self.sPoints_Labels.append('BP'+str(k_iter))
+                            k_iter+=1
+                        k_iter=1
+                        while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
+                            self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
+                            self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
+                            self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable2])
+                            self.sPoints_Labels.append('LP'+str(k_iter))
+                            k_iter+=1
+                        self._specialPoints=[self.sPoints_X, 
+                                             np.asarray(self.sPoints_Y)-np.asarray(self.sPoints_Z), 
+                                             self.sPoints_Labels]
+                    except TypeError:
+                        print('Continuation failed; try with different parameters.')
                     
                 else:
-                    self._YDATA = self._pyDScont['EQ1'].sol[self._stateVariable1]
-                    while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
-                        self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
-                        self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
-                        self.sPoints_Labels.append('BP'+str(k_iter))
-                        k_iter+=1
-                    k_iter=1
-                    while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
-                        self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
-                        self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
-                        self.sPoints_Labels.append('LP'+str(k_iter))
-                        k_iter+=1
-                    
-                    self._specialPoints=[self.sPoints_X, self.sPoints_Y, self.sPoints_Labels]    
+                    try:
+                        self._YDATA = self._pyDScont['EQ1'].sol[self._stateVariable1]
+                        while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
+                            self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
+                            self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
+                            self.sPoints_Labels.append('BP'+str(k_iter))
+                            k_iter+=1
+                        k_iter=1
+                        while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
+                            self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
+                            self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
+                            self.sPoints_Labels.append('LP'+str(k_iter))
+                            k_iter+=1
+                        
+                        self._specialPoints=[self.sPoints_X, self.sPoints_Y, self.sPoints_Labels]    
+                    except TypeError:
+                        print('Continuation failed; try with different parameters.')
                 
                 #The following was an attempt to include also EQ2 if a BP or LP was found using EQ1    
                 #if self._pyDScont['EQ1'].getSpecialPoint('BP1'):
@@ -2602,7 +2782,8 @@ def round_to_1(x):
 ## Function for editing properties of 3D plots. 
 #
 #This function is used in MuMoTvectorView.
-def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=False, **kwargs):
+def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=False, 
+                       specialPoints=None, showFixedPoints=False, **kwargs):
     
     fig = plt.gcf()
     #fig.set_size_inches(10,8) 
@@ -2702,6 +2883,27 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     else:
         ax.set_zlim3d(z_lim_bot,z_lim_top)
                     
+    if showFixedPoints==True:
+        if not specialPoints[0] == []:
+            for jj in range(len(specialPoints[0])):
+                try:
+                    len(specialPoints[3][jj]) == 3
+                    lam1 = specialPoints[3][jj][0]
+                    lam2 = specialPoints[3][jj][1]
+                    lam3 = specialPoints[3][jj][2]
+                    if (re(lam1) < 0 and re(lam2) < 0 and re(lam3) < 0):
+                        FPcolor = 'g'
+                        FPmarker = 'o'
+                    else:
+                        FPcolor = 'r'  
+                        FPmarker = '>'     
+                except:
+                    print('Check input!')
+                    FPcolor='k'  
+                     
+                ax.scatter([specialPoints[0][jj]], [specialPoints[1][jj]], [specialPoints[2][jj]], 
+                           marker=FPmarker, s=300, c=FPcolor)
+    
     if 'fontsize' in kwargs:
         if not kwargs['fontsize']==None:
             chooseFontSize = kwargs['fontsize']
@@ -2738,7 +2940,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
 #
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
 def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None, 
-                       curve_replot=False, ax_reformat=False, specialPoints=None,
+                       curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
                        xlab=None, ylab=None, curvelab=None, **kwargs):
     #print(kwargs)
     
@@ -2942,8 +3144,9 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None,
 
     plt.xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
     plt.ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
-    
-    
+    #ax.set_xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
+    #ax.set_ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
+     
     if figure==None or ax_reformat==True:
         xrange = [np.max(data_x[kk]) - np.min(data_x[kk]) for kk in range(len(data_x))]
         yrange = [np.max(data_y[kk]) - np.min(data_y[kk]) for kk in range(len(data_y))]
@@ -2989,6 +3192,30 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None,
                     y_offset = (plt.ylim()[1]-plt.ylim()[0])*0.05
                 plt.text(a+x_offset, b+y_offset, c, fontsize=18)
     
+    if showFixedPoints==True:
+        if not specialPoints[0] == []:
+            for jj in range(len(specialPoints[0])):
+                try:
+                    len(specialPoints[2][jj]) == 2
+                    lam1 = specialPoints[2][jj][0]
+                    lam2 = specialPoints[2][jj][1]
+                    if re(lam1) < 0 and re(lam2) < 0:
+                        FPcolor = line_color_list[2]
+                        FPfill = 'full'
+                    elif re(lam1) > 0 and re(lam2) > 0:
+                        FPcolor = line_color_list[3]
+                        FPfill = 'none'
+                    else:
+                        FPcolor = line_color_list[1]
+                        FPfill = 'none'
+                        
+                except:
+                    print('Check input!')
+                    FPcolor=line_color_list[0]  
+                    FPfill = 'none'
+                     
+                plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=20, 
+                         c=FPcolor, fillstyle=FPfill, mew=4, mec=FPcolor)
     
     if curvelab != None:
         if 'legend_loc' in kwargs:
