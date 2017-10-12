@@ -47,6 +47,7 @@ from math import log10, floor
 #from matplotlib.offsetbox import kwargs
 
 
+
 get_ipython().magic('alias_magic model latex')
 get_ipython().magic('matplotlib nbagg')
 
@@ -251,6 +252,62 @@ class MuMoTmodel:
     def showODEs(self):
         for reactant in self._reactants:
             out = "\\displaystyle \\frac{\\textrm{d}" + latex(reactant) + "}{\\textrm{d}t} := " + latex(self._equations[reactant])
+            display(Math(out))
+    
+    ## displays expression of stoichiometry
+    def showStoichiometry(self):
+        out = latex(self._stoichiometry)
+        display(Math(out))
+    
+    ## displays Master equation expressed with ladder operators
+    def showMasterEquation(self):
+        P, t = symbols('P t')
+        out_rhs=""
+        stoich = self._stoichiometry
+        nvec = []
+        for key1 in stoich:
+            for key2 in stoich[key1]:
+                if not key2 in nvec:
+                    nvec.append(key2)
+        nvec = sorted(nvec, key=default_sort_key)
+        assert (len(nvec)==2 or len(nvec)==3), 'This module works for 2 or 3 different reactants only'
+        rhs_dict = _deriveMasterEquation(stoich)
+        #rhs_ME = 0
+        term_count = 0
+        for key in rhs_dict:
+            #rhs_ME += terms_gcd(key*(rhs_dict[key][0]-1)*rhs_dict[key][1]*rhs_dict[key][2], deep=True)
+            if term_count == 0:
+                rhs_plus = ""
+            else:
+                rhs_plus = " + "
+            out_rhs += rhs_plus + latex(key) + " ( " + latex((rhs_dict[key][0]-1)) + " ) " +  latex(rhs_dict[key][1]) + latex(rhs_dict[key][2])
+            term_count += 1
+        if len(nvec)==2:
+            lhs_ME = Derivative(P(nvec[0], nvec[1],t),t)
+        else:
+            lhs_ME = Derivative(P(nvec[0], nvec[1], nvec[2], t), t)     
+        
+        #return {lhs_ME: rhs_ME}
+        out = latex(lhs_ME) + ":= " + out_rhs
+        display(Math(out))
+        
+    def showVanKampenExpansion(self):
+        stoichiometry = self._stoichiometry
+        rhs_vke, lhs_vke = _doVanKampenExpansion(_deriveMasterEquation, stoichiometry)
+        out = latex(lhs_vke) + " := \n" + latex(rhs_vke)
+        display(Math(out))
+    
+    
+    def showODEs_vKE(self):
+        ODEdict = _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, self._rules)
+        for ode in ODEdict:
+            out = latex(ode) + " := " + latex(ODEdict[ode])
+            display(Math(out))
+        
+    def showFockerPlanckEquation(self):
+        FPEdict = _getFockerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, self._rules)
+        for fpe in FPEdict:
+            out = latex(fpe) + " := " + latex(FPEdict[fpe])
             display(Math(out))
     
     # show a LaTeX representation of the model <br>
@@ -2725,6 +2782,8 @@ def parseModel(modelDescription):
     rates = map(latex, list(model._rates))
     for (rate, latexStr) in zip(model._rates, rates):
         model._ratesLaTeX[repr(rate)] = latexStr
+    
+    model._stoichiometry = _getStoichiometry(model._rules)
                     
     return model
 
@@ -2755,6 +2814,236 @@ def _deriveODEsFromRules(reactants, rules):
 
     return equations
 
+## produces dictionary with stoichiometry of all reactions
+def _getStoichiometry(rules):
+    stoich = {}
+    for rule in rules:
+        reactDict = {}
+        for reactant in rule.lhsReactants:
+            reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
+        for reactant in rule.rhsReactants:
+            if not reactant in rule.lhsReactants:
+                reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
+        stoich[rule.rate] = reactDict
+        
+    return stoich
+
+## derivation of the Master equation, returns dictionary used in showMasterEquation
+def _deriveMasterEquation(stoichiometry):
+    P, E_op, x, y, xi_1, xi_2, xi_3, Phi_A, Phi_B, Phi_C, v, w, t, m = symbols('P E_op x, y, xi_1 xi_2 xi_3 Phi_A Phi_B Phi_C v w t m')
+    V = Symbol('V', real=True, constant=True)
+    stoich = stoichiometry
+    nvec = []
+    for key1 in stoich:
+        for key2 in stoich[key1]:
+            if not key2 in nvec:
+                nvec.append(key2)
+    nvec = sorted(nvec, key=default_sort_key)
+    
+    assert (len(nvec)==2 or len(nvec)==3), 'This module works for 2 or 3 different reactants only'
+    
+    rhs = 0
+    sol_dict_rhs = {}
+    f = lambdify((x(y, v-w)), x(y, v-w), modules='sympy')
+    g = lambdify((x, y, v), (factorial(x)/factorial(x-y))/v**y, modules='sympy')
+    for key1 in stoich:
+        prod1 = 1
+        prod2 = 1
+        for key2 in stoich[key1]:
+            prod1 *= f(E_op(key2, stoich[key1][key2][0]-stoich[key1][key2][1]))
+            prod2 *= g(key2, stoich[key1][key2][0], V)
+        if len(nvec)==2:
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t))
+        else:
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t))
+
+    return sol_dict_rhs
+    
+def _doVanKampenExpansion(rhs, stoich):
+    P, E_op, x, y, xi_1, xi_2, xi_3, Phi_A, Phi_B, Phi_C, v, w, t, m = symbols('P E_op x, y, xi_1 xi_2 xi_3 Phi_A Phi_B Phi_C v w t m')
+    V = Symbol('V', real=True, constant=True)
+    nvec = []
+    for key1 in stoich:
+        for key2 in stoich[key1]:
+            if not key2 in nvec:
+                nvec.append(key2)
+    nvec = sorted(nvec, key=default_sort_key)
+    rhs_dict = rhs(stoich)
+    rhs_vKE = 0
+    
+    if len(nvec)==2:
+        lhs_vKE = (Derivative(P(nvec[0], nvec[1],t),t).subs({nvec[0]: xi_1, nvec[1]: xi_2})
+                  - sqrt(V)*Derivative(Phi_A,t)*Derivative(P(nvec[0], nvec[1],t),nvec[0]).subs({nvec[0]: xi_1, nvec[1]: xi_2})
+                  - sqrt(V)*Derivative(Phi_B,t)*Derivative(P(nvec[0], nvec[1],t),nvec[1]).subs({nvec[0]: xi_1, nvec[1]: xi_2}))
+
+        for key in rhs_dict:
+            op = rhs_dict[key][0].subs({nvec[0]: xi_1, nvec[1]: xi_2})
+            func1 = rhs_dict[key][1].subs({nvec[0]: V*Phi_A+sqrt(V)*xi_1, nvec[1]: V*Phi_B+sqrt(V)*xi_2})
+            func2 = rhs_dict[key][2].subs({nvec[0]: xi_1, nvec[1]: xi_2})
+            func = func1*func2
+            if len(op.args[0].args) ==0:
+                term = (op*func).subs({op*func: func + op.args[1]/sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
+                
+            else:
+                term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sqrt(V)*Derivative(func, op.args[1].args[0]) 
+                                       + op.args[1].args[1]**2/(2*V)*Derivative(func, op.args[1].args[0], op.args[1].args[0])})
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                                       + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
+            #term_num, term_denom = term.as_numer_denom()
+            rhs_vKE += key*(term.doit() - func)
+    elif len(nvec)==3:
+        nvec = sorted(nvec, key=default_sort_key)
+        lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
+                  - sqrt(V)*Derivative(Phi_A,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
+                  - sqrt(V)*Derivative(Phi_B,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[1]).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
+                  - sqrt(V)*Derivative(Phi_C,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[2]).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3}))
+        rhs_dict = rhs(stoich)
+        rhs_vKE = 0
+        for key in rhs_dict:
+            op = rhs_dict[key][0].subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
+            func1 = rhs_dict[key][1].subs({nvec[0]: V*Phi_A+sqrt(V)*xi_1, nvec[1]: V*Phi_B+sqrt(V)*xi_2, nvec[2]: V*Phi_C+sqrt(V)*xi_3})
+            func2 = rhs_dict[key][2].subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
+            func = func1*func2
+            if len(op.args[0].args) ==0:
+                term = (op*func).subs({op*func: func + op.args[1]/sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
+                
+            elif len(op.args) ==2:
+                term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sqrt(V)*Derivative(func, op.args[1].args[0]) 
+                                       + op.args[1].args[1]**2/(2*V)*Derivative(func, op.args[1].args[0], op.args[1].args[0])})
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                                       + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
+            elif len(op.args) ==3:
+                term = (op.args[2]*func).subs({op.args[2]*func: func + op.args[2].args[1]/sqrt(V)*Derivative(func, op.args[2].args[0]) 
+                                       + op.args[2].args[1]**2/(2*V)*Derivative(func, op.args[2].args[0], op.args[2].args[0])})
+                term = (op.args[1]*term).subs({op.args[1]*term: term + op.args[1].args[1]/sqrt(V)*Derivative(term, op.args[1].args[0]) 
+                                       + op.args[1].args[1]**2/(2*V)*Derivative(term, op.args[1].args[0], op.args[1].args[0])})
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                                       + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
+            else:
+                print('Something went wrong!')
+            rhs_vKE += key*(term.doit() - func)    
+    else:
+        print('Not implemented yet.')
+    
+    return rhs_vKE.expand(), lhs_vKE
+
+## creates list of dictionaries where the key is the system size order
+def _get_orderedLists_vKE( _getStoichiometry,rules):
+        V = Symbol('V', real=True, constant=True)
+        #stoichiometry = self._stoichiometry
+        stoichiometry = _getStoichiometry(rules)
+        rhs_vke, lhs_vke = _doVanKampenExpansion(_deriveMasterEquation, stoichiometry)
+        Vlist_lhs=[]
+        Vlist_rhs=[]
+        for jj in range(len(rhs_vke.args)):
+            try:
+                Vlist_rhs.append(simplify(rhs_vke.args[jj]).collect(V, evaluate=False))
+            except NotImplementedError:
+                prod=1
+                for nn in range(len(rhs_vke.args[jj].args)-1):
+                    prod*=rhs_vke.args[jj].args[nn]
+                tempdict=prod.collect(V, evaluate=False)
+                for key in tempdict:
+                    Vlist_rhs.append({key: prod/key*rhs_vke.args[jj].args[-1]})
+        
+        for jj in range(len(lhs_vke.args)):
+            try:
+                Vlist_lhs.append(simplify(lhs_vke.args[jj]).collect(V, evaluate=False))
+            except NotImplementedError:
+                prod=1
+                for nn in range(len(lhs_vke.args[jj].args)-1):
+                    prod*=lhs_vke.args[jj].args[nn]
+                tempdict=prod.collect(V, evaluate=False)
+                for key in tempdict:
+                    Vlist_lhs.append({key: prod/key*lhs_vke.args[jj].args[-1]})
+        return Vlist_lhs, Vlist_rhs
+
+def _getFockerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, rules):
+    P, xi_1, xi_2, xi_3, t, Phi_A, Phi_B, Phi_C = symbols('P xi_1 xi_2 xi_3 t Phi_A Phi_B Phi_C')
+    V = Symbol('V', real=True, constant=True)
+    Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(_getStoichiometry, rules)
+    rhsFPE=0
+    lhsFPE=0
+    for kk in range(len(Vlist_rhs)):
+        for key in Vlist_rhs[kk]:
+            if key==1:
+                rhsFPE += Vlist_rhs[kk][key]  
+    for kk in range(len(Vlist_lhs)):
+        for key in Vlist_lhs[kk]:
+            if key==1:
+                lhsFPE += Vlist_lhs[kk][key]            
+        
+    FPE = lhsFPE-rhsFPE
+    
+    if len(Vlist_lhs)-1 == 2:
+        SOL_FPE = solve(FPE, Derivative(P(xi_1,xi_2,t),t), dict=True)[0]
+    elif len(Vlist_lhs)-1 == 3:
+        SOL_FPE = solve(FPE, Derivative(P(xi_1,xi_2,xi_3,t),t), dict=True)[0]
+    else:
+        print('Not implemented yet.')
+           
+    return SOL_FPE
+
+
+
+    
+def _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, rules):
+    P, xi_1, xi_2, xi_3, t, Phi_A, Phi_B, Phi_C = symbols('P xi_1 xi_2 xi_3 t Phi_A Phi_B Phi_C')
+    V = Symbol('V', real=True, constant=True)
+    Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(_getStoichiometry, rules)
+    rhsODE=0
+    lhsODE=0
+    for kk in range(len(Vlist_rhs)):
+        for key in Vlist_rhs[kk]:
+            if key==sqrt(V):
+                rhsODE += Vlist_rhs[kk][key]            
+    for kk in range(len(Vlist_lhs)):
+        for key in Vlist_lhs[kk]:
+            if key==sqrt(V):
+                lhsODE += Vlist_lhs[kk][key]  
+        
+    ODE = lhsODE-rhsODE
+
+    if len(Vlist_lhs)-1 == 2:
+        ode1 = 0
+        ode2 = 0
+        for kk in range(len(ODE.args)):
+            prod=1
+            for nn in range(len(ODE.args[kk].args)-1):
+                prod *= ODE.args[kk].args[nn]
+            if ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,t), xi_1):
+                ode1 += prod
+            elif ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,t), xi_2):
+                ode2 += prod
+            else:
+                print('Check ODE.args!')
+        ODE_1 = solve(ode1, Derivative(Phi_A, t), dict=True)
+        ODE_2 = solve(ode2, Derivative(Phi_B, t), dict=True)
+        ODEsys = {**ODE_1[0], **ODE_2[0]}
+                
+    elif len(Vlist_lhs)-1 == 3:
+        ode1 = 0
+        ode2 = 0
+        ode3 = 0
+        for kk in range(len(ODE.args)):
+            prod=1
+            for nn in range(len(ODE.args[kk].args)-1):
+                prod *= ODE.args[kk].args[nn]
+            if ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,xi_3,t), xi_1):
+                ode1 += prod
+            elif ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,xi_3,t), xi_2):
+                ode2 += prod
+            else:
+                ode3 += prod
+        ODE_1 = solve(ode1, Derivative(Phi_A, t), dict=True)
+        ODE_2 = solve(ode2, Derivative(Phi_B, t), dict=True)
+        ODE_3 = solve(ode3, Derivative(Phi_C, t), dict=True)
+        ODEsys = {**ODE_1[0], **ODE_2[0], **ODE_3[0]}
+    else:
+        print('Not implemented yet.')
+        
+    return ODEsys 
+ 
     
 def _raiseModelError(expected, read, rule):
     raise SyntaxError("Expected " + expected + " but read '" + read + "' in rule: " + rule)
