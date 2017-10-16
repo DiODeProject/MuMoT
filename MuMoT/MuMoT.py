@@ -2830,7 +2830,7 @@ def _getStoichiometry(rules):
 
 ## derivation of the Master equation, returns dictionary used in showMasterEquation
 def _deriveMasterEquation(stoichiometry):
-    P, E_op, x, y, xi_1, xi_2, xi_3, Phi_A, Phi_B, Phi_C, v, w, t, m = symbols('P E_op x, y, xi_1 xi_2 xi_3 Phi_A Phi_B Phi_C v w t m')
+    P, E_op, x, y, eta_1, eta_2, eta_3, Phi_A, Phi_B, Phi_C, v, w, t, m = symbols('P E_op x, y, eta_1 eta_2 eta_3 Phi_A Phi_B Phi_C v w t m')
     V = Symbol('V', real=True, constant=True)
     stoich = stoichiometry
     nvec = []
@@ -2860,7 +2860,7 @@ def _deriveMasterEquation(stoichiometry):
     return sol_dict_rhs
     
 def _doVanKampenExpansion(rhs, stoich):
-    P, E_op, x, y, xi_1, xi_2, xi_3, Phi_A, Phi_B, Phi_C, v, w, t, m = symbols('P E_op x, y, xi_1 xi_2 xi_3 Phi_A Phi_B Phi_C v w t m')
+    P, E_op, x, y, eta_1, eta_2, eta_3, Phi_A, Phi_B, Phi_C, v, w, t, m = symbols('P E_op x, y, eta_1 eta_2 eta_3 Phi_A Phi_B Phi_C v w t m')
     V = Symbol('V', real=True, constant=True)
     nvec = []
     for key1 in stoich:
@@ -2872,14 +2872,14 @@ def _doVanKampenExpansion(rhs, stoich):
     rhs_vKE = 0
     
     if len(nvec)==2:
-        lhs_vKE = (Derivative(P(nvec[0], nvec[1],t),t).subs({nvec[0]: xi_1, nvec[1]: xi_2})
-                  - sqrt(V)*Derivative(Phi_A,t)*Derivative(P(nvec[0], nvec[1],t),nvec[0]).subs({nvec[0]: xi_1, nvec[1]: xi_2})
-                  - sqrt(V)*Derivative(Phi_B,t)*Derivative(P(nvec[0], nvec[1],t),nvec[1]).subs({nvec[0]: xi_1, nvec[1]: xi_2}))
+        lhs_vKE = (Derivative(P(nvec[0], nvec[1],t),t).subs({nvec[0]: eta_1, nvec[1]: eta_2})
+                  - sqrt(V)*Derivative(Phi_A,t)*Derivative(P(nvec[0], nvec[1],t),nvec[0]).subs({nvec[0]: eta_1, nvec[1]: eta_2})
+                  - sqrt(V)*Derivative(Phi_B,t)*Derivative(P(nvec[0], nvec[1],t),nvec[1]).subs({nvec[0]: eta_1, nvec[1]: eta_2}))
 
         for key in rhs_dict:
-            op = rhs_dict[key][0].subs({nvec[0]: xi_1, nvec[1]: xi_2})
-            func1 = rhs_dict[key][1].subs({nvec[0]: V*Phi_A+sqrt(V)*xi_1, nvec[1]: V*Phi_B+sqrt(V)*xi_2})
-            func2 = rhs_dict[key][2].subs({nvec[0]: xi_1, nvec[1]: xi_2})
+            op = rhs_dict[key][0].subs({nvec[0]: eta_1, nvec[1]: eta_2})
+            func1 = rhs_dict[key][1].subs({nvec[0]: V*Phi_A+sqrt(V)*eta_1, nvec[1]: V*Phi_B+sqrt(V)*eta_2})
+            func2 = rhs_dict[key][2].subs({nvec[0]: eta_1, nvec[1]: eta_2})
             func = func1*func2
             if len(op.args[0].args) ==0:
                 term = (op*func).subs({op*func: func + op.args[1]/sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
@@ -2893,16 +2893,16 @@ def _doVanKampenExpansion(rhs, stoich):
             rhs_vKE += key*(term.doit() - func)
     elif len(nvec)==3:
         nvec = sorted(nvec, key=default_sort_key)
-        lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
-                  - sqrt(V)*Derivative(Phi_A,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
-                  - sqrt(V)*Derivative(Phi_B,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[1]).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
-                  - sqrt(V)*Derivative(Phi_C,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[2]).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3}))
+        lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: eta_1, nvec[1]: eta_2, nvec[2]: eta_3})
+                  - sqrt(V)*Derivative(Phi_A,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: eta_1, nvec[1]: eta_2, nvec[2]: eta_3})
+                  - sqrt(V)*Derivative(Phi_B,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[1]).subs({nvec[0]: eta_1, nvec[1]: eta_2, nvec[2]: eta_3})
+                  - sqrt(V)*Derivative(Phi_C,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[2]).subs({nvec[0]: eta_1, nvec[1]: eta_2, nvec[2]: eta_3}))
         rhs_dict = rhs(stoich)
         rhs_vKE = 0
         for key in rhs_dict:
-            op = rhs_dict[key][0].subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
-            func1 = rhs_dict[key][1].subs({nvec[0]: V*Phi_A+sqrt(V)*xi_1, nvec[1]: V*Phi_B+sqrt(V)*xi_2, nvec[2]: V*Phi_C+sqrt(V)*xi_3})
-            func2 = rhs_dict[key][2].subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
+            op = rhs_dict[key][0].subs({nvec[0]: eta_1, nvec[1]: eta_2, nvec[2]: eta_3})
+            func1 = rhs_dict[key][1].subs({nvec[0]: V*Phi_A+sqrt(V)*eta_1, nvec[1]: V*Phi_B+sqrt(V)*eta_2, nvec[2]: V*Phi_C+sqrt(V)*eta_3})
+            func2 = rhs_dict[key][2].subs({nvec[0]: eta_1, nvec[1]: eta_2, nvec[2]: eta_3})
             func = func1*func2
             if len(op.args[0].args) ==0:
                 term = (op*func).subs({op*func: func + op.args[1]/sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
@@ -2959,7 +2959,7 @@ def _get_orderedLists_vKE( _getStoichiometry,rules):
         return Vlist_lhs, Vlist_rhs
 
 def _getFockerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, rules):
-    P, xi_1, xi_2, xi_3, t, Phi_A, Phi_B, Phi_C = symbols('P xi_1 xi_2 xi_3 t Phi_A Phi_B Phi_C')
+    P, eta_1, eta_2, eta_3, t, Phi_A, Phi_B, Phi_C = symbols('P eta_1 eta_2 eta_3 t Phi_A Phi_B Phi_C')
     V = Symbol('V', real=True, constant=True)
     Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(_getStoichiometry, rules)
     rhsFPE=0
@@ -2976,9 +2976,9 @@ def _getFockerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, rules):
     FPE = lhsFPE-rhsFPE
     
     if len(Vlist_lhs)-1 == 2:
-        SOL_FPE = solve(FPE, Derivative(P(xi_1,xi_2,t),t), dict=True)[0]
+        SOL_FPE = solve(FPE, Derivative(P(eta_1,eta_2,t),t), dict=True)[0]
     elif len(Vlist_lhs)-1 == 3:
-        SOL_FPE = solve(FPE, Derivative(P(xi_1,xi_2,xi_3,t),t), dict=True)[0]
+        SOL_FPE = solve(FPE, Derivative(P(eta_1,eta_2,eta_3,t),t), dict=True)[0]
     else:
         print('Not implemented yet.')
            
@@ -2988,7 +2988,7 @@ def _getFockerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, rules):
 
     
 def _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, rules):
-    P, xi_1, xi_2, xi_3, t, Phi_A, Phi_B, Phi_C = symbols('P xi_1 xi_2 xi_3 t Phi_A Phi_B Phi_C')
+    P, eta_1, eta_2, eta_3, t, Phi_A, Phi_B, Phi_C = symbols('P eta_1 eta_2 eta_3 t Phi_A Phi_B Phi_C')
     V = Symbol('V', real=True, constant=True)
     Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(_getStoichiometry, rules)
     rhsODE=0
@@ -3011,9 +3011,9 @@ def _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, rules):
             prod=1
             for nn in range(len(ODE.args[kk].args)-1):
                 prod *= ODE.args[kk].args[nn]
-            if ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,t), xi_1):
+            if ODE.args[kk].args[-1] == Derivative(P(eta_1,eta_2,t), eta_1):
                 ode1 += prod
-            elif ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,t), xi_2):
+            elif ODE.args[kk].args[-1] == Derivative(P(eta_1,eta_2,t), eta_2):
                 ode2 += prod
             else:
                 print('Check ODE.args!')
@@ -3029,9 +3029,9 @@ def _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, rules):
             prod=1
             for nn in range(len(ODE.args[kk].args)-1):
                 prod *= ODE.args[kk].args[nn]
-            if ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,xi_3,t), xi_1):
+            if ODE.args[kk].args[-1] == Derivative(P(eta_1,eta_2,eta_3,t), eta_1):
                 ode1 += prod
-            elif ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,xi_3,t), xi_2):
+            elif ODE.args[kk].args[-1] == Derivative(P(eta_1,eta_2,eta_3,t), eta_2):
                 ode2 += prod
             else:
                 ode3 += prod
