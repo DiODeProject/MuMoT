@@ -116,6 +116,8 @@ class MuMoTmodel:
     _equations = None
     ## set of solutions to equations
     _solutions = None 
+    ## summary of stoichiometry as nested dictionaries
+    _stoichiometry = None
     ## dictionary of lambdified functions for integration, plotting, etc.
     _funcs = None
     ## tuple of argument symbols for lambdified functions
@@ -144,12 +146,26 @@ class MuMoTmodel:
         newModel._rules = copy.copy(self._rules)
         newModel._reactants = copy.copy(self._reactants)
         newModel._equations = copy.copy(self._equations)
+        newModel._stoichiometry = copy.deepcopy(self._stoichiometry)
+        for reaction in newModel._stoichiometry:
+            for sub in subs:
+                newModel._stoichiometry[reaction]['rate'] = newModel._stoichiometry[reaction]['rate'].subs(sub[0], sub[1])
+                for reactant in newModel._stoichiometry[reaction]:
+                    if not reactant == 'rate':
+                        if reactant == sub[0]:
+                            #replace keys according to: dictionary[new_key] = dictionary.pop(old_key)
+                            newModel._stoichiometry[reaction][sub[1]] = newModel._stoichiometry[reaction].pop(reactant)
+                                                    
         for reactant in newModel._reactants:
             for sub in subs:
                 newModel._equations[reactant] = newModel._equations[reactant].subs(sub[0], sub[1])
         for rule in newModel._rules:
             for sub in subs:
                 rule.rate = rule.rate.subs(sub[0], sub[1])
+                #for kk in range(len(rule.lhsReactants)):
+                #    rule.lhsReactants[kk] = rule.lhsReactants[kk].subs(sub[0], sub[1])
+                #for kk in range(len(rule.rhsReactants)):    
+                #    rule.rhsReactants[kk] = rule.rhsReactants[kk].subs(sub[0], sub[1])
         for sub in subs:
             if sub[0] in newModel._reactants:
                 for atom in sub[1].atoms(Symbol):
@@ -240,10 +256,21 @@ class MuMoTmodel:
             self._reactantsLaTeX.sort()
         for reactant in self._reactantsLaTeX:
             display(Math(reactant))
-
+        #reactant_list = []
+        #for reaction in self._stoichiometry:
+        #    for reactant in self._stoichiometry[reaction]:
+        #        if not reactant in reactant_list:
+        #            if not reactant == 'rate':
+        #                display(Math(latex(reactant)))
+        #                reactant_list.append(reactant)
 
     ## show a sorted LaTeX representation of the model's rate parameters
     def showRates(self):
+        for reaction in self._stoichiometry:
+            out = latex(self._stoichiometry[reaction]['rate']) + "\; (" + latex(reaction) + ")"
+            display(Math(out))        
+    
+    def showRatesOLD(self):
         for rate in self._ratesLaTeX:
             display(Math(self._ratesLaTeX[rate]))
 
@@ -254,7 +281,8 @@ class MuMoTmodel:
             out = "\\displaystyle \\frac{\\textrm{d}" + latex(reactant) + "}{\\textrm{d}t} := " + latex(self._equations[reactant])
             display(Math(out))
     
-    ## displays expression of stoichiometry
+    ## displays stoichiometry as a dictionary with keys ReactionNr,
+    # ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry
     def showStoichiometry(self):
         out = latex(self._stoichiometry)
         display(Math(out))
@@ -267,8 +295,9 @@ class MuMoTmodel:
         nvec = []
         for key1 in stoich:
             for key2 in stoich[key1]:
-                if not key2 in nvec:
-                    nvec.append(key2)
+                if not key2 == 'rate':
+                    if not key2 in nvec:
+                        nvec.append(key2)
         nvec = sorted(nvec, key=default_sort_key)
         assert (len(nvec)==2 or len(nvec)==3), 'This module works for 2 or 3 different reactants only'
         rhs_dict = _deriveMasterEquation(stoich)
@@ -280,7 +309,7 @@ class MuMoTmodel:
                 rhs_plus = ""
             else:
                 rhs_plus = " + "
-            out_rhs += rhs_plus + latex(key) + " ( " + latex((rhs_dict[key][0]-1)) + " ) " +  latex(rhs_dict[key][1]) + latex(rhs_dict[key][2])
+            out_rhs += rhs_plus + latex(rhs_dict[key][3]) + " ( " + latex((rhs_dict[key][0]-1)) + " ) " +  latex(rhs_dict[key][1]) + latex(rhs_dict[key][2])
             term_count += 1
         if len(nvec)==2:
             lhs_ME = Derivative(P(nvec[0], nvec[1],t),t)
@@ -291,21 +320,23 @@ class MuMoTmodel:
         out = latex(lhs_ME) + ":= " + out_rhs
         display(Math(out))
         
+    ## shows van Kampen expansion when the operators are expanded up to second order
     def showVanKampenExpansion(self):
-        stoichiometry = self._stoichiometry
-        rhs_vke, lhs_vke = _doVanKampenExpansion(_deriveMasterEquation, stoichiometry)
+        rhs_vke, lhs_vke = _doVanKampenExpansion(_deriveMasterEquation, self._stoichiometry)
         out = latex(lhs_vke) + " := \n" + latex(rhs_vke)
         display(Math(out))
     
-    
+    ## shows ODEs derived from the leading term in van Kampen expansion
     def showODEs_vKE(self):
-        ODEdict = _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, self._rules)
+        ODEdict = _getODEs_vKE(_get_orderedLists_vKE, self._stoichiometry)
         for ode in ODEdict:
             out = latex(ode) + " := " + latex(ODEdict[ode])
             display(Math(out))
         
-    def showFockerPlanckEquation(self):
-        FPEdict = _getFockerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, self._rules)
+    ## shows Fokker-Planck equation derived from term ~ O(1) in van Kampen expansion
+    # this is the linear noise approximation
+    def showFokkerPlanckEquation(self):
+        FPEdict = _getFokkerPlanckEquation(_get_orderedLists_vKE, self._stoichiometry,  self._reactants)
         for fpe in FPEdict:
             out = latex(fpe) + " := " + latex(FPEdict[fpe])
             display(Math(out))
@@ -724,6 +755,7 @@ class MuMoTmodel:
         self._rates = set()
         self._ratesLaTeX= None
         self._equations = {}
+        self._stoichiometry = {}
         self._pyDSmodel = None
         self._dot = None
         if not os.path.isdir(self._tmpdirpath):
@@ -2849,7 +2881,7 @@ def parseModel(modelDescription):
         model._ratesLaTeX[repr(rate)] = latexStr
     
     model._stoichiometry = _getStoichiometry(model._rules)
-                    
+    
     return model
 
 def _deriveODEsFromRules(reactants, rules):
@@ -2879,30 +2911,34 @@ def _deriveODEsFromRules(reactants, rules):
 
     return equations
 
-## produces dictionary with stoichiometry of all reactions
+## produces dictionary with stoichiometry of all reactions with key ReactionNr
+# ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry
 def _getStoichiometry(rules):
     stoich = {}
+    ReactionNr = numbered_symbols(prefix='Reaction ', cls=Symbol, start=1)
     for rule in rules:
-        reactDict = {}
+        reactDict = {'rate': rule.rate}
         for reactant in rule.lhsReactants:
             reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
         for reactant in rule.rhsReactants:
             if not reactant in rule.lhsReactants:
                 reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
-        stoich[rule.rate] = reactDict
+        stoich[ReactionNr.__next__()] = reactDict
         
     return stoich
 
+
 ## derivation of the Master equation, returns dictionary used in showMasterEquation
 def _deriveMasterEquation(stoichiometry):
-    P, E_op, x, y, xi_1, xi_2, xi_3, Phi_A, Phi_B, Phi_C, v, w, t, m = symbols('P E_op x, y, xi_1 xi_2 xi_3 Phi_A Phi_B Phi_C v w t m')
+    P, E_op, x, y, v, w, t, m = symbols('P E_op x y v w t m')
     V = Symbol('V', real=True, constant=True)
     stoich = stoichiometry
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 in nvec:
-                nvec.append(key2)
+            if not key2 == 'rate':
+                if not key2 in nvec:
+                    nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
     
     assert (len(nvec)==2 or len(nvec)==3), 'This module works for 2 or 3 different reactants only'
@@ -2915,36 +2951,47 @@ def _deriveMasterEquation(stoichiometry):
         prod1 = 1
         prod2 = 1
         for key2 in stoich[key1]:
-            prod1 *= f(E_op(key2, stoich[key1][key2][0]-stoich[key1][key2][1]))
-            prod2 *= g(key2, stoich[key1][key2][0], V)
+            if not key2 == 'rate':
+                prod1 *= f(E_op(key2, stoich[key1][key2][0]-stoich[key1][key2][1]))
+                prod2 *= g(key2, stoich[key1][key2][0], V)
         if len(nvec)==2:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t))
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t), stoich[key1]['rate'])
         else:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t))
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t), stoich[key1]['rate'])
 
     return sol_dict_rhs
-    
+
+
+## Function returning the left-hand side and right-hand side of van Kampen expansion    
 def _doVanKampenExpansion(rhs, stoich):
-    P, E_op, x, y, xi_1, xi_2, xi_3, Phi_A, Phi_B, Phi_C, v, w, t, m = symbols('P E_op x, y, xi_1 xi_2 xi_3 Phi_A Phi_B Phi_C v w t m')
+    P, E_op, x, y, v, w, t, m = symbols('P E_op x y v w t m')
     V = Symbol('V', real=True, constant=True)
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 in nvec:
-                nvec.append(key2)
+            if not key2 == 'rate':
+                if not key2 in nvec:
+                    nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
+    
+    NoiseDict = {}
+    PhiDict = {}
+    for kk in range(len(nvec)):
+        NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
+        PhiDict[nvec[kk]] = Symbol('Phi_'+str(nvec[kk]))
+        
     rhs_dict = rhs(stoich)
     rhs_vKE = 0
     
     if len(nvec)==2:
-        lhs_vKE = (Derivative(P(nvec[0], nvec[1],t),t).subs({nvec[0]: xi_1, nvec[1]: xi_2})
-                  - sqrt(V)*Derivative(Phi_A,t)*Derivative(P(nvec[0], nvec[1],t),nvec[0]).subs({nvec[0]: xi_1, nvec[1]: xi_2})
-                  - sqrt(V)*Derivative(Phi_B,t)*Derivative(P(nvec[0], nvec[1],t),nvec[1]).subs({nvec[0]: xi_1, nvec[1]: xi_2}))
+        lhs_vKE = (Derivative(P(nvec[0], nvec[1],t),t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
+                  - sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1],t),nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
+                  - sqrt(V)*Derivative(PhiDict[nvec[1]],t)*Derivative(P(nvec[0], nvec[1],t),nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]}))
 
         for key in rhs_dict:
-            op = rhs_dict[key][0].subs({nvec[0]: xi_1, nvec[1]: xi_2})
-            func1 = rhs_dict[key][1].subs({nvec[0]: V*Phi_A+sqrt(V)*xi_1, nvec[1]: V*Phi_B+sqrt(V)*xi_2})
-            func2 = rhs_dict[key][2].subs({nvec[0]: xi_1, nvec[1]: xi_2})
+            op = rhs_dict[key][0].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
+            func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sqrt(V)*NoiseDict[nvec[1]]})
+            func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
             func = func1*func2
             if len(op.args[0].args) ==0:
                 term = (op*func).subs({op*func: func + op.args[1]/sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
@@ -2955,19 +3002,19 @@ def _doVanKampenExpansion(rhs, stoich):
                 term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             #term_num, term_denom = term.as_numer_denom()
-            rhs_vKE += key*(term.doit() - func)
+            rhs_vKE += rhs_dict[key][3]*(term.doit() - func)
     elif len(nvec)==3:
         nvec = sorted(nvec, key=default_sort_key)
-        lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
-                  - sqrt(V)*Derivative(Phi_A,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
-                  - sqrt(V)*Derivative(Phi_B,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[1]).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
-                  - sqrt(V)*Derivative(Phi_C,t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[2]).subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3}))
+        lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
+                  - sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
+                  - sqrt(V)*Derivative(PhiDict[nvec[1]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
+                  - sqrt(V)*Derivative(PhiDict[nvec[2]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[2]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]}))
         rhs_dict = rhs(stoich)
         rhs_vKE = 0
         for key in rhs_dict:
-            op = rhs_dict[key][0].subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
-            func1 = rhs_dict[key][1].subs({nvec[0]: V*Phi_A+sqrt(V)*xi_1, nvec[1]: V*Phi_B+sqrt(V)*xi_2, nvec[2]: V*Phi_C+sqrt(V)*xi_3})
-            func2 = rhs_dict[key][2].subs({nvec[0]: xi_1, nvec[1]: xi_2, nvec[2]: xi_3})
+            op = rhs_dict[key][0].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
+            func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sqrt(V)*NoiseDict[nvec[1]], nvec[2]: V*PhiDict[nvec[2]]+sqrt(V)*NoiseDict[nvec[2]]})
+            func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
             func = func1*func2
             if len(op.args[0].args) ==0:
                 term = (op*func).subs({op*func: func + op.args[1]/sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
@@ -2986,47 +3033,49 @@ def _doVanKampenExpansion(rhs, stoich):
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             else:
                 print('Something went wrong!')
-            rhs_vKE += key*(term.doit() - func)    
+            rhs_vKE += rhs_dict[key][3]*(term.doit() - func)    
     else:
         print('Not implemented yet.')
     
     return rhs_vKE.expand(), lhs_vKE
 
 ## creates list of dictionaries where the key is the system size order
-def _get_orderedLists_vKE( _getStoichiometry,rules):
-        V = Symbol('V', real=True, constant=True)
-        #stoichiometry = self._stoichiometry
-        stoichiometry = _getStoichiometry(rules)
-        rhs_vke, lhs_vke = _doVanKampenExpansion(_deriveMasterEquation, stoichiometry)
-        Vlist_lhs=[]
-        Vlist_rhs=[]
-        for jj in range(len(rhs_vke.args)):
-            try:
-                Vlist_rhs.append(simplify(rhs_vke.args[jj]).collect(V, evaluate=False))
-            except NotImplementedError:
-                prod=1
-                for nn in range(len(rhs_vke.args[jj].args)-1):
-                    prod*=rhs_vke.args[jj].args[nn]
-                tempdict=prod.collect(V, evaluate=False)
-                for key in tempdict:
-                    Vlist_rhs.append({key: prod/key*rhs_vke.args[jj].args[-1]})
-        
-        for jj in range(len(lhs_vke.args)):
-            try:
-                Vlist_lhs.append(simplify(lhs_vke.args[jj]).collect(V, evaluate=False))
-            except NotImplementedError:
-                prod=1
-                for nn in range(len(lhs_vke.args[jj].args)-1):
-                    prod*=lhs_vke.args[jj].args[nn]
-                tempdict=prod.collect(V, evaluate=False)
-                for key in tempdict:
-                    Vlist_lhs.append({key: prod/key*lhs_vke.args[jj].args[-1]})
-        return Vlist_lhs, Vlist_rhs
-
-def _getFockerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, rules):
-    P, xi_1, xi_2, xi_3, t, Phi_A, Phi_B, Phi_C = symbols('P xi_1 xi_2 xi_3 t Phi_A Phi_B Phi_C')
+#def _get_orderedLists_vKE( _getStoichiometry,rules):
+def _get_orderedLists_vKE(stoich):
     V = Symbol('V', real=True, constant=True)
-    Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(_getStoichiometry, rules)
+    stoichiometry = stoich
+    rhs_vke, lhs_vke = _doVanKampenExpansion(_deriveMasterEquation, stoichiometry)
+    Vlist_lhs=[]
+    Vlist_rhs=[]
+    for jj in range(len(rhs_vke.args)):
+        try:
+            Vlist_rhs.append(simplify(rhs_vke.args[jj]).collect(V, evaluate=False))
+        except NotImplementedError:
+            prod=1
+            for nn in range(len(rhs_vke.args[jj].args)-1):
+                prod*=rhs_vke.args[jj].args[nn]
+            tempdict=prod.collect(V, evaluate=False)
+            for key in tempdict:
+                Vlist_rhs.append({key: prod/key*rhs_vke.args[jj].args[-1]})
+    
+    for jj in range(len(lhs_vke.args)):
+        try:
+            Vlist_lhs.append(simplify(lhs_vke.args[jj]).collect(V, evaluate=False))
+        except NotImplementedError:
+            prod=1
+            for nn in range(len(lhs_vke.args[jj].args)-1):
+                prod*=lhs_vke.args[jj].args[nn]
+            tempdict=prod.collect(V, evaluate=False)
+            for key in tempdict:
+                Vlist_lhs.append({key: prod/key*lhs_vke.args[jj].args[-1]})
+    return Vlist_lhs, Vlist_rhs
+
+
+## Function that returns the Fokker-Planck equation
+def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich, reactants):
+    P, t = symbols('P t')
+    V = Symbol('V', real=True, constant=True)
+    Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(stoich)
     rhsFPE=0
     lhsFPE=0
     for kk in range(len(Vlist_rhs)):
@@ -3040,22 +3089,36 @@ def _getFockerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, rules):
         
     FPE = lhsFPE-rhsFPE
     
+    nvec = []
+    for key1 in stoich:
+        for key2 in stoich[key1]:
+            if not key2 == 'rate':
+                if not key2 in nvec:
+                    nvec.append(key2)
+    #for reactant in reactants:
+    #    nvec.append(reactant)
+    nvec = sorted(nvec, key=default_sort_key)
+    
+    NoiseDict = {}
+    #Noise = numbered_symbols(prefix='eta_', cls=Symbol, start=1)
+    for kk in range(len(nvec)):
+        NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
+    
+    
     if len(Vlist_lhs)-1 == 2:
-        SOL_FPE = solve(FPE, Derivative(P(xi_1,xi_2,t),t), dict=True)[0]
+        SOL_FPE = solve(FPE, Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],t),t), dict=True)[0]
     elif len(Vlist_lhs)-1 == 3:
-        SOL_FPE = solve(FPE, Derivative(P(xi_1,xi_2,xi_3,t),t), dict=True)[0]
+        SOL_FPE = solve(FPE, Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],t),t), dict=True)[0]
     else:
         print('Not implemented yet.')
            
     return SOL_FPE
 
-
-
-    
-def _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, rules):
-    P, xi_1, xi_2, xi_3, t, Phi_A, Phi_B, Phi_C = symbols('P xi_1 xi_2 xi_3 t Phi_A Phi_B Phi_C')
+## Function that returns the ODE system deerived from Master equation
+def _getODEs_vKE(_get_orderedLists_vKE, stoich):
+    P, t = symbols('P t')
     V = Symbol('V', real=True, constant=True)
-    Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(_getStoichiometry, rules)
+    Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(stoich)
     rhsODE=0
     lhsODE=0
     for kk in range(len(Vlist_rhs)):
@@ -3068,7 +3131,24 @@ def _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, rules):
                 lhsODE += Vlist_lhs[kk][key]  
         
     ODE = lhsODE-rhsODE
-
+    
+    nvec = []
+    for key1 in stoich:
+        for key2 in stoich[key1]:
+            if not key2 == 'rate':
+                if not key2 in nvec:
+                    nvec.append(key2)
+    #for reactant in reactants:
+    #    nvec.append(reactant)
+    nvec = sorted(nvec, key=default_sort_key)
+    
+    PhiDict = {}
+    NoiseDict = {}
+    for kk in range(len(nvec)):
+        NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
+        PhiDict[nvec[kk]] = Symbol('Phi_'+str(nvec[kk]))
+    
+    
     if len(Vlist_lhs)-1 == 2:
         ode1 = 0
         ode2 = 0
@@ -3076,14 +3156,14 @@ def _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, rules):
             prod=1
             for nn in range(len(ODE.args[kk].args)-1):
                 prod *= ODE.args[kk].args[nn]
-            if ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,t), xi_1):
+            if ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],t), NoiseDict[nvec[0]]):
                 ode1 += prod
-            elif ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,t), xi_2):
+            elif ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],t), NoiseDict[nvec[1]]):
                 ode2 += prod
             else:
                 print('Check ODE.args!')
-        ODE_1 = solve(ode1, Derivative(Phi_A, t), dict=True)
-        ODE_2 = solve(ode2, Derivative(Phi_B, t), dict=True)
+        ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+        ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
         ODEsys = {**ODE_1[0], **ODE_2[0]}
                 
     elif len(Vlist_lhs)-1 == 3:
@@ -3094,15 +3174,15 @@ def _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, rules):
             prod=1
             for nn in range(len(ODE.args[kk].args)-1):
                 prod *= ODE.args[kk].args[nn]
-            if ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,xi_3,t), xi_1):
+            if ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],t), NoiseDict[nvec[0]]):
                 ode1 += prod
-            elif ODE.args[kk].args[-1] == Derivative(P(xi_1,xi_2,xi_3,t), xi_2):
+            elif ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],t), NoiseDict[nvec[1]]):
                 ode2 += prod
             else:
                 ode3 += prod
-        ODE_1 = solve(ode1, Derivative(Phi_A, t), dict=True)
-        ODE_2 = solve(ode2, Derivative(Phi_B, t), dict=True)
-        ODE_3 = solve(ode3, Derivative(Phi_C, t), dict=True)
+        ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+        ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
+        ODE_3 = solve(ode3, Derivative(PhiDict[nvec[2]] , t), dict=True)
         ODEsys = {**ODE_1[0], **ODE_2[0], **ODE_3[0]}
     else:
         print('Not implemented yet.')
