@@ -39,9 +39,9 @@ from enum import Enum
 
 import matplotlib.ticker as ticker
 from math import log10, floor
+import ast
 
 #from matplotlib.offsetbox import kwargs
-#import ast
 #from __builtin__ import None
 #from numpy.oldnumeric.fix_default_axis import _args3
 #from matplotlib.offsetbox import kwargs
@@ -476,7 +476,7 @@ class MuMoTmodel:
         return viewController
 
     def SSA(self, initialState="Auto", maxTime="Auto", randomSeed="Auto", **kwargs):
-        specialParams = {}
+        ssaParams = {}
         if initialState=="Auto":
             first = True
             initialState = {}
@@ -488,30 +488,25 @@ class MuMoTmodel:
                 else:
                     initialState[reactant] = 0
         else:
+            ## @todo check if the Initial State has valid length and positive values
             print("TODO: check if the Initial State has valid length and positive values")
-#             initialState = ast.literal_eval(initialState) # translate from string to dict
-#             print(initialState)
-#             print(self._reactants)
-#             for state in initialState.keys():
-#                 print(state)
-#                 print(str(state) + " == " + str(self._reactants) + " " + str(state in self._reactants) )
-#             for state in self._reactants:
-#                 print(state)
-#                 print(str(state) + " == " + str(initialState.keys()) + " " + str( "'"+str(state)+"'" in initialState.keys()) )
+            initialState_str = ast.literal_eval(initialState) # translate string into dict
             initialState = {}
-            first = True
-            for reactant in self._reactants:
-                if first:
-                    print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
-                    initialState[reactant] = MuMoTdefault._agents
-                    first = False
-                else:
-                    initialState[reactant] = 0
-#             print(initialState)
-#             print(initialState.keys())
+            for state,pop in initialState_str.items():
+                initialState[process_sympy(state)] = pop # convert string into SymPy symbol
         print("Initial State is " + str(initialState) )
-        specialParams['initialState'] = initialState
+        ssaParams['initialState'] = initialState
         
+        if (maxTime == "Auto" or maxTime <= 0):
+            maxTime = MuMoTdefault._maxTime
+            timeLimitMax = max(maxTime, MuMoTdefault._timeLimits[1])
+        ssaParams["maxTime"] = (maxTime, MuMoTdefault._timeLimits[0], timeLimitMax, MuMoTdefault._timeStep)
+        if (randomSeed == "Auto" or randomSeed <= 0 or randomSeed > MAX_RANDOM_SEED):
+            randomSeed = np.random.randint(MAX_RANDOM_SEED)
+            print("Automatic Random Seed set to " + str(randomSeed) )
+        ssaParams['randomSeed'] = randomSeed
+        ssaParams['visualisationType'] = 'evo'
+            
         # construct controller
         paramValues = []
         paramNames = [] 
@@ -520,21 +515,13 @@ class MuMoTmodel:
             paramValues.append((MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep))
             paramNames.append(str(rate))
 
-        if (maxTime == "Auto" or maxTime <= 0):
-            maxTime = MuMoTdefault._maxTime
-            timeLimitMax = max(maxTime, MuMoTdefault._timeLimits[1])
-        paramNames.append("maxTime")
-        paramValues.append( (maxTime, MuMoTdefault._timeLimits[0], timeLimitMax, MuMoTdefault._timeStep) )
-        if (randomSeed == "Auto" or randomSeed <= 0):
-            specialParams['randomSeed'] = np.random.randint(MAX_RANDOM_SEED)
-            print("Automatic Random Seed set to " + str(specialParams['randomSeed']) )
-        viewController = MuMoTSSAController(paramValues, paramNames, self._ratesLaTeX, False, specialParams)
+        viewController = MuMoTSSAController(paramValues, paramNames, self._ratesLaTeX, False, ssaParams)
         
-        paramDict = {}
-        paramDict['initialState'] = initialState
-        modelView = MuMoTSSAView(self, viewController, **kwargs)
+        #paramDict = {}
+        #paramDict['initialState'] = initialState
+        modelView = MuMoTSSAView(self, viewController, ssaParams, **kwargs)
         viewController.setView(modelView)
-        modelView._plot_timeEvolution()
+        #modelView._plot_timeEvolution()
         
 #         viewController.setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
         viewController.setReplotFunction(modelView._plot_timeEvolution)
@@ -886,11 +873,6 @@ class MuMoTcontroller:
 
     def _setErrorWidget(self, errorWidget):
         self._errorMessage = errorWidget
-
-#     def _update_params_from_widgets(self):
-#         for i in np.arange(0, len(self._paramValues)):
-#             # slightly less ugly!
-#             self._paramValues[i] = self._widgetDict[self._paramNames[i]].value
             
     def _downloadFile(self, data_to_download):
         js_download = """
@@ -921,16 +903,13 @@ class MuMoTcontroller:
 
 ## class describing a controller for multiagent views
 class MuMoTSSAController(MuMoTcontroller):
-    _filetodownload = None
-    _initialState = None
-
     
-    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, specialParams):
+    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, ssaParams):
         MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot)
         advancedWidgets = []
         
-        self._initialState = specialParams['initialState']
-        for state,pop in self._initialState.items():
+        initialState = ssaParams['initialState']
+        for state,pop in initialState.items():
             widget = widgets.IntSlider(value = pop,
                                          min = min(pop, MuMoTdefault._agentsLimits[0]), 
                                          max = max(pop, MuMoTdefault._agentsLimits[1]),
@@ -941,9 +920,20 @@ class MuMoTSSAController(MuMoTcontroller):
             self._widgets.append(widget)
             advancedWidgets.append(widget)
             
+        # Max time slider
+        maxTime = ssaParams['maxTime']
+        widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
+                                         max = maxTime[2], step = maxTime[3], 
+                                         description = 'Simulation time:',
+                                         disabled=False,
+                                         continuous_update = continuousReplot) 
+        self._widgetDict['maxTime'] = widget
+        self._widgets.append(widget)
+        advancedWidgets.append(widget)
+        
         # Random seed input field
         widget = widgets.IntText(
-            value=specialParams['randomSeed'],
+            value=ssaParams['randomSeed'],
             description='Random seed:',
             disabled=False
         )
@@ -954,6 +944,7 @@ class MuMoTSSAController(MuMoTcontroller):
         ## Toggle buttons for plotting style 
         plotToggle = widgets.ToggleButtons(
             options=[('Temporal evolution', 'evo'), ('Final distribution', 'final')],
+            value = ssaParams['visualisationType'],
             description='Plot:',
             disabled=False,
             button_style='', # 'success', 'info', 'warning', 'danger' or ''
@@ -981,21 +972,12 @@ class MuMoTSSAController(MuMoTcontroller):
         )
         display(self._progressBar)
         
-    
-        
-    ## overwritten parent's method. Old method is not used becuase substituted by widgetDict
-    def _update_params_from_widgets(self):
-        for state in self._initialState.keys():
-            self._initialState[state] = self._widgetDict['init'+str(state)].value
-        #numNodes = sum(self._initialState.values())
-        np.random.seed(self._widgetDict['randomSeed'].value)
 
 ## class describing a controller for multiagent views
 class MuMoTmultiagentController(MuMoTcontroller):
     _filetodownload = None
     _initialState = None
 
-    
     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, specialParams):
         MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot)
         advancedWidgets = []
@@ -1298,10 +1280,10 @@ class MuMoTview:
         plt.clf()
         figureCounter += 1
         if (self._visualisationType == "evo"):
-            if not hasattr(self._controller, '_initialState'):
-                print("ERROR! in multirun arguments. The specified controller does not have the attribute _initialState which is required for visualisationType 'evo'.")
-                return
-            systemSize = sum(self._controller._initialState.values())
+#             if not hasattr(self._controller, '_initialState'):
+#                 print("ERROR! in multirun arguments. The specified controller does not have the attribute _initialState which is required for visualisationType 'evo'.")
+#                 return
+            systemSize = sum(self._controller._view._initialState.values())
             maxTime = self._controller._widgetDict['maxTime'].value
             plt.axis([0, maxTime, 0, systemSize])
             
@@ -2074,13 +2056,32 @@ class MuMoTbifurcationView(MuMoTview):
 class MuMoTmultiagentView(MuMoTview):
     _colors = None
     _probabilities = None
+    ## structure to store the communication network
     _graph = None
+    ## list of agents involved in the simulation
     _agents = None
+    ## list of agents' positions
     _positions = None
+    ## Arena size: width
     _arena_width = 1
+    ## Arena size: height
     _arena_height = 1
+    ## @todo necessary!?!?
     _plot = None
+    ## visualisation type
     _visualisationType = None 
+
+#     ## the system state at the start of the simulation (timestep zero)
+#     _initialState = None
+#     ## random seed
+#     _randomSeed = None
+#     ## number of simulation timesteps
+#     _maxTime = None
+#     ## dictionary of rates
+#     _ratesDict = None
+#     ## variable storing the simulation data which can be downloaded upon request
+#     _fileToDownload = None
+
 
     def __init__(self, model, controller, figure = None, params = None, **kwargs):
         super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
@@ -2507,40 +2508,102 @@ class MuMoTSSAView(MuMoTview):
     ## a matrix form of the left-handside of the rules
     _reactantsMatrix = None 
     ## the effect of each rule
-    _ruleChanges = None 
+    _ruleChanges = None
+    ## the system state at the start of the simulation (timestep zero)
+    _initialState = None
+    ## dictionary of rates
+    _ratesDict = None
+    ## number of simulation timesteps
+    _maxTime = None
+    ## random seed
+    _randomSeed = None
+    ## visualisation type
     _visualisationType = None
+    ## variable storing the simulation data which can be downloaded upon request
+    _fileToDownload = None
 
-    def __init__(self, model, controller, figure = None, **kwargs):
-        super().__init__(model, controller, figure)
+    def __init__(self, model, controller, ssaParams, figure = None, rates = None, **kwargs):
+        super().__init__(model, controller, figure=figure, params=rates)
 
         with io.capture_output() as log:
+#         if True:
+            if self._controller == None:
+                # storing the rates for each rule
+                ## @todo moving it to general method?
+                self._ratesDict = {}
+                rates_input_dict = dict( rates )
+#                 print("DIct is " + str(rates_input_dict) )
+                for key in rates_input_dict.keys():
+                    rates_input_dict[str(process_sympy(str(key)))] = rates_input_dict.pop(key) # replace the dictionary key with the str of the SymPy symbol
+#                 print("DIct is " + str(rates_input_dict) )
+                # create the self._ratesDict 
+                for rule in self._mumotModel._rules:
+                    self._ratesDict[str(rule.rate)] = rates_input_dict[str(rule.rate)] 
+            
             colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
             self._colors = {}
             i = 0
             for state in self._mumotModel._reactants:
                 self._colors[state] = colors[i] 
                 i += 1
+                
+            self._initialState = {}
+            for state,pop in ssaParams["initialState"].items():
+                self._initialState[process_sympy(str(state))] = pop # convert string into SymPy symbol
+                #self._initialState[state] = pop
+            self._maxTime = ssaParams["maxTime"]
+            self._randomSeed = ssaParams["randomSeed"]
+            self._visualisationType = ssaParams["visualisationType"]
         
         self._logs.append(log)
+        self._plot_timeEvolution()
 
+    def _update_params(self):
+        if self._controller != None:
+            # getting the rates
+            ## @todo moving it to general method?
+            self._ratesDict = {}
+            for rule in self._mumotModel._rules:
+                self._ratesDict[str(rule.rate)] = self._controller._widgetDict[str(rule.rate)].value
+            # getting other parameters specific to 
+            for state in self._initialState.keys():
+                self._initialState[state] = self._controller._widgetDict['init'+str(state)].value
+            #numNodes = sum(self._initialState.values())
+            self._randomSeed = self._controller._widgetDict['randomSeed'].value
+            self._visualisationType = self._controller._widgetDict['visualisationType'].value
+            self._maxTime = self._controller._widgetDict['maxTime'].value
+            print("Plot Type: " + str(self._visualisationType) )
+    
+    def _print_standalone_view_cmd(self):
+        ssaParams = {}
+        initState_str = {}
+        for state,pop in self._initialState.items():
+            initState_str[str(state)] = pop
+        ssaParams["initialState"] = initState_str 
+        ssaParams["maxTime"] = self._maxTime 
+        ssaParams["randomSeed"] = self._randomSeed
+        ssaParams["visualisationType"] = self._visualisationType
+        print( "mmt.MuMoTSSAView(model1, None, ssaParams = " + str(ssaParams) + ", rates = " + str( list(self._ratesDict.items()) ) + " )")
     
     def _plot_timeEvolution(self):
         with io.capture_output() as log:
-            self._controller._update_params_from_widgets()
-            self._visualisationType = self._controller._widgetDict['visualisationType'].value
-            print("Plot Type: " + str(self._visualisationType) ) 
-            
+            self._update_params()
             self._log("Stochastic Simulation Algorithm (SSA)")
+            self._print_standalone_view_cmd()
+
+            # inti the random seed
+            np.random.seed(self._randomSeed)
+            
+            # organise rates and reactants into strunctures to run the SSA
             self._createSSAmatrix(self._mumotModel._reactants, self._mumotModel._rules)
             
             # Clearing the plot
             self._plot = self._figure.add_subplot(111)
             self._plot.clear()
             # Creating main figure frame
-            maxTime = self._controller._widgetDict['maxTime'].value
             if (self._visualisationType == 'evo'):
-                totAgents = sum(self._controller._initialState.values())
-                self._plot.axis([0, maxTime, 0, totAgents])
+                totAgents = sum(self._initialState.values())
+                self._plot.axis([0, self._maxTime, 0, totAgents])
                 self._figure.show()
                 # make legend
                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
@@ -2548,8 +2611,8 @@ class MuMoTSSAView(MuMoTview):
                 # show canvas
                 self._figure.canvas.draw()
            
-            logs = self._runSSA(self._controller._initialState, maxTime)
-            self._controller._fileToDownload = logs[1]
+            logs = self._runSSA(self._initialState, self._maxTime)
+            self._fileToDownload = logs[1]
            
         self._logs.append(log)
         
@@ -2562,7 +2625,8 @@ class MuMoTSSAView(MuMoTview):
             evo[state] = []
             evo[state].append(pop)
          
-        self._controller._progressBar.max = maxTime
+        ## @todo move the progress bar in the view
+        if self._controller != None: self._controller._progressBar.max = maxTime 
          
         t = 0
         currentState = []
@@ -2572,8 +2636,8 @@ class MuMoTSSAView(MuMoTview):
  
         while t < maxTime:
             # update progress bar
-            self._controller._progressBar.value = t
-            self._controller._progressBar.description = "Loading " + str(round(t/maxTime*100)) + "%:"
+            if self._controller != None: self._controller._progressBar.value = t
+            if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(t/maxTime*100)) + "%:"
 #             print("Time: " + str(t))
              
             timeInterval,currentState = self._stepSSA(currentState)
@@ -2598,8 +2662,8 @@ class MuMoTSSAView(MuMoTview):
             # dinamically update the plot each timestep
             self._figure.canvas.draw()
          
-        self._controller._progressBar.value = self._controller._progressBar.max
-        self._controller._progressBar.description = "Completed 100%:"
+        if self._controller != None: self._controller._progressBar.value = self._controller._progressBar.max
+        if self._controller != None: self._controller._progressBar.description = "Completed 100%:"
         print("State distribution each timestep: " + str(historyState))
         print("Temporal evolution per state: " + str(evo))
         return (historyState,evo)
@@ -2616,7 +2680,7 @@ class MuMoTSSAView(MuMoTview):
             for reactant in sorted(self._mumotModel._reactants, key=str):
                 before = rule.lhsReactants.count(reactant)
                 after = rule.rhsReactants.count(reactant)
-                lineR.append( before * self._controller._widgetDict[str(rule.rate)].value )
+                lineR.append( before * self._ratesDict[str(rule.rate)] )
                 lineC.append( after - before )
             self._reactantsMatrix.append(lineR)
             self._ruleChanges.append(lineC)  
@@ -2661,6 +2725,7 @@ class MuMoTSSAView(MuMoTview):
                 
         return (timeInterval, currentState)
     
+    ## @todo check if it is still running correctly after structural change for View independence from Controller (especially, if initialState is correctly initialised)
     def _singleRun(self, randomSeed):
         # set random seed
         np.random.seed(randomSeed)
@@ -2668,14 +2733,14 @@ class MuMoTSSAView(MuMoTview):
         historyState = []
         evo = {}
         evo['time'] = [0]
-        for state,pop in self._controller._initialState.items():
+        for state,pop in self._initialState.items():
             evo[state] = []
             evo[state].append(pop)
          
         t = 0
         currentState = []
         for reactant in sorted(self._mumotModel._reactants, key=str):
-            currentState.append(self._controller._initialState[reactant])
+            currentState.append(self._initialState[reactant])
         historyState.append( [t] + currentState )
         maxTime = self._controller._widgetDict['maxTime'].value
  
