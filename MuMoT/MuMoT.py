@@ -116,6 +116,8 @@ class MuMoTmodel:
     _equations = None
     ## set of solutions to equations
     _solutions = None 
+    ## summary of stoichiometry as nested dictionaries
+    _stoichiometry = None
     ## dictionary of lambdified functions for integration, plotting, etc.
     _funcs = None
     ## tuple of argument symbols for lambdified functions
@@ -144,12 +146,26 @@ class MuMoTmodel:
         newModel._rules = copy.copy(self._rules)
         newModel._reactants = copy.copy(self._reactants)
         newModel._equations = copy.copy(self._equations)
+        newModel._stoichiometry = copy.deepcopy(self._stoichiometry)
+        for reaction in newModel._stoichiometry:
+            for sub in subs:
+                newModel._stoichiometry[reaction]['rate'] = newModel._stoichiometry[reaction]['rate'].subs(sub[0], sub[1])
+                for reactant in newModel._stoichiometry[reaction]:
+                    if not reactant == 'rate':
+                        if reactant == sub[0]:
+                            #replace keys according to: dictionary[new_key] = dictionary.pop(old_key)
+                            newModel._stoichiometry[reaction][sub[1]] = newModel._stoichiometry[reaction].pop(reactant)
+                                                    
         for reactant in newModel._reactants:
             for sub in subs:
                 newModel._equations[reactant] = newModel._equations[reactant].subs(sub[0], sub[1])
         for rule in newModel._rules:
             for sub in subs:
                 rule.rate = rule.rate.subs(sub[0], sub[1])
+                #for kk in range(len(rule.lhsReactants)):
+                #    rule.lhsReactants[kk] = rule.lhsReactants[kk].subs(sub[0], sub[1])
+                #for kk in range(len(rule.rhsReactants)):    
+                #    rule.rhsReactants[kk] = rule.rhsReactants[kk].subs(sub[0], sub[1])
         for sub in subs:
             if sub[0] in newModel._reactants:
                 for atom in sub[1].atoms(Symbol):
@@ -240,10 +256,21 @@ class MuMoTmodel:
             self._reactantsLaTeX.sort()
         for reactant in self._reactantsLaTeX:
             display(Math(reactant))
-
+        #reactant_list = []
+        #for reaction in self._stoichiometry:
+        #    for reactant in self._stoichiometry[reaction]:
+        #        if not reactant in reactant_list:
+        #            if not reactant == 'rate':
+        #                display(Math(latex(reactant)))
+        #                reactant_list.append(reactant)
 
     ## show a sorted LaTeX representation of the model's rate parameters
     def showRates(self):
+        for reaction in self._stoichiometry:
+            out = latex(self._stoichiometry[reaction]['rate']) + "\; (" + latex(reaction) + ")"
+            display(Math(out))        
+    
+    def showRatesOLD(self):
         for rate in self._ratesLaTeX:
             display(Math(self._ratesLaTeX[rate]))
 
@@ -254,7 +281,8 @@ class MuMoTmodel:
             out = "\\displaystyle \\frac{\\textrm{d}" + latex(reactant) + "}{\\textrm{d}t} := " + latex(self._equations[reactant])
             display(Math(out))
     
-    ## displays expression of stoichiometry
+    ## displays stoichiometry as a dictionary with keys ReactionNr,
+    # ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry
     def showStoichiometry(self):
         out = latex(self._stoichiometry)
         display(Math(out))
@@ -267,8 +295,9 @@ class MuMoTmodel:
         nvec = []
         for key1 in stoich:
             for key2 in stoich[key1]:
-                if not key2 in nvec:
-                    nvec.append(key2)
+                if not key2 == 'rate':
+                    if not key2 in nvec:
+                        nvec.append(key2)
         nvec = sorted(nvec, key=default_sort_key)
         assert (len(nvec)==2 or len(nvec)==3), 'This module works for 2 or 3 different reactants only'
         rhs_dict = _deriveMasterEquation(stoich)
@@ -280,7 +309,7 @@ class MuMoTmodel:
                 rhs_plus = ""
             else:
                 rhs_plus = " + "
-            out_rhs += rhs_plus + latex(key) + " ( " + latex((rhs_dict[key][0]-1)) + " ) " +  latex(rhs_dict[key][1]) + latex(rhs_dict[key][2])
+            out_rhs += rhs_plus + latex(rhs_dict[key][3]) + " ( " + latex((rhs_dict[key][0]-1)) + " ) " +  latex(rhs_dict[key][1]) + latex(rhs_dict[key][2])
             term_count += 1
         if len(nvec)==2:
             lhs_ME = Derivative(P(nvec[0], nvec[1],t),t)
@@ -291,21 +320,23 @@ class MuMoTmodel:
         out = latex(lhs_ME) + ":= " + out_rhs
         display(Math(out))
         
+    ## shows van Kampen expansion when the operators are expanded up to second order
     def showVanKampenExpansion(self):
-        stoichiometry = self._stoichiometry
-        rhs_vke, lhs_vke = _doVanKampenExpansion(_deriveMasterEquation, stoichiometry)
+        rhs_vke, lhs_vke = _doVanKampenExpansion(_deriveMasterEquation, self._stoichiometry)
         out = latex(lhs_vke) + " := \n" + latex(rhs_vke)
         display(Math(out))
     
-    
+    ## shows ODEs derived from the leading term in van Kampen expansion
     def showODEs_vKE(self):
-        ODEdict = _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, self._rules, self._reactants)
+        ODEdict = _getODEs_vKE(_get_orderedLists_vKE, self._stoichiometry)
         for ode in ODEdict:
             out = latex(ode) + " := " + latex(ODEdict[ode])
             display(Math(out))
         
+    ## shows Fokker-Planck equation derived from term ~ O(1) in van Kampen expansion
+    # this is the linear noise approximation
     def showFokkerPlanckEquation(self):
-        FPEdict = _getFokkerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, self._rules, self._reactants)
+        FPEdict = _getFokkerPlanckEquation(_get_orderedLists_vKE, self._stoichiometry,  self._reactants)
         for fpe in FPEdict:
             out = latex(fpe) + " := " + latex(FPEdict[fpe])
             display(Math(out))
@@ -737,6 +768,7 @@ class MuMoTmodel:
         self._rates = set()
         self._ratesLaTeX= None
         self._equations = {}
+        self._stoichiometry = {}
         self._pyDSmodel = None
         self._dot = None
         if not os.path.isdir(self._tmpdirpath):
@@ -2784,7 +2816,7 @@ def parseModel(modelDescription):
         model._ratesLaTeX[repr(rate)] = latexStr
     
     model._stoichiometry = _getStoichiometry(model._rules)
-                    
+    
     return model
 
 def _deriveODEsFromRules(reactants, rules):
@@ -2814,19 +2846,22 @@ def _deriveODEsFromRules(reactants, rules):
 
     return equations
 
-## produces dictionary with stoichiometry of all reactions
+## produces dictionary with stoichiometry of all reactions with key ReactionNr
+# ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry
 def _getStoichiometry(rules):
     stoich = {}
+    ReactionNr = numbered_symbols(prefix='Reaction ', cls=Symbol, start=1)
     for rule in rules:
-        reactDict = {}
+        reactDict = {'rate': rule.rate}
         for reactant in rule.lhsReactants:
             reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
         for reactant in rule.rhsReactants:
             if not reactant in rule.lhsReactants:
                 reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
-        stoich[rule.rate] = reactDict
+        stoich[ReactionNr.__next__()] = reactDict
         
     return stoich
+
 
 ## derivation of the Master equation, returns dictionary used in showMasterEquation
 def _deriveMasterEquation(stoichiometry):
@@ -2836,8 +2871,9 @@ def _deriveMasterEquation(stoichiometry):
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 in nvec:
-                nvec.append(key2)
+            if not key2 == 'rate':
+                if not key2 in nvec:
+                    nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
     
     assert (len(nvec)==2 or len(nvec)==3), 'This module works for 2 or 3 different reactants only'
@@ -2850,14 +2886,16 @@ def _deriveMasterEquation(stoichiometry):
         prod1 = 1
         prod2 = 1
         for key2 in stoich[key1]:
-            prod1 *= f(E_op(key2, stoich[key1][key2][0]-stoich[key1][key2][1]))
-            prod2 *= g(key2, stoich[key1][key2][0], V)
+            if not key2 == 'rate':
+                prod1 *= f(E_op(key2, stoich[key1][key2][0]-stoich[key1][key2][1]))
+                prod2 *= g(key2, stoich[key1][key2][0], V)
         if len(nvec)==2:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t))
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t), stoich[key1]['rate'])
         else:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t))
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t), stoich[key1]['rate'])
 
     return sol_dict_rhs
+
 
 ## Function returning the left-hand side and right-hand side of van Kampen expansion    
 def _doVanKampenExpansion(rhs, stoich):
@@ -2866,13 +2904,13 @@ def _doVanKampenExpansion(rhs, stoich):
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 in nvec:
-                nvec.append(key2)
+            if not key2 == 'rate':
+                if not key2 in nvec:
+                    nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
     
     NoiseDict = {}
     PhiDict = {}
-    #Noise = numbered_symbols(prefix='eta_', cls=Symbol, start=1)
     for kk in range(len(nvec)):
         NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
         PhiDict[nvec[kk]] = Symbol('Phi_'+str(nvec[kk]))
@@ -2899,7 +2937,7 @@ def _doVanKampenExpansion(rhs, stoich):
                 term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             #term_num, term_denom = term.as_numer_denom()
-            rhs_vKE += key*(term.doit() - func)
+            rhs_vKE += rhs_dict[key][3]*(term.doit() - func)
     elif len(nvec)==3:
         nvec = sorted(nvec, key=default_sort_key)
         lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
@@ -2930,17 +2968,17 @@ def _doVanKampenExpansion(rhs, stoich):
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             else:
                 print('Something went wrong!')
-            rhs_vKE += key*(term.doit() - func)    
+            rhs_vKE += rhs_dict[key][3]*(term.doit() - func)    
     else:
         print('Not implemented yet.')
     
     return rhs_vKE.expand(), lhs_vKE
 
 ## creates list of dictionaries where the key is the system size order
-def _get_orderedLists_vKE( _getStoichiometry,rules):
+#def _get_orderedLists_vKE( _getStoichiometry,rules):
+def _get_orderedLists_vKE(stoich):
     V = Symbol('V', real=True, constant=True)
-    #stoichiometry = self._stoichiometry
-    stoichiometry = _getStoichiometry(rules)
+    stoichiometry = stoich
     rhs_vke, lhs_vke = _doVanKampenExpansion(_deriveMasterEquation, stoichiometry)
     Vlist_lhs=[]
     Vlist_rhs=[]
@@ -2969,10 +3007,10 @@ def _get_orderedLists_vKE( _getStoichiometry,rules):
 
 
 ## Function that returns the Fokker-Planck equation
-def _getFokkerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, rules, reactants):
+def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich, reactants):
     P, t = symbols('P t')
     V = Symbol('V', real=True, constant=True)
-    Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(_getStoichiometry, rules)
+    Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(stoich)
     rhsFPE=0
     lhsFPE=0
     for kk in range(len(Vlist_rhs)):
@@ -2987,8 +3025,13 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, rules, re
     FPE = lhsFPE-rhsFPE
     
     nvec = []
-    for reactant in reactants:
-        nvec.append(reactant)
+    for key1 in stoich:
+        for key2 in stoich[key1]:
+            if not key2 == 'rate':
+                if not key2 in nvec:
+                    nvec.append(key2)
+    #for reactant in reactants:
+    #    nvec.append(reactant)
     nvec = sorted(nvec, key=default_sort_key)
     
     NoiseDict = {}
@@ -3007,10 +3050,10 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, _getStoichiometry, rules, re
     return SOL_FPE
 
 ## Function that returns the ODE system deerived from Master equation
-def _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, rules, reactants):
+def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     P, t = symbols('P t')
     V = Symbol('V', real=True, constant=True)
-    Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(_getStoichiometry, rules)
+    Vlist_lhs, Vlist_rhs = _get_orderedLists_vKE(stoich)
     rhsODE=0
     lhsODE=0
     for kk in range(len(Vlist_rhs)):
@@ -3025,8 +3068,13 @@ def _getODEs_vKE(_get_orderedLists_vKE, _getStoichiometry, rules, reactants):
     ODE = lhsODE-rhsODE
     
     nvec = []
-    for reactant in reactants:
-        nvec.append(reactant)
+    for key1 in stoich:
+        for key2 in stoich[key1]:
+            if not key2 == 'rate':
+                if not key2 in nvec:
+                    nvec.append(key2)
+    #for reactant in reactants:
+    #    nvec.append(reactant)
     nvec = sorted(nvec, key=default_sort_key)
     
     PhiDict = {}
