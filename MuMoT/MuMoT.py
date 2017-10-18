@@ -457,7 +457,7 @@ class MuMoTmodel:
         # init the max-time
         if (maxTime == "Auto" or maxTime <= 0):
             maxTime = MuMoTdefault._maxTime
-            timeLimitMax = max(maxTime, MuMoTdefault._timeLimits[1])
+        timeLimitMax = max(maxTime, MuMoTdefault._timeLimits[1])
         MAParams["maxTime"] = (maxTime, MuMoTdefault._timeLimits[0], timeLimitMax, MuMoTdefault._timeStep)
         # init the random seed 
         if (randomSeed == "Auto" or randomSeed <= 0 or randomSeed > MAX_RANDOM_SEED):
@@ -475,8 +475,10 @@ class MuMoTmodel:
         MAParams['particleSpeed'] = (0.01, 0.0, 0.1, 0.005)
         MAParams['visualisationType'] = 'evo' # default view is time-evolution
         MAParams['scaling'] = (1, 0.01, 1, 0.01)
-        MAParams['showTrace'] = True
+        MAParams['showTrace'] = netType == 'dynamic'
         MAParams['showInteractions'] = False
+        ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
+        MAParams['realtimePlot'] = kwargs.get('realtimePlot', False)
         
         # construct controller
         paramValues = []
@@ -520,13 +522,14 @@ class MuMoTmodel:
         
         if (maxTime == "Auto" or maxTime <= 0):
             maxTime = MuMoTdefault._maxTime
-            timeLimitMax = max(maxTime, MuMoTdefault._timeLimits[1])
+        timeLimitMax = max(maxTime, MuMoTdefault._timeLimits[1])
         ssaParams["maxTime"] = (maxTime, MuMoTdefault._timeLimits[0], timeLimitMax, MuMoTdefault._timeStep)
         if (randomSeed == "Auto" or randomSeed <= 0 or randomSeed > MAX_RANDOM_SEED):
             randomSeed = np.random.randint(MAX_RANDOM_SEED)
             print("Automatic Random Seed set to " + str(randomSeed) )
         ssaParams['randomSeed'] = randomSeed
         ssaParams['visualisationType'] = 'evo'
+        ssaParams['realtimePlot'] = kwargs.get('realtimePlot', False)
             
         # construct controller
         paramValues = []
@@ -976,6 +979,16 @@ class MuMoTSSAController(MuMoTcontroller):
         self._widgets.append(plotToggle)
         advancedWidgets.append(plotToggle)
         
+        ## Checkbox for realtime plot update
+        widget = widgets.Checkbox(
+            value = ssaParams.get('realtimePlot',False),
+            description='Runtime plot update',
+            disabled = False
+        )
+        self._widgetDict['realtimePlot'] = widget
+        self._widgets.append(widget)
+        advancedWidgets.append(widget)
+        
         advancedPage = widgets.Box(children=advancedWidgets)
         advancedOpts = widgets.Accordion(children=[advancedPage])
         advancedOpts.set_title(0, 'Advanced options')
@@ -1133,6 +1146,15 @@ class MuMoTmultiagentController(MuMoTcontroller):
             disabled = not (self._widgetDict['netType'].value == NetworkType.DYNAMIC)
         )
         self._widgetDict['showInteractions'] = widget
+        self._widgets.append(widget)
+        advancedWidgets.append(widget)
+        
+        widget = widgets.Checkbox(
+            value = MAParams.get('realtimePlot',False),
+            description='Runtime plot update',
+            disabled = False
+        )
+        self._widgetDict['realtimePlot'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -2126,11 +2148,13 @@ class MuMoTmultiagentView(MuMoTview):
     _showTrace = None
     ## visualise the agent trace (on moving particles)
     _showInteractions = None
+    ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
+    _realtimePlot = None
 
     def __init__(self, model, controller, MAParams, figure = None, rates = None, **kwargs):
         super().__init__(model=model, controller=controller, figure=figure, params=rates, **kwargs)
 
-        with io.capture_output() as log:
+        with io.capture_output() as log:          
             if self._controller == None:
                 # storing the rates for each rule
                 ## @todo moving it to general method?
@@ -2163,6 +2187,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._scaling = MAParams.get('scaling',1)
             self._showTrace = MAParams.get('showTrace',False)
             self._showInteractions = MAParams.get('showInteractions',False)
+            self._realtimePlot = MAParams.get('realtimePlot', False)
             
             self._initGraph(graphType=self._netType, numNodes=sum(self._initialState.values()), netParam=self._netParam)
             
@@ -2212,6 +2237,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._scaling = self._controller._widgetDict['scaling'].value
             self._showTrace = self._controller._widgetDict['showTrace'].value
             self._showInteractions = self._controller._widgetDict['showInteractions'].value
+            self._realtimePlot = self._controller._widgetDict['realtimePlot'].value
 
             numNodes = sum(self._initialState.values())
             self._initGraph(graphType=self._netType, numNodes=numNodes, netParam=self._netParam)
@@ -2271,24 +2297,30 @@ class MuMoTmultiagentView(MuMoTview):
         for state,pop in initialState.items():
             evo[state] = []
             evo[state].append(pop)
-        if self._showTrace:
+            
+        dynamicNetwork = self._netType == NetworkType.DYNAMIC
+        if self._showTrace and dynamicNetwork:
             positionHistory = []
             for _ in np.arange(sum(initialState.values())):
                 positionHistory.append( [] )
-        
+        else:
+            positionHistory = None
+            
         # init progress bar
         if self._controller != None: self._controller._progressBar.max = maxTime
         
-        dynamic = self._netType == NetworkType.DYNAMIC
-        if (not dynamic) and self._visualisationType == "graph":
+        # store the graph layout (only for 'graph' visualisation)
+        if (not dynamicNetwork) and self._visualisationType == "graph":
             pos_layout = nx.circular_layout(self._graph)
+        else:
+            pos_layout = None
         
         for i in np.arange(1, maxTime+1):
             #print("Time: " + str(i))
             if self._controller != None: self._controller._progressBar.value = i
             if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(i/maxTime*100)) + "%:"
-            if dynamic and self._showTrace:
-                for idx, a in enumerate(self._agents):
+            if dynamicNetwork and self._showTrace:
+                for idx, _ in enumerate(self._agents): # second element _ is the agent (unused)
                     positionHistory[idx].append( self._positions[idx] )
             
             currentState = self._stepMultiagent()
@@ -2298,51 +2330,62 @@ class MuMoTmultiagentView(MuMoTview):
                 evo[state].append(pop)
             
             ## Plotting
-            if (self._visualisationType == "evo"):
-                for state,pop in evo.items():
-                    #self._plot.plot(pop, color=self._colors[state]) #label=state,
-                    # Plot only the last timestep rather than overlay all
-                    self._plot.plot([i-1,i], pop[len(pop)-2:len(pop)], color=self._colors[state])
+            if self._realtimePlot:
+                self._updateMultiagentFigure(i, evo, positionHistory=positionHistory, pos_layout=pos_layout)
 
-            elif (self._visualisationType == "graph"):
-                self._plot.clear()
-                if dynamic:
-                    self._plot.axis([0, 1, 0, 1])
-#                     xs = [p[0] for p in positions]
-#                     ys = [p[1] for p in positions]
-#                     plt.plot(xs, ys, 'o' )
-                    xs = {}
-                    ys = {}
-                    for state in initialState.keys():
-                        xs[state] = []
-                        ys[state] = []
-                    for a in np.arange(len(self._positions)):
-                        xs[self._agents[a]].append( self._positions[a][0] )
-                        ys[self._agents[a]].append( self._positions[a][1] )
-                        
-                        if self._showInteractions:
-                            for n in self._getNeighbours(a, self._positions, self._controller._widgetDict['netParam'].value): 
-                                self._plot.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
-                        
-                        if self._showTrace:
-                            trace_xs = [p[0] for p in positionHistory[a] ]
-                            trace_ys = [p[1] for p in positionHistory[a] ]
-                            self._plot.plot( trace_xs, trace_ys, '-', c='0.6') 
-                    for state in currentState.keys():
-                        self._plot.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
-#                     plt.axes().set_aspect('equal')
-                else:
-                    stateColors=[]
-                    for n in self._graph.nodes():
-                        stateColors.append( self._colors.get( self._agents[n], 'w') ) 
-                    nx.draw(self._graph, pos_layout, node_color=stateColors, with_labels=True)
-            # dinamically update the plot each timestep
-            self._figure.canvas.draw()
+        ## Final Plot
+        if not self._realtimePlot:
+            self._updateMultiagentFigure(i, evo, positionHistory=positionHistory, pos_layout=pos_layout)
                 
         if self._controller != None: self._controller._progressBar.description = "Completed 100%:"
         print("State distribution each timestep: " + str(historyState))
         print("Temporal evolution per state: " + str(evo))
         return (historyState,evo)
+    
+    def _updateMultiagentFigure(self, i, evo, positionHistory, pos_layout):
+        if (self._visualisationType == "evo"):
+            for state,pop in evo.items():
+                if self._realtimePlot:
+                    # If realtime-plot mode, draw only the last timestep rather than overlay all
+                    self._plot.plot([i-1,i], pop[len(pop)-2:len(pop)], color=self._colors[state])
+                else:
+                    # otherwise, plot all time-evolution
+                    self._plot.plot(pop, color=self._colors[state]) #label=state,
+
+        elif (self._visualisationType == "graph"):
+            self._plot.clear()
+            if self._netType == NetworkType.DYNAMIC:
+                self._plot.axis([0, 1, 0, 1])
+#                     xs = [p[0] for p in positions]
+#                     ys = [p[1] for p in positions]
+#                     plt.plot(xs, ys, 'o' )
+                xs = {}
+                ys = {}
+                for state in self._initialState.keys():
+                    xs[state] = []
+                    ys[state] = []
+                for a in np.arange(len(self._positions)):
+                    xs[self._agents[a]].append( self._positions[a][0] )
+                    ys[self._agents[a]].append( self._positions[a][1] )
+                    
+                    if self._showInteractions:
+                        for n in self._getNeighbours(a, self._positions, self._controller._widgetDict['netParam'].value): 
+                            self._plot.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
+                    
+                    if self._showTrace:
+                        trace_xs = [p[0] for p in positionHistory[a] ]
+                        trace_ys = [p[1] for p in positionHistory[a] ]
+                        self._plot.plot( trace_xs, trace_ys, '-', c='0.6') 
+                for state in self._initialState.keys():
+                    self._plot.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
+#                     plt.axes().set_aspect('equal')
+            else:
+                stateColors=[]
+                for n in self._graph.nodes():
+                    stateColors.append( self._colors.get( self._agents[n], 'w') ) 
+                nx.draw(self._graph, pos_layout, node_color=stateColors, with_labels=True)
+        # dinamically update the plot each timestep
+        self._figure.canvas.draw()
     
     def _singleRun(self, randomSeed):
         # set random seed
@@ -2633,6 +2676,8 @@ class MuMoTSSAView(MuMoTview):
     _visualisationType = None
     ## variable storing the simulation data which can be downloaded upon request
     _fileToDownload = None
+    ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
+    _realtimePlot = None
 
     def __init__(self, model, controller, ssaParams, figure = None, rates = None, **kwargs):
         super().__init__(model, controller, figure=figure, params=rates)
@@ -2666,6 +2711,7 @@ class MuMoTSSAView(MuMoTview):
             self._maxTime = ssaParams["maxTime"]
             self._randomSeed = ssaParams["randomSeed"]
             self._visualisationType = ssaParams["visualisationType"]
+            self._realtimePlot = ssaParams.get('realtimePlot', False)
         
         self._logs.append(log)
         self._plot_timeEvolution()
@@ -2680,11 +2726,10 @@ class MuMoTSSAView(MuMoTview):
             # getting other parameters specific to SSA
             for state in self._initialState.keys():
                 self._initialState[state] = self._controller._widgetDict['init'+str(state)].value
-            #numNodes = sum(self._initialState.values())
             self._randomSeed = self._controller._widgetDict['randomSeed'].value
             self._visualisationType = self._controller._widgetDict['visualisationType'].value
             self._maxTime = self._controller._widgetDict['maxTime'].value
-#             print("Plot Type: " + str(self._visualisationType) )
+            self._realtimePlot = self._controller._widgetDict['realtimePlot'].value
     
     def _print_standalone_view_cmd(self):
         ssaParams = {}
@@ -2762,23 +2807,35 @@ class MuMoTSSAView(MuMoTview):
                 evo[state].append(pop)
             evo['time'].append(t)
              
-            ## Plot
-            if (self._visualisationType == "evo"):
-                for state,pop in evo.items():
-                    if (state == 'time'): continue
-                    #self._plot.plot(evo['time'], pop, color=self._colors[state]) #label=state,
-                    # Plot only the last timestep rather than overlay all
-                    self._plot.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
-            elif (self._visualisationType == "final"):
-                print("TODO: Missing final distribution visualisation.")
-            # dinamically update the plot each timestep
-            self._figure.canvas.draw()
+            ## Plotting
+            if self._realtimePlot:
+                self._updateSSAFigure(evo)
+        
+        ## Final Plot
+        if not self._realtimePlot:
+            self._updateSSAFigure(evo)
          
         if self._controller != None: self._controller._progressBar.value = self._controller._progressBar.max
         if self._controller != None: self._controller._progressBar.description = "Completed 100%:"
         print("State distribution each timestep: " + str(historyState))
         print("Temporal evolution per state: " + str(evo))
         return (historyState,evo)
+    
+    def _updateSSAFigure(self, evo):
+        if (self._visualisationType == "evo"):
+            for state,pop in evo.items():
+                if (state == 'time'): continue
+                if self._realtimePlot:
+                    # If realtime-plot mode, draw only the last timestep rather than overlay all
+                    self._plot.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
+                else:
+                    # otherwise, plot all time-evolution
+                    self._plot.plot(evo['time'], pop, color=self._colors[state]) #label=state,
+                
+        elif (self._visualisationType == "final"):
+            print("TODO: Missing final distribution visualisation.")
+        # dinamically update the plot each timestep
+        self._figure.canvas.draw()
     
     def _createSSAmatrix(self, reactants, rules):
 #         self._reactantsList = []
