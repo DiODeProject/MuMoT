@@ -36,6 +36,7 @@ from matplotlib.cbook import MatplotlibDeprecationWarning
 from mpl_toolkits.mplot3d import axes3d
 import networkx as nx #@UnresolvedImport
 from enum import Enum
+import json
 
 import matplotlib.ticker as ticker
 from math import log10, floor
@@ -463,15 +464,9 @@ class MuMoTmodel:
             randomSeed = np.random.randint(MAX_RANDOM_SEED)
             print("Automatic Random Seed set to " + str(randomSeed) )
         MAParams['randomSeed'] = randomSeed
-        # init the network type
-        admissibleNetTypes = {'full': NetworkType.FULLY_CONNECTED, 
-                              'erdos-renyi': NetworkType.ERSOS_RENYI, 
-                              'barabasi-albert': NetworkType.BARABASI_ALBERT, 
-                              'dynamic': NetworkType.DYNAMIC}
-        if netType not in admissibleNetTypes.keys():
-            print("ERROR! Invalid netType argument! Valid strings are: " + str(admissibleNetTypes) )
-            return
-        MAParams['netType'] = admissibleNetTypes[netType]
+        # check validity of the network type
+        if _decodeNetworkTypeFromString(netType) == None: return # terminating the process if the input argument is wrong
+        MAParams['netType'] = netType
         print("Network type set to " + str(MAParams['netType']) ) 
 
         # Setting some default values 
@@ -719,17 +714,17 @@ class MuMoTmodel:
     def _getArgTuple(self, argNames, argValues, argDict, reactants, reactantValues):
         assert false # need to work this out
         argList = []
-        for arg in self._args:
-            if arg == stateVariable1:
-                argList.append(X)
-            elif arg == stateVariable2:
-                argList.append(Y)
-            elif arg == stateVariable3:
-                argList.append(Z)                
-            elif arg == self._systemSize:
-                argList.append(1) ## @todo: system size set to 1
-            else:
-                argList.append(argDict[arg])
+#         for arg in self._args:
+#             if arg == stateVariable1:
+#                 argList.append(X)
+#             elif arg == stateVariable2:
+#                 argList.append(Y)
+#             elif arg == stateVariable3:
+#                 argList.append(Z)                
+#             elif arg == self._systemSize:
+#                 argList.append(1) ## @todo: system size set to 1
+#             else:
+#                 argList.append(argDict[arg])
             
         return tuple(argList)
 
@@ -1038,7 +1033,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                      ('Moving particles', NetworkType.DYNAMIC)
                      ],
             description='Network topology:',
-            value = MAParams['netType'], 
+            value = _decodeNetworkTypeFromString(MAParams['netType']), 
             disabled=False
         )
         self._widgetDict['netType'] = netDropdown
@@ -1274,13 +1269,14 @@ class MuMoTview:
         if self._controller != None:
             paramNames = []
             paramValues = []
-            ## @todo: if the afphabetic order is not good, the view could store the desired order in (paramNames) when the controller is controsucted
+            ## @todo: if the afphabetic order is not good, the view could store the desired order in (paramNames) when the controller is constructed
             for name in sorted(self._controller._widgetDict.keys()):
                 paramNames.append(name)
                 paramValues.append(self._controller._widgetDict[name].value)
         else:
             paramNames = self._paramNames
             paramValues = self._paramValues
+            # @todo: in soloView, this does not show the extra parameters (we should make clearer what the use of showLogs) 
 
         for i in zip(paramNames, paramValues):
             print('(' + i[0] + '=' + repr(i[1]) + '), ', end='')
@@ -2131,8 +2127,6 @@ class MuMoTmultiagentView(MuMoTview):
     ## visualise the agent trace (on moving particles)
     _showInteractions = None
 
-
-
     def __init__(self, model, controller, MAParams, figure = None, rates = None, **kwargs):
         super().__init__(model=model, controller=controller, figure=figure, params=rates, **kwargs)
 
@@ -2162,7 +2156,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._maxTime = MAParams["maxTime"]
             self._randomSeed = MAParams["randomSeed"]
             self._visualisationType = MAParams["visualisationType"]
-            self._netType = MAParams['netType']
+            self._netType = _decodeNetworkTypeFromString(MAParams['netType'])
             self._netParam = MAParams['netParam']
             self._motionCorrelatedness = MAParams['motionCorrelatedness']
             self._particleSpeed = MAParams['particleSpeed']
@@ -2170,15 +2164,32 @@ class MuMoTmultiagentView(MuMoTview):
             self._showTrace = MAParams.get('showTrace',False)
             self._showInteractions = MAParams.get('showInteractions',False)
             
+            self._initGraph(graphType=self._netType, numNodes=sum(self._initialState.values()), netParam=self._netParam)
+            
         self._logs.append(log)
         self._plot_timeEvolution()
         
-    ## @todo make consistent with parent implementation (paramValues vs widgets)    
-    def _log(self, analysis):
-        print("Starting", analysis, "with parameters ", end='')
-        for w in self._controller._widgetDict.values():
-            print('(' + w.description + '=' + str(w.value) + '), ', end='')
-        print("at", datetime.datetime.now())
+    def _print_standalone_view_cmd(self):
+        MAParams = {}
+        initState_str = {}
+        for state,pop in self._initialState.items():
+            initState_str[str(state)] = pop
+        MAParams["initialState"] = initState_str 
+        MAParams["maxTime"] = self._maxTime 
+        MAParams["randomSeed"] = self._randomSeed
+        MAParams["visualisationType"] = self._visualisationType
+        MAParams['netType'] = _encodeNetworkTypeToString(self._netType)
+        MAParams['netParam'] = self._netParam 
+        MAParams['motionCorrelatedness'] = self._motionCorrelatedness
+        MAParams['particleSpeed'] = self._particleSpeed
+        MAParams['scaling'] = self._scaling
+        MAParams['showTrace'] = self._showTrace
+        MAParams['showInteractions'] = self._showInteractions
+#         sortedDict = "{"
+#         for key,value in sorted(MAParams.items()):
+#             sortedDict += "'" + key + "': " + str(value) + ", "
+#         sortedDict += "}"
+        print( "mmt.MuMoTmultiagentView(model1, None, MAParams = " + str(MAParams) + ", rates = " + str( list(self._ratesDict.items()) ) + " )")
     
     def _update_params(self):
         if self._controller != None:
@@ -2211,7 +2222,7 @@ class MuMoTmultiagentView(MuMoTview):
             # update parameters (needed only if there's a controller)
             self._update_params()
             self._log("Multiagent simulation")
-            #self._print_standalone_view_cmd()
+            self._print_standalone_view_cmd()
 
             # inti the random seed
             np.random.seed(self._randomSeed)
@@ -3805,3 +3816,27 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None,
     for tick in ax.yaxis.get_major_ticks():
                     tick.label.set_fontsize(18)
     plt.tight_layout() 
+    
+def _decodeNetworkTypeFromString(netTypeStr):
+    # init the network type
+    admissibleNetTypes = {'full': NetworkType.FULLY_CONNECTED, 
+                          'erdos-renyi': NetworkType.ERSOS_RENYI, 
+                          'barabasi-albert': NetworkType.BARABASI_ALBERT, 
+                          'dynamic': NetworkType.DYNAMIC}
+    
+    if netTypeStr not in admissibleNetTypes:
+        print("ERROR! Invalid network type argument! Valid strings are: " + str(admissibleNetTypes) )
+    return admissibleNetTypes.get(netTypeStr, None)
+
+def _encodeNetworkTypeToString(netType):
+    # init the network type
+    netTypeEncoding = {NetworkType.FULLY_CONNECTED: 'full', 
+                          NetworkType.ERSOS_RENYI: 'erdos-renyi', 
+                          NetworkType.BARABASI_ALBERT: 'barabasi-albert', 
+                          NetworkType.DYNAMIC: 'dynamic'}
+    
+    if netType not in netTypeEncoding:
+        print("ERROR! Invalid netTypeEncoding table! Tryed to encode network type: " + str(netType) )
+    return netTypeEncoding.get(netType, 'none')
+
+
