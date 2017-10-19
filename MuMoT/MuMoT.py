@@ -298,7 +298,7 @@ class MuMoTmodel:
                     if not key2 in nvec:
                         nvec.append(key2)
         nvec = sorted(nvec, key=default_sort_key)
-        assert (len(nvec)==2 or len(nvec)==3), 'This module works for 2 or 3 different reactants only'
+        assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
         rhs_dict, substring = _deriveMasterEquation(stoich)
         #rhs_ME = 0
         term_count = 0
@@ -312,8 +312,10 @@ class MuMoTmodel:
             term_count += 1
         if len(nvec)==2:
             lhs_ME = Derivative(P(nvec[0], nvec[1],t),t)
+        elif len(nvec)==3:
+            lhs_ME = Derivative(P(nvec[0], nvec[1], nvec[2], t), t)
         else:
-            lhs_ME = Derivative(P(nvec[0], nvec[1], nvec[2], t), t)     
+            lhs_ME = Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), t)     
         
         #return {lhs_ME: rhs_ME}
         out = latex(lhs_ME) + ":= " + out_rhs
@@ -3148,7 +3150,7 @@ def _deriveMasterEquation(stoichiometry):
                     substring = stoich[key1][key2][2]
     nvec = sorted(nvec, key=default_sort_key)
     
-    assert (len(nvec)==2 or len(nvec)==3), 'This module works for 2 or 3 different reactants only'
+    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
     
     rhs = 0
     sol_dict_rhs = {}
@@ -3163,8 +3165,10 @@ def _deriveMasterEquation(stoichiometry):
                 prod2 *= g(key2, stoich[key1][key2][0], V)
         if len(nvec)==2:
             sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t), stoich[key1]['rate'])
-        else:
+        elif len(nvec)==3:
             sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t), stoich[key1]['rate'])
+        else:
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], nvec[3], t), stoich[key1]['rate'])
 
     return sol_dict_rhs, substring
 
@@ -3180,6 +3184,7 @@ def _doVanKampenExpansion(rhs, stoich):
                 if not key2 in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
+    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
     
     NoiseDict = {}
     PhiDict = {}
@@ -3211,7 +3216,6 @@ def _doVanKampenExpansion(rhs, stoich):
             #term_num, term_denom = term.as_numer_denom()
             rhs_vKE += rhs_dict[key][3]*(term.doit() - func)
     elif len(nvec)==3:
-        nvec = sorted(nvec, key=default_sort_key)
         lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
                   - sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
                   - sqrt(V)*Derivative(PhiDict[nvec[1]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
@@ -3242,7 +3246,45 @@ def _doVanKampenExpansion(rhs, stoich):
                 print('Something went wrong!')
             rhs_vKE += rhs_dict[key][3]*(term.doit() - func)    
     else:
-        print('Not implemented yet.')
+        lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
+                  - sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
+                  - sqrt(V)*Derivative(PhiDict[nvec[1]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
+                  - sqrt(V)*Derivative(PhiDict[nvec[2]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[2]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
+                  - sqrt(V)*Derivative(PhiDict[nvec[3]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[3]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]}))
+        rhs_dict, substring = rhs(stoich)
+        rhs_vKE = 0
+        for key in rhs_dict:
+            op = rhs_dict[key][0].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
+            func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sqrt(V)*NoiseDict[nvec[1]], nvec[2]: V*PhiDict[nvec[2]]+sqrt(V)*NoiseDict[nvec[2]], nvec[3]: V*PhiDict[nvec[3]]+sqrt(V)*NoiseDict[nvec[3]]})
+            func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
+            func = func1*func2
+            if len(op.args[0].args) ==0:
+                term = (op*func).subs({op*func: func + op.args[1]/sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
+                
+            elif len(op.args) ==2:
+                term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sqrt(V)*Derivative(func, op.args[1].args[0]) 
+                                       + op.args[1].args[1]**2/(2*V)*Derivative(func, op.args[1].args[0], op.args[1].args[0])})
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                                       + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
+            elif len(op.args) ==3:
+                term = (op.args[2]*func).subs({op.args[2]*func: func + op.args[2].args[1]/sqrt(V)*Derivative(func, op.args[2].args[0]) 
+                                       + op.args[2].args[1]**2/(2*V)*Derivative(func, op.args[2].args[0], op.args[2].args[0])})
+                term = (op.args[1]*term).subs({op.args[1]*term: term + op.args[1].args[1]/sqrt(V)*Derivative(term, op.args[1].args[0]) 
+                                       + op.args[1].args[1]**2/(2*V)*Derivative(term, op.args[1].args[0], op.args[1].args[0])})
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                                       + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
+            elif len(op.args) ==4:
+                term = (op.args[3]*func).subs({op.args[3]*func: func + op.args[3].args[1]/sqrt(V)*Derivative(func, op.args[3].args[0]) 
+                                       + op.args[3].args[1]**2/(2*V)*Derivative(func, op.args[3].args[0], op.args[3].args[0])})
+                term = (op.args[2]*term).subs({op.args[2]*term: term + op.args[2].args[1]/sqrt(V)*Derivative(term, op.args[2].args[0]) 
+                                       + op.args[2].args[1]**2/(2*V)*Derivative(term, op.args[2].args[0], op.args[2].args[0])})
+                term = (op.args[1]*term).subs({op.args[1]*term: term + op.args[1].args[1]/sqrt(V)*Derivative(term, op.args[1].args[0]) 
+                                       + op.args[1].args[1]**2/(2*V)*Derivative(term, op.args[1].args[0], op.args[1].args[0])})
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                                       + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
+            else:
+                print('Something went wrong!')
+            rhs_vKE += rhs_dict[key][3]*(term.doit() - func)
     
     return rhs_vKE.expand(), lhs_vKE, substring
 
@@ -3305,6 +3347,7 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich, reactants):
     #for reactant in reactants:
     #    nvec.append(reactant)
     nvec = sorted(nvec, key=default_sort_key)
+    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
     
     NoiseDict = {}
     #Noise = numbered_symbols(prefix='eta_', cls=Symbol, start=1)
@@ -3316,6 +3359,8 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich, reactants):
         SOL_FPE = solve(FPE, Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],t),t), dict=True)[0]
     elif len(Vlist_lhs)-1 == 3:
         SOL_FPE = solve(FPE, Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],t),t), dict=True)[0]
+    elif len(Vlist_lhs)-1 == 4:
+        SOL_FPE = solve(FPE, Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],NoiseDict[nvec[3]],t),t), dict=True)[0]
     else:
         print('Not implemented yet.')
            
@@ -3348,12 +3393,28 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     #for reactant in reactants:
     #    nvec.append(reactant)
     nvec = sorted(nvec, key=default_sort_key)
+    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
     
     PhiDict = {}
     NoiseDict = {}
     for kk in range(len(nvec)):
         NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
         PhiDict[nvec[kk]] = Symbol('Phi_'+str(nvec[kk]))
+        
+    PhiSubDict = None    
+    if not substring == None:
+        PhiSubDict = {}
+        for sub in substring:
+            PhiSubSym = Symbol('Phi_'+str(sub))
+            PhiSubDict[PhiSubSym] = substring[sub]
+        for key in PhiSubDict:
+            for sym in PhiSubDict[key].atoms(Symbol):
+                phisub = Symbol('Phi_'+str(sym))
+                if sym in nvec:
+                    symSub = phisub
+                    PhiSubDict[key] = PhiSubDict[key].subs({sym: symSub})
+                else:
+                    PhiSubDict[key] = PhiSubDict[key].subs({sym: 1})
     
     
     if len(Vlist_lhs)-1 == 2:
@@ -3369,9 +3430,26 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
                 ode2 += prod
             else:
                 print('Check ODE.args!')
-        ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
-        ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
-        ODEsys = {**ODE_1[0], **ODE_2[0]}
+                
+        if PhiSubDict:
+            ode1 = ode1.subs(PhiSubDict)
+            ode2 = ode2.subs(PhiSubDict) 
+            
+            for key in PhiSubDict:
+                if key == PhiDict[nvec[0]]:
+                    ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
+                    ODEsys = {**ODE_2[0]}
+                elif key == PhiDict[nvec[1]]:
+                    ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+                    ODEsys = {**ODE_1[0]}
+                else:
+                    ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+                    ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
+                    ODEsys = {**ODE_1[0], **ODE_2[0]}            
+        else:        
+            ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+            ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
+            ODEsys = {**ODE_1[0], **ODE_2[0]}
                 
     elif len(Vlist_lhs)-1 == 3:
         ode1 = 0
@@ -3388,20 +3466,7 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
             else:
                 ode3 += prod
         
-        if not substring == None:
-            PhiSubDict = {}
-            for sub in substring:
-                PhiSubSym = Symbol('Phi_'+str(sub))
-                PhiSubDict[PhiSubSym] = substring[sub]
-            for key in PhiSubDict:
-                for sym in PhiSubDict[key].atoms(Symbol):
-                    phisub = Symbol('Phi_'+str(sym))
-                    if sym in nvec:
-                        symSub = phisub
-                        PhiSubDict[key] = PhiSubDict[key].subs({sym: symSub})
-                    else:
-                        PhiSubDict[key] = PhiSubDict[key].subs({sym: 1})
-
+        if PhiSubDict:
             ode1 = ode1.subs(PhiSubDict)
             ode2 = ode2.subs(PhiSubDict)
             ode3 = ode3.subs(PhiSubDict)
@@ -3423,13 +3488,73 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
                     ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
                     ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
                     ODE_3 = solve(ode3, Derivative(PhiDict[nvec[2]] , t), dict=True)
-                    ODEsys = {**ODE_1[0], **ODE_2[0], **ODE_3[0]}   
-                    
+                    ODEsys = {**ODE_1[0], **ODE_2[0], **ODE_3[0]} 
+        
         else:
             ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
             ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
             ODE_3 = solve(ode3, Derivative(PhiDict[nvec[2]] , t), dict=True)
             ODEsys = {**ODE_1[0], **ODE_2[0], **ODE_3[0]}
+            
+    elif len(Vlist_lhs)-1 == 4:
+        ode1 = 0
+        ode2 = 0
+        ode3 = 0
+        ode4 = 0
+        for kk in range(len(ODE.args)):
+            prod=1
+            for nn in range(len(ODE.args[kk].args)-1):
+                prod *= ODE.args[kk].args[nn]
+            if ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],NoiseDict[nvec[3]],t), NoiseDict[nvec[0]]):
+                ode1 += prod
+            elif ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],NoiseDict[nvec[3]],t), NoiseDict[nvec[1]]):
+                ode2 += prod
+            elif ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],NoiseDict[nvec[3]],t), NoiseDict[nvec[2]]):
+                ode3 += prod
+            else:
+                ode4 += prod
+        
+        if PhiSubDict:
+            ode1 = ode1.subs(PhiSubDict)
+            ode2 = ode2.subs(PhiSubDict)
+            ode3 = ode3.subs(PhiSubDict)
+            ode4 = ode4.subs(PhiSubDict)
+            
+            for key in PhiSubDict:
+                if key == PhiDict[nvec[0]]:
+                    ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
+                    ODE_3 = solve(ode3, Derivative(PhiDict[nvec[2]] , t), dict=True)
+                    ODE_4 = solve(ode4, Derivative(PhiDict[nvec[3]] , t), dict=True)
+                    ODEsys = {**ODE_2[0], **ODE_3[0], **ODE_4[0]}
+                elif key == PhiDict[nvec[1]]:
+                    ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+                    ODE_3 = solve(ode3, Derivative(PhiDict[nvec[2]] , t), dict=True)
+                    ODE_4 = solve(ode4, Derivative(PhiDict[nvec[3]] , t), dict=True)
+                    ODEsys = {**ODE_1[0], **ODE_3[0], **ODE_4[0]}
+                elif key == PhiDict[nvec[2]]:
+                    ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+                    ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
+                    ODE_4 = solve(ode4, Derivative(PhiDict[nvec[3]] , t), dict=True)
+                    ODEsys = {**ODE_1[0], **ODE_2[0], **ODE_4[0]}
+                elif key == PhiDict[nvec[3]]:
+                    ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+                    ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
+                    ODE_3 = solve(ode3, Derivative(PhiDict[nvec[2]] , t), dict=True)
+                    ODEsys = {**ODE_1[0], **ODE_2[0], **ODE_3[0]}
+                else:
+                    ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+                    ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
+                    ODE_3 = solve(ode3, Derivative(PhiDict[nvec[2]] , t), dict=True)
+                    ODE_4 = solve(ode4, Derivative(PhiDict[nvec[3]] , t), dict=True)
+                    ODEsys = {**ODE_1[0], **ODE_2[0], **ODE_3[0], **ODE_4[0]} 
+        
+        else:
+            ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+            ODE_2 = solve(ode2, Derivative(PhiDict[nvec[1]] , t), dict=True)
+            ODE_3 = solve(ode3, Derivative(PhiDict[nvec[2]] , t), dict=True)
+            ODE_4 = solve(ode4, Derivative(PhiDict[nvec[3]] , t), dict=True)
+            ODEsys = {**ODE_1[0], **ODE_2[0], **ODE_3[0], **ODE_4[0]}
+            
     else:
         print('Not implemented yet.')
         
