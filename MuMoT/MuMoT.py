@@ -380,7 +380,7 @@ class MuMoTmodel:
             modelView = MuMoTstreamView(self, viewController, stateVariable1, stateVariable2, **kwargs)
                     
             viewController.setView(modelView)
-            viewController.setReplotFunction(modelView._plot_field)         
+            viewController._setReplotFunction(modelView._plot_field)         
             
             return viewController
         else:
@@ -396,7 +396,7 @@ class MuMoTmodel:
             modelView = MuMoTvectorView(self, viewController, stateVariable1, stateVariable2, stateVariable3, **kwargs)
                     
             viewController.setView(modelView)
-            viewController.setReplotFunction(modelView._plot_field)         
+            viewController._setReplotFunction(modelView._plot_field)         
                         
             return viewController
         else:
@@ -428,7 +428,7 @@ class MuMoTmodel:
         modelView = MuMoTbifurcationView(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, **kwargs)
         
         viewController.setView(modelView)
-        viewController.setReplotFunction(modelView._replot_bifurcation)
+        viewController._setReplotFunction(modelView._replot_bifurcation)
         
         return viewController
 
@@ -493,8 +493,8 @@ class MuMoTmodel:
         
         modelView = MuMoTmultiagentView(self, viewController, MAParams, **kwargs)
         viewController.setView(modelView)
-#         viewController.setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
-        viewController.setReplotFunction(modelView._plot_timeEvolution)
+#         viewController._setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
+        viewController._setReplotFunction(modelView._plot_timeEvolution, modelView._redrawOnly)
 
         return viewController
 
@@ -547,8 +547,8 @@ class MuMoTmodel:
         viewController.setView(modelView)
         #modelView._plot_timeEvolution()
         
-#         viewController.setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
-        viewController.setReplotFunction(modelView._plot_timeEvolution)
+#         viewController._setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
+        viewController._setReplotFunction(modelView._plot_timeEvolution)
         
         return viewController
 
@@ -815,6 +815,8 @@ class MuMoTcontroller:
     _widgets = None
     ## dictionary of controller widgets, with parameter name as key
     _widgetDict = None
+    ## dictionary of controller widgets, with parameter that influence only the plotting and not the computation
+    _widgetsPlotOnly = None
     ## replot function widgets have been assigned (for use by MuMoTmultiController)
     _replotFunction = None
     ## widget for simple error messages to be displayed to user during interaction
@@ -829,6 +831,7 @@ class MuMoTcontroller:
         self._paramLabelDict = paramLabelDict
         self._widgets = []
         self._widgetDict = {}
+        self._widgetsPlotOnly = {}
         self._silent = silent
         unsortedPairs = zip(paramNames, paramValues)
         for pair in sorted(unsortedPairs):
@@ -846,11 +849,17 @@ class MuMoTcontroller:
         if not(silent):
             print('bar' + str(self._errorMessage))
             display(self._errorMessage)
-            
-    def setReplotFunction(self, replotFunction):
-        self._replotFunction = replotFunction
-        for widget in self._widgets:
-            widget.on_trait_change(replotFunction, 'value')
+    
+    ## set the functions that must be triggered when the widgets are changed.
+    ## @param[in]    recomputeFunction    The function to be called when recomputing is necessary 
+    ## @param[in]    redrawFunction    The function to be called when only redrawing (relying on previous computation) is sufficient 
+    def _setReplotFunction(self, recomputeFunction, redrawFunction=None):
+        self._replotFunction = recomputeFunction
+        for widget in self._widgetDict.values():
+            widget.on_trait_change(recomputeFunction, 'value')
+        if redrawFunction != None:
+            for widget in self._widgetsPlotOnly.values():
+                widget.on_trait_change(redrawFunction, 'value')
 
     def setView(self, view):
         self._view = view
@@ -1127,7 +1136,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             tooltips=['Population change over time', 'Network topology', 'Number of agents in each state at final timestep'],
         #     icons=['check'] * 3
         )
-        self._widgetDict['visualisationType'] = plotToggle
+        self._widgetsPlotOnly['visualisationType'] = plotToggle
         self._widgets.append(plotToggle)
         advancedWidgets.append(plotToggle)
         
@@ -1137,7 +1146,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             description='Show particle trace',
             disabled = not (self._widgetDict['netType'].value == NetworkType.DYNAMIC)
         )
-        self._widgetDict['showTrace'] = widget
+        self._widgetsPlotOnly['showTrace'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         widget = widgets.Checkbox(
@@ -1145,7 +1154,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             description='Show communication links',
             disabled = not (self._widgetDict['netType'].value == NetworkType.DYNAMIC)
         )
-        self._widgetDict['showInteractions'] = widget
+        self._widgetsPlotOnly['showInteractions'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -1196,7 +1205,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             self._widgetDict['netParam'].description = "Network connectivity parameter (link probability)"
         elif (self._widgetDict['netType'].value == NetworkType.BARABASI_ALBERT):
             self._widgetDict['netParam'].disabled = False
-            maxVal = sum(self._initialState.values())-1
+            maxVal = sum(self._view._initialState.values())-1
             self._widgetDict['netParam'].min = 1
             self._widgetDict['netParam'].max = maxVal
             self._widgetDict['netParam'].step = 1
@@ -1214,13 +1223,13 @@ class MuMoTmultiagentController(MuMoTcontroller):
             self._widgetDict['netParam'].description = "Interaction range"
             self._widgetDict['particleSpeed'].disabled = False
             self._widgetDict['motionCorrelatedness'].disabled = False
-            self._widgetDict['showTrace'].disabled = False
-            self._widgetDict['showInteractions'].disabled = False
+            self._widgetsPlotOnly['showTrace'].disabled = False
+            self._widgetsPlotOnly['showInteractions'].disabled = False
         else:
             self._widgetDict['particleSpeed'].disabled = True
             self._widgetDict['motionCorrelatedness'].disabled = True
-            self._widgetDict['showTrace'].disabled = True
-            self._widgetDict['showInteractions'].disabled = True
+            self._widgetsPlotOnly['showTrace'].disabled = True
+            self._widgetsPlotOnly['showInteractions'].disabled = True
     
     def _update_scaling_widget(self, scaling):
         if (self._widgetDict['scaling'].value > scaling):
@@ -1231,7 +1240,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             self._widgetDict['scaling'].step = scaling/100 
     
     def downloadTimeEvolution(self):
-        return self._downloadFile(self._filetodownload)
+        return self._downloadFile(self._view._latestResults[0])
     
 
 
@@ -1246,7 +1255,6 @@ class MuMoTview:
     _figureNum = None
     ## 3d axes? (False => 2d)
     _axes3d = None
-#    _widgets = None
     ## Controller that controls this view @todo - could become None
     _controller = None
     ## Summary logs of view behaviour
@@ -1470,6 +1478,7 @@ class MuMoTmultiController(MuMoTcontroller):
 #             if controller._view == None: ## presume this controller is a multi controller (@todo check?)
 #                 controller._widgets = self._widgets
         
+        ## @todo possibly replace self._widgets with self._widgetDict? This is the only _widgets usage
         for widget in self._widgets:
             widget.on_trait_change(self._view._plot, 'value')
 
@@ -2138,8 +2147,6 @@ class MuMoTmultiagentView(MuMoTview):
     _scaling = None
     ## dictionary of rates
     _ratesDict = None
-    ## variable storing the simulation data which can be downloaded upon request
-    _fileToDownload = None
     ## @todo necessary!?!?
     _plot = None
     ## visualisation type
@@ -2150,6 +2157,8 @@ class MuMoTmultiagentView(MuMoTview):
     _showInteractions = None
     ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
     _realtimePlot = None
+    ## latest computed results
+    _latestResults = None
 
     def __init__(self, model, controller, MAParams, figure = None, rates = None, **kwargs):
         super().__init__(model=model, controller=controller, figure=figure, params=rates, **kwargs)
@@ -2216,6 +2225,8 @@ class MuMoTmultiagentView(MuMoTview):
 #         sortedDict += "}"
         print( "mmt.MuMoTmultiagentView(model1, None, MAParams = " + str(MAParams) + ", rates = " + str( list(self._ratesDict.items()) ) + " )")
     
+    ## reads the new parameters (in case they changed in the controller)
+    ## this function should only update local parameters and not compute data
     def _update_params(self):
         if self._controller != None:
             # getting the rates
@@ -2228,19 +2239,17 @@ class MuMoTmultiagentView(MuMoTview):
                 self._initialState[state] = self._controller._widgetDict['init'+str(state)].value
             #numNodes = sum(self._initialState.values())
             self._randomSeed = self._controller._widgetDict['randomSeed'].value
-            self._visualisationType = self._controller._widgetDict['visualisationType'].value
+            self._visualisationType = self._controller._widgetsPlotOnly['visualisationType'].value
             self._maxTime = self._controller._widgetDict['maxTime'].value
             self._netType = self._controller._widgetDict['netType'].value
             self._netParam = self._controller._widgetDict['netParam'].value
             self._motionCorrelatedness = self._controller._widgetDict['motionCorrelatedness'].value
             self._particleSpeed = self._controller._widgetDict['particleSpeed'].value
             self._scaling = self._controller._widgetDict['scaling'].value
-            self._showTrace = self._controller._widgetDict['showTrace'].value
-            self._showInteractions = self._controller._widgetDict['showInteractions'].value
+            self._showTrace = self._controller._widgetsPlotOnly['showTrace'].value
+            self._showInteractions = self._controller._widgetsPlotOnly['showInteractions'].value
             self._realtimePlot = self._controller._widgetDict['realtimePlot'].value
 
-            numNodes = sum(self._initialState.values())
-            self._initGraph(graphType=self._netType, numNodes=numNodes, netParam=self._netParam)
     
     def _plot_timeEvolution(self):
         with io.capture_output() as log:
@@ -2250,8 +2259,11 @@ class MuMoTmultiagentView(MuMoTview):
             self._log("Multiagent simulation")
             self._print_standalone_view_cmd()
 
-            # inti the random seed
+            # init the random seed
             np.random.seed(self._randomSeed)
+            
+            # init the network
+            self._initGraph(graphType=self._netType, numNodes=sum(self._initialState.values()), netParam=self._netParam)
             
             self._convertRatesIntoProbabilities(self._mumotModel._reactants, self._mumotModel._rules)
 
@@ -2275,61 +2287,83 @@ class MuMoTmultiagentView(MuMoTview):
                 # show canvas
                 self._figure.canvas.draw()
             
-            logs = self._runMultiagent(self._initialState, self._maxTime)
+            self._latestResults = self._runMultiagent()
+            print("Temporal evolution per state: " + str(self._latestResults[0]))
+            
+            ## Final Plot
+            if not self._realtimePlot:
+                self._updateMultiagentFigure(0, self._latestResults[0], positionHistory=self._latestResults[1], pos_layout=self._latestResults[2])
+            
             # replot legend at the end
             if not self._silent:
-                self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.) # TODO: display legend every timeframe in 'graph' plots
+                ## @todo display legend every timeframe in 'graph' plots
+                self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.) 
 #             plt.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
-            
-            # asign the file to download            
-            self._fileToDownload = logs[1]
             
 #             for state,pop in logs[1].items():
 #                 print("Plotting:"+str(pop))
 #                 plt.plot(pop, label=state)
             
         self._logs.append(log)
+    
+    def _redrawOnly(self):
+        self._update_params()
+        if not self._silent:
+            #plt.clf()
+            self._plot = self._figure.add_subplot(111)
+            self._plot.clear()
+ 
+            if (self._visualisationType == 'evo'):
+                plt.axes().set_aspect('auto')
+                # create the frame
+                totAgents = sum(self._initialState.values())
+                self._plot.axis([0, self._maxTime, 0, totAgents])
+                self._figure.show()
+            elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
+                plt.axes().set_aspect('equal')
+                      
+        self._updateMultiagentFigure(0, self._latestResults[0], positionHistory=self._latestResults[1], pos_layout=self._latestResults[2])
         
-    def _runMultiagent(self, initialState, maxTime):
+    def _runMultiagent(self):
         # init the controller variables
         self._initMultiagent()
         
         # init logging structs
-        historyState = []
-        historyState.append(initialState)
+#         historyState = []
+#         historyState.append(initialState)
         evo = {}
-        for state,pop in initialState.items():
+        for state,pop in self._initialState.items():
             evo[state] = []
             evo[state].append(pop)
             
         dynamicNetwork = self._netType == NetworkType.DYNAMIC
-        if self._showTrace and dynamicNetwork:
+        if dynamicNetwork:
             positionHistory = []
-            for _ in np.arange(sum(initialState.values())):
+            for _ in np.arange(sum(self._initialState.values())):
                 positionHistory.append( [] )
         else:
             positionHistory = None
             
         # init progress bar
-        if self._controller != None: self._controller._progressBar.max = maxTime
+        if self._controller != None: self._controller._progressBar.max = self._maxTime
         
         # store the graph layout (only for 'graph' visualisation)
-        if (not dynamicNetwork) and self._visualisationType == "graph":
+        if (not dynamicNetwork): # and self._visualisationType == "graph":
             pos_layout = nx.circular_layout(self._graph)
         else:
             pos_layout = None
         
-        for i in np.arange(1, maxTime+1):
+        for i in np.arange(1, self._maxTime+1):
             #print("Time: " + str(i))
             if self._controller != None: self._controller._progressBar.value = i
-            if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(i/maxTime*100)) + "%:"
-            if dynamicNetwork and self._showTrace:
+            if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(i/self._maxTime*100)) + "%:"
+            if dynamicNetwork: # and self._showTrace:
                 for idx, _ in enumerate(self._agents): # second element _ is the agent (unused)
                     positionHistory[idx].append( self._positions[idx] )
             
             currentState = self._stepMultiagent()
                     
-            historyState.append(currentState)
+#             historyState.append(currentState)
             for state,pop in currentState.items():
                 evo[state].append(pop)
             
@@ -2337,19 +2371,15 @@ class MuMoTmultiagentView(MuMoTview):
             if self._realtimePlot:
                 self._updateMultiagentFigure(i, evo, positionHistory=positionHistory, pos_layout=pos_layout)
 
-        ## Final Plot
-        if not self._realtimePlot:
-            self._updateMultiagentFigure(i, evo, positionHistory=positionHistory, pos_layout=pos_layout)
                 
         if self._controller != None: self._controller._progressBar.description = "Completed 100%:"
-        print("State distribution each timestep: " + str(historyState))
-        print("Temporal evolution per state: " + str(evo))
-        return (historyState,evo)
+#         print("State distribution each timestep: " + str(historyState))
+        return (evo, positionHistory, pos_layout)
     
     def _updateMultiagentFigure(self, i, evo, positionHistory, pos_layout):
         if (self._visualisationType == "evo"):
             for state,pop in evo.items():
-                if self._realtimePlot:
+                if self._realtimePlot and i>0:
                     # If realtime-plot mode, draw only the last timestep rather than overlay all
                     self._plot.plot([i-1,i], pop[len(pop)-2:len(pop)], color=self._colors[state])
                 else:
@@ -2374,7 +2404,7 @@ class MuMoTmultiagentView(MuMoTview):
                     ys[self._agents[a]].append( self._positions[a][1] )
                     
                     if self._showInteractions:
-                        for n in self._getNeighbours(a, self._positions, self._controller._widgetDict['netParam'].value): 
+                        for n in self._getNeighbours(a, self._positions, self._netParam): 
                             self._plot.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
                     
                     if self._showTrace:
@@ -2680,8 +2710,6 @@ class MuMoTSSAView(MuMoTview):
     _randomSeed = None
     ## visualisation type
     _visualisationType = None
-    ## variable storing the simulation data which can be downloaded upon request
-    _fileToDownload = None
     ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
     _realtimePlot = None
 
@@ -2776,7 +2804,6 @@ class MuMoTSSAView(MuMoTview):
                     self._figure.canvas.draw()
            
             logs = self._runSSA(self._initialState, self._maxTime)
-            self._fileToDownload = logs[1]
            
         self._logs.append(log)
         
