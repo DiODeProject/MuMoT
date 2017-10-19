@@ -144,9 +144,9 @@ class MuMoTmodel:
             assignment = process_sympy(subString)
             subs.append((assignment.lhs, assignment.rhs))
         newModel = MuMoTmodel()
-        newModel._rules = copy.copy(self._rules)
-        newModel._reactants = copy.copy(self._reactants)
-        newModel._equations = copy.copy(self._equations)
+        newModel._rules = copy.deepcopy(self._rules)
+        newModel._reactants = copy.deepcopy(self._reactants)
+        newModel._equations = copy.deepcopy(self._equations)
         newModel._stoichiometry = copy.deepcopy(self._stoichiometry)
         for reaction in newModel._stoichiometry:
             for sub in subs:
