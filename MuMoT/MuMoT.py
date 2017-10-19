@@ -2256,29 +2256,33 @@ class MuMoTmultiagentView(MuMoTview):
             self._convertRatesIntoProbabilities(self._mumotModel._reactants, self._mumotModel._rules)
 
             # Clearing the plot
-            self._plot = self._figure.add_subplot(111)
-            self._plot.clear()
+            if not self._silent:
+                self._plot = self._figure.add_subplot(111)
+                self._plot.clear()
 
-            if (self._visualisationType == 'evo'):
-                plt.axes().set_aspect('auto')
-                # create the frame
-                totAgents = sum(self._initialState.values())
-                self._plot.axis([0, self._maxTime, 0, totAgents])
-                self._figure.show()
-            elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
-                plt.axes().set_aspect('equal')
+                if (self._visualisationType == 'evo'):
+                    plt.axes().set_aspect('auto')
+                    # create the frame
+                    totAgents = sum(self._initialState.values())
+                    self._plot.axis([0, self._maxTime, 0, totAgents])
+                    self._figure.show()
+                elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
+                    plt.axes().set_aspect('equal')
                 
-            # plot legend
-            markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
-            self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
-            # show canvas
-            self._figure.canvas.draw()
+                # plot legend
+                markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
+                self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
+                # show canvas
+                self._figure.canvas.draw()
             
             logs = self._runMultiagent(self._initialState, self._maxTime)
             # replot legend at the end
-            self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.) # TODO: display legend every timeframe in 'graph' plots
-            self._fileToDownload = logs[1]
+            if not self._silent:
+                self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.) # TODO: display legend every timeframe in 'graph' plots
 #             plt.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
+            
+            # asign the file to download            
+            self._fileToDownload = logs[1]
             
 #             for state,pop in logs[1].items():
 #                 print("Plotting:"+str(pop))
@@ -2350,7 +2354,8 @@ class MuMoTmultiagentView(MuMoTview):
                     self._plot.plot([i-1,i], pop[len(pop)-2:len(pop)], color=self._colors[state])
                 else:
                     # otherwise, plot all time-evolution
-                    self._plot.plot(pop, color=self._colors[state]) #label=state,
+                    #self._plot.plot(pop, color=self._colors[state]) #label=state,
+                    plt.plot(pop, color=self._colors[state])
 
         elif (self._visualisationType == "graph"):
             self._plot.clear()
@@ -2385,7 +2390,8 @@ class MuMoTmultiagentView(MuMoTview):
                     stateColors.append( self._colors.get( self._agents[n], 'w') ) 
                 nx.draw(self._graph, pos_layout, node_color=stateColors, with_labels=True)
         # dinamically update the plot each timestep
-        self._figure.canvas.draw()
+        if not self._silent:
+            self._figure.canvas.draw()
     
     def _singleRun(self, randomSeed):
         # set random seed
@@ -2755,18 +2761,19 @@ class MuMoTSSAView(MuMoTview):
             self._createSSAmatrix(self._mumotModel._reactants, self._mumotModel._rules)
             
             # Clearing the plot
-            self._plot = self._figure.add_subplot(111)
-            self._plot.clear()
-            # Creating main figure frame
-            if (self._visualisationType == 'evo'):
-                totAgents = sum(self._initialState.values())
-                self._plot.axis([0, self._maxTime, 0, totAgents])
-                self._figure.show()
-                # make legend
-                markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
-                self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
-                # show canvas
-                self._figure.canvas.draw()
+            if not self._silent:
+                self._plot = self._figure.add_subplot(111)
+                self._plot.clear()
+                # Creating main figure frame
+                if (self._visualisationType == 'evo'):
+                    totAgents = sum(self._initialState.values())
+                    self._plot.axis([0, self._maxTime, 0, totAgents])
+                    self._figure.show()
+                    # make legend
+                    markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
+                    self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
+                    # show canvas
+                    self._figure.canvas.draw()
            
             logs = self._runSSA(self._initialState, self._maxTime)
             self._fileToDownload = logs[1]
@@ -2830,12 +2837,14 @@ class MuMoTSSAView(MuMoTview):
                     self._plot.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
                 else:
                     # otherwise, plot all time-evolution
-                    self._plot.plot(evo['time'], pop, color=self._colors[state]) #label=state,
+                    #self._plot.plot(evo['time'], pop, color=self._colors[state]) #label=state,
+                    plt.plot(evo['time'], pop, color=self._colors[state]) #label=state,
                 
         elif (self._visualisationType == "final"):
             print("TODO: Missing final distribution visualisation.")
-        # dinamically update the plot each timestep
-        self._figure.canvas.draw()
+
+        if not self._silent:
+            self._figure.canvas.draw()
     
     def _createSSAmatrix(self, reactants, rules):
 #         self._reactantsList = []
