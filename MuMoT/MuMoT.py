@@ -110,8 +110,12 @@ class MuMoTmodel:
     _constantReactants = None 
     ## parameter that determines system size, set by using substitute()
     _systemSize = None
+    ## is system size constant or not?
+    _constantSystemSize = None
     ## list of LaTeX strings describing reactants (@todo: depracated?)
     _reactantsLaTeX = None
+    ## list of LaTeX strings describing constant reactants (@todo: depracated?)
+    _constantReactantsLaTeX = None    
     ## set of rates
     _rates = None 
     ## dictionary of LaTeX strings describing rates
@@ -258,6 +262,25 @@ class MuMoTmodel:
                 
         return self._dot
 
+    ## show a sorted LaTeX representation of the model's constant reactants
+    def showConstantReactants(self):
+        if self._constantReactantsLaTeX == None:
+            self._constantReactantsLaTeX = []
+            reactants = map(latex, list(self._constantReactants))
+            for reactant in reactants:
+                self._constantReactantsLaTeX.append(reactant)
+            self._constantReactantsLaTeX.sort()
+        for reactant in self._constantReactantsLaTeX:
+            display(Math(reactant))
+        #reactant_list = []
+        #for reaction in self._stoichiometry:
+        #    for reactant in self._stoichiometry[reaction]:
+        #        if not reactant in reactant_list:
+        #            if not reactant == 'rate':
+        #                display(Math(latex(reactant)))
+        #                reactant_list.append(reactant)
+
+
     ## show a sorted LaTeX representation of the model's reactants
     def showReactants(self):
         if self._reactantsLaTeX == None:
@@ -371,11 +394,15 @@ class MuMoTmodel:
         for rule in self._rules:
             out = ""
             for reactant in rule.lhsReactants:
+                if type(reactant) is numbers.One:
+                    reactant = Symbol('\emptyset')
                 out += latex(reactant)
                 out += " + "
             out = out[0:len(out) - 2] # delete the last ' + '
             out += " \\xrightarrow{" + latex(rule.rate) + "}"
             for reactant in rule.rhsReactants:
+                if type(reactant) is numbers.One:
+                    reactant = Symbol('\emptyset')
                 out += latex(reactant)
                 out += " + "
             out = out[0:len(out) - 2] # delete the last ' + '
@@ -661,6 +688,9 @@ class MuMoTmodel:
         for rate in self._rates:
             paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
             paramNames.append(str(rate))
+        for reactant in self._constantReactants:
+            paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+            paramNames.append('(' + latex(reactant) + ')')            
         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, **kwargs)
 
         return viewController
@@ -790,6 +820,7 @@ class MuMoTmodel:
         self._rules = []
         self._reactants = set()
         self._systemSize = None
+        self._constantSystemSize = True
         self._reactantsLaTeX = None
         self._rates = set()
         self._ratesLaTeX= None
@@ -3044,6 +3075,7 @@ def parseModel(modelDescription):
     rates = set()
     rules = []
     model = MuMoTmodel()
+    
 
     for rule in modelRules:
         if (len(rule) > 0):
@@ -3074,6 +3106,8 @@ def parseModel(modelDescription):
                             token = token.replace(')','')
                         if token == '\emptyset':
                             constantReactant = True
+                            model._constantSystemSize = False
+                            token = '1'
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
@@ -3081,7 +3115,7 @@ def parseModel(modelDescription):
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
                         if constantReactant:
-                            if reactant not in constantReactants:
+                            if reactant not in constantReactants and token != '1':
                                 constantReactants.add(reactant)                            
                         else:
                             if reactant not in reactants:
@@ -3110,7 +3144,9 @@ def parseModel(modelDescription):
                             token = token.replace(')','')
                             print(token)
                         if token == '\emptyset':
+                            model._constantSystemSize = False
                             constantReactant = True
+                            token = '1'
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
@@ -3118,7 +3154,7 @@ def parseModel(modelDescription):
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
                         if constantReactant:
-                            if reactant not in constantReactants:
+                            if reactant not in constantReactants and token != '1':
                                 constantReactants.add(reactant)                            
                         else:
                             if reactant not in reactants:
@@ -3157,7 +3193,10 @@ def parseModel(modelDescription):
     model._rules = rules
     model._reactants = reactants
     model._constantReactants = constantReactants
-    # @todo: check intersection of reactants and constantReactants is empty
+    # check intersection of reactants and constantReactants is empty
+    intersect = model._reactants.intersection(model._constantReactants) 
+    if len(intersect) != 0:
+        raise SyntaxError("Following reactants defined as both constant and variable: " + str(intersect))
     model._rates = rates
     model._equations = _deriveODEsFromRules(model._reactants, model._rules)
     model._ratesLaTeX = {}
@@ -3192,11 +3231,6 @@ def _deriveODEsFromRules(reactants, rules):
                     rhs = factor * term
                 else:
                     rhs = rhs + factor * term
-        expr = process_sympy('\\emptyset')
-        atoms = expr.atoms()
-        for atom in atoms:
-            pass # this loop extracts element from singleton set                    
-        rhs.subs(atom, '1')
         equations[reactant] = rhs
     
 
