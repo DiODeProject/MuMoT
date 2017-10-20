@@ -105,6 +105,8 @@ class MuMoTmodel:
     _rules = None 
     ## set of reactants
     _reactants = None
+    ## set of fixed-concentration reactants (boundary conditions)
+    _constantReactants = None 
     ## parameter that determines system size, set by using substitute()
     _systemSize = None
     ## list of LaTeX strings describing reactants (@todo: depracated?)
@@ -146,6 +148,7 @@ class MuMoTmodel:
         newModel = MuMoTmodel()
         newModel._rules = copy.deepcopy(self._rules)
         newModel._reactants = copy.deepcopy(self._reactants)
+        newModel._constantReactants = copy.deepcopy(self._constantReactants)
         newModel._equations = copy.deepcopy(self._equations)
         newModel._stoichiometry = copy.deepcopy(self._stoichiometry)
         for sub in subs:
@@ -2995,6 +2998,7 @@ def parseModel(modelDescription):
     modelRules = modelDescr.split('\\n')
     # parse and construct the model
     reactants = set()
+    constantReactants = set()
     rates = set()
     rules = []
     model = MuMoTmodel()
@@ -3014,6 +3018,7 @@ def parseModel(modelDescription):
                 # state D: expecting a '+' or a ':' (decrement reactant count on entering)
                 # state E: expecting a rate equation until end of rule
                 token = token.replace("\\\\",'\\')
+                constantReactant = False
 
                 if state == 'A':
                     if token != "+" and token != "->" and token != ":":
@@ -3021,14 +3026,24 @@ def parseModel(modelDescription):
                         if '^' in token:
                             raise SyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
                         reactantCount += 1
+                        if (token[0] == '(' and token[-1] == ')'):
+                            constantReactant = True
+                            token = token.replace('(','')
+                            token = token.replace(')','')
+                        if token == '\emptyset':
+                            constantReactant = True
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
                             raise SyntaxError("Non-singleton symbol set in token " + token +" in rule " + rule)
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
-                        if reactant not in reactants:
-                            reactants.add(reactant)
+                        if constantReactant:
+                            if reactant not in constantReactants:
+                                constantReactants.add(reactant)                            
+                        else:
+                            if reactant not in reactants:
+                                reactants.add(reactant)
                         newRule.lhsReactants.append(reactant)
                     else:
                         _raiseModelError("reactant", token, rule)
@@ -3047,14 +3062,25 @@ def parseModel(modelDescription):
                         if '^' in token:
                             raise SyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
                         reactantCount -= 1
+                        if (token[0] == '(' and token[-1] == ')'):
+                            constantReactant = True
+                            token = token.replace('(','')
+                            token = token.replace(')','')
+                            print(token)
+                        if token == '\emptyset':
+                            constantReactant = True
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
                             raise SyntaxError("Non-singleton symbol set in token " + token +" in rule " + rule)
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
-                        if reactant not in reactants:
-                            reactants.add(reactant)
+                        if constantReactant:
+                            if reactant not in constantReactants:
+                                constantReactants.add(reactant)                            
+                        else:
+                            if reactant not in reactants:
+                                reactants.add(reactant)
                         newRule.rhsReactants.append(reactant)                        
                     else:
                         _raiseModelError("reactant", token, rule)
@@ -3088,6 +3114,8 @@ def parseModel(modelDescription):
             
     model._rules = rules
     model._reactants = reactants
+    model._constantReactants = constantReactants
+    # @todo: check intersection of reactants and constantReactants is empty
     model._rates = rates
     model._equations = _deriveODEsFromRules(model._reactants, model._rules)
     model._ratesLaTeX = {}
@@ -3122,7 +3150,13 @@ def _deriveODEsFromRules(reactants, rules):
                     rhs = factor * term
                 else:
                     rhs = rhs + factor * term
+        expr = process_sympy('\\emptyset')
+        atoms = expr.atoms()
+        for atom in atoms:
+            pass # this loop extracts element from singleton set                    
+        rhs.subs(atom, '1')
         equations[reactant] = rhs
+    
 
     return equations
 
