@@ -60,6 +60,7 @@ RATE_BOUND = 100.0
 RATE_STEP = 0.1
 MULTIPLOT_COLUMNS = 2
 
+line_color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
 
 # enum possible Network types
 class NetworkType(Enum):
@@ -450,19 +451,19 @@ class MuMoTmodel:
             initialState = {}
             for reactant in self._reactants:
                 if first:
-                    print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
+#                     print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
                     initialState[reactant] = MuMoTdefault._agents
                     first = False
                 else:
                     initialState[reactant] = 0
         else:
             ## @todo check if the Initial State has valid length and positive values
-            print("TODO: check if the Initial State has valid length and positive values")
+#             print("TODO: check if the Initial State has valid length and positive values")
             initialState_str = ast.literal_eval(initialState) # translate string into dict
             initialState = {}
             for state,pop in initialState_str.items():
                 initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-        print("Initial State is " + str(initialState) )
+#         print("Initial State is " + str(initialState) )
         MAParams['initialState'] = initialState
         
         # init the max-time
@@ -473,12 +474,12 @@ class MuMoTmodel:
         # init the random seed 
         if (randomSeed == "Auto" or randomSeed <= 0 or randomSeed > MAX_RANDOM_SEED):
             randomSeed = np.random.randint(MAX_RANDOM_SEED)
-            print("Automatic Random Seed set to " + str(randomSeed) )
+#             print("Automatic Random Seed set to " + str(randomSeed) )
         MAParams['randomSeed'] = randomSeed
         # check validity of the network type
         if _decodeNetworkTypeFromString(netType) == None: return # terminating the process if the input argument is wrong
         MAParams['netType'] = netType
-        print("Network type set to " + str(MAParams['netType']) ) 
+#         print("Network type set to " + str(MAParams['netType']) ) 
 
         # Setting some default values 
         ## @todo add possibility to customise these values from input line
@@ -2158,8 +2159,6 @@ class MuMoTmultiagentView(MuMoTview):
     _scaling = None
     ## dictionary of rates
     _ratesDict = None
-    ## @todo necessary!?!?
-    _plot = None
     ## visualisation type
     _visualisationType = None
     ## visualise the agent trace (on moving particles)
@@ -2174,7 +2173,10 @@ class MuMoTmultiagentView(MuMoTview):
     def __init__(self, model, controller, MAParams, figure = None, rates = None, **kwargs):
         super().__init__(model=model, controller=controller, figure=figure, params=rates, **kwargs)
 
-        with io.capture_output() as log:          
+        with io.capture_output() as log:
+#             if not self._silent:
+#                 self._plot = self._figure.add_subplot(111)
+                      
             if self._controller == None:
                 # storing the rates for each rule
                 ## @todo moving it to general method?
@@ -2185,12 +2187,6 @@ class MuMoTmultiagentView(MuMoTview):
                 # create the self._ratesDict 
                 for rule in self._mumotModel._rules:
                     self._ratesDict[str(rule.rate)] = rates_input_dict[str(rule.rate)] 
-            colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
-            self._colors = {}
-            i = 0
-            for state in self._mumotModel._reactants:
-                self._colors[state] = colors[i] 
-                i += 1
             
             # storing the initial state
             self._initialState = {}
@@ -2210,6 +2206,14 @@ class MuMoTmultiagentView(MuMoTview):
             self._realtimePlot = MAParams.get('realtimePlot', False)
             
             self._initGraph(graphType=self._netType, numNodes=sum(self._initialState.values()), netParam=self._netParam)
+
+            # map colouts to each reactant
+            #colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
+            self._colors = {}
+            i = 0
+            for state in sorted(self._initialState.keys(), key=str): #sorted(self._mumotModel._reactants, key=str):
+                self._colors[state] = line_color_list[i] 
+                i += 1            
             
         self._logs.append(log)
         self._plot_timeEvolution()
@@ -2280,23 +2284,28 @@ class MuMoTmultiagentView(MuMoTview):
 
             # Clearing the plot
             if not self._silent:
-                self._plot = self._figure.add_subplot(111)
-                self._plot.clear()
+                #self._plot = self._figure.add_subplot(111)
+                #self._plot.clear()
+                plt.figure(self._figureNum)
+                plt.clf()
 
                 if (self._visualisationType == 'evo'):
                     plt.axes().set_aspect('auto')
                     # create the frame
                     totAgents = sum(self._initialState.values())
-                    self._plot.axis([0, self._maxTime, 0, totAgents])
-                    self._figure.show()
+#                     self._plot.axis([0, self._maxTime, 0, totAgents])
+                    plt.xlim((0, self._maxTime))
+                    plt.ylim((0, totAgents))
+                    #self._figure.show()
+                    _fig_formatting_2D(self._figure, xlab="time", ylab="pop", curve_replot=True)
                 elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
                     plt.axes().set_aspect('equal')
                 
                 # plot legend
-                markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
-                self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
+#                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
+#                 self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
                 # show canvas
-                self._figure.canvas.draw()
+#                 self._figure.canvas.draw()
             
             self._latestResults = self._runMultiagent()
             print("Temporal evolution per state: " + str(self._latestResults[0]))
@@ -2306,9 +2315,9 @@ class MuMoTmultiagentView(MuMoTview):
                 self._updateMultiagentFigure(0, self._latestResults[0], positionHistory=self._latestResults[1], pos_layout=self._latestResults[2])
             
             # replot legend at the end
-            if not self._silent:
+            #if not self._silent:
                 ## @todo display legend every timeframe in 'graph' plots
-                self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.) 
+                #self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.) 
 #             plt.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
             
 #             for state,pop in logs[1].items():
@@ -2320,16 +2329,20 @@ class MuMoTmultiagentView(MuMoTview):
     def _redrawOnly(self):
         self._update_params()
         if not self._silent:
-            #plt.clf()
-            self._plot = self._figure.add_subplot(111)
-            self._plot.clear()
+            plt.figure(self._figureNum)
+            plt.clf()
+            #self._plot = self._figure.add_subplot(111)
+            #self._plot.clear()
  
             if (self._visualisationType == 'evo'):
                 plt.axes().set_aspect('auto')
                 # create the frame
                 totAgents = sum(self._initialState.values())
-                self._plot.axis([0, self._maxTime, 0, totAgents])
-                self._figure.show()
+#                 self._plot.axis([0, self._maxTime, 0, totAgents])
+                plt.xlim((0, self._maxTime))
+                plt.ylim((0, totAgents))
+#                 self._figure.show()
+                _fig_formatting_2D(self._figure, xlab="time", ylab="pop", curve_replot=True)
             elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
                 plt.axes().set_aspect('equal')
                       
@@ -2389,19 +2402,43 @@ class MuMoTmultiagentView(MuMoTview):
     
     def _updateMultiagentFigure(self, i, evo, positionHistory, pos_layout):
         if (self._visualisationType == "evo"):
-            for state,pop in evo.items():
-                if self._realtimePlot and i>0:
-                    # If realtime-plot mode, draw only the last timestep rather than overlay all
-                    self._plot.plot([i-1,i], pop[len(pop)-2:len(pop)], color=self._colors[state])
-                else:
-                    # otherwise, plot all time-evolution
-                    #self._plot.plot(pop, color=self._colors[state]) #label=state,
-                    plt.plot(pop, color=self._colors[state])
+#             for state,pop in evo.items():
+#                 if self._realtimePlot and i>0:
+#                     # If realtime-plot mode, draw only the last timestep rather than overlay all
+#                     self._plot.plot([i-1,i], pop[len(pop)-2:len(pop)], color=self._colors[state])
+#                 else:
+#                     # otherwise, plot all time-evolution
+#                     #self._plot.plot(pop, color=self._colors[state]) #label=state,
+#                     plt.plot(pop, color=self._colors[state])
+            if (i>1):
+                xdata = []
+                ydata = []
+                labels = []
+                for state in sorted(self._initialState.keys(), key=str):
+                    xdata.append( list(np.arange(len(evo[state]))) )
+                    ydata.append(evo[state])
+                    labels.append(state)
+                #_fig_formatting_2D(xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curve_replot=False)
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False)
+            else:
+                xdata = []
+                ydata = []
+                labels = []
+                for state in sorted(self._initialState.keys(), key=str):
+                    xdata.append( list(np.arange(len(evo[state]))) )
+                    ydata.append(evo[state])
+                    labels.append(state)
+                #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False)
 
         elif (self._visualisationType == "graph"):
-            self._plot.clear()
+            #self._plot.clear()
+            plt.clf()
             if self._netType == NetworkType.DYNAMIC:
-                self._plot.axis([0, 1, 0, 1])
+#                 self._plot.axis([0, 1, 0, 1])
+                plt.xlim((0, 1))
+                plt.ylim((0, 1))
+                plt.axes().set_aspect('equal')
 #                     xs = [p[0] for p in positions]
 #                     ys = [p[1] for p in positions]
 #                     plt.plot(xs, ys, 'o' )
@@ -2416,14 +2453,19 @@ class MuMoTmultiagentView(MuMoTview):
                     
                     if self._showInteractions:
                         for n in self._getNeighbours(a, self._positions, self._netParam): 
-                            self._plot.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
+#                             self._plot.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
+                            plt.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
                     
                     if self._showTrace:
                         trace_xs = [p[0] for p in positionHistory[a] ]
                         trace_ys = [p[1] for p in positionHistory[a] ]
-                        self._plot.plot( trace_xs, trace_ys, '-', c='0.6') 
+                        trace_xs.append( self._positions[a][0] )
+                        trace_ys.append( self._positions[a][1] )
+#                         self._plot.plot( trace_xs, trace_ys, '-', c='0.6') 
+                        plt.plot( trace_xs, trace_ys, '-', c='0.6') 
                 for state in self._initialState.keys():
-                    self._plot.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
+                    #self._plot.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
+                    plt.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
 #                     plt.axes().set_aspect('equal')
             else:
                 stateColors=[]
@@ -3749,7 +3791,8 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
         tick.label.set_fontsize(18)      
         
     plt.tight_layout(pad=4)
-            
+ 
+         
 ## Function for formatting 2D plots. 
 #
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
@@ -3758,7 +3801,6 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None,
                        xlab=None, ylab=None, curvelab=None, **kwargs):
     #print(kwargs)
     
-    line_color_list = ['k', 'b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange']
     linestyle_list = ['solid','dashed', 'dashdot', 'dotted', 'solid','dashed', 'dashdot', 'dotted', 'solid']
     
     if xdata and ydata:
