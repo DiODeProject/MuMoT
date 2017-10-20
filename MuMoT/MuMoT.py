@@ -148,6 +148,9 @@ class MuMoTmodel:
         newModel._reactants = copy.deepcopy(self._reactants)
         newModel._equations = copy.deepcopy(self._equations)
         newModel._stoichiometry = copy.deepcopy(self._stoichiometry)
+        for sub in subs:
+            if sub[0] in newModel._reactants and len(sub[1].atoms(Symbol)) == 1:
+                raise SyntaxError("Using substitute to rename reactants not supported: " + str(sub[0]) + " = " + str(sub[1]))
         for reaction in newModel._stoichiometry:
             for sub in subs:
                 newModel._stoichiometry[reaction]['rate'] = newModel._stoichiometry[reaction]['rate'].subs(sub[0], sub[1])
@@ -169,7 +172,13 @@ class MuMoTmodel:
             if sub[0] in newModel._reactants:
                 for atom in sub[1].atoms(Symbol):
                     if atom not in newModel._reactants and atom != self._systemSize:
-                        newModel._systemSize = atom
+                        if newModel._systemSize == None:
+                            newModel._systemSize = atom
+                        else:
+                            raise SyntaxError("More than one unknown reactant encountered when trying to set system size: " + str(sub[0]) + " = " + str(sub[1]))
+                if newModel._systemSize == None:
+                    raise SyntaxError("Expected to find system size parameter but failed: " + str(sub[0]) + " = " + str(sub[1]))
+                # @todo: more thorough error checking for valid system size expression
                 newModel._reactants.discard(sub[0])
                 del newModel._equations[sub[0]]
         if newModel._systemSize == None:
