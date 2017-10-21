@@ -60,6 +60,7 @@ RATE_BOUND = 100.0
 RATE_STEP = 0.1
 MULTIPLOT_COLUMNS = 2
 
+line_color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
 
 # enum possible Network types
 class NetworkType(Enum):
@@ -105,10 +106,16 @@ class MuMoTmodel:
     _rules = None 
     ## set of reactants
     _reactants = None
+    ## set of fixed-concentration reactants (boundary conditions)
+    _constantReactants = None 
     ## parameter that determines system size, set by using substitute()
     _systemSize = None
+    ## is system size constant or not?
+    _constantSystemSize = None
     ## list of LaTeX strings describing reactants (@todo: depracated?)
     _reactantsLaTeX = None
+    ## list of LaTeX strings describing constant reactants (@todo: depracated?)
+    _constantReactantsLaTeX = None    
     ## set of rates
     _rates = None 
     ## dictionary of LaTeX strings describing rates
@@ -144,10 +151,14 @@ class MuMoTmodel:
             assignment = process_sympy(subString)
             subs.append((assignment.lhs, assignment.rhs))
         newModel = MuMoTmodel()
-        newModel._rules = copy.copy(self._rules)
-        newModel._reactants = copy.copy(self._reactants)
-        newModel._equations = copy.copy(self._equations)
+        newModel._rules = copy.deepcopy(self._rules)
+        newModel._reactants = copy.deepcopy(self._reactants)
+        newModel._constantReactants = copy.deepcopy(self._constantReactants)
+        newModel._equations = copy.deepcopy(self._equations)
         newModel._stoichiometry = copy.deepcopy(self._stoichiometry)
+        for sub in subs:
+            if sub[0] in newModel._reactants and len(sub[1].atoms(Symbol)) == 1:
+                raise SyntaxError("Using substitute to rename reactants not supported: " + str(sub[0]) + " = " + str(sub[1]))
         for reaction in newModel._stoichiometry:
             for sub in subs:
                 newModel._stoichiometry[reaction]['rate'] = newModel._stoichiometry[reaction]['rate'].subs(sub[0], sub[1])
@@ -169,7 +180,13 @@ class MuMoTmodel:
             if sub[0] in newModel._reactants:
                 for atom in sub[1].atoms(Symbol):
                     if atom not in newModel._reactants and atom != self._systemSize:
-                        newModel._systemSize = atom
+                        if newModel._systemSize == None:
+                            newModel._systemSize = atom
+                        else:
+                            raise SyntaxError("More than one unknown reactant encountered when trying to set system size: " + str(sub[0]) + " = " + str(sub[1]))
+                if newModel._systemSize == None:
+                    raise SyntaxError("Expected to find system size parameter but failed: " + str(sub[0]) + " = " + str(sub[1]))
+                # @todo: more thorough error checking for valid system size expression
                 newModel._reactants.discard(sub[0])
                 del newModel._equations[sub[0]]
         if newModel._systemSize == None:
@@ -244,6 +261,25 @@ class MuMoTmodel:
             self._dot = dot
                 
         return self._dot
+
+    ## show a sorted LaTeX representation of the model's constant reactants
+    def showConstantReactants(self):
+        if self._constantReactantsLaTeX == None:
+            self._constantReactantsLaTeX = []
+            reactants = map(latex, list(self._constantReactants))
+            for reactant in reactants:
+                self._constantReactantsLaTeX.append(reactant)
+            self._constantReactantsLaTeX.sort()
+        for reactant in self._constantReactantsLaTeX:
+            display(Math(reactant))
+        #reactant_list = []
+        #for reaction in self._stoichiometry:
+        #    for reactant in self._stoichiometry[reaction]:
+        #        if not reactant in reactant_list:
+        #            if not reactant == 'rate':
+        #                display(Math(latex(reactant)))
+        #                reactant_list.append(reactant)
+
 
     ## show a sorted LaTeX representation of the model's reactants
     def showReactants(self):
@@ -381,11 +417,15 @@ class MuMoTmodel:
         for rule in self._rules:
             out = ""
             for reactant in rule.lhsReactants:
+                if type(reactant) is numbers.One:
+                    reactant = Symbol('\emptyset')
                 out += latex(reactant)
                 out += " + "
             out = out[0:len(out) - 2] # delete the last ' + '
             out += " \\xrightarrow{" + latex(rule.rate) + "}"
             for reactant in rule.rhsReactants:
+                if type(reactant) is numbers.One:
+                    reactant = Symbol('\emptyset')
                 out += latex(reactant)
                 out += " + "
             out = out[0:len(out) - 2] # delete the last ' + '
@@ -405,7 +445,7 @@ class MuMoTmodel:
             modelView = MuMoTstreamView(self, viewController, stateVariable1, stateVariable2, **kwargs)
                     
             viewController.setView(modelView)
-            viewController.setReplotFunction(modelView._plot_field)         
+            viewController._setReplotFunction(modelView._plot_field)         
             
             return viewController
         else:
@@ -421,7 +461,7 @@ class MuMoTmodel:
             modelView = MuMoTvectorView(self, viewController, stateVariable1, stateVariable2, stateVariable3, **kwargs)
                     
             viewController.setView(modelView)
-            viewController.setReplotFunction(modelView._plot_field)         
+            viewController._setReplotFunction(modelView._plot_field)         
                         
             return viewController
         else:
@@ -453,7 +493,7 @@ class MuMoTmodel:
         modelView = MuMoTbifurcationView(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, **kwargs)
         
         viewController.setView(modelView)
-        viewController.setReplotFunction(modelView._replot_bifurcation)
+        viewController._setReplotFunction(modelView._replot_bifurcation)
         
         return viewController
 
@@ -464,19 +504,19 @@ class MuMoTmodel:
             initialState = {}
             for reactant in self._reactants:
                 if first:
-                    print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
+#                     print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
                     initialState[reactant] = MuMoTdefault._agents
                     first = False
                 else:
                     initialState[reactant] = 0
         else:
             ## @todo check if the Initial State has valid length and positive values
-            print("TODO: check if the Initial State has valid length and positive values")
+#             print("TODO: check if the Initial State has valid length and positive values")
             initialState_str = ast.literal_eval(initialState) # translate string into dict
             initialState = {}
             for state,pop in initialState_str.items():
                 initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-        print("Initial State is " + str(initialState) )
+#         print("Initial State is " + str(initialState) )
         MAParams['initialState'] = initialState
         
         # init the max-time
@@ -487,12 +527,12 @@ class MuMoTmodel:
         # init the random seed 
         if (randomSeed == "Auto" or randomSeed <= 0 or randomSeed > MAX_RANDOM_SEED):
             randomSeed = np.random.randint(MAX_RANDOM_SEED)
-            print("Automatic Random Seed set to " + str(randomSeed) )
+#             print("Automatic Random Seed set to " + str(randomSeed) )
         MAParams['randomSeed'] = randomSeed
         # check validity of the network type
         if _decodeNetworkTypeFromString(netType) == None: return # terminating the process if the input argument is wrong
         MAParams['netType'] = netType
-        print("Network type set to " + str(MAParams['netType']) ) 
+#         print("Network type set to " + str(MAParams['netType']) ) 
 
         # Setting some default values 
         ## @todo add possibility to customise these values from input line
@@ -518,8 +558,8 @@ class MuMoTmodel:
         
         modelView = MuMoTmultiagentView(self, viewController, MAParams, **kwargs)
         viewController.setView(modelView)
-#         viewController.setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
-        viewController.setReplotFunction(modelView._plot_timeEvolution)
+#         viewController._setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
+        viewController._setReplotFunction(modelView._plot_timeEvolution, modelView._redrawOnly)
 
         return viewController
 
@@ -572,8 +612,8 @@ class MuMoTmodel:
         viewController.setView(modelView)
         #modelView._plot_timeEvolution()
         
-#         viewController.setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
-        viewController.setReplotFunction(modelView._plot_timeEvolution)
+#         viewController._setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
+        viewController._setReplotFunction(modelView._plot_timeEvolution)
         
         return viewController
 
@@ -671,6 +711,9 @@ class MuMoTmodel:
         for rate in self._rates:
             paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
             paramNames.append(str(rate))
+        for reactant in self._constantReactants:
+            paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+            paramNames.append('(' + latex(reactant) + ')')            
         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, **kwargs)
 
         return viewController
@@ -800,6 +843,7 @@ class MuMoTmodel:
         self._rules = []
         self._reactants = set()
         self._systemSize = None
+        self._constantSystemSize = True
         self._reactantsLaTeX = None
         self._rates = set()
         self._ratesLaTeX= None
@@ -840,6 +884,8 @@ class MuMoTcontroller:
     _widgets = None
     ## dictionary of controller widgets, with parameter name as key
     _widgetDict = None
+    ## dictionary of controller widgets, with parameter that influence only the plotting and not the computation
+    _widgetsPlotOnly = None
     ## replot function widgets have been assigned (for use by MuMoTmultiController)
     _replotFunction = None
     ## widget for simple error messages to be displayed to user during interaction
@@ -854,6 +900,7 @@ class MuMoTcontroller:
         self._paramLabelDict = paramLabelDict
         self._widgets = []
         self._widgetDict = {}
+        self._widgetsPlotOnly = {}
         self._silent = silent
         unsortedPairs = zip(paramNames, paramValues)
         for pair in sorted(unsortedPairs):
@@ -871,11 +918,17 @@ class MuMoTcontroller:
         if not(silent):
             print('bar' + str(self._errorMessage))
             display(self._errorMessage)
-            
-    def setReplotFunction(self, replotFunction):
-        self._replotFunction = replotFunction
-        for widget in self._widgets:
-            widget.on_trait_change(replotFunction, 'value')
+    
+    ## set the functions that must be triggered when the widgets are changed.
+    ## @param[in]    recomputeFunction    The function to be called when recomputing is necessary 
+    ## @param[in]    redrawFunction    The function to be called when only redrawing (relying on previous computation) is sufficient 
+    def _setReplotFunction(self, recomputeFunction, redrawFunction=None):
+        self._replotFunction = recomputeFunction
+        for widget in self._widgetDict.values():
+            widget.on_trait_change(recomputeFunction, 'value')
+        if redrawFunction != None:
+            for widget in self._widgetsPlotOnly.values():
+                widget.on_trait_change(redrawFunction, 'value')
 
     def setView(self, view):
         self._view = view
@@ -1152,7 +1205,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             tooltips=['Population change over time', 'Network topology', 'Number of agents in each state at final timestep'],
         #     icons=['check'] * 3
         )
-        self._widgetDict['visualisationType'] = plotToggle
+        self._widgetsPlotOnly['visualisationType'] = plotToggle
         self._widgets.append(plotToggle)
         advancedWidgets.append(plotToggle)
         
@@ -1162,7 +1215,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             description='Show particle trace',
             disabled = not (self._widgetDict['netType'].value == NetworkType.DYNAMIC)
         )
-        self._widgetDict['showTrace'] = widget
+        self._widgetsPlotOnly['showTrace'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         widget = widgets.Checkbox(
@@ -1170,7 +1223,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             description='Show communication links',
             disabled = not (self._widgetDict['netType'].value == NetworkType.DYNAMIC)
         )
-        self._widgetDict['showInteractions'] = widget
+        self._widgetsPlotOnly['showInteractions'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -1221,7 +1274,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             self._widgetDict['netParam'].description = "Network connectivity parameter (link probability)"
         elif (self._widgetDict['netType'].value == NetworkType.BARABASI_ALBERT):
             self._widgetDict['netParam'].disabled = False
-            maxVal = sum(self._initialState.values())-1
+            maxVal = sum(self._view._initialState.values())-1
             self._widgetDict['netParam'].min = 1
             self._widgetDict['netParam'].max = maxVal
             self._widgetDict['netParam'].step = 1
@@ -1239,13 +1292,13 @@ class MuMoTmultiagentController(MuMoTcontroller):
             self._widgetDict['netParam'].description = "Interaction range"
             self._widgetDict['particleSpeed'].disabled = False
             self._widgetDict['motionCorrelatedness'].disabled = False
-            self._widgetDict['showTrace'].disabled = False
-            self._widgetDict['showInteractions'].disabled = False
+            self._widgetsPlotOnly['showTrace'].disabled = False
+            self._widgetsPlotOnly['showInteractions'].disabled = False
         else:
             self._widgetDict['particleSpeed'].disabled = True
             self._widgetDict['motionCorrelatedness'].disabled = True
-            self._widgetDict['showTrace'].disabled = True
-            self._widgetDict['showInteractions'].disabled = True
+            self._widgetsPlotOnly['showTrace'].disabled = True
+            self._widgetsPlotOnly['showInteractions'].disabled = True
     
     def _update_scaling_widget(self, scaling):
         if (self._widgetDict['scaling'].value > scaling):
@@ -1256,7 +1309,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             self._widgetDict['scaling'].step = scaling/100 
     
     def downloadTimeEvolution(self):
-        return self._downloadFile(self._filetodownload)
+        return self._downloadFile(self._view._latestResults[0])
     
 
 
@@ -1271,7 +1324,6 @@ class MuMoTview:
     _figureNum = None
     ## 3d axes? (False => 2d)
     _axes3d = None
-#    _widgets = None
     ## Controller that controls this view @todo - could become None
     _controller = None
     ## Summary logs of view behaviour
@@ -1495,6 +1547,7 @@ class MuMoTmultiController(MuMoTcontroller):
 #             if controller._view == None: ## presume this controller is a multi controller (@todo check?)
 #                 controller._widgets = self._widgets
         
+        ## @todo possibly replace self._widgets with self._widgetDict? This is the only _widgets usage
         for widget in self._widgets:
             widget.on_trait_change(self._view._plot, 'value')
 
@@ -2163,10 +2216,6 @@ class MuMoTmultiagentView(MuMoTview):
     _scaling = None
     ## dictionary of rates
     _ratesDict = None
-    ## variable storing the simulation data which can be downloaded upon request
-    _fileToDownload = None
-    ## @todo necessary!?!?
-    _plot = None
     ## visualisation type
     _visualisationType = None
     ## visualise the agent trace (on moving particles)
@@ -2175,11 +2224,16 @@ class MuMoTmultiagentView(MuMoTview):
     _showInteractions = None
     ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
     _realtimePlot = None
+    ## latest computed results
+    _latestResults = None
 
     def __init__(self, model, controller, MAParams, figure = None, rates = None, **kwargs):
         super().__init__(model=model, controller=controller, figure=figure, params=rates, **kwargs)
 
-        with io.capture_output() as log:          
+        with io.capture_output() as log:
+#             if not self._silent:
+#                 self._plot = self._figure.add_subplot(111)
+                      
             if self._controller == None:
                 # storing the rates for each rule
                 ## @todo moving it to general method?
@@ -2190,12 +2244,6 @@ class MuMoTmultiagentView(MuMoTview):
                 # create the self._ratesDict 
                 for rule in self._mumotModel._rules:
                     self._ratesDict[str(rule.rate)] = rates_input_dict[str(rule.rate)] 
-            colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
-            self._colors = {}
-            i = 0
-            for state in self._mumotModel._reactants:
-                self._colors[state] = colors[i] 
-                i += 1
             
             # storing the initial state
             self._initialState = {}
@@ -2215,6 +2263,14 @@ class MuMoTmultiagentView(MuMoTview):
             self._realtimePlot = MAParams.get('realtimePlot', False)
             
             self._initGraph(graphType=self._netType, numNodes=sum(self._initialState.values()), netParam=self._netParam)
+
+            # map colouts to each reactant
+            #colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
+            self._colors = {}
+            i = 0
+            for state in sorted(self._initialState.keys(), key=str): #sorted(self._mumotModel._reactants, key=str):
+                self._colors[state] = line_color_list[i] 
+                i += 1            
             
         self._logs.append(log)
         self._plot_timeEvolution()
@@ -2241,6 +2297,8 @@ class MuMoTmultiagentView(MuMoTview):
 #         sortedDict += "}"
         print( "mmt.MuMoTmultiagentView(model1, None, MAParams = " + str(MAParams) + ", rates = " + str( list(self._ratesDict.items()) ) + " )")
     
+    ## reads the new parameters (in case they changed in the controller)
+    ## this function should only update local parameters and not compute data
     def _update_params(self):
         if self._controller != None:
             # getting the rates
@@ -2253,19 +2311,17 @@ class MuMoTmultiagentView(MuMoTview):
                 self._initialState[state] = self._controller._widgetDict['init'+str(state)].value
             #numNodes = sum(self._initialState.values())
             self._randomSeed = self._controller._widgetDict['randomSeed'].value
-            self._visualisationType = self._controller._widgetDict['visualisationType'].value
+            self._visualisationType = self._controller._widgetsPlotOnly['visualisationType'].value
             self._maxTime = self._controller._widgetDict['maxTime'].value
             self._netType = self._controller._widgetDict['netType'].value
             self._netParam = self._controller._widgetDict['netParam'].value
             self._motionCorrelatedness = self._controller._widgetDict['motionCorrelatedness'].value
             self._particleSpeed = self._controller._widgetDict['particleSpeed'].value
             self._scaling = self._controller._widgetDict['scaling'].value
-            self._showTrace = self._controller._widgetDict['showTrace'].value
-            self._showInteractions = self._controller._widgetDict['showInteractions'].value
+            self._showTrace = self._controller._widgetsPlotOnly['showTrace'].value
+            self._showInteractions = self._controller._widgetsPlotOnly['showInteractions'].value
             self._realtimePlot = self._controller._widgetDict['realtimePlot'].value
 
-            numNodes = sum(self._initialState.values())
-            self._initGraph(graphType=self._netType, numNodes=numNodes, netParam=self._netParam)
     
     def _plot_timeEvolution(self):
         with io.capture_output() as log:
@@ -2275,86 +2331,120 @@ class MuMoTmultiagentView(MuMoTview):
             self._log("Multiagent simulation")
             self._print_standalone_view_cmd()
 
-            # inti the random seed
+            # init the random seed
             np.random.seed(self._randomSeed)
+            
+            # init the network
+            self._initGraph(graphType=self._netType, numNodes=sum(self._initialState.values()), netParam=self._netParam)
             
             self._convertRatesIntoProbabilities(self._mumotModel._reactants, self._mumotModel._rules)
 
             # Clearing the plot
             if not self._silent:
-                self._plot = self._figure.add_subplot(111)
-                self._plot.clear()
+                #self._plot = self._figure.add_subplot(111)
+                #self._plot.clear()
+                plt.figure(self._figureNum)
+                plt.clf()
 
                 if (self._visualisationType == 'evo'):
                     plt.axes().set_aspect('auto')
                     # create the frame
                     totAgents = sum(self._initialState.values())
-                    self._plot.axis([0, self._maxTime, 0, totAgents])
-                    self._figure.show()
+#                     self._plot.axis([0, self._maxTime, 0, totAgents])
+                    plt.xlim((0, self._maxTime))
+                    plt.ylim((0, totAgents))
+                    #self._figure.show()
+                    _fig_formatting_2D(self._figure, xlab="time", ylab="pop", curve_replot=True)
                 elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
                     plt.axes().set_aspect('equal')
                 
                 # plot legend
-                markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
-                self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
+#                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
+#                 self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
                 # show canvas
-                self._figure.canvas.draw()
+#                 self._figure.canvas.draw()
             
-            logs = self._runMultiagent(self._initialState, self._maxTime)
+            self._latestResults = self._runMultiagent()
+            print("Temporal evolution per state: " + str(self._latestResults[0]))
+            
+            ## Final Plot
+            if not self._realtimePlot:
+                self._updateMultiagentFigure(0, self._latestResults[0], positionHistory=self._latestResults[1], pos_layout=self._latestResults[2])
+            
             # replot legend at the end
-            if not self._silent:
-                self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.) # TODO: display legend every timeframe in 'graph' plots
+            #if not self._silent:
+                ## @todo display legend every timeframe in 'graph' plots
+                #self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.) 
 #             plt.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
-            
-            # asign the file to download            
-            self._fileToDownload = logs[1]
             
 #             for state,pop in logs[1].items():
 #                 print("Plotting:"+str(pop))
 #                 plt.plot(pop, label=state)
             
         self._logs.append(log)
+    
+    def _redrawOnly(self):
+        self._update_params()
+        if not self._silent:
+            plt.figure(self._figureNum)
+            plt.clf()
+            #self._plot = self._figure.add_subplot(111)
+            #self._plot.clear()
+ 
+            if (self._visualisationType == 'evo'):
+                plt.axes().set_aspect('auto')
+                # create the frame
+                totAgents = sum(self._initialState.values())
+#                 self._plot.axis([0, self._maxTime, 0, totAgents])
+                plt.xlim((0, self._maxTime))
+                plt.ylim((0, totAgents))
+#                 self._figure.show()
+                _fig_formatting_2D(self._figure, xlab="time", ylab="pop", curve_replot=True)
+            elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
+                plt.axes().set_aspect('equal')
+                      
+        self._updateMultiagentFigure(0, self._latestResults[0], positionHistory=self._latestResults[1], pos_layout=self._latestResults[2])
         
-    def _runMultiagent(self, initialState, maxTime):
+    def _runMultiagent(self):
         # init the controller variables
         self._initMultiagent()
         
         # init logging structs
-        historyState = []
-        historyState.append(initialState)
+#         historyState = []
+#         historyState.append(initialState)
         evo = {}
-        for state,pop in initialState.items():
+        for state,pop in self._initialState.items():
             evo[state] = []
             evo[state].append(pop)
             
         dynamicNetwork = self._netType == NetworkType.DYNAMIC
-        if self._showTrace and dynamicNetwork:
+        if dynamicNetwork:
             positionHistory = []
-            for _ in np.arange(sum(initialState.values())):
+            for _ in np.arange(sum(self._initialState.values())):
                 positionHistory.append( [] )
         else:
             positionHistory = None
             
         # init progress bar
-        if self._controller != None: self._controller._progressBar.max = maxTime
+        if self._controller != None: self._controller._progressBar.max = self._maxTime
         
         # store the graph layout (only for 'graph' visualisation)
-        if (not dynamicNetwork) and self._visualisationType == "graph":
+        if (not dynamicNetwork): # and self._visualisationType == "graph":
             pos_layout = nx.circular_layout(self._graph)
         else:
             pos_layout = None
         
-        for i in np.arange(1, maxTime+1):
+        for i in np.arange(1, self._maxTime+1):
             #print("Time: " + str(i))
             if self._controller != None: self._controller._progressBar.value = i
-            if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(i/maxTime*100)) + "%:"
-            if dynamicNetwork and self._showTrace:
+            if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(i/self._maxTime*100)) + "%:"
+            if dynamicNetwork: # and self._showTrace:
                 for idx, _ in enumerate(self._agents): # second element _ is the agent (unused)
                     positionHistory[idx].append( self._positions[idx] )
             
             currentState = self._stepMultiagent()
                     
-            historyState.append(currentState)
+#             historyState.append(currentState)
             for state,pop in currentState.items():
                 evo[state].append(pop)
             
@@ -2362,30 +2452,50 @@ class MuMoTmultiagentView(MuMoTview):
             if self._realtimePlot:
                 self._updateMultiagentFigure(i, evo, positionHistory=positionHistory, pos_layout=pos_layout)
 
-        ## Final Plot
-        if not self._realtimePlot:
-            self._updateMultiagentFigure(i, evo, positionHistory=positionHistory, pos_layout=pos_layout)
                 
         if self._controller != None: self._controller._progressBar.description = "Completed 100%:"
-        print("State distribution each timestep: " + str(historyState))
-        print("Temporal evolution per state: " + str(evo))
-        return (historyState,evo)
+#         print("State distribution each timestep: " + str(historyState))
+        return (evo, positionHistory, pos_layout)
     
     def _updateMultiagentFigure(self, i, evo, positionHistory, pos_layout):
         if (self._visualisationType == "evo"):
-            for state,pop in evo.items():
-                if self._realtimePlot:
-                    # If realtime-plot mode, draw only the last timestep rather than overlay all
-                    self._plot.plot([i-1,i], pop[len(pop)-2:len(pop)], color=self._colors[state])
-                else:
-                    # otherwise, plot all time-evolution
-                    #self._plot.plot(pop, color=self._colors[state]) #label=state,
-                    plt.plot(pop, color=self._colors[state])
+#             for state,pop in evo.items():
+#                 if self._realtimePlot and i>0:
+#                     # If realtime-plot mode, draw only the last timestep rather than overlay all
+#                     self._plot.plot([i-1,i], pop[len(pop)-2:len(pop)], color=self._colors[state])
+#                 else:
+#                     # otherwise, plot all time-evolution
+#                     #self._plot.plot(pop, color=self._colors[state]) #label=state,
+#                     plt.plot(pop, color=self._colors[state])
+            if (i>1):
+                xdata = []
+                ydata = []
+                labels = []
+                for state in sorted(self._initialState.keys(), key=str):
+                    xdata.append( list(np.arange(len(evo[state]))) )
+                    ydata.append(evo[state])
+                    labels.append(state)
+                #_fig_formatting_2D(xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curve_replot=False)
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False)
+            else:
+                xdata = []
+                ydata = []
+                labels = []
+                for state in sorted(self._initialState.keys(), key=str):
+                    xdata.append( list(np.arange(len(evo[state]))) )
+                    ydata.append(evo[state])
+                    labels.append(state)
+                #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False)
 
         elif (self._visualisationType == "graph"):
-            self._plot.clear()
+            #self._plot.clear()
+            plt.clf()
             if self._netType == NetworkType.DYNAMIC:
-                self._plot.axis([0, 1, 0, 1])
+#                 self._plot.axis([0, 1, 0, 1])
+                plt.xlim((0, 1))
+                plt.ylim((0, 1))
+                plt.axes().set_aspect('equal')
 #                     xs = [p[0] for p in positions]
 #                     ys = [p[1] for p in positions]
 #                     plt.plot(xs, ys, 'o' )
@@ -2399,15 +2509,20 @@ class MuMoTmultiagentView(MuMoTview):
                     ys[self._agents[a]].append( self._positions[a][1] )
                     
                     if self._showInteractions:
-                        for n in self._getNeighbours(a, self._positions, self._controller._widgetDict['netParam'].value): 
-                            self._plot.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
+                        for n in self._getNeighbours(a, self._positions, self._netParam): 
+#                             self._plot.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
+                            plt.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
                     
                     if self._showTrace:
                         trace_xs = [p[0] for p in positionHistory[a] ]
                         trace_ys = [p[1] for p in positionHistory[a] ]
-                        self._plot.plot( trace_xs, trace_ys, '-', c='0.6') 
+                        trace_xs.append( self._positions[a][0] )
+                        trace_ys.append( self._positions[a][1] )
+#                         self._plot.plot( trace_xs, trace_ys, '-', c='0.6') 
+                        plt.plot( trace_xs, trace_ys, '-', c='0.6') 
                 for state in self._initialState.keys():
-                    self._plot.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
+                    #self._plot.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
+                    plt.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
 #                     plt.axes().set_aspect('equal')
             else:
                 stateColors=[]
@@ -2705,8 +2820,6 @@ class MuMoTSSAView(MuMoTview):
     _randomSeed = None
     ## visualisation type
     _visualisationType = None
-    ## variable storing the simulation data which can be downloaded upon request
-    _fileToDownload = None
     ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
     _realtimePlot = None
 
@@ -2801,7 +2914,6 @@ class MuMoTSSAView(MuMoTview):
                     self._figure.canvas.draw()
            
             logs = self._runSSA(self._initialState, self._maxTime)
-            self._fileToDownload = logs[1]
            
         self._logs.append(log)
         
@@ -2982,9 +3094,11 @@ def parseModel(modelDescription):
     modelRules = modelDescr.split('\\n')
     # parse and construct the model
     reactants = set()
+    constantReactants = set()
     rates = set()
     rules = []
     model = MuMoTmodel()
+    
 
     for rule in modelRules:
         if (len(rule) > 0):
@@ -3001,6 +3115,7 @@ def parseModel(modelDescription):
                 # state D: expecting a '+' or a ':' (decrement reactant count on entering)
                 # state E: expecting a rate equation until end of rule
                 token = token.replace("\\\\",'\\')
+                constantReactant = False
 
                 if state == 'A':
                     if token != "+" and token != "->" and token != ":":
@@ -3008,14 +3123,26 @@ def parseModel(modelDescription):
                         if '^' in token:
                             raise SyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
                         reactantCount += 1
+                        if (token[0] == '(' and token[-1] == ')'):
+                            constantReactant = True
+                            token = token.replace('(','')
+                            token = token.replace(')','')
+                        if token == '\emptyset':
+                            constantReactant = True
+                            model._constantSystemSize = False
+                            token = '1'
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
                             raise SyntaxError("Non-singleton symbol set in token " + token +" in rule " + rule)
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
-                        if reactant not in reactants:
-                            reactants.add(reactant)
+                        if constantReactant:
+                            if reactant not in constantReactants and token != '1':
+                                constantReactants.add(reactant)                            
+                        else:
+                            if reactant not in reactants:
+                                reactants.add(reactant)
                         newRule.lhsReactants.append(reactant)
                     else:
                         _raiseModelError("reactant", token, rule)
@@ -3034,14 +3161,27 @@ def parseModel(modelDescription):
                         if '^' in token:
                             raise SyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
                         reactantCount -= 1
+                        if (token[0] == '(' and token[-1] == ')'):
+                            constantReactant = True
+                            token = token.replace('(','')
+                            token = token.replace(')','')
+                            print(token)
+                        if token == '\emptyset':
+                            model._constantSystemSize = False
+                            constantReactant = True
+                            token = '1'
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
                             raise SyntaxError("Non-singleton symbol set in token " + token +" in rule " + rule)
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
-                        if reactant not in reactants:
-                            reactants.add(reactant)
+                        if constantReactant:
+                            if reactant not in constantReactants and token != '1':
+                                constantReactants.add(reactant)                            
+                        else:
+                            if reactant not in reactants:
+                                reactants.add(reactant)
                         newRule.rhsReactants.append(reactant)                        
                     else:
                         _raiseModelError("reactant", token, rule)
@@ -3075,6 +3215,11 @@ def parseModel(modelDescription):
             
     model._rules = rules
     model._reactants = reactants
+    model._constantReactants = constantReactants
+    # check intersection of reactants and constantReactants is empty
+    intersect = model._reactants.intersection(model._constantReactants) 
+    if len(intersect) != 0:
+        raise SyntaxError("Following reactants defined as both constant and variable: " + str(intersect))
     model._rates = rates
     model._equations = _deriveODEsFromRules(model._reactants, model._rules)
     model._ratesLaTeX = {}
@@ -3110,6 +3255,7 @@ def _deriveODEsFromRules(reactants, rules):
                 else:
                     rhs = rhs + factor * term
         equations[reactant] = rhs
+    
 
     return equations
 
@@ -4191,7 +4337,8 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
         tick.label.set_fontsize(18)      
         
     plt.tight_layout(pad=4)
-            
+ 
+         
 ## Function for formatting 2D plots. 
 #
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
@@ -4200,7 +4347,6 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None,
                        xlab=None, ylab=None, curvelab=None, **kwargs):
     #print(kwargs)
     
-    line_color_list = ['k', 'b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange']
     linestyle_list = ['solid','dashed', 'dashdot', 'dotted', 'solid','dashed', 'dashdot', 'dotted', 'solid']
     
     if xdata and ydata:
