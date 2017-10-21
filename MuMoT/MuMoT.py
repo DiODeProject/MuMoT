@@ -343,13 +343,36 @@ class MuMoTmodel:
     ## shows Fokker-Planck equation derived from term ~ O(1) in van Kampen expansion
     # this is the linear noise approximation
     def showFokkerPlanckEquation(self):
-        FPEdict, substring = _getFokkerPlanckEquation(_get_orderedLists_vKE, self._stoichiometry,  self._reactants)
+        FPEdict, substring = _getFokkerPlanckEquation(_get_orderedLists_vKE, self._stoichiometry)
         for fpe in FPEdict:
             out = latex(fpe) + " := " + latex(FPEdict[fpe])
             display(Math(out))
             if not substring == None:
                 for sub in substring:
                     display(Math("With \; substitution:\;" + latex(sub) + ":= " + latex(substring[sub])))
+    
+    ## displays equations of motion of first and second order moments of noise                
+    def showNoiseEOM(self):
+        EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+        for eom1 in EOM_1stOrderMom:
+            out = "\\displaystyle \\frac{\\textrm{d}" + latex(eom1.subs(NoiseSubs1stOrder)) + "}{\\textrm{d}t} := " + latex(EOM_1stOrderMom[eom1].subs(NoiseSubs1stOrder))
+            display(Math(out))
+        for eom2 in EOM_2ndOrderMom:
+            out = "\\displaystyle \\frac{\\textrm{d}" + latex(eom2.subs(NoiseSubs2ndOrder)) + "}{\\textrm{d}t} := " + latex(EOM_2ndOrderMom[eom2].subs(NoiseSubs2ndOrder))
+            display(Math(out))
+    
+    ## displays noise in the stationary state
+    def showNoiseStationarySol(self):
+        SOL_1stOrderMom, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+        for sol1 in SOL_1stOrderMom:
+            out = latex(sol1.subs(NoiseSubs1stOrder)) + ":= " + latex(SOL_1stOrderMom[sol1].subs(NoiseSubs1stOrder))
+            display(Math(out))
+        for sol2 in SOL_2ndOrdMomDict:
+            out = latex(sol2.subs(NoiseSubs2ndOrder)) + " := " + latex(SOL_2ndOrdMomDict[sol2].subs(NoiseSubs2ndOrder))
+            display(Math(out))     
+        
+        
+        
     
     # show a LaTeX representation of the model <br>
     # if rules have | after them update notebook (allegedly, or switch browser): <br>
@@ -3294,7 +3317,7 @@ def _get_orderedLists_vKE(stoich):
 
 
 ## Function that returns the Fokker-Planck equation
-def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich, reactants):
+def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
     P, t = symbols('P t')
     V = Symbol('V', real=True, constant=True)
     Vlist_lhs, Vlist_rhs, substring = _get_orderedLists_vKE(stoich)
@@ -3317,16 +3340,12 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich, reactants):
             if not key2 == 'rate':
                 if not key2 in nvec:
                     nvec.append(key2)
-    #for reactant in reactants:
-    #    nvec.append(reactant)
     nvec = sorted(nvec, key=default_sort_key)
     assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
     
     NoiseDict = {}
-    #Noise = numbered_symbols(prefix='eta_', cls=Symbol, start=1)
     for kk in range(len(nvec)):
         NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
-    
     
     if len(Vlist_lhs)-1 == 2:
         SOL_FPE = solve(FPE, Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],t),t), dict=True)[0]
@@ -3338,6 +3357,461 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich, reactants):
         print('Not implemented yet.')
            
     return SOL_FPE, substring
+
+
+## calculates noise in the system
+# returns equations of motion for noise
+def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
+    P, M_1, M_2, t = symbols('P M_1 M_2 t')
+    #
+    #A,B, alpha, beta, gamma = symbols('A B alpha beta gamma')
+    #custom_stoich= {'reaction1': {'rate': alpha, A: [0,1]}, 'reaction2': {'rate': gamma, A: [2,0], B: [0,1]},
+    #                 'reaction3': {'rate': beta, B: [1,0]}}
+    #stoich = custom_stoich
+    # 
+    nvec = []
+    for key1 in stoich:
+        for key2 in stoich[key1]:
+            if not key2 == 'rate':
+                if not key2 in nvec:
+                    nvec.append(key2)
+    nvec = sorted(nvec, key=default_sort_key)
+    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+
+    NoiseDict = {}
+    for kk in range(len(nvec)):
+        NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
+    FPEdict, substring = _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich)
+    
+    NoiseSub1stOrder = {}
+    NoiseSub2ndOrder = {}
+    
+    if len(NoiseDict)==2:
+        Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],t)
+    elif len(NoiseDict)==3:
+        Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],t)
+    else:
+        Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],NoiseDict[nvec[3]],t)
+        
+    for noise1 in NoiseDict:
+        NoiseSub1stOrder[NoiseDict[noise1]*Pdim] = M_1(NoiseDict[noise1])
+        for noise2 in NoiseDict:
+            for noise3 in NoiseDict:
+                key = NoiseDict[noise1]*NoiseDict[noise2]*Derivative(Pdim,NoiseDict[noise3])
+                if key not in NoiseSub1stOrder:
+                    if NoiseDict[noise1] == NoiseDict[noise2] and NoiseDict[noise3] == NoiseDict[noise1]:
+                        NoiseSub1stOrder[key] = -2*M_1(NoiseDict[noise1])
+                    elif NoiseDict[noise1] != NoiseDict[noise2] and NoiseDict[noise3] == NoiseDict[noise1]:
+                        NoiseSub1stOrder[key] = -M_1(NoiseDict[noise2])
+                    elif NoiseDict[noise1] != NoiseDict[noise2] and NoiseDict[noise3] == NoiseDict[noise2]:
+                        NoiseSub1stOrder[key] = -M_1(NoiseDict[noise1])
+                    elif NoiseDict[noise1] != NoiseDict[noise3] and NoiseDict[noise3] != NoiseDict[noise2]:
+                        NoiseSub1stOrder[key] = 0
+                    else:
+                        NoiseSub1stOrder[key] = 0 
+                key2 = NoiseDict[noise1]*Derivative(Pdim,NoiseDict[noise2],NoiseDict[noise3])
+                if key2 not in NoiseSub1stOrder:
+                    NoiseSub1stOrder[key2] = 0   
+    
+    for noise1 in NoiseDict:
+        for noise2 in NoiseDict:
+            key = NoiseDict[noise1]*NoiseDict[noise2]*Pdim
+            if key not in NoiseSub2ndOrder:
+                NoiseSub2ndOrder[key] = M_2(NoiseDict[noise1]*NoiseDict[noise2])
+            for noise3 in NoiseDict:
+                for noise4 in NoiseDict:
+                    key2 = NoiseDict[noise1]*NoiseDict[noise2]*NoiseDict[noise3]*Derivative(Pdim,NoiseDict[noise4])
+                    if key2 not in NoiseSub2ndOrder:
+                        if noise1 == noise2 and noise2 == noise3 and noise3 == noise4:
+                            NoiseSub2ndOrder[key2] = -3*M_2(NoiseDict[noise1]*NoiseDict[noise1])
+                        elif noise1 == noise2 and noise2 != noise3 and noise1 == noise4:
+                            NoiseSub2ndOrder[key2] = -2*M_2(NoiseDict[noise1]*NoiseDict[noise3])
+                        elif noise1 == noise2 and noise2 != noise3 and noise3 == noise4:
+                            NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise1]*NoiseDict[noise2])
+                        elif noise1 != noise2 and noise2 == noise3 and noise1 == noise4:
+                            NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise2]*NoiseDict[noise3])
+                        elif noise1 != noise2 and noise2 == noise3 and noise3 == noise4:
+                            NoiseSub2ndOrder[key2] = -2*M_2(NoiseDict[noise1]*NoiseDict[noise2])
+                        elif noise1 != noise2 and noise2 != noise3 and noise1 != noise3:
+                            if noise1 == noise4:
+                                NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise2]*NoiseDict[noise3])
+                            elif noise2 == noise4:
+                                NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise1]*NoiseDict[noise3])
+                            elif noise3 == noise4:
+                                NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise1]*NoiseDict[noise2])
+                            else:
+                                NoiseSub2ndOrder[key2] = 0
+                        else:
+                            NoiseSub2ndOrder[key2] = 0
+                    key3 = NoiseDict[noise1]*NoiseDict[noise2]*Derivative(Pdim,NoiseDict[noise3],NoiseDict[noise4])
+                    if key3 not in NoiseSub2ndOrder:
+                        if noise1 == noise3 and noise2 == noise4:
+                            if noise1 == noise2:
+                                NoiseSub2ndOrder[key3] = 2
+                            else:
+                                 NoiseSub2ndOrder[key3] = 1
+                        elif noise1 == noise4 and noise2 == noise3:
+                            if noise1 == noise2:
+                                NoiseSub2ndOrder[key3] = 2
+                            else:
+                                NoiseSub2ndOrder[key3] = 1
+                        else:
+                            NoiseSub2ndOrder[key3] = 0
+    NoiseSubs1stOrder = {}                   
+    EQsys1stOrdMom = []
+    EOM_1stOrderMom = {}
+    for fpe_lhs in FPEdict: 
+        for noise in NoiseDict:
+            eq1stOrderMoment = (NoiseDict[noise]*FPEdict[fpe_lhs]).expand() 
+            eq1stOrderMoment = eq1stOrderMoment.subs(NoiseSub1stOrder)
+            if len(NoiseDict)==2:
+                eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[0]]))
+                eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[1]]))
+            elif len(NoiseDict)==3:
+                eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[0]]))
+                eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[1]]))
+                eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[2]]))
+            else:
+                eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[0]]))
+                eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[1]]))
+                eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[2]]))
+                eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[3]]))
+            EQsys1stOrdMom.append(eq1stOrderMoment)
+            if M_1(NoiseDict[noise]) not in EOM_1stOrderMom:
+                EOM_1stOrderMom[M_1(NoiseDict[noise])] = eq1stOrderMoment
+                NoiseSubs1stOrder[M_1(NoiseDict[noise])] = r'<'+latex(NoiseDict[noise])+'>'
+    
+    NoiseSubs2ndOrder = {}
+    EQsys2ndOrdMom = []
+    EOM_2ndOrderMom = {}
+    for fpe_lhs in FPEdict: 
+        for noise1 in NoiseDict:
+            for noise2 in NoiseDict:
+                eq2ndOrderMoment = (NoiseDict[noise1]*NoiseDict[noise2]*FPEdict[fpe_lhs]).expand() 
+                eq2ndOrderMoment = eq2ndOrderMoment.subs(NoiseSub2ndOrder)
+                eq2ndOrderMoment = eq2ndOrderMoment.subs(NoiseSub1stOrder)
+                #eq2ndOrderMoment = eq2ndOrderMoment.subs(SOL_1stOrderMom[0])
+                if len(NoiseDict)==2:
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]))
+                elif len(NoiseDict)==3:
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]]))
+                else:
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[3]]*NoiseDict[nvec[3]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[3]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[3]]))
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[3]]))
+                    
+                eq2ndOrderMoment = eq2ndOrderMoment.simplify()
+                if eq2ndOrderMoment not in EQsys2ndOrdMom:
+                    EQsys2ndOrdMom.append(eq2ndOrderMoment)
+                if M_2(NoiseDict[noise1]*NoiseDict[noise2]) not in EOM_2ndOrderMom:
+                    EOM_2ndOrderMom[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = eq2ndOrderMoment
+                    NoiseSubs2ndOrder[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = r'<'+latex(NoiseDict[noise1]*NoiseDict[noise2])+'>'
+      
+    return EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder 
+
+
+## calculates noise in the system
+# returns analytical solution for stationary noise
+def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
+    P, M_1, M_2, t = symbols('P M_1 M_2 t')
+    
+    EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich)
+    
+    nvec = []
+    for key1 in stoich:
+        for key2 in stoich[key1]:
+            if not key2 == 'rate':
+                if not key2 in nvec:
+                    nvec.append(key2)
+    nvec = sorted(nvec, key=default_sort_key)
+    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+
+    NoiseDict = {}
+    for kk in range(len(nvec)):
+        NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
+            
+    if len(NoiseDict)==2:
+        SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]])], dict=True)
+    elif len(NoiseDict)==3:
+        SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]]),M_1(NoiseDict[nvec[2]])], dict=True)
+    else:
+        SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]]),M_1(NoiseDict[nvec[2]]),M_1(NoiseDict[nvec[3]])], dict=True)
+    
+                    
+    SOL_2ndOrdMomDict = {} 
+    if len(NoiseDict)==2:
+        SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])]))[0] #only one set of solutions (if any) in linear system of equations
+        
+        if M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]) in SOL_2ndOrderMom:
+            ZsubDict = {M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]): 0}
+            SOL_2ndOrderMomMod = []
+            for nn in range(len(SOL_2ndOrderMom)):
+                SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
+            SOL_2ndOrderMom = SOL_2ndOrderMomMod
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[1]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[2]
+    
+    elif len(NoiseDict)==3:
+        SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), 
+                                                         M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), 
+                                                         M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]]), 
+                                                         M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]), 
+                                                         M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]]), 
+                                                         M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]])]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
+        ZsubDict = {}
+        for noise1 in NoiseDict:
+            for noise2 in NoiseDict:
+                if M_2(NoiseDict[noise1]*NoiseDict[noise2]) in SOL_2ndOrderMom:
+                    ZsubDict[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = 0
+        if len(ZsubDict) > 0:
+            SOL_2ndOrderMomMod = []
+            for nn in range(len(SOL_2ndOrderMom)):
+                SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
+        SOL_2ndOrderMom = SOL_2ndOrderMomMod
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[1]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[2]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[3]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[4]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[5]
+        
+    else:
+        SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), 
+                                                         M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), 
+                                                         M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]]),
+                                                         M_2(NoiseDict[nvec[3]]*NoiseDict[nvec[3]]), 
+                                                         M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]), 
+                                                         M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]]), 
+                                                         M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[3]]),
+                                                         M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]]),
+                                                         M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[3]]),
+                                                         M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[3]])]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
+        ZsubDict = {}
+        for noise1 in NoiseDict:
+            for noise2 in NoiseDict:
+                if M_2(NoiseDict[noise1]*NoiseDict[noise2]) in SOL_2ndOrderMom:
+                    ZsubDict[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = 0
+        if len(ZsubDict) > 0:
+            SOL_2ndOrderMomMod = []
+            for nn in range(len(SOL_2ndOrderMom)):
+                SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
+        SOL_2ndOrderMom = SOL_2ndOrderMomMod
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[1]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[2]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[3]]*NoiseDict[nvec[3]])] = SOL_2ndOrderMom[3]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[4]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[5]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[3]])] = SOL_2ndOrderMom[6]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[7]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[3]])] = SOL_2ndOrderMom[8]
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[3]])] = SOL_2ndOrderMom[9]    
+      
+    return SOL_1stOrderMom[0], NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder 
+ 
+
+# def _getNoise(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
+#     P, M_1, M_2, t = symbols('P M_1 M_2 t')
+#     
+#     nvec = []
+#     for key1 in stoich:
+#         for key2 in stoich[key1]:
+#             if not key2 == 'rate':
+#                 if not key2 in nvec:
+#                     nvec.append(key2)
+#     nvec = sorted(nvec, key=default_sort_key)
+#     assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+# 
+#     NoiseDict = {}
+#     for kk in range(len(nvec)):
+#         NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
+#     FPEdict, substring = _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich)
+#     print(len(NoiseDict))
+#     
+#     NoiseSub1stOrder = {}
+#     NoiseSub2ndOrder = {}
+#     
+#     if len(NoiseDict)==2:
+#         Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],t)
+#     elif len(NoiseDict)==3:
+#         Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],t)
+#     else:
+#         Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],NoiseDict[nvec[3]],t)
+#         
+#     for noise1 in NoiseDict:
+#         NoiseSub1stOrder[NoiseDict[noise1]*Pdim] = M_1(NoiseDict[noise1])
+#         for noise2 in NoiseDict:
+#             for noise3 in NoiseDict:
+#                 key = NoiseDict[noise1]*NoiseDict[noise2]*Derivative(Pdim,NoiseDict[noise3])
+#                 if key not in NoiseSub1stOrder:
+#                     if NoiseDict[noise1] == NoiseDict[noise2] and NoiseDict[noise3] == NoiseDict[noise1]:
+#                         NoiseSub1stOrder[key] = -2*M_1(NoiseDict[noise1])
+#                     elif NoiseDict[noise1] != NoiseDict[noise2] and NoiseDict[noise3] == NoiseDict[noise1]:
+#                         NoiseSub1stOrder[key] = -M_1(NoiseDict[noise2])
+#                     elif NoiseDict[noise1] != NoiseDict[noise2] and NoiseDict[noise3] == NoiseDict[noise2]:
+#                         NoiseSub1stOrder[key] = -M_1(NoiseDict[noise1])
+#                     elif NoiseDict[noise1] != NoiseDict[noise3] and NoiseDict[noise3] != NoiseDict[noise2]:
+#                         NoiseSub1stOrder[key] = 0
+#                     else:
+#                         NoiseSub1stOrder[key] = 0 
+#                 key2 = NoiseDict[noise1]*Derivative(Pdim,NoiseDict[noise2],NoiseDict[noise3])
+#                 if key2 not in NoiseSub1stOrder:
+#                     NoiseSub1stOrder[key2] = 0   
+#     
+#     for noise1 in NoiseDict:
+#         for noise2 in NoiseDict:
+#             key = NoiseDict[noise1]*NoiseDict[noise2]*Pdim
+#             if key not in NoiseSub2ndOrder:
+#                 NoiseSub2ndOrder[key] = M_2(NoiseDict[noise1]*NoiseDict[noise2])
+#             for noise3 in NoiseDict:
+#                 for noise4 in NoiseDict:
+#                     key2 = NoiseDict[noise1]*NoiseDict[noise2]*NoiseDict[noise3]*Derivative(Pdim,NoiseDict[noise4])
+#                     if key2 not in NoiseSub2ndOrder:
+#                         if noise1 == noise2 and noise2 == noise3 and noise3 == noise4:
+#                             NoiseSub2ndOrder[key2] = -3*M_2(NoiseDict[noise1]*NoiseDict[noise1])
+#                         elif noise1 == noise2 and noise2 != noise3 and noise1 == noise4:
+#                             NoiseSub2ndOrder[key2] = -2*M_2(NoiseDict[noise1]*NoiseDict[noise3])
+#                         elif noise1 == noise2 and noise2 != noise3 and noise3 == noise4:
+#                             NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise1]*NoiseDict[noise2])
+#                         elif noise1 != noise2 and noise2 == noise3 and noise1 == noise4:
+#                             NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise2]*NoiseDict[noise3])
+#                         elif noise1 != noise2 and noise2 == noise3 and noise3 == noise4:
+#                             NoiseSub2ndOrder[key2] = -2*M_2(NoiseDict[noise1]*NoiseDict[noise2])
+#                         elif noise1 != noise2 and noise2 != noise3 and noise1 != noise3:
+#                             if noise1 == noise4:
+#                                 NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise2]*NoiseDict[noise3])
+#                             elif noise2 == noise4:
+#                                 NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise1]*NoiseDict[noise3])
+#                             elif noise3 == noise4:
+#                                 NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise1]*NoiseDict[noise2])
+#                             else:
+#                                 NoiseSub2ndOrder[key2] = 0
+#                         else:
+#                             NoiseSub2ndOrder[key2] = 0
+#                     key3 = NoiseDict[noise1]*NoiseDict[noise2]*Derivative(Pdim,NoiseDict[noise3],NoiseDict[noise4])
+#                     if key3 not in NoiseSub2ndOrder:
+#                         if noise1 == noise3 and noise2 == noise4:
+#                             if noise1 == noise2:
+#                                 NoiseSub2ndOrder[key3] = 2
+#                             else:
+#                                  NoiseSub2ndOrder[key3] = 1
+#                         elif noise1 == noise4 and noise2 == noise3:
+#                             if noise1 == noise2:
+#                                 NoiseSub2ndOrder[key3] = 2
+#                             else:
+#                                 NoiseSub2ndOrder[key3] = 1
+#                         else:
+#                             NoiseSub2ndOrder[key3] = 0
+#     NoiseSubs1stOrder = {}                   
+#     EQsys1stOrdMom = []
+#     EOM_1stOrderMom = {}
+#     for fpe_lhs in FPEdict: 
+#         for noise in NoiseDict:
+#             eq1stOrderMoment = (NoiseDict[noise]*FPEdict[fpe_lhs]).expand() 
+#             eq1stOrderMoment = eq1stOrderMoment.subs(NoiseSub1stOrder)
+#             EQsys1stOrdMom.append(eq1stOrderMoment)
+#             if M_1(NoiseDict[noise]) not in EOM_1stOrderMom:
+#                 EOM_1stOrderMom[M_1(NoiseDict[noise])] = eq1stOrderMoment
+#                 NoiseSubs1stOrder[M_1(NoiseDict[noise])] = r'<'+latex(NoiseDict[noise])+'>'
+#     print(EOM_1stOrderMom)
+#             
+#     if len(NoiseDict)==2:
+#         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]])], dict=True)
+#     elif len(NoiseDict)==3:
+#         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]]),M_1(NoiseDict[nvec[2]])], dict=True)
+#     else:
+#         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]]),M_1(NoiseDict[nvec[2]]),M_1(NoiseDict[nvec[3]])], dict=True)
+#     print(SOL_1stOrderMom)
+#     
+#     NoiseSubs2ndOrder = {}
+#     EQsys2ndOrdMom = []
+#     EOM_2ndOrderMom = {}
+#     for fpe_lhs in FPEdict: 
+#         for noise1 in NoiseDict:
+#             for noise2 in NoiseDict:
+#                 eq2ndOrderMoment = (NoiseDict[noise1]*NoiseDict[noise2]*FPEdict[fpe_lhs]).expand() 
+#                 eq2ndOrderMoment = eq2ndOrderMoment.subs(NoiseSub2ndOrder)
+#                 eq2ndOrderMoment = eq2ndOrderMoment.subs(NoiseSub1stOrder)
+#                 eq2ndOrderMoment = eq2ndOrderMoment.subs(SOL_1stOrderMom[0])
+#                 if len(NoiseDict)==2:
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]))
+#                 elif len(NoiseDict)==3:
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]]))
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]))
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]]))
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]]))
+#                 else:
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
+#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]))
+#                 eq2ndOrderMoment = eq2ndOrderMoment.simplify()
+#                 if eq2ndOrderMoment not in EQsys2ndOrdMom:
+#                     EQsys2ndOrdMom.append(eq2ndOrderMoment)
+#                 if M_2(NoiseDict[noise1]*NoiseDict[noise2]) not in EOM_2ndOrderMom:
+#                     EOM_2ndOrderMom[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = eq2ndOrderMoment
+#                     NoiseSubs2ndOrder[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = r'<'+latex(NoiseDict[noise1]*NoiseDict[noise2])+'>'
+#     print(EOM_2ndOrderMom)
+#                     
+#     SOL_2ndOrdMomDict = {} 
+#     if len(NoiseDict)==2:
+#         SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])]))[0] #only one set of solutions (if any) in linear system of equations
+#         
+#         if M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]) in SOL_2ndOrderMom:
+#             ZsubDict = {M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]): 0}
+#             SOL_2ndOrderMomMod = []
+#             for nn in range(len(SOL_2ndOrderMom)):
+#                 SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
+#             SOL_2ndOrderMom = SOL_2ndOrderMomMod
+#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
+#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[1]
+#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[2]
+#     
+#     elif len(NoiseDict)==3:
+#         SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), 
+#                                                          M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), 
+#                                                          M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]]), 
+#                                                          M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]), 
+#                                                          M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]]), 
+#                                                          M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]])]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
+#         ZsubDict = {}
+#         for noise1 in NoiseDict:
+#             for noise2 in NoiseDict:
+#                 if M_2(NoiseDict[noise1]*NoiseDict[noise2]) in SOL_2ndOrderMom:
+#                     ZsubDict[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = 0
+#         if len(ZsubDict) > 0:
+#             SOL_2ndOrderMomMod = []
+#             for nn in range(len(SOL_2ndOrderMom)):
+#                 SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
+#         SOL_2ndOrderMom = SOL_2ndOrderMomMod
+#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
+#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[1]
+#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[2]
+#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[3]
+#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[4]
+#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[5]
+#     print(SOL_2ndOrdMomDict)    
+#       
+#     return EOM_1stOrderMom, SOL_1stOrderMom[0], NoiseSubs1stOrder, EOM_2ndOrderMom, SOL_2ndOrdMomDict, NoiseSubs2ndOrder 
+    
 
 ## Function that returns the ODE system deerived from Master equation
 def _getODEs_vKE(_get_orderedLists_vKE, stoich):
@@ -3533,6 +4007,10 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
         
     return ODEsys
  
+
+
+
+
     
 def _raiseModelError(expected, read, rule):
     raise SyntaxError("Expected " + expected + " but read '" + read + "' in rule: " + rule)
@@ -4029,5 +4507,4 @@ def _encodeNetworkTypeToString(netType):
     if netType not in netTypeEncoding:
         print("ERROR! Invalid netTypeEncoding table! Tryed to encode network type: " + str(netType) )
     return netTypeEncoding.get(netType, 'none')
-
 
