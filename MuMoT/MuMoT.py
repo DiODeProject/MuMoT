@@ -186,7 +186,7 @@ class MuMoTmodel:
                             raise SyntaxError("More than one unknown reactant encountered when trying to set system size: " + str(sub[0]) + " = " + str(sub[1]))
                 if newModel._systemSize == None:
                     raise SyntaxError("Expected to find system size parameter but failed: " + str(sub[0]) + " = " + str(sub[1]))
-                # @todo: more thorough error checking for valid system size expression
+                ## @todo: more thorough error checking for valid system size expression
                 newModel._reactants.discard(sub[0])
                 del newModel._equations[sub[0]]
         if newModel._systemSize == None:
@@ -622,7 +622,7 @@ class MuMoTmodel:
 #             # create widgets
 # 
 #             if self._systemSize != None:
-#                 # @todo: shouldn't allow system size to be varied?
+#                 ## @todo: shouldn't allow system size to be varied?
 #                 pass
 # #                self._paramValues.append(1)
 # #                self._paramNames.append(str(self._systemSize))
@@ -642,38 +642,38 @@ class MuMoTmodel:
 #                     self._widgets.append(widget)
 #                     display(widget)
 #             widget = widgets.HTML(value = '')
-#             self._errorMessage = widget                                # @todo: add to __init__()
+#             self._errorMessage = widget                                ## @todo: add to __init__()
 #             display(self._errorMessage)
 #             
 #             # Prepare the system to start close to a steady state
-#             self._bifurcationParameter = bifurcationParameter          # @todo: remove hack (bifurcation parameter for multiple possible bifurcations needs to be stored in self)
-#             self._stateVariable1 = stateVariable1                      # @todo: remove hack (state variable for multiple possible bifurcations needs to be stored in self)
+#             self._bifurcationParameter = bifurcationParameter          ## @todo: remove hack (bifurcation parameter for multiple possible bifurcations needs to be stored in self)
+#             self._stateVariable1 = stateVariable1                      ## @todo: remove hack (state variable for multiple possible bifurcations needs to be stored in self)
 # #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       # Lower bound of the bifurcation parameter (@todo: set dynamically)
 # #            self._pyDSode.set(pars = self._pyDSmodel.pars )       # Lower bound of the bifurcation parameter (@todo: set dynamically)
 # #            self._pyDSode.pars = {bifurcationParameter: 0}             # Lower bound of the bifurcation parameter (@todo: set dynamically?)
-#             initconds = {stateVariable1: self._paramDict[str(self._systemSize)] / len(self._reactants)} # @todo: guess where steady states are?
+#             initconds = {stateVariable1: self._paramDict[str(self._systemSize)] / len(self._reactants)} ## @todo: guess where steady states are?
 #             for reactant in self._reactants:
 #                 if str(reactant) != stateVariable1:
 #                     initconds[str(reactant)] = self._paramDict[str(self._systemSize)] / len(self._reactants)
 # #            self._pyDSmodel.ics = initconds
-#             self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    # @todo: replace            
+#             self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    ## @todo: replace            
 # #            self._pyDSode.set(ics = initconds)
-#             self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  # @todo: add to __init__()
-#             self._pyDSode.set(pars = {bifurcationParameter: 5} )                       # @todo remove magic number
+#             self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  ## @todo: add to __init__()
+#             self._pyDSode.set(pars = {bifurcationParameter: 5} )                       ## @todo remove magic number
 #             self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class (@todo: add to __init__())
-#             # @todo: add self._pyDScontArgs to __init__()
+#             ## @todo: add self._pyDScontArgs to __init__()
 #             self._pyDScontArgs = dst.args(name='EQ1', type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labeled 'EQ1'.
 #             self._pyDScontArgs.freepars     = [bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
 #             self._pyDScontArgs.MaxNumPoints = 450                      # The following 3 parameters are set after trial-and-error @todo: how to automate this?
 #             self._pyDScontArgs.MaxStepSize  = 1e-1
 #             self._pyDScontArgs.MinStepSize  = 1e-5
 #             self._pyDScontArgs.StepSize     = 2e-3
-#             self._pyDScontArgs.LocBifPoints = ['LP', 'BP']                    # @todo WAS 'LP' (detect limit points / saddle-node bifurcations)
+#             self._pyDScontArgs.LocBifPoints = ['LP', 'BP']                    ## @todo WAS 'LP' (detect limit points / saddle-node bifurcations)
 #             self._pyDScontArgs.SaveEigen    = True                     # to tell unstable from stable branches
 # #            self._pyDScontArgs.CalcStab     = True
 # 
 #             plt.ion()
-# #            self._bifurcation2Dfig = plt.figure(1)                     # @todo: add to __init__()
+# #            self._bifurcation2Dfig = plt.figure(1)                     ## @todo: add to __init__()
 #             self._pyDScont.newCurve(self._pyDScontArgs)
 #             try:
 #                 try:
@@ -681,7 +681,7 @@ class MuMoTmodel:
 #                 except:
 #                     self._errorMessage.value = 'Continuation failure'
 #                 try:
-#                     self._pyDScont['EQ1'].forward()                                  # @todo: how to choose direction?
+#                     self._pyDScont['EQ1'].forward()                                  ## @todo: how to choose direction?
 #                 except:
 #                     self._errorMessage.value = 'Continuation failure'
 #                     self._errorMessage.value = ''
@@ -732,15 +732,16 @@ class MuMoTmodel:
 
     ## lambdify sympy equations for numerical integration, plotting, etc.
     def _getFuncs(self):
-        if self._systemSize == None:
-            assert false ## @todo is this necessary?
+#         if self._systemSize == None:
+#             assert false ## @todo is this necessary?
         if self._funcs == None:
             argList = []
             for reactant in self._reactants:
                 argList.append(reactant)
             for rate in self._rates:
                 argList.append(rate)
-            argList.append(self._systemSize)
+            if self._systemSize != None:
+                argList.append(self._systemSize)
             self._args = tuple(argList)
             self._funcs = {}
             for equation in self._equations:
@@ -913,7 +914,7 @@ class MuMoTcontroller:
             if not(silent):
                 display(widget)
         widget = widgets.HTML()
-        widget.value = 'foo' + str(widget) # @todo why doesn't this work?
+        widget.value = 'foo' + str(widget) ## @todo why doesn't this work?
         self._errorMessage = widget
         if not(silent):
             print('bar' + str(self._errorMessage))
@@ -1375,7 +1376,7 @@ class MuMoTview:
         else:
             paramNames = self._paramNames
             paramValues = self._paramValues
-            # @todo: in soloView, this does not show the extra parameters (we should make clearer what the use of showLogs) 
+            ## @todo: in soloView, this does not show the extra parameters (we should make clearer what the use of showLogs) 
 
         for i in zip(paramNames, paramValues):
             print('(' + i[0] + '=' + repr(i[1]) + '), ', end='')
@@ -1583,6 +1584,9 @@ class MuMoTfieldView(MuMoTview):
     _mask = {} 
     
     def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
+        if model._systemSize == None and model._constantSystemSize == True:
+            print("Cannot construct field-based plot until system size is set, using substitute()")
+            return
         silent = kwargs.get('silent', False)
         super().__init__(model, controller, figure, params, **kwargs)
         
@@ -1713,8 +1717,9 @@ class MuMoTfieldView(MuMoTview):
             self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
-            self._Xdot = np.ma.array(self._Xdot, mask=mask)
-            self._Ydot = np.ma.array(self._Ydot, mask=mask)        
+            if self._mumotModel._constantSystemSize == True:
+                self._Xdot = np.ma.array(self._Xdot, mask=mask)
+                self._Ydot = np.ma.array(self._Ydot, mask=mask)        
         self._logs.append(log)
 
     ## get 3-dimensional field for plotting        
@@ -1740,9 +1745,10 @@ class MuMoTfieldView(MuMoTview):
 #            self._Xdot = self._Xdot * mask
 #            self._Ydot = self._Ydot * mask
 #            self._Zdot = self._Zdot * mask
-            self._Xdot = np.ma.array(self._Xdot, mask=mask)
-            self._Ydot = np.ma.array(self._Ydot, mask=mask)        
-            self._Zdot = np.ma.array(self._Zdot, mask=mask)
+            if self._mumotModel._constantSystemSize == True:
+                self._Xdot = np.ma.array(self._Xdot, mask=mask)
+                self._Ydot = np.ma.array(self._Ydot, mask=mask)        
+                self._Zdot = np.ma.array(self._Zdot, mask=mask)
         self._logs.append(log)
 
 ## stream plot view on model
@@ -1784,9 +1790,13 @@ class MuMoTstreamView(MuMoTfieldView):
             
         self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
         fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
-        plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
-        plt.xlim(0,1)
-        plt.ylim(0,1)
+        if self._mumotModel._constantSystemSize == True:
+            plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')            
+            plt.xlim(0,1)
+            plt.ylim(0,1)
+        else:
+            ## @todo: plot limits to be set via slider in this case
+            pass
         
         _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
                    ylab = self._ylab, fontsize=self._chooseFontSize)
@@ -1840,9 +1850,12 @@ class MuMoTvectorView(MuMoTfieldView):
             
             self._get_field2d("2d vector plot", 10) ## @todo: allow user to set mesh points with keyword
             fig_vector=plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') ## @todo: define colormap by user keyword
-            plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
-            plt.xlim(0,1)
-            plt.ylim(0,1)
+
+            if self._mumotModel._constantSystemSize == True:
+                plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
+            else:
+                ## @todo: plot limits to be set via slider in this case
+                pass
             _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
                    ylab = self._ylab, fontsize=self._chooseFontSize)
     #        plt.set_aspect('equal') ## @todo
@@ -1881,7 +1894,7 @@ class MuMoTvectorView(MuMoTfieldView):
             ax = self._figure.gca(projection = '3d')
             fig_vec3d=ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length = 0.01, color = 'black') ## @todo: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
             _fig_formatting_3D(figure=fig_vec3d, xlab= self._xlab, ylab= self._ylab, zlab= self._zlab, specialPoints=FixedPoints,
-                               showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=True)
+                               showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=self._mumotModel._constantSystemSize)
 #           plt.set_aspect('equal') ## @todo
 
             if self._showFixedPoints==True:
@@ -2156,7 +2169,7 @@ class MuMoTbifurcationView(MuMoTview):
                 if self._stateVariable2 == None:
                     # 2-d bifurcation diagram
                     if self._silent == True:
-                        #assert false # @todo: enable when Thomas implements in-housse plotting routines
+                        #assert false ## @todo: enable when Thomas implements in-housse plotting routines
                         self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], axes = None, stability = True)
                     else:
                         self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figureNum)
