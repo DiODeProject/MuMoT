@@ -2263,8 +2263,6 @@ class MuMoTmultiagentView(MuMoTview):
         super().__init__(model=model, controller=controller, figure=figure, params=rates, **kwargs)
 
         with io.capture_output() as log:
-#             if not self._silent:
-#                 self._plot = self._figure.add_subplot(111)
                       
             if self._controller == None:
                 # storing the rates for each rule
@@ -2373,8 +2371,6 @@ class MuMoTmultiagentView(MuMoTview):
 
             # Clearing the plot
             if not self._silent:
-                #self._plot = self._figure.add_subplot(111)
-                #self._plot.clear()
                 plt.figure(self._figureNum)
                 plt.clf()
 
@@ -2389,12 +2385,6 @@ class MuMoTmultiagentView(MuMoTview):
                     _fig_formatting_2D(self._figure, xlab="time", ylab="pop", curve_replot=True)
                 elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
                     plt.axes().set_aspect('equal')
-                
-                # plot legend
-#                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
-#                 self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
-                # show canvas
-#                 self._figure.canvas.draw()
             
             self._latestResults = self._runMultiagent()
             print("Temporal evolution per state: " + str(self._latestResults[0]))
@@ -2402,16 +2392,6 @@ class MuMoTmultiagentView(MuMoTview):
             ## Final Plot
             if not self._realtimePlot:
                 self._updateMultiagentFigure(0, self._latestResults[0], positionHistory=self._latestResults[1], pos_layout=self._latestResults[2])
-            
-            # replot legend at the end
-            #if not self._silent:
-                ## @todo display legend every timeframe in 'graph' plots
-                #self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.) 
-#             plt.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
-            
-#             for state,pop in logs[1].items():
-#                 print("Plotting:"+str(pop))
-#                 plt.plot(pop, label=state)
             
         self._logs.append(log)
     
@@ -2491,25 +2471,19 @@ class MuMoTmultiagentView(MuMoTview):
     
     def _updateMultiagentFigure(self, i, evo, positionHistory, pos_layout):
         if (self._visualisationType == "evo"):
-#             for state,pop in evo.items():
-#                 if self._realtimePlot and i>0:
-#                     # If realtime-plot mode, draw only the last timestep rather than overlay all
-#                     self._plot.plot([i-1,i], pop[len(pop)-2:len(pop)], color=self._colors[state])
-#                 else:
-#                     # otherwise, plot all time-evolution
-#                     #self._plot.plot(pop, color=self._colors[state]) #label=state,
-#                     plt.plot(pop, color=self._colors[state])
+            # If realtime-plot mode, draw only the last timestep rather than overlay all
             if (i>1):
                 xdata = []
                 ydata = []
-                labels = []
                 for state in sorted(self._initialState.keys(), key=str):
                     xdata.append( list(np.arange(len(evo[state]))) )
-                    ydata.append(evo[state])
-                    labels.append(state)
-                #_fig_formatting_2D(xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curve_replot=False)
+                    ydata.append( evo[state] )
+                    ## @todo replot only the last part (rather than all the line)
+#                     xdata.append( [i-1,i] )
+#                     pop = evo[state]
+#                     ydata.append( pop[len(pop)-2:len(pop)] )
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False)
-            else:
+            else: # otherwise, plot all time-evolution
                 xdata = []
                 ydata = []
                 labels = []
@@ -2521,10 +2495,8 @@ class MuMoTmultiagentView(MuMoTview):
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False)
 
         elif (self._visualisationType == "graph"):
-            #self._plot.clear()
             plt.clf()
             if self._netType == NetworkType.DYNAMIC:
-#                 self._plot.axis([0, 1, 0, 1])
                 plt.xlim((0, 1))
                 plt.ylim((0, 1))
                 plt.axes().set_aspect('equal')
@@ -2542,7 +2514,6 @@ class MuMoTmultiagentView(MuMoTview):
                     
                     if self._showInteractions:
                         for n in self._getNeighbours(a, self._positions, self._netParam): 
-#                             self._plot.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
                             plt.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
                     
                     if self._showTrace:
@@ -2550,17 +2521,17 @@ class MuMoTmultiagentView(MuMoTview):
                         trace_ys = [p[1] for p in positionHistory[a] ]
                         trace_xs.append( self._positions[a][0] )
                         trace_ys.append( self._positions[a][1] )
-#                         self._plot.plot( trace_xs, trace_ys, '-', c='0.6') 
                         plt.plot( trace_xs, trace_ys, '-', c='0.6') 
                 for state in self._initialState.keys():
-                    #self._plot.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
                     plt.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
-#                     plt.axes().set_aspect('equal')
             else:
                 stateColors=[]
                 for n in self._graph.nodes():
                     stateColors.append( self._colors.get( self._agents[n], 'w') ) 
                 nx.draw(self._graph, pos_layout, node_color=stateColors, with_labels=True)
+                # plot legend
+                markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='', markersize=15) for color in self._colors.values()]
+                plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0., numpoints=1)
         # dinamically update the plot each timestep
         if not self._silent:
             self._figure.canvas.draw()
