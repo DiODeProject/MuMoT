@@ -210,10 +210,15 @@ class MuMoTmodel:
     #  `brew install libtool --universal` <br>
     #  `brew link libtool`
     def visualise(self):
+        errorShown = False
         if self._dot == None:
             dot = Digraph(comment = "Model", engine = 'circo')
+            if not self._constantSystemSize:
+                dot.node(str('1'), " ", image = self._localLaTeXimageFile(Symbol('\\emptyset'))) ## @todo: only display if used: for now, guess it is used if system size is non-constant                
             for reactant in self._reactants:
                 dot.node(str(reactant), " ", image = self._localLaTeXimageFile(reactant))
+            for reactant in self._constantReactants:
+                dot.node(str(reactant), " ", image = self._localLaTeXimageFile('(' + str(reactant) + ')'))                
             for rule in self._rules:
                 # render LaTeX representation of rule
                 localfilename = self._localLaTeXimageFile(rule.rate)
@@ -258,6 +263,10 @@ class MuMoTmodel:
 
                     if source != None:
                         dot.edge(source, target, label = htmlLabel, arrowhead = head, arrowtail = tail, dir = 'both')
+                else:
+                    if not errorShown:
+                        errorShown = True
+                        print("Model contains rules with three or more reactants; only displaying unary and binary rules")
             self._dot = dot
                 
         return self._dot
@@ -1716,7 +1725,11 @@ class MuMoTfieldView(MuMoTview):
                 self._mask[(meshPoints, 2)] = mask
             self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
-            self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
+            try:
+                self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
+            except:
+#                self._speed = np.ones(self._X.shape, dtype=float)
+                self._speed = None
             if self._mumotModel._constantSystemSize == True:
                 self._Xdot = np.ma.array(self._Xdot, mask=mask)
                 self._Ydot = np.ma.array(self._Ydot, mask=mask)        
@@ -1741,7 +1754,10 @@ class MuMoTfieldView(MuMoTview):
             self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
             self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
             self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2 + self._Zdot ** 2))
+            try:
+                self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2 + self._Zdot ** 2))
+            except:
+                self._speed = None
 #            self._Xdot = self._Xdot * mask
 #            self._Ydot = self._Ydot * mask
 #            self._Zdot = self._Zdot * mask
@@ -1789,7 +1805,10 @@ class MuMoTstreamView(MuMoTfieldView):
             FixedPoints = None
             
         self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
-        fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
+        if self._speed is not None:
+            fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
+        else:
+            fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = 'k') ## @todo: define colormap by user keyword
         if self._mumotModel._constantSystemSize == True:
             plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')            
             plt.xlim(0,1)
