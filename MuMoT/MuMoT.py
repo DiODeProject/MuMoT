@@ -722,7 +722,8 @@ class MuMoTmodel:
             paramNames.append(str(rate))
         for reactant in self._constantReactants:
             paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-            paramNames.append('(' + latex(reactant) + ')')            
+#            paramNames.append('(' + latex(reactant) + ')')
+            paramNames.append(str(reactant))            
         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, **kwargs)
 
         return viewController
@@ -746,6 +747,8 @@ class MuMoTmodel:
         if self._funcs == None:
             argList = []
             for reactant in self._reactants:
+                argList.append(reactant)
+            for reactant in self._constantReactants:
                 argList.append(reactant)
             for rate in self._rates:
                 argList.append(rate)
@@ -1698,6 +1701,9 @@ class MuMoTfieldView(MuMoTview):
             paramNames = []
             paramValues = []
             for name, value in self._controller._widgetDict.items():
+                # throw away formatting for constant reactants
+#                 name = name.replace('(','')
+#                 name = name.replace(')','')
                 paramNames.append(name)
                 paramValues.append(value.value)          
         else:
