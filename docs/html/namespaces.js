@@ -1,5 +1,5 @@
 var namespaces =
 [
-    [ "MuMoT", "namespace_mu_mo_t.html", null ],
-    [ "setup", "namespacesetup.html", null ]
+    [ "setup", "namespacesetup.html", null ],
+    [ "setup (1)", "namespacesetup_01_071_08.html", null ]
 ];

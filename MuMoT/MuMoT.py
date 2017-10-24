@@ -114,11 +114,9 @@ class MuMoTmodel:
     _constantSystemSize = None
     ## list of LaTeX strings describing reactants (@todo: depracated?)
     _reactantsLaTeX = None
-    ## list of LaTeX strings describing constant reactants (@todo: depracated?)
-    _constantReactantsLaTeX = None    
     ## set of rates
     _rates = None 
-    ## dictionary of LaTeX strings describing rates
+    ## dictionary of LaTeX strings describing rates and constant reactants (@todo: rename)
     _ratesLaTeX = None 
     ## dictionary of ODE righthand sides with reactant as key
     _equations = None
@@ -200,6 +198,10 @@ class MuMoTmodel:
         rates = map(latex, list(newModel._rates))
         for (rate, latexStr) in zip(newModel._rates, rates):
             newModel._ratesLaTeX[repr(rate)] = latexStr
+        constantReactants = map(latex, list(newModel._constantReactants))
+        for (reactant, latexStr) in zip(newModel._constantReactants, constantReactants):
+            newModel._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'
+
         ## @todo: what else should be copied to new model?
 
         return newModel
@@ -218,7 +220,7 @@ class MuMoTmodel:
             for reactant in self._reactants:
                 dot.node(str(reactant), " ", image = self._localLaTeXimageFile(reactant))
             for reactant in self._constantReactants:
-                dot.node(str(reactant), " ", image = self._localLaTeXimageFile('(' + str(reactant) + ')'))                
+                dot.node(str(reactant), " ", image = self._localLaTeXimageFile(Symbol(self._ratesLaTeX[repr(reactant)])))                
             for rule in self._rules:
                 # render LaTeX representation of rule
                 localfilename = self._localLaTeXimageFile(rule.rate)
@@ -273,14 +275,16 @@ class MuMoTmodel:
 
     ## show a sorted LaTeX representation of the model's constant reactants
     def showConstantReactants(self):
-        if self._constantReactantsLaTeX == None:
-            self._constantReactantsLaTeX = []
-            reactants = map(latex, list(self._constantReactants))
-            for reactant in reactants:
-                self._constantReactantsLaTeX.append(reactant)
-            self._constantReactantsLaTeX.sort()
-        for reactant in self._constantReactantsLaTeX:
-            display(Math(reactant))
+        for reactant in self._constantReactants:
+            display(Math(self._ratesLaTeX[repr(reactant)]))
+#         if self._constantReactantsLaTeX == None:
+#             self._constantReactantsLaTeX = []
+#             reactants = map(latex, list(self._constantReactants))
+#             for reactant in reactants:
+#                 self._constantReactantsLaTeX.append(reactant)
+#             self._constantReactantsLaTeX.sort()
+#         for reactant in self._constantReactantsLaTeX:
+#             display(Math(reactant))
         #reactant_list = []
         #for reaction in self._stoichiometry:
         #    for reactant in self._stoichiometry[reaction]:
@@ -3305,6 +3309,9 @@ def parseModel(modelDescription):
     rates = map(latex, list(model._rates))
     for (rate, latexStr) in zip(model._rates, rates):
         model._ratesLaTeX[repr(rate)] = latexStr
+    constantReactants = map(latex, list(model._constantReactants))
+    for (reactant, latexStr) in zip(model._constantReactants, constantReactants):
+        model._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'    
     
     model._stoichiometry = _getStoichiometry(model._rules)
     

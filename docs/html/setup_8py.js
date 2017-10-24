@@ -6,6 +6,7 @@ var setup_8py =
     [ "install_requires", "setup_8py.html#a047d4e9f7b152e767f7bd459218fe1fd", null ],
     [ "license", "setup_8py.html#a4e659be027e258b72df12349200a263e", null ],
     [ "name", "setup_8py.html#ab74e6bf80237ddc4109968cedc58c151", null ],
+    [ "package_data", "setup_8py.html#a3082807deecba7a5edc23253ddfb584f", null ],
     [ "package_dir", "setup_8py.html#a831b74f0aec5de1cb7b526c3de2c12ed", null ],
     [ "packages", "setup_8py.html#a5191bfd75a28371588f75471591d5500", null ],
     [ "requirements", "setup_8py.html#aae5f59f06402b79899f58170ca7c3abb", null ],

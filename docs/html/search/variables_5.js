@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['eigenvalues',['eigenvalues',['../class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#aa4c73e042e5fc54d56298cdbbba8e6c2',1,'MuMoT::MuMoTbifurcationView']]],
-  ['ersos_5frenyi',['ERSOS_RENYI',['../class_mu_mo_t_1_1_network_type.html#abfc09d249fa8a7e47ccae49424a21d61',1,'MuMoT::NetworkType']]]
+  ['package_5fdata',['package_data',['../namespacesetup_01_071_08.html#a3082807deecba7a5edc23253ddfb584f',1,'setup (1).package_data()'],['../namespacesetup.html#a3082807deecba7a5edc23253ddfb584f',1,'setup.package_data()']]],
+  ['package_5fdir',['package_dir',['../namespacesetup_01_071_08.html#a831b74f0aec5de1cb7b526c3de2c12ed',1,'setup (1).package_dir()'],['../namespacesetup.html#a831b74f0aec5de1cb7b526c3de2c12ed',1,'setup.package_dir()']]],
+  ['packages',['packages',['../namespacesetup_01_071_08.html#a5191bfd75a28371588f75471591d5500',1,'setup (1).packages()'],['../namespacesetup.html#a5191bfd75a28371588f75471591d5500',1,'setup.packages()']]]
 ];
