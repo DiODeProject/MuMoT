@@ -566,9 +566,9 @@ class MuMoTmodel:
             paramValues.append((MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep))
             paramNames.append(str(rate))
 
-        viewController = MuMoTmultiagentController(paramValues, paramNames, self._ratesLaTeX, False, MAParams)
+        viewController = MuMoTmultiagentController(paramValues, paramNames, self._ratesLaTeX, False, MAParams, **kwargs)
         # Get the default network values assigned from the controller
-        MAParams['netParam'] = viewController._widgetDict['netParam'].value ## @todo use defaults without relying on the controller 
+        MAParams['netParam'] = viewController._widgetsExtraParams['netParam'].value ## @todo use defaults without relying on the controller 
         
         modelView = MuMoTmultiagentView(self, viewController, MAParams, **kwargs)
         viewController.setView(modelView)
@@ -618,8 +618,7 @@ class MuMoTmodel:
             paramValues.append((MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep))
             paramNames.append(str(rate))
 
-        viewController = MuMoTSSAController(paramValues, paramNames, self._ratesLaTeX, False, ssaParams)
-        
+        viewController = MuMoTSSAController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, ssaParams=ssaParams, **kwargs)
         #paramDict = {}
         #paramDict['initialState'] = initialState
         modelView = MuMoTSSAView(self, viewController, ssaParams, **kwargs)
@@ -901,8 +900,10 @@ class MuMoTcontroller:
     _paramLabelDict = None
     ## list of widgets
     _widgets = None
-    ## dictionary of controller widgets, with parameter name as key
-    _widgetDict = None
+    ## dictionary of controller widgets only for the free parameters of the model, with parameter name as key
+    _widgetsFreeParams = None
+    ## dictionary of controller widgets for the special parameters (e.g., simulation length, initial state), with parameter name as key
+    _widgetsExtraParams = None
     ## dictionary of controller widgets, with parameter that influence only the plotting and not the computation
     _widgetsPlotOnly = None
     ## replot function widgets have been assigned (for use by MuMoTmultiController)
@@ -922,18 +923,19 @@ class MuMoTcontroller:
         silent = kwargs.get('silent', False)
         self._paramLabelDict = paramLabelDict
         self._widgets = []
-        self._widgetDict = {}
+        self._widgetsFreeParams = {}
+        self._widgetsExtraParams = {}
         self._widgetsPlotOnly = {}
-        self._silent = silent
+        self._silent = kwargs.get('silent', False)
         unsortedPairs = zip(paramNames, paramValues)
         for pair in sorted(unsortedPairs):
             widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
                                          max = pair[1][2], step = pair[1][3], 
                                          description = r'\(' + self._paramLabelDict.get(pair[0],pair[0]) + r'\)', 
                                          continuous_update = continuousReplot)
-            self._widgetDict[pair[0]] = widget
+            self._widgetsFreeParams[pair[0]] = widget
             self._widgets.append(widget)
-            if not(silent):
+            if not(self._silent):
                 display(widget)
         if plotLimits:
             ## @todo: remove hard coded values and limits
@@ -954,7 +956,7 @@ class MuMoTcontroller:
         widget = widgets.HTML()
         widget.value = 'foo' + str(widget) ## @todo why doesn't this work?
         self._errorMessage = widget
-        if not(silent):
+        if not(self._silent):
             print('bar' + str(self._errorMessage))
             display(self._errorMessage)
     
@@ -963,7 +965,9 @@ class MuMoTcontroller:
     ## @param[in]    redrawFunction    The function to be called when only redrawing (relying on previous computation) is sufficient 
     def _setReplotFunction(self, recomputeFunction, redrawFunction=None):
         self._replotFunction = recomputeFunction
-        for widget in self._widgetDict.values():
+        for widget in self._widgetsFreeParams.values():
+            widget.on_trait_change(recomputeFunction, 'value')
+        for widget in self._widgetsExtraParams.values():
             widget.on_trait_change(recomputeFunction, 'value')
         if self._plotLimitsWidget != None:
             self._plotLimitsWidget.on_trait_change(recomputeFunction, 'value')
@@ -1049,8 +1053,8 @@ class MuMoTcontroller:
 ## class describing a controller for multiagent views
 class MuMoTSSAController(MuMoTcontroller):
     
-    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, ssaParams):
-        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot)
+    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, ssaParams, **kwargs):
+        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, **kwargs)
         advancedWidgets = []
         
         initialState = ssaParams['initialState']
@@ -1061,7 +1065,7 @@ class MuMoTSSAController(MuMoTcontroller):
                                          step = MuMoTdefault._agentsStep,
                                          description = "State " + str(state), 
                                          continuous_update = continuousReplot)
-            self._widgetDict['init'+str(state)] = widget
+            self._widgetsExtraParams['init'+str(state)] = widget
             self._widgets.append(widget)
             advancedWidgets.append(widget)
             
@@ -1072,7 +1076,7 @@ class MuMoTSSAController(MuMoTcontroller):
                                          description = 'Simulation time:',
                                          disabled=False,
                                          continuous_update = continuousReplot) 
-        self._widgetDict['maxTime'] = widget
+        self._widgetsExtraParams['maxTime'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -1082,7 +1086,7 @@ class MuMoTSSAController(MuMoTcontroller):
             description='Random seed:',
             disabled=False
         )
-        self._widgetDict['randomSeed'] = widget
+        self._widgetsExtraParams['randomSeed'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -1106,33 +1110,35 @@ class MuMoTSSAController(MuMoTcontroller):
             description='Runtime plot update',
             disabled = False
         )
-        self._widgetDict['realtimePlot'] = widget
+        self._widgetsExtraParams['realtimePlot'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
         advancedPage = widgets.Box(children=advancedWidgets)
         advancedOpts = widgets.Accordion(children=[advancedPage])
         advancedOpts.set_title(0, 'Advanced options')
-        display(advancedOpts)
+        if not self._silent:
+            display(advancedOpts)
         
         # Loading bar (useful to give user progress status for long executions)
         self._progressBar = widgets.FloatProgress(
             value=0,
             min=0,
-            max=self._widgetDict['maxTime'].value,
+            max=self._widgetsExtraParams['maxTime'].value,
             #step=1,
             description='Loading:',
             bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
             orientation='horizontal'
         )
-        display(self._progressBar)
+        if not self._silent:
+            display(self._progressBar)
         
 
 ## class describing a controller for multiagent views
 class MuMoTmultiagentController(MuMoTcontroller):
 
-    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, MAParams):
-        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot)
+    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, MAParams, **kwargs):
+        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, **kwargs)
         advancedWidgets = []
         
         initialState = MAParams['initialState']
@@ -1143,7 +1149,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                          step = MuMoTdefault._agentsStep,
                                          description = "State " + str(state), 
                                          continuous_update = continuousReplot)
-            self._widgetDict['init'+str(state)] = widget
+            self._widgetsExtraParams['init'+str(state)] = widget
             self._widgets.append(widget)
             advancedWidgets.append(widget)
         
@@ -1154,7 +1160,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                          description = 'Simulation time:',
                                          disabled=False,
                                          continuous_update = continuousReplot) 
-        self._widgetDict['maxTime'] = widget
+        self._widgetsExtraParams['maxTime'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -1170,7 +1176,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             value = _decodeNetworkTypeFromString(MAParams['netType']), 
             disabled=False
         )
-        self._widgetDict['netType'] = netDropdown
+        self._widgetsExtraParams['netType'] = netDropdown
         #self._widgets.append(netDropdown)
         netDropdown.on_trait_change(self._update_net_params, 'value')
         advancedWidgets.append(netDropdown)
@@ -1183,7 +1189,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             continuous_update = continuousReplot,
                             disabled=True
         )
-        self._widgetDict['netParam'] = widget
+        self._widgetsExtraParams['netParam'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -1195,7 +1201,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             continuous_update = continuousReplot,
                             disabled=True
         )
-        self._widgetDict['particleSpeed'] = widget
+        self._widgetsExtraParams['particleSpeed'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -1209,7 +1215,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             continuous_update = continuousReplot,
                             disabled=True
         )
-        self._widgetDict['motionCorrelatedness'] = widget
+        self._widgetsExtraParams['motionCorrelatedness'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -1219,7 +1225,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             description='Random seed:',
             disabled=False
         )
-        self._widgetDict['randomSeed'] = widget
+        self._widgetsExtraParams['randomSeed'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         #display(widget)
@@ -1233,7 +1239,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             description = 'Time scaling', 
                             continuous_update = continuousReplot
         )
-        self._widgetDict['scaling'] = widget
+        self._widgetsExtraParams['scaling'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -1256,7 +1262,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         widget = widgets.Checkbox(
             value = MAParams['showTrace'],
             description='Show particle trace',
-            disabled = not (self._widgetDict['netType'].value == NetworkType.DYNAMIC)
+            disabled = not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
         )
         self._widgetsPlotOnly['showTrace'] = widget
         self._widgets.append(widget)
@@ -1264,7 +1270,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         widget = widgets.Checkbox(
             value = MAParams['showInteractions'],
             description='Show communication links',
-            disabled = not (self._widgetDict['netType'].value == NetworkType.DYNAMIC)
+            disabled = not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
         )
         self._widgetsPlotOnly['showInteractions'] = widget
         self._widgets.append(widget)
@@ -1275,7 +1281,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             description='Runtime plot update',
             disabled = False
         )
-        self._widgetDict['realtimePlot'] = widget
+        self._widgetsExtraParams['realtimePlot'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -1284,72 +1290,66 @@ class MuMoTmultiagentController(MuMoTcontroller):
         advancedPage = widgets.Box(children=advancedWidgets)
         advancedOpts = widgets.Accordion(children=[advancedPage])
         advancedOpts.set_title(0, 'Advanced options')
-        display(advancedOpts)        
+        if not self._silent:
+            display(advancedOpts)
         
         # Loading bar (useful to give user progress status for long executions)
         self._progressBar = widgets.IntProgress(
             value=0,
             min=0,
-            max=self._widgetDict['maxTime'].value,
+            max=self._widgetsExtraParams['maxTime'].value,
             step=1,
             description='Loading:',
             bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
             orientation='horizontal'
         )
-        display(self._progressBar)
+        if not self._silent:
+            display(self._progressBar)
     
     def _update_net_params(self):
         # oder of assignment is important (first, update the min and max, later, the value)
         ## @todo: the update of value happens two times (changing min-max and value) and therefore the calculatio are done two times
-        if (self._widgetDict['netType'].value == NetworkType.FULLY_CONNECTED):
-            self._widgetDict['netParam'].min = 0
-            self._widgetDict['netParam'].max = 1
-            self._widgetDict['netParam'].step = 1
-            self._widgetDict['netParam'].value = 0
-            self._widgetDict['netParam'].disabled = True
-            self._widgetDict['netParam'].description = "None"
-        elif (self._widgetDict['netType'].value == NetworkType.ERSOS_RENYI):
-            self._widgetDict['netParam'].disabled = False
-            self._widgetDict['netParam'].min = 0.1
-            self._widgetDict['netParam'].max = 1
-            self._widgetDict['netParam'].step = 0.1
-            self._widgetDict['netParam'].value = 0.5
-            self._widgetDict['netParam'].description = "Network connectivity parameter (link probability)"
-        elif (self._widgetDict['netType'].value == NetworkType.BARABASI_ALBERT):
-            self._widgetDict['netParam'].disabled = False
+        if (self._widgetsExtraParams['netType'].value == NetworkType.FULLY_CONNECTED):
+            self._widgetsExtraParams['netParam'].min = 0
+            self._widgetsExtraParams['netParam'].max = 1
+            self._widgetsExtraParams['netParam'].step = 1
+            self._widgetsExtraParams['netParam'].value = 0
+            self._widgetsExtraParams['netParam'].disabled = True
+            self._widgetsExtraParams['netParam'].description = "None"
+        elif (self._widgetsExtraParams['netType'].value == NetworkType.ERSOS_RENYI):
+            self._widgetsExtraParams['netParam'].disabled = False
+            self._widgetsExtraParams['netParam'].min = 0.1
+            self._widgetsExtraParams['netParam'].max = 1
+            self._widgetsExtraParams['netParam'].step = 0.1
+            self._widgetsExtraParams['netParam'].value = 0.5
+            self._widgetsExtraParams['netParam'].description = "Network connectivity parameter (link probability)"
+        elif (self._widgetsExtraParams['netType'].value == NetworkType.BARABASI_ALBERT):
+            self._widgetsExtraParams['netParam'].disabled = False
             maxVal = sum(self._view._initialState.values())-1
-            self._widgetDict['netParam'].min = 1
-            self._widgetDict['netParam'].max = maxVal
-            self._widgetDict['netParam'].step = 1
-            self._widgetDict['netParam'].value = min(maxVal, 3)
-            self._widgetDict['netParam'].description = "Network connectivity parameter (new edges)"            
-        elif (self._widgetDict['netType'].value == NetworkType.SPACE):
-            self._widgetDict['netParam'].value = -1
+            self._widgetsExtraParams['netParam'].min = 1
+            self._widgetsExtraParams['netParam'].max = maxVal
+            self._widgetsExtraParams['netParam'].step = 1
+            self._widgetsExtraParams['netParam'].value = min(maxVal, 3)
+            self._widgetsExtraParams['netParam'].description = "Network connectivity parameter (new edges)"            
+        elif (self._widgetsExtraParams['netType'].value == NetworkType.SPACE):
+            self._widgetsExtraParams['netParam'].value = -1
         
-        if (self._widgetDict['netType'].value == NetworkType.DYNAMIC):
-            self._widgetDict['netParam'].disabled = False
-            self._widgetDict['netParam'].min = 0.0
-            self._widgetDict['netParam'].max = 1
-            self._widgetDict['netParam'].step = 0.05
-            self._widgetDict['netParam'].value = 0.1
-            self._widgetDict['netParam'].description = "Interaction range"
-            self._widgetDict['particleSpeed'].disabled = False
-            self._widgetDict['motionCorrelatedness'].disabled = False
+        if (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC):
+            self._widgetsExtraParams['netParam'].disabled = False
+            self._widgetsExtraParams['netParam'].min = 0.0
+            self._widgetsExtraParams['netParam'].max = 1
+            self._widgetsExtraParams['netParam'].step = 0.05
+            self._widgetsExtraParams['netParam'].value = 0.1
+            self._widgetsExtraParams['netParam'].description = "Interaction range"
+            self._widgetsExtraParams['particleSpeed'].disabled = False
+            self._widgetsExtraParams['motionCorrelatedness'].disabled = False
             self._widgetsPlotOnly['showTrace'].disabled = False
             self._widgetsPlotOnly['showInteractions'].disabled = False
         else:
-            self._widgetDict['particleSpeed'].disabled = True
-            self._widgetDict['motionCorrelatedness'].disabled = True
+            self._widgetsExtraParams['particleSpeed'].disabled = True
+            self._widgetsExtraParams['motionCorrelatedness'].disabled = True
             self._widgetsPlotOnly['showTrace'].disabled = True
             self._widgetsPlotOnly['showInteractions'].disabled = True
-    
-    def _update_scaling_widget(self, scaling):
-        if (self._widgetDict['scaling'].value > scaling):
-            self._widgetDict['scaling'].value = scaling  
-        if (self._widgetDict['scaling'].max > scaling):
-            self._widgetDict['scaling'].max = scaling
-            self._widgetDict['scaling'].min = scaling/100
-            self._widgetDict['scaling'].step = scaling/100 
     
     def downloadTimeEvolution(self):
         return self._downloadFile(self._view._latestResults[0])
@@ -1414,9 +1414,12 @@ class MuMoTview:
             paramNames = []
             paramValues = []
             ## @todo: if the afphabetic order is not good, the view could store the desired order in (paramNames) when the controller is constructed
-            for name in sorted(self._controller._widgetDict.keys()):
+            for name in sorted(self._controller._widgetsFreeParams.keys()):
                 paramNames.append(name)
-                paramValues.append(self._controller._widgetDict[name].value)
+                paramValues.append(self._controller._widgetsFreeParams[name].value)
+            for name in sorted(self._controller._widgetsExtraParams.keys()):
+                paramNames.append(name)
+                paramValues.append(self._controller._widgetsExtraParams[name].value)
         else:
             paramNames = self._paramNames
             paramValues = self._paramValues
@@ -1459,7 +1462,7 @@ class MuMoTview:
 #                 print("ERROR! in multirun arguments. The specified controller does not have the attribute _initialState which is required for visualisationType 'evo'.")
 #                 return
             systemSize = sum(self._controller._view._initialState.values())
-            maxTime = self._controller._widgetDict['maxTime'].value
+            maxTime = self._controller._widgetsExtraParams['maxTime'].value
             plt.axis([0, maxTime, 0, systemSize])
             
             for evo in allEvos:
@@ -1537,9 +1540,6 @@ class MuMoTmultiController(MuMoTcontroller):
 
     def __init__(self, controllers, **kwargs):
         global figureCounter
-        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
-        rateStep = RATE_STEP ## @todo choose rate step sensibly                
 
         self._silent = kwargs.get('silent', False)
         self._replotFunctions = []
@@ -1547,12 +1547,15 @@ class MuMoTmultiController(MuMoTcontroller):
         paramValues = []
         paramValueDict = {}
         paramLabelDict = {}
+        #widgetsExtraParamsTmp = {} # cannot be the final dict already, because it will be erased when constructor is called
         views = []
         subPlotNum = 1
         for controller in controllers:
-            for name, value in controller._widgetDict.items():
-                paramValueDict[name] = value.value
+            for name, value in controller._widgetsFreeParams.items():
+                paramValueDict[name] = (value.value, value.min, value.max, value.step)
             paramLabelDict.update(controller._paramLabelDict)
+#             for name, value in controller._widgetsExtraParams.items():
+#                 widgetsExtraParamsTmp[name] = value
             if controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
                 for view in controller._view._views:
                     views.append(view)         
@@ -1573,7 +1576,7 @@ class MuMoTmultiController(MuMoTcontroller):
 
         for name, value in paramValueDict.items():
             paramNames.append(name)
-            paramValues.append((value, rateLimits[0], rateLimits[1], rateStep))
+            paramValues.append(value)
             
 #         for view in self._views:
 #             if view._controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
@@ -1584,6 +1587,39 @@ class MuMoTmultiController(MuMoTcontroller):
 #             view._controller = self
         
         super().__init__(paramValues, paramNames, paramLabelDict, False, **kwargs)
+        
+        addProgressBar = False
+        for controller in controllers:
+            for name, widget in controller._widgetsExtraParams.items():
+                self._widgetsExtraParams[name] = widget
+            for name, widget in controller._widgetsPlotOnly.items():
+                self._widgetsPlotOnly[name] = widget
+            if controller._progressBar:
+                addProgressBar = True
+        if self._widgetsExtraParams or self._widgetsPlotOnly:
+            if not self._silent:
+                advancedWidgets = []
+                for widget in self._widgetsExtraParams.values():
+                    advancedWidgets.append(widget)
+                for widget in self._widgetsPlotOnly.values():
+                    advancedWidgets.append(widget)
+                advancedPage = widgets.Box(children=advancedWidgets)
+                advancedOpts = widgets.Accordion(children=[advancedPage])
+                advancedOpts.set_title(0, 'Advanced options')
+                display(advancedOpts)
+        if addProgressBar:
+            # Loading bar (useful to give user progress status for long executions)
+            self._progressBar = widgets.IntProgress(
+                value=0,
+                min=0,
+                max=self._widgetsExtraParams['maxTime'].value,
+                #step=1,
+                description='Loading:',
+                bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
+                orientation='horizontal'
+            )
+            if not self._silent:
+                display(self._progressBar)
 
         self._view = MuMoTmultiView(self, views, subPlotNum - 1, **kwargs)
                 
@@ -1592,12 +1628,12 @@ class MuMoTmultiController(MuMoTcontroller):
 #             if controller._view == None: ## presume this controller is a multi controller (@todo check?)
 #                 controller._widgets = self._widgets
         
-        ## @todo possibly replace self._widgets with self._widgetDict? This is the only _widgets usage
+        ## @todo possibly replace self._widgets with self._widgetsFreeParams? This is the only _widgets usage
         for widget in self._widgets:
             widget.on_trait_change(self._view._plot, 'value')
 
-        silent = kwargs.get('silent', False)
-        if not(silent):
+        #silent = kwargs.get('silent', False)
+        if not self._silent:
             self._view._plot()
 
 
@@ -1659,7 +1695,7 @@ class MuMoTfieldView(MuMoTview):
         if self._controller != None:
             paramNames = []
             paramValues = []
-            for name, value in self._controller._widgetDict.items():
+            for name, value in self._controller._widgetsFreeParams.items():
                 paramNames.append(name)
                 paramValues.append(value.value)          
         else:
@@ -1691,7 +1727,7 @@ class MuMoTfieldView(MuMoTview):
         if self._controller != None:
             paramNames = []
             paramValues = []
-            for name, value in self._controller._widgetDict.items():
+            for name, value in self._controller._widgetsFreeParams.items():
                 paramNames.append(name)
                 paramValues.append(value.value)          
         else:
@@ -1732,7 +1768,7 @@ class MuMoTfieldView(MuMoTview):
         if self._controller != None:
             paramNames = []
             paramValues = []
-            for name, value in self._controller._widgetDict.items():
+            for name, value in self._controller._widgetsFreeParams.items():
                 # throw away formatting for constant reactants
 #                 name = name.replace('(','')
 #                 name = name.replace(')','')
@@ -2236,7 +2272,7 @@ class MuMoTbifurcationView(MuMoTview):
         self._logs.append(log)
 
     def _replot_bifurcation(self):
-        for name, value in self._controller._widgetDict.items():
+        for name, value in self._controller._widgetsFreeParams.items():
             self._pyDSmodel.pars[name] = value.value
  
         self._pyDScont.plot.clearall()
@@ -2373,22 +2409,22 @@ class MuMoTmultiagentView(MuMoTview):
             ## @todo moving it to general method?
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
-                self._ratesDict[str(rule.rate)] = self._controller._widgetDict[str(rule.rate)].value
+                self._ratesDict[str(rule.rate)] = self._controller._widgetsFreeParams[str(rule.rate)].value
             # getting other parameters specific to M-A view
             for state in self._initialState.keys():
-                self._initialState[state] = self._controller._widgetDict['init'+str(state)].value
+                self._initialState[state] = self._controller._widgetsExtraParams['init'+str(state)].value
             #numNodes = sum(self._initialState.values())
-            self._randomSeed = self._controller._widgetDict['randomSeed'].value
+            self._randomSeed = self._controller._widgetsExtraParams['randomSeed'].value
             self._visualisationType = self._controller._widgetsPlotOnly['visualisationType'].value
-            self._maxTime = self._controller._widgetDict['maxTime'].value
-            self._netType = self._controller._widgetDict['netType'].value
-            self._netParam = self._controller._widgetDict['netParam'].value
-            self._motionCorrelatedness = self._controller._widgetDict['motionCorrelatedness'].value
-            self._particleSpeed = self._controller._widgetDict['particleSpeed'].value
-            self._scaling = self._controller._widgetDict['scaling'].value
+            self._maxTime = self._controller._widgetsExtraParams['maxTime'].value
+            self._netType = self._controller._widgetsExtraParams['netType'].value
+            self._netParam = self._controller._widgetsExtraParams['netParam'].value
+            self._motionCorrelatedness = self._controller._widgetsExtraParams['motionCorrelatedness'].value
+            self._particleSpeed = self._controller._widgetsExtraParams['particleSpeed'].value
+            self._scaling = self._controller._widgetsExtraParams['scaling'].value
             self._showTrace = self._controller._widgetsPlotOnly['showTrace'].value
             self._showInteractions = self._controller._widgetsPlotOnly['showInteractions'].value
-            self._realtimePlot = self._controller._widgetDict['realtimePlot'].value
+            self._realtimePlot = self._controller._widgetsExtraParams['realtimePlot'].value
 
     
     def _plot_timeEvolution(self):
@@ -2417,25 +2453,7 @@ class MuMoTmultiagentView(MuMoTview):
             if not self._realtimePlot:
                 self._updateMultiagentFigure(0, self._latestResults[0], positionHistory=self._latestResults[1], pos_layout=self._latestResults[2])
             
-        self._logs.append(log)
-    
-    def _initFigure(self):
-        if not self._silent:
-            plt.figure(self._figureNum)
-            plt.clf()
-
-            if (self._visualisationType == 'evo'):
-                plt.axes().set_aspect('auto')
-                # create the frame
-                totAgents = sum(self._initialState.values())
-#                     self._plot.axis([0, self._maxTime, 0, totAgents])
-                plt.xlim((0, self._maxTime))
-                plt.ylim((0, totAgents))
-                #self._figure.show()
-                _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
-            elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
-                plt.axes().set_aspect('equal')
-        
+        self._logs.append(log)      
     
     def _redrawOnly(self):
         self._update_params()
@@ -2493,6 +2511,28 @@ class MuMoTmultiagentView(MuMoTview):
         if self._controller != None: self._controller._progressBar.description = "Completed 100%:"
 #         print("State distribution each timestep: " + str(historyState))
         return (evo, positionHistory, pos_layout)
+        
+    def _initFigure(self):
+        if not self._silent:
+            plt.figure(self._figureNum)
+            plt.clf()
+
+        if (self._visualisationType == 'evo'):
+            plt.axes().set_aspect('auto')
+            # create the frame
+            totAgents = sum(self._initialState.values())
+#                     self._plot.axis([0, self._maxTime, 0, totAgents])
+            plt.xlim((0, self._maxTime))
+            plt.ylim((0, totAgents))
+            #self._figure.show()
+            if not self._silent: _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
+        elif self._visualisationType == "graph": #and self._netType == NetworkType.DYNAMIC:
+            plt.axes().set_aspect('equal')
+        elif (self._visualisationType == "final"):
+#             plt.axes().set_aspect('equal') #for piechart
+            plt.axes().set_aspect('auto') # for barchart
+            plt.ylim((0, sum(self._initialState.values())))
+    
     
     def _updateMultiagentFigure(self, i, evo, positionHistory, pos_layout):
         if (self._visualisationType == "evo"):
@@ -2507,6 +2547,7 @@ class MuMoTmultiagentView(MuMoTview):
 #                     xdata.append( [i-1,i] )
 #                     pop = evo[state]
 #                     ydata.append( pop[len(pop)-2:len(pop)] )
+                    #plt.plot(evo[state], color=self._colors[state])
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False)
             else: # otherwise, plot all time-evolution
                 xdata = []
@@ -2517,14 +2558,17 @@ class MuMoTmultiagentView(MuMoTview):
                     ydata.append(evo[state])
                     labels.append(state)
                 #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
+                    #plt.plot(evo[state], color=self._colors[state])
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False)
 
         elif (self._visualisationType == "graph"):
-            plt.clf()
+            self._initFigure()
+            #plt.clf()
+            #plt.axes().set_aspect('equal')
             if self._netType == NetworkType.DYNAMIC:
                 plt.xlim((0, 1))
                 plt.ylim((0, 1))
-                plt.axes().set_aspect('equal')
+                #plt.axes().set_aspect('equal')
 #                     xs = [p[0] for p in positions]
 #                     ys = [p[1] for p in positions]
 #                     plt.plot(xs, ys, 'o' )
@@ -2557,6 +2601,24 @@ class MuMoTmultiagentView(MuMoTview):
                 # plot legend
                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='', markersize=15) for color in self._colors.values()]
                 plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0., numpoints=1)
+        elif (self._visualisationType == "final"):
+            self._initFigure()
+            
+            finaldata = []
+            labels = []
+            colors = []
+            for state in sorted(self._initialState.keys(), key=str):
+                finaldata.append( evo[state][len(evo[state])-1] )
+                labels.append(state)
+                colors.append(self._colors[state])
+             
+#             plt.pie(finaldata, labels=labels, autopct=_make_autopct(piedata), colors=colors) #shadow=True, startangle=90,
+            xpos = np.arange(len( self._initialState.keys() ))  # the x locations for the bars
+            width = 1       # the width of the bars
+            plt.bar(xpos, finaldata, width, color=colors) #, yerr=stdev)
+            plt.axes().set_xticks(xpos + width / 2)
+            plt.axes().set_xticklabels(sorted(self._initialState.keys(), key=str))
+
         # update the figure
         if not self._silent:
             self._figure.canvas.draw()
@@ -2685,9 +2747,17 @@ class MuMoTmultiagentView(MuMoTview):
         #self._scaling = 1/maxRatesAll
         if maxRatesAll>0: self._scaling = 1/maxRatesAll 
         else: self._scaling = 1
-        if self._controller != None: self._controller._update_scaling_widget(self._scaling)
+        if self._controller != None: self._update_scaling_widget(self._scaling)
         print("Scaling factor s=" + str(self._scaling))
-        
+    
+    def _update_scaling_widget(self, scaling):
+        if (self._controller._widgetsExtraParams['scaling'].value > scaling):
+            self._controller._widgetsExtraParams['scaling'].value = scaling  
+        if (self._controller._widgetsExtraParams['scaling'].max > scaling):
+            self._controller._widgetsExtraParams['scaling'].max = scaling
+            self._controller._widgetsExtraParams['scaling'].min = scaling/100
+            self._controller._widgetsExtraParams['scaling'].step = scaling/100 
+    
     def _applyScalingFactor(self):
         # Multiply all rates by the scaling factor
         for probSets in self._probabilities.values():
@@ -2854,7 +2924,7 @@ class MuMoTSSAView(MuMoTview):
     _latestResults = None
 
     def __init__(self, model, controller, ssaParams, figure = None, rates = None, **kwargs):
-        super().__init__(model, controller, figure=figure, params=rates)
+        super().__init__(model, controller, figure=figure, params=rates, **kwargs)
 
         with io.capture_output() as log:
 #         if True:
@@ -2870,13 +2940,7 @@ class MuMoTSSAView(MuMoTview):
                 # create the self._ratesDict 
                 for rule in self._mumotModel._rules:
                     self._ratesDict[str(rule.rate)] = rates_input_dict[str(rule.rate)] 
-            
-            colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
-            self._colors = {}
-            i = 0
-            for state in self._mumotModel._reactants:
-                self._colors[state] = colors[i] 
-                i += 1
+                     
                 
             self._initialState = {}
             for state,pop in ssaParams["initialState"].items():
@@ -2886,6 +2950,14 @@ class MuMoTSSAView(MuMoTview):
             self._randomSeed = ssaParams["randomSeed"]
             self._visualisationType = ssaParams["visualisationType"]
             self._realtimePlot = ssaParams.get('realtimePlot', False)
+            
+            # map colouts to each reactant
+            #colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
+            self._colors = {}
+            i = 0
+            for state in sorted(self._initialState.keys(), key=str): #sorted(self._mumotModel._reactants, key=str):
+                self._colors[state] = line_color_list[i] 
+                i += 1 
         
         self._logs.append(log)
         self._plot_timeEvolution()
@@ -2896,14 +2968,14 @@ class MuMoTSSAView(MuMoTview):
             ## @todo moving it to general method?
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
-                self._ratesDict[str(rule.rate)] = self._controller._widgetDict[str(rule.rate)].value
+                self._ratesDict[str(rule.rate)] = self._controller._widgetsFreeParams[str(rule.rate)].value
             # getting other parameters specific to SSA
             for state in self._initialState.keys():
-                self._initialState[state] = self._controller._widgetDict['init'+str(state)].value
-            self._randomSeed = self._controller._widgetDict['randomSeed'].value
+                self._initialState[state] = self._controller._widgetsExtraParams['init'+str(state)].value
+            self._randomSeed = self._controller._widgetsExtraParams['randomSeed'].value
             self._visualisationType = self._controller._widgetsPlotOnly['visualisationType'].value
-            self._maxTime = self._controller._widgetDict['maxTime'].value
-            self._realtimePlot = self._controller._widgetDict['realtimePlot'].value
+            self._maxTime = self._controller._widgetsExtraParams['maxTime'].value
+            self._realtimePlot = self._controller._widgetsExtraParams['realtimePlot'].value
     
     def _print_standalone_view_cmd(self):
         ssaParams = {}
@@ -2916,29 +2988,9 @@ class MuMoTSSAView(MuMoTview):
         ssaParams["visualisationType"] = self._visualisationType
         print( "mmt.MuMoTSSAView(model1, None, ssaParams = " + str(ssaParams) + ", rates = " + str( list(self._ratesDict.items()) ) + " )")
     
-    def initFigure(self):
-        if not self._silent:
-            # Clearing the plot
-            plt.figure(self._figureNum)
-            plt.clf()
-
-            # Setting the axes
-            if (self._visualisationType == 'evo'):
-                plt.axes().set_aspect('auto')
-                # create the frame
-                totAgents = sum(self._initialState.values())
-#                     self._plot.axis([0, self._maxTime, 0, totAgents])
-                plt.xlim((0, self._maxTime))
-                plt.ylim((0, totAgents))
-#                 # make legend
-#                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
-#                 self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
-                _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
-                #self._figure.show()
-    
     def _redrawOnly(self):
         self._update_params()
-        self.initFigure()
+        self._initFigure()
         self._updateSSAFigure(self._latestResults, fullPlot=True)
     
     def _plot_timeEvolution(self):
@@ -2954,7 +3006,7 @@ class MuMoTSSAView(MuMoTview):
             self._createSSAmatrix(self._mumotModel._reactants, self._mumotModel._rules)
             
             # Clearing the plot and setting the axes
-            self.initFigure()
+            self._initFigure()
            
             self._latestResults = self._runSSA(self._initialState, self._maxTime)
             
@@ -3008,6 +3060,30 @@ class MuMoTSSAView(MuMoTview):
 #         print("Temporal evolution per state: " + str(evo))
         return evo
     
+    def _initFigure(self):
+        if not self._silent:
+            # Clearing the plot
+            plt.figure(self._figureNum)
+            plt.clf()
+
+        # Setting the axes
+        if (self._visualisationType == 'evo'):
+            plt.axes().set_aspect('auto')
+            # create the frame
+            totAgents = sum(self._initialState.values())
+#                     self._plot.axis([0, self._maxTime, 0, totAgents])
+            plt.xlim((0, self._maxTime))
+            plt.ylim((0, totAgents))
+#                 # make legend
+#                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
+#                 self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
+            if not self._silent: _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
+            #self._figure.show()
+        elif (self._visualisationType == "final"):
+#             plt.axes().set_aspect('equal') #for piechart
+            plt.axes().set_aspect('auto') # for barchart
+            plt.ylim((0, sum(self._initialState.values())))
+    
     def _updateSSAFigure(self, evo, fullPlot=True):
         if (self._visualisationType == "evo"):
             if not fullPlot and len(evo['time']) <= 2: # if incremental plot is requested, but it's the first item, we operate as fullPlot (to allow legend)
@@ -3023,8 +3099,8 @@ class MuMoTSSAView(MuMoTview):
                     ydata.append(evo[state])
                     labels.append(state)
                 #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
+                    #plt.plot(evo['time'], evo[state], color=self._colors[state]) #label=state,
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False)
-#                 plt.plot(evo['time'], pop, color=self._colors[state]) #label=state,
             else: # If realtime-plot mode, draw only the last timestep rather than overlay all
                 xdata = []
                 ydata = []
@@ -3039,7 +3115,24 @@ class MuMoTSSAView(MuMoTview):
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False)
 #                 plt.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
         elif (self._visualisationType == "final"):
-            print("TODO: Missing final distribution visualisation.")
+            self._initFigure()
+
+            finaldata = []
+            labels = []
+            colors = []
+            for state in sorted(self._initialState.keys(), key=str):
+                if (state == 'time'): continue
+                finaldata.append( evo[state][len(evo[state])-1] )
+                labels.append(state)
+                colors.append(self._colors[state])
+#             
+#             plt.pie(finaldata, labels=labels, autopct=_make_autopct(piedata), colors=colors) #shadow=True, startangle=90,
+            xpos = np.arange(len( self._initialState.keys() ))  # the x locations for the bars
+            width = 1       # the width of the bars
+            
+            plt.bar(xpos, finaldata, width, color=colors) #, yerr=stdev)
+            plt.axes().set_xticks(xpos + width / 2)
+            plt.axes().set_xticklabels(sorted(self._initialState.keys(), key=str))
         
         # update the figure
         if not self._silent:
@@ -4403,7 +4496,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
         
     plt.tight_layout(pad=4)
  
-         
+
 ## Function for formatting 2D plots. 
 #
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
@@ -4719,3 +4812,9 @@ def _encodeNetworkTypeToString(netType):
         print("ERROR! Invalid netTypeEncoding table! Tryed to encode network type: " + str(netType) )
     return netTypeEncoding.get(netType, 'none')
 
+def _make_autopct(values):
+    def my_autopct(pct):
+        total = sum(values)
+        val = int(round(pct*total/100.0))
+        return '{p:.2f}%  ({v:d})'.format(p=pct,v=val)
+    return my_autopct
