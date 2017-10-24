@@ -2385,25 +2385,7 @@ class MuMoTmultiagentView(MuMoTview):
             if not self._realtimePlot:
                 self._updateMultiagentFigure(0, self._latestResults[0], positionHistory=self._latestResults[1], pos_layout=self._latestResults[2])
             
-        self._logs.append(log)
-    
-    def _initFigure(self):
-        if not self._silent:
-            plt.figure(self._figureNum)
-            plt.clf()
-
-            if (self._visualisationType == 'evo'):
-                plt.axes().set_aspect('auto')
-                # create the frame
-                totAgents = sum(self._initialState.values())
-#                     self._plot.axis([0, self._maxTime, 0, totAgents])
-                plt.xlim((0, self._maxTime))
-                plt.ylim((0, totAgents))
-                #self._figure.show()
-                _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
-            elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
-                plt.axes().set_aspect('equal')
-        
+        self._logs.append(log)      
     
     def _redrawOnly(self):
         self._update_params()
@@ -2461,6 +2443,29 @@ class MuMoTmultiagentView(MuMoTview):
         if self._controller != None: self._controller._progressBar.description = "Completed 100%:"
 #         print("State distribution each timestep: " + str(historyState))
         return (evo, positionHistory, pos_layout)
+        
+    def _initFigure(self):
+        if not self._silent:
+            plt.figure(self._figureNum)
+            plt.clf()
+
+            if (self._visualisationType == 'evo'):
+                plt.axes().set_aspect('auto')
+                # create the frame
+                totAgents = sum(self._initialState.values())
+#                     self._plot.axis([0, self._maxTime, 0, totAgents])
+                plt.xlim((0, self._maxTime))
+                plt.ylim((0, totAgents))
+                #self._figure.show()
+                _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
+            elif self._visualisationType == "graph": #and self._netType == NetworkType.DYNAMIC:
+                plt.axes().set_aspect('equal')
+            elif (self._visualisationType == "final"):
+                plt.clf()
+#             plt.axes().set_aspect('equal') #for piechart
+                plt.axes().set_aspect('auto') # for barchart
+                plt.ylim((0, sum(self._initialState.values())))
+    
     
     def _updateMultiagentFigure(self, i, evo, positionHistory, pos_layout):
         if (self._visualisationType == "evo"):
@@ -2488,11 +2493,13 @@ class MuMoTmultiagentView(MuMoTview):
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False)
 
         elif (self._visualisationType == "graph"):
-            plt.clf()
+            self._initFigure()
+            #plt.clf()
+            #plt.axes().set_aspect('equal')
             if self._netType == NetworkType.DYNAMIC:
                 plt.xlim((0, 1))
                 plt.ylim((0, 1))
-                plt.axes().set_aspect('equal')
+                #plt.axes().set_aspect('equal')
 #                     xs = [p[0] for p in positions]
 #                     ys = [p[1] for p in positions]
 #                     plt.plot(xs, ys, 'o' )
@@ -2525,6 +2532,24 @@ class MuMoTmultiagentView(MuMoTview):
                 # plot legend
                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='', markersize=15) for color in self._colors.values()]
                 plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0., numpoints=1)
+        elif (self._visualisationType == "final"):
+            self._initFigure()
+            
+            finaldata = []
+            labels = []
+            colors = []
+            for state in sorted(self._initialState.keys(), key=str):
+                finaldata.append( evo[state][len(evo[state])-1] )
+                labels.append(state)
+                colors.append(self._colors[state])
+             
+#             plt.pie(finaldata, labels=labels, autopct=_make_autopct(piedata), colors=colors) #shadow=True, startangle=90,
+            xpos = np.arange(len( self._initialState.keys() ))  # the x locations for the bars
+            width = 1       # the width of the bars
+            plt.bar(xpos, finaldata, width, color=colors) #, yerr=stdev)
+            plt.axes().set_xticks(xpos + width / 2)
+            plt.axes().set_xticklabels(sorted(self._initialState.keys(), key=str))
+
         # update the figure
         if not self._silent:
             self._figure.canvas.draw()
@@ -2838,13 +2863,7 @@ class MuMoTSSAView(MuMoTview):
                 # create the self._ratesDict 
                 for rule in self._mumotModel._rules:
                     self._ratesDict[str(rule.rate)] = rates_input_dict[str(rule.rate)] 
-            
-            colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
-            self._colors = {}
-            i = 0
-            for state in self._mumotModel._reactants:
-                self._colors[state] = colors[i] 
-                i += 1
+                     
                 
             self._initialState = {}
             for state,pop in ssaParams["initialState"].items():
@@ -2854,6 +2873,14 @@ class MuMoTSSAView(MuMoTview):
             self._randomSeed = ssaParams["randomSeed"]
             self._visualisationType = ssaParams["visualisationType"]
             self._realtimePlot = ssaParams.get('realtimePlot', False)
+            
+            # map colouts to each reactant
+            #colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
+            self._colors = {}
+            i = 0
+            for state in sorted(self._initialState.keys(), key=str): #sorted(self._mumotModel._reactants, key=str):
+                self._colors[state] = line_color_list[i] 
+                i += 1 
         
         self._logs.append(log)
         self._plot_timeEvolution()
@@ -2884,29 +2911,9 @@ class MuMoTSSAView(MuMoTview):
         ssaParams["visualisationType"] = self._visualisationType
         print( "mmt.MuMoTSSAView(model1, None, ssaParams = " + str(ssaParams) + ", rates = " + str( list(self._ratesDict.items()) ) + " )")
     
-    def initFigure(self):
-        if not self._silent:
-            # Clearing the plot
-            plt.figure(self._figureNum)
-            plt.clf()
-
-            # Setting the axes
-            if (self._visualisationType == 'evo'):
-                plt.axes().set_aspect('auto')
-                # create the frame
-                totAgents = sum(self._initialState.values())
-#                     self._plot.axis([0, self._maxTime, 0, totAgents])
-                plt.xlim((0, self._maxTime))
-                plt.ylim((0, totAgents))
-#                 # make legend
-#                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
-#                 self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
-                _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
-                #self._figure.show()
-    
     def _redrawOnly(self):
         self._update_params()
-        self.initFigure()
+        self._initFigure()
         self._updateSSAFigure(self._latestResults, fullPlot=True)
     
     def _plot_timeEvolution(self):
@@ -2922,7 +2929,7 @@ class MuMoTSSAView(MuMoTview):
             self._createSSAmatrix(self._mumotModel._reactants, self._mumotModel._rules)
             
             # Clearing the plot and setting the axes
-            self.initFigure()
+            self._initFigure()
            
             self._latestResults = self._runSSA(self._initialState, self._maxTime)
             
@@ -2976,6 +2983,31 @@ class MuMoTSSAView(MuMoTview):
 #         print("Temporal evolution per state: " + str(evo))
         return evo
     
+    def _initFigure(self):
+        if not self._silent:
+            # Clearing the plot
+            plt.figure(self._figureNum)
+            plt.clf()
+
+            # Setting the axes
+            if (self._visualisationType == 'evo'):
+                plt.axes().set_aspect('auto')
+                # create the frame
+                totAgents = sum(self._initialState.values())
+#                     self._plot.axis([0, self._maxTime, 0, totAgents])
+                plt.xlim((0, self._maxTime))
+                plt.ylim((0, totAgents))
+#                 # make legend
+#                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
+#                 self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
+                _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
+                #self._figure.show()
+            elif (self._visualisationType == "final"):
+                plt.clf()
+#             plt.axes().set_aspect('equal') #for piechart
+                plt.axes().set_aspect('auto') # for barchart
+                plt.ylim((0, sum(self._initialState.values())))
+    
     def _updateSSAFigure(self, evo, fullPlot=True):
         if (self._visualisationType == "evo"):
             if not fullPlot and len(evo['time']) <= 2: # if incremental plot is requested, but it's the first item, we operate as fullPlot (to allow legend)
@@ -3007,7 +3039,24 @@ class MuMoTSSAView(MuMoTview):
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False)
 #                 plt.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
         elif (self._visualisationType == "final"):
-            print("TODO: Missing final distribution visualisation.")
+            self._initFigure()
+
+            finaldata = []
+            labels = []
+            colors = []
+            for state in sorted(self._initialState.keys(), key=str):
+                if (state == 'time'): continue
+                finaldata.append( evo[state][len(evo[state])-1] )
+                labels.append(state)
+                colors.append(self._colors[state])
+#             
+#             plt.pie(finaldata, labels=labels, autopct=_make_autopct(piedata), colors=colors) #shadow=True, startangle=90,
+            xpos = np.arange(len( self._initialState.keys() ))  # the x locations for the bars
+            width = 1       # the width of the bars
+            
+            plt.bar(xpos, finaldata, width, color=colors) #, yerr=stdev)
+            plt.axes().set_xticks(xpos + width / 2)
+            plt.axes().set_xticklabels(sorted(self._initialState.keys(), key=str))
         
         # update the figure
         if not self._silent:
@@ -4684,3 +4733,9 @@ def _encodeNetworkTypeToString(netType):
         print("ERROR! Invalid netTypeEncoding table! Tryed to encode network type: " + str(netType) )
     return netTypeEncoding.get(netType, 'none')
 
+def _make_autopct(values):
+    def my_autopct(pct):
+        total = sum(values)
+        val = int(round(pct*total/100.0))
+        return '{p:.2f}%  ({v:d})'.format(p=pct,v=val)
+    return my_autopct
