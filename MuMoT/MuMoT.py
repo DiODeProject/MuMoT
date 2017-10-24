@@ -583,19 +583,19 @@ class MuMoTmodel:
             initialState = {}
             for reactant in self._reactants:
                 if first:
-                    print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
+#                     print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
                     initialState[reactant] = MuMoTdefault._agents
                     first = False
                 else:
                     initialState[reactant] = 0
         else:
             ## @todo check if the Initial State has valid length and positive values
-            print("TODO: check if the Initial State has valid length and positive values")
+#             print("TODO: check if the Initial State has valid length and positive values")
             initialState_str = ast.literal_eval(initialState) # translate string into dict
             initialState = {}
             for state,pop in initialState_str.items():
                 initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-        print("Initial State is " + str(initialState) )
+#         print("Initial State is " + str(initialState) )
         ssaParams['initialState'] = initialState
         
         if (maxTime == "Auto" or maxTime <= 0):
@@ -604,7 +604,7 @@ class MuMoTmodel:
         ssaParams["maxTime"] = (maxTime, MuMoTdefault._timeLimits[0], timeLimitMax, MuMoTdefault._timeStep)
         if (randomSeed == "Auto" or randomSeed <= 0 or randomSeed > MAX_RANDOM_SEED):
             randomSeed = np.random.randint(MAX_RANDOM_SEED)
-            print("Automatic Random Seed set to " + str(randomSeed) )
+#             print("Automatic Random Seed set to " + str(randomSeed) )
         ssaParams['randomSeed'] = randomSeed
         ssaParams['visualisationType'] = 'evo'
         ssaParams['realtimePlot'] = kwargs.get('realtimePlot', False)
@@ -626,7 +626,7 @@ class MuMoTmodel:
         #modelView._plot_timeEvolution()
         
 #         viewController._setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
-        viewController._setReplotFunction(modelView._plot_timeEvolution)
+        viewController._setReplotFunction(modelView._plot_timeEvolution, modelView._redrawOnly)
         
         return viewController
 
@@ -1070,7 +1070,7 @@ class MuMoTSSAController(MuMoTcontroller):
             tooltips=['Population change over time', 'Population distribution in each state at final timestep'],
         #     icons=['check'] * 3
         )
-        self._widgetDict['visualisationType'] = plotToggle
+        self._widgetsPlotOnly['visualisationType'] = plotToggle
         self._widgets.append(plotToggle)
         advancedWidgets.append(plotToggle)
         
@@ -2379,22 +2379,8 @@ class MuMoTmultiagentView(MuMoTview):
             
             self._convertRatesIntoProbabilities(self._mumotModel._reactants, self._mumotModel._rules)
 
-            # Clearing the plot
-            if not self._silent:
-                plt.figure(self._figureNum)
-                plt.clf()
-
-                if (self._visualisationType == 'evo'):
-                    plt.axes().set_aspect('auto')
-                    # create the frame
-                    totAgents = sum(self._initialState.values())
-#                     self._plot.axis([0, self._maxTime, 0, totAgents])
-                    plt.xlim((0, self._maxTime))
-                    plt.ylim((0, totAgents))
-                    #self._figure.show()
-                    _fig_formatting_2D(self._figure, xlab="time", ylab="pop", curve_replot=True)
-                elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
-                    plt.axes().set_aspect('equal')
+            # Clearing the plot and setting the axes
+            self._initFigure()
             
             self._latestResults = self._runMultiagent()
             print("Temporal evolution per state: " + str(self._latestResults[0]))
@@ -2405,26 +2391,27 @@ class MuMoTmultiagentView(MuMoTview):
             
         self._logs.append(log)
     
-    def _redrawOnly(self):
-        self._update_params()
+    def _initFigure(self):
         if not self._silent:
             plt.figure(self._figureNum)
             plt.clf()
-            #self._plot = self._figure.add_subplot(111)
-            #self._plot.clear()
- 
+
             if (self._visualisationType == 'evo'):
                 plt.axes().set_aspect('auto')
                 # create the frame
                 totAgents = sum(self._initialState.values())
-#                 self._plot.axis([0, self._maxTime, 0, totAgents])
+#                     self._plot.axis([0, self._maxTime, 0, totAgents])
                 plt.xlim((0, self._maxTime))
                 plt.ylim((0, totAgents))
-#                 self._figure.show()
-                _fig_formatting_2D(self._figure, xlab="time", ylab="pop", curve_replot=True)
+                #self._figure.show()
+                _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
             elif self._netType == NetworkType.DYNAMIC and self._visualisationType == "graph":
                 plt.axes().set_aspect('equal')
-                      
+        
+    
+    def _redrawOnly(self):
+        self._update_params()
+        self._initFigure()
         self._updateMultiagentFigure(0, self._latestResults[0], positionHistory=self._latestResults[1], pos_layout=self._latestResults[2])
         
     def _runMultiagent(self):
@@ -2542,7 +2529,7 @@ class MuMoTmultiagentView(MuMoTview):
                 # plot legend
                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='', markersize=15) for color in self._colors.values()]
                 plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0., numpoints=1)
-        # dinamically update the plot each timestep
+        # update the figure
         if not self._silent:
             self._figure.canvas.draw()
     
@@ -2835,6 +2822,8 @@ class MuMoTSSAView(MuMoTview):
     _visualisationType = None
     ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
     _realtimePlot = None
+    ## latest computed results
+    _latestResults = None
 
     def __init__(self, model, controller, ssaParams, figure = None, rates = None, **kwargs):
         super().__init__(model, controller, figure=figure, params=rates)
@@ -2884,7 +2873,7 @@ class MuMoTSSAView(MuMoTview):
             for state in self._initialState.keys():
                 self._initialState[state] = self._controller._widgetDict['init'+str(state)].value
             self._randomSeed = self._controller._widgetDict['randomSeed'].value
-            self._visualisationType = self._controller._widgetDict['visualisationType'].value
+            self._visualisationType = self._controller._widgetsPlotOnly['visualisationType'].value
             self._maxTime = self._controller._widgetDict['maxTime'].value
             self._realtimePlot = self._controller._widgetDict['realtimePlot'].value
     
@@ -2899,6 +2888,31 @@ class MuMoTSSAView(MuMoTview):
         ssaParams["visualisationType"] = self._visualisationType
         print( "mmt.MuMoTSSAView(model1, None, ssaParams = " + str(ssaParams) + ", rates = " + str( list(self._ratesDict.items()) ) + " )")
     
+    def initFigure(self):
+        if not self._silent:
+            # Clearing the plot
+            plt.figure(self._figureNum)
+            plt.clf()
+
+            # Setting the axes
+            if (self._visualisationType == 'evo'):
+                plt.axes().set_aspect('auto')
+                # create the frame
+                totAgents = sum(self._initialState.values())
+#                     self._plot.axis([0, self._maxTime, 0, totAgents])
+                plt.xlim((0, self._maxTime))
+                plt.ylim((0, totAgents))
+#                 # make legend
+#                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
+#                 self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
+                _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
+                #self._figure.show()
+    
+    def _redrawOnly(self):
+        self._update_params()
+        self.initFigure()
+        self._updateSSAFigure(self._latestResults, fullPlot=True)
+    
     def _plot_timeEvolution(self):
         with io.capture_output() as log:
             self._update_params()
@@ -2911,28 +2925,20 @@ class MuMoTSSAView(MuMoTview):
             # organise rates and reactants into strunctures to run the SSA
             self._createSSAmatrix(self._mumotModel._reactants, self._mumotModel._rules)
             
-            # Clearing the plot
-            if not self._silent:
-                self._plot = self._figure.add_subplot(111)
-                self._plot.clear()
-                # Creating main figure frame
-                if (self._visualisationType == 'evo'):
-                    totAgents = sum(self._initialState.values())
-                    self._plot.axis([0, self._maxTime, 0, totAgents])
-                    self._figure.show()
-                    # make legend
-                    markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
-                    self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
-                    # show canvas
-                    self._figure.canvas.draw()
+            # Clearing the plot and setting the axes
+            self.initFigure()
            
-            logs = self._runSSA(self._initialState, self._maxTime)
+            self._latestResults = self._runSSA(self._initialState, self._maxTime)
+            
+            ## Final Plot
+            if not self._realtimePlot:
+                self._updateSSAFigure(self._latestResults, fullPlot=True)
            
         self._logs.append(log)
         
     def _runSSA(self, initialState, maxTime): 
         # Create logging structs
-        historyState = []
+#         historyState = []
         evo = {}
         evo['time'] = [0]
         for state,pop in initialState.items():
@@ -2946,7 +2952,7 @@ class MuMoTSSAView(MuMoTview):
         currentState = []
         for reactant in sorted(self._mumotModel._reactants, key=str):
             currentState.append(initialState[reactant])
-        historyState.append( [t] + currentState )
+#         historyState.append( [t] + currentState )
  
         while t < maxTime:
             # update progress bar
@@ -2959,40 +2965,55 @@ class MuMoTSSAView(MuMoTview):
             t += timeInterval
              
             # log step
-            historyState.append( [t] + currentState )
+#             historyState.append( [t] + currentState )
             for state,pop in zip(sorted(self._mumotModel._reactants, key=str), currentState):
                 evo[state].append(pop)
             evo['time'].append(t)
              
-            ## Plotting
+            ## Plotting each timestep
             if self._realtimePlot:
-                self._updateSSAFigure(evo)
-        
-        ## Final Plot
-        if not self._realtimePlot:
-            self._updateSSAFigure(evo)
+                self._updateSSAFigure(evo, fullPlot=False)
          
         if self._controller != None: self._controller._progressBar.value = self._controller._progressBar.max
         if self._controller != None: self._controller._progressBar.description = "Completed 100%:"
-        print("State distribution each timestep: " + str(historyState))
-        print("Temporal evolution per state: " + str(evo))
-        return (historyState,evo)
+#         print("State distribution each timestep: " + str(historyState))
+#         print("Temporal evolution per state: " + str(evo))
+        return evo
     
-    def _updateSSAFigure(self, evo):
+    def _updateSSAFigure(self, evo, fullPlot=True):
         if (self._visualisationType == "evo"):
-            for state,pop in evo.items():
-                if (state == 'time'): continue
-                if self._realtimePlot:
-                    # If realtime-plot mode, draw only the last timestep rather than overlay all
-                    self._plot.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
-                else:
-                    # otherwise, plot all time-evolution
-                    #self._plot.plot(evo['time'], pop, color=self._colors[state]) #label=state,
-                    plt.plot(evo['time'], pop, color=self._colors[state]) #label=state,
-                
+            if not fullPlot and len(evo['time']) <= 2: # if incremental plot is requested, but it's the first item, we operate as fullPlot (to allow legend)
+                fullPlot = True
+            # (if fullPlot) plot all time-evolution
+            if fullPlot:
+                xdata = []
+                ydata = []
+                labels = []
+                for state in sorted(self._initialState.keys(), key=str):
+                    if (state == 'time'): continue
+                    xdata.append( evo['time'] )
+                    ydata.append(evo[state])
+                    labels.append(state)
+                #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False)
+#                 plt.plot(evo['time'], pop, color=self._colors[state]) #label=state,
+            else: # If realtime-plot mode, draw only the last timestep rather than overlay all
+                xdata = []
+                ydata = []
+                for state in sorted(self._initialState.keys(), key=str):
+                    if (state == 'time'): continue
+                    xdata.append( evo['time'] )
+                    ydata.append( evo[state] )
+                    ## @todo replot only the last part (rather than all the line)
+#                     xdata.append( [i-1,i] )
+#                     pop = evo[state]
+#                     ydata.append( pop[len(pop)-2:len(pop)] )
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False)
+#                 plt.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
         elif (self._visualisationType == "final"):
             print("TODO: Missing final distribution visualisation.")
-
+        
+        # update the figure
         if not self._silent:
             self._figure.canvas.draw()
     
