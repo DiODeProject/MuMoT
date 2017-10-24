@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['eigenvalues',['eigenvalues',['../class_mu_mo_t_1_1_mu_mo_tbifurcation_view.html#aa4c73e042e5fc54d56298cdbbba8e6c2',1,'MuMoT::MuMoTbifurcationView']]],
-  ['ersos_5frenyi',['ERSOS_RENYI',['../class_mu_mo_t_1_1_network_type.html#abfc09d249fa8a7e47ccae49424a21d61',1,'MuMoT::NetworkType']]]
+  ['name',['name',['../namespacesetup_01_071_08.html#ab74e6bf80237ddc4109968cedc58c151',1,'setup (1).name()'],['../namespacesetup.html#ab74e6bf80237ddc4109968cedc58c151',1,'setup.name()']]]
 ];
