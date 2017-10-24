@@ -41,6 +41,7 @@ import json
 import matplotlib.ticker as ticker
 from math import log10, floor
 import ast
+from matplotlib.pyplot import plot
 
 #from matplotlib.offsetbox import kwargs
 #from __builtin__ import None
@@ -452,7 +453,7 @@ class MuMoTmodel:
                 
                 return None
             # construct controller
-            viewController = self._controller(True, **kwargs)
+            viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), **kwargs)
             
             # construct view
             modelView = MuMoTstreamView(self, viewController, stateVariable1, stateVariable2, **kwargs)
@@ -468,7 +469,7 @@ class MuMoTmodel:
     def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             # construct controller
-            viewController = self._controller(True, **kwargs)
+            viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), **kwargs)
             
             # construct view
             modelView = MuMoTvectorView(self, viewController, stateVariable1, stateVariable2, stateVariable3, **kwargs)
@@ -713,7 +714,7 @@ class MuMoTmodel:
         return self._solutions
 
     ## general controller constructor with all rates as free parameters
-    def _controller(self, contRefresh, displayController = True, **kwargs):
+    def _controller(self, contRefresh, displayController = True, plotLimitsSlider = False, **kwargs):
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
         rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly                
@@ -727,8 +728,9 @@ class MuMoTmodel:
         for reactant in self._constantReactants:
             paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
 #            paramNames.append('(' + latex(reactant) + ')')
-            paramNames.append(str(reactant))            
-        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, **kwargs)
+            paramNames.append(str(reactant))
+        systemSizeSlider = kwargs.get('showNoise', False)
+        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, plotLimitsSlider, systemSizeSlider, **kwargs)
 
         return viewController
 
@@ -907,12 +909,16 @@ class MuMoTcontroller:
     _replotFunction = None
     ## widget for simple error messages to be displayed to user during interaction
     _errorMessage = None
+    ## plot limits slider widget
+    _plotLimitsWidget = None
+    ## system size slider widget
+    _systemSizeWidget = None    
     ## progress bar @todo: is this best put in base class when it is not always used?
     _progressBar = None
     ## used two progress bars, otherwise the previous cell bar (where controller is created) does not react anymore  @todo: is this best put in base class when it is not always used?
     _progressBar_multi = None 
 
-    def __init__(self, paramValues, paramNames, paramLabelDict={}, continuousReplot=False, **kwargs):
+    def __init__(self, paramValues, paramNames, paramLabelDict = {}, continuousReplot = False, plotLimits = False, systemSize = False, **kwargs):
         silent = kwargs.get('silent', False)
         self._paramLabelDict = paramLabelDict
         self._widgets = []
@@ -929,6 +935,22 @@ class MuMoTcontroller:
             self._widgets.append(widget)
             if not(silent):
                 display(widget)
+        if plotLimits:
+            ## @todo: remove hard coded values and limits
+            self._plotLimitsWidget = widgets.FloatSlider(value = 1.0, min = 1.0, 
+                                         max = 10.0, step = 0.1, 
+                                         description = "Plot limits", 
+                                         continuous_update = False)
+        if systemSize:
+            ## @todo: remove hard coded values and limits
+            self._systemSizeWidget = widgets.IntSlider(value = 5, min = 5, 
+                                         max = 100, step = 1, 
+                                         description = "System size", 
+                                         continuous_update = False)
+        if not(silent):
+            display(self._plotLimitsWidget)
+            display(self._systemSizeWidget)
+
         widget = widgets.HTML()
         widget.value = 'foo' + str(widget) ## @todo why doesn't this work?
         self._errorMessage = widget
@@ -943,6 +965,10 @@ class MuMoTcontroller:
         self._replotFunction = recomputeFunction
         for widget in self._widgetDict.values():
             widget.on_trait_change(recomputeFunction, 'value')
+        if self._plotLimitsWidget != None:
+            self._plotLimitsWidget.on_trait_change(recomputeFunction, 'value')
+        if self._systemSizeWidget != None:
+            self._systemSizeWidget.on_trait_change(recomputeFunction, 'value')
         if redrawFunction != None:
             for widget in self._widgetsPlotOnly.values():
                 widget.on_trait_change(redrawFunction, 'value')
@@ -1351,6 +1377,8 @@ class MuMoTview:
     _paramValues = None
     ## silent flag (TRUE = do not try to acquire figure handle from pyplot)
     _silent = None
+    ## plot limits (for non-constant system size)
+    _plotLimits = None
     
     def __init__(self, model, controller, figure = None, params = None, **kwargs):
         self._silent = kwargs.get('silent', False)
@@ -1358,9 +1386,9 @@ class MuMoTview:
         self._controller = controller
         self._logs = []
         self._axes3d = False
+        self._plotLimits = 1
         if params != None:
             self._paramNames, self._paramValues = zip(*params)
-
         
         if not(self._silent):
             _buildFig(self, figure)
@@ -1720,11 +1748,11 @@ class MuMoTfieldView(MuMoTview):
         return (funcs, argNamesSymb, argDict, paramNames, paramValues)
 
     ## get 2-dimensional field for plotting
-    def _get_field2d(self, kind, meshPoints):
+    def _get_field2d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
             (funcs, argNamesSymb, argDict, paramNames, paramValues) = self._get_field()
-            self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] ## @todo system size defined to be one
+            self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
             mask = self._mask.get((meshPoints, 2))
             if mask is None:
                 mask = np.zeros(self._X.shape, dtype=bool)
@@ -1746,11 +1774,11 @@ class MuMoTfieldView(MuMoTview):
         self._logs.append(log)
 
     ## get 3-dimensional field for plotting        
-    def _get_field3d(self, kind, meshPoints):
+    def _get_field3d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
             (funcs, argNamesSymb, argDict, paramNames, paramValues) = self._get_field()
-            self._Z, self._Y, self._X = np.mgrid[0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints), 0:1:complex(0, meshPoints)] ## @todo system size defined to be one
+            self._Z, self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
             mask = self._mask.get((meshPoints, 3))
             if mask is None:
 #                mask = np.zeros(self._X.shape, dtype=bool)
