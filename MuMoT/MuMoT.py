@@ -56,8 +56,8 @@ get_ipython().magic('matplotlib nbagg')
 figureCounter = 1 # global figure counter for model views
 
 MAX_RANDOM_SEED = 4294967295
-INITIAL_RATE_VALUE = 10.0
-RATE_BOUND = 100.0
+INITIAL_RATE_VALUE = 0.5
+RATE_BOUND = 10.0
 RATE_STEP = 0.1
 MULTIPLOT_COLUMNS = 2
 
@@ -490,7 +490,7 @@ class MuMoTmodel:
             return    
 
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
+        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly                
 
 
@@ -715,7 +715,7 @@ class MuMoTmodel:
     ## general controller constructor with all rates as free parameters
     def _controller(self, contRefresh, displayController = True, plotLimitsSlider = False, **kwargs):
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
+        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly                
 
         # construct controller
@@ -734,7 +734,7 @@ class MuMoTmodel:
         return viewController
 
     def _check_state_variables(self, stateVariable1, stateVariable2, stateVariable3 = None):
-        if Symbol(stateVariable1) in self._reactants and Symbol(stateVariable2) in self._reactants and (stateVariable3 == None or Symbol(stateVariable3) in self._reactants):
+        if process_sympy(stateVariable1) in self._reactants and process_sympy(stateVariable2) in self._reactants and (stateVariable3 == None or process_sympy(stateVariable3) in self._reactants):
             if stateVariable1 != stateVariable2 and stateVariable1 != stateVariable3 and stateVariable2 != stateVariable3:
                 return True
             else:
@@ -940,7 +940,7 @@ class MuMoTcontroller:
         if plotLimits:
             ## @todo: remove hard coded values and limits
             self._plotLimitsWidget = widgets.FloatSlider(value = 1.0, min = 1.0, 
-                                         max = 10.0, step = 0.1, 
+                                         max = 10.0, step = 0.5, 
                                          description = "Plot limits", 
                                          continuous_update = False)
         if systemSize:
@@ -950,8 +950,10 @@ class MuMoTcontroller:
                                          description = "System size", 
                                          continuous_update = False)
         if not(silent):
-            display(self._plotLimitsWidget)
-            display(self._systemSizeWidget)
+            if plotLimits:
+                display(self._plotLimitsWidget)
+            if systemSize:
+                display(self._systemSizeWidget)
 
         widget = widgets.HTML()
         widget.value = 'foo' + str(widget) ## @todo why doesn't this work?
@@ -1386,7 +1388,7 @@ class MuMoTview:
         self._controller = controller
         self._logs = []
         self._axes3d = False
-        self._plotLimits = 1
+        self._plotLimits = 6
         if params != None:
             self._paramNames, self._paramValues = zip(*params)
         
@@ -1679,11 +1681,11 @@ class MuMoTfieldView(MuMoTview):
         if stateVariable3:
             self._zlab = kwargs.get('zlab', str(stateVariable3)) 
         
-        self._stateVariable1 = Symbol(stateVariable1)
-        self._stateVariable2 = Symbol(stateVariable2)
+        self._stateVariable1 = process_sympy(stateVariable1)
+        self._stateVariable2 = process_sympy(stateVariable2)
         if stateVariable3 != None:
             self._axes3d = True
-            self._stateVariable3 = Symbol(stateVariable3)
+            self._stateVariable3 = process_sympy(stateVariable3)
         _mask = {}
 
         if not(silent):
@@ -1764,6 +1766,7 @@ class MuMoTfieldView(MuMoTview):
 
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
+        plotLimits = 1
         if self._controller != None:
             paramNames = []
             paramValues = []
@@ -1772,7 +1775,9 @@ class MuMoTfieldView(MuMoTview):
 #                 name = name.replace('(','')
 #                 name = name.replace(')','')
                 paramNames.append(name)
-                paramValues.append(value.value)          
+                paramValues.append(value.value)
+            if self._controller._plotLimitsWidget != None:
+                plotLimits = self._controller._plotLimitsWidget.value
         else:
             paramNames = self._paramNames
             paramValues = self._paramValues            
@@ -1780,22 +1785,24 @@ class MuMoTfieldView(MuMoTview):
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
         
-        return (funcs, argNamesSymb, argDict, paramNames, paramValues)
+        
+        return (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits)
 
     ## get 2-dimensional field for plotting
     def _get_field2d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
-            (funcs, argNamesSymb, argDict, paramNames, paramValues) = self._get_field()
+            (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits) = self._get_field()
             self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
-            mask = self._mask.get((meshPoints, 2))
-            if mask is None:
-                mask = np.zeros(self._X.shape, dtype=bool)
-                upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
-                mask[upperright] = True
-                np.fill_diagonal(mask, False)
-                mask = np.flipud(mask)
-                self._mask[(meshPoints, 2)] = mask
+            if self._mumotModel._constantSystemSize:
+                mask = self._mask.get((meshPoints, 2))
+                if mask is None:
+                    mask = np.zeros(self._X.shape, dtype=bool)
+                    upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
+                    mask[upperright] = True
+                    np.fill_diagonal(mask, False)
+                    mask = np.flipud(mask)
+                    self._mask[(meshPoints, 2)] = mask
             self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             try:
@@ -1803,7 +1810,7 @@ class MuMoTfieldView(MuMoTview):
             except:
 #                self._speed = np.ones(self._X.shape, dtype=float)
                 self._speed = None
-            if self._mumotModel._constantSystemSize == True:
+            if self._mumotModel._constantSystemSize:
                 self._Xdot = np.ma.array(self._Xdot, mask=mask)
                 self._Ydot = np.ma.array(self._Ydot, mask=mask)        
         self._logs.append(log)
@@ -1812,18 +1819,19 @@ class MuMoTfieldView(MuMoTview):
     def _get_field3d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
-            (funcs, argNamesSymb, argDict, paramNames, paramValues) = self._get_field()
+            (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits) = self._get_field()
             self._Z, self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
-            mask = self._mask.get((meshPoints, 3))
-            if mask is None:
-#                mask = np.zeros(self._X.shape, dtype=bool)
-#                 upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
-#                 mask[upperright] = True
-#                 np.fill_diagonal(mask, False)
-#                 mask = np.flipud(mask)
-                mask = self._X + self._Y + self._Z >= 1
-#                mask = mask.astype(int)
-                self._mask[(meshPoints, 3)] = mask
+            if self._mumotModel._constantSystemSize:
+                mask = self._mask.get((meshPoints, 3))
+                if mask is None:
+    #                mask = np.zeros(self._X.shape, dtype=bool)
+    #                 upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
+    #                 mask[upperright] = True
+    #                 np.fill_diagonal(mask, False)
+    #                 mask = np.flipud(mask)
+                    mask = self._X + self._Y + self._Z >= 1
+    #                mask = mask.astype(int)
+                    self._mask[(meshPoints, 3)] = mask
             self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
             self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
             self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
@@ -1834,7 +1842,7 @@ class MuMoTfieldView(MuMoTview):
 #            self._Xdot = self._Xdot * mask
 #            self._Ydot = self._Ydot * mask
 #            self._Zdot = self._Zdot * mask
-            if self._mumotModel._constantSystemSize == True:
+            if self._mumotModel._constantSystemSize:
                 self._Xdot = np.ma.array(self._Xdot, mask=mask)
                 self._Ydot = np.ma.array(self._Ydot, mask=mask)        
                 self._Zdot = np.ma.array(self._Zdot, mask=mask)
@@ -1887,8 +1895,8 @@ class MuMoTstreamView(MuMoTfieldView):
             plt.xlim(0,1)
             plt.ylim(0,1)
         else:
-            ## @todo: plot limits to be set via slider in this case
-            pass
+            plt.xlim(0,self._X.max())
+            plt.ylim(0,self._Y.max())
         
         _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
                    ylab = self._ylab, fontsize=self._chooseFontSize)
@@ -1946,8 +1954,8 @@ class MuMoTvectorView(MuMoTfieldView):
             if self._mumotModel._constantSystemSize == True:
                 plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
             else:
-                ## @todo: plot limits to be set via slider in this case
-                pass
+                plt.xlim(0,self._X.max())
+                plt.ylim(0,self._Y.max())
             _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
                    ylab = self._ylab, fontsize=self._chooseFontSize)
     #        plt.set_aspect('equal') ## @todo
@@ -2009,14 +2017,17 @@ class MuMoTbifurcationView(MuMoTview):
     def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, 
                  figure = None, params = None, **kwargs):
         super().__init__(model, controller, figure, params, **kwargs)
+        bifurcationParameter = self._pydstoolify(bifurcationParameter)
+        stateVariable1 = self._pydstoolify(stateVariable1)
+        stateVariable2 = self._pydstoolify(stateVariable2)
 
         paramDict = {}
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
+        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly
         for rate in self._mumotModel._rates:
-            paramDict[str(rate)] = initialRateValue ## @todo choose initial values sensibly
-        paramDict[str(self._mumotModel._systemSize)] = 1 ## @todo choose system size sensibly
+            paramDict[self._pydstoolify(rate)] = initialRateValue ## @todo choose initial values sensibly
+        paramDict[self._pydstoolify(self._mumotModel._systemSize)] = 1 ## @todo choose system size sensibly
         
         if 'fontsize' in kwargs:
             self._chooseFontSize = kwargs['fontsize']
@@ -2035,16 +2046,19 @@ class MuMoTbifurcationView(MuMoTview):
             
         self._bifInit = kwargs.get('BifParInit', 5)
         
-        self._initSV = kwargs.get('initSV', [])
-        if self._initSV != []:
-            assert (len(self._initSV) == len(self._mumotModel._reactants)),"Number of state variables and initial conditions must coincide!"     
+        tmpInitSV = kwargs.get('initSV', [])
+        self._initSV= []
+        if tmpInitSV != []:
+            assert (len(tmpInitSV) == len(self._mumotModel._reactants)),"Number of state variables and initial conditions must coincide!"
+            for pair in tmpInitSV:
+                self._initSV.append([self._pydstoolify(pair[0]), pair[1]])
         else:
             if kwargs.get('initRandom', False) == True:
                 for reactant in self._mumotModel._reactants:
-                    self._initSV.append([str(reactant), round(np.random.rand(), 2)])
+                    self._initSV.append([self._pydstoolify(reactant), round(np.random.rand(), 2)])
             else:
                 for reactant in self._mumotModel._reactants:
-                    self._initSV.append([str(reactant), 0.0])
+                    self._initSV.append([self._pydstoolify(reactant), 0.0])
                 
         with io.capture_output() as log:      
             name = 'MuMoT Model' + str(id(self))
@@ -2052,7 +2066,7 @@ class MuMoTbifurcationView(MuMoTview):
             self._pyDSmodel.pars = paramDict
             varspecs = {}
             for reactant in self._mumotModel._reactants:
-                varspecs[str(reactant)] = str(self._mumotModel._equations[reactant])
+                varspecs[self._pydstoolify(reactant)] = self._pydstoolify(self._mumotModel._equations[reactant])
             self._pyDSmodel.varspecs = varspecs
     
             if model._systemSize != None:
@@ -2087,7 +2101,7 @@ class MuMoTbifurcationView(MuMoTview):
     #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
     #            self._pyDSode.set(pars = self._pyDSmodel.pars )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
     #            self._pyDSode.pars = {bifurcationParameter: 0}             ## Lower bound of the bifurcation parameter (@todo: set dynamically?)
-            initconds = {stateVariable1: self._pyDSmodel.pars[str(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)} ## @todo: guess where steady states are?
+            initconds = {stateVariable1: self._pyDSmodel.pars[self._pydstoolify(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)} ## @todo: guess where steady states are?
             
             self._pyDSmodel.ics   = {}
             for kk in range(len(self._initSV)):
@@ -2287,6 +2301,15 @@ class MuMoTbifurcationView(MuMoTview):
 #        self._pyDScont.update(self._pyDScontArgs)                         ## @todo: what does this do?
         self._plot_bifurcation()
 
+    # utility function to mangle variable names in equations so they are accepted by PyDStool
+    def _pydstoolify(self, equation):
+        equation = str(equation)
+        equation = equation.replace('{', '')
+        equation = equation.replace('}', '')
+        equation = equation.replace('_', '')
+        equation = equation.replace('\\', '')
+        
+        return equation
 
 ## agent on networks view on model 
 class MuMoTmultiagentView(MuMoTview):
@@ -3387,7 +3410,7 @@ def parseModel(modelDescription):
     for (reactant, latexStr) in zip(model._constantReactants, constantReactants):
         model._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'    
     
-    model._stoichiometry = _getStoichiometry(model._rules)
+    model._stoichiometry = _getStoichiometry(model._rules, model._constantReactants)
     
     return model
 
@@ -3421,16 +3444,24 @@ def _deriveODEsFromRules(reactants, rules):
 
 ## produces dictionary with stoichiometry of all reactions with key ReactionNr
 # ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry
-def _getStoichiometry(rules):
+def _getStoichiometry(rules, const_reactants):
     stoich = {}
     ReactionNr = numbered_symbols(prefix='Reaction ', cls=Symbol, start=1)
     for rule in rules:
         reactDict = {'rate': rule.rate}
         for reactant in rule.lhsReactants:
-            reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
+            if reactant != 1:
+                if reactant in const_reactants:
+                    reactDict[reactant] = 'const'
+                else:
+                    reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
         for reactant in rule.rhsReactants:
-            if not reactant in rule.lhsReactants:
-                reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
+            if reactant != 1:
+                if reactant not in rule.lhsReactants:
+                    if reactant in const_reactants:
+                        reactDict[reactant] = 'const'
+                    else:
+                        reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
         stoich[ReactionNr.__next__()] = reactDict
         
     return stoich
@@ -3445,7 +3476,7 @@ def _deriveMasterEquation(stoichiometry):
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
                 if len(stoich[key1][key2]) == 3:
@@ -3461,16 +3492,19 @@ def _deriveMasterEquation(stoichiometry):
     for key1 in stoich:
         prod1 = 1
         prod2 = 1
+        rate_fact = 1
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 prod1 *= f(E_op(key2, stoich[key1][key2][0]-stoich[key1][key2][1]))
                 prod2 *= g(key2, stoich[key1][key2][0], V)
+            if stoich[key1][key2] == 'const':
+                rate_fact *= key2/V
         if len(nvec)==2:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t), stoich[key1]['rate'])
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t), stoich[key1]['rate']*rate_fact)
         elif len(nvec)==3:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t), stoich[key1]['rate'])
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t), stoich[key1]['rate']*rate_fact)
         else:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], nvec[3], t), stoich[key1]['rate'])
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], nvec[3], t), stoich[key1]['rate']*rate_fact)
 
     return sol_dict_rhs, substring
 
@@ -3480,19 +3514,30 @@ def _doVanKampenExpansion(rhs, stoich):
     P, E_op, x, y, v, w, t, m = symbols('P E_op x y v w t m')
     V = Symbol('V', real=True, constant=True)
     nvec = []
+    nconstvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
+            elif key2 != 'rate' and stoich[key1][key2] == 'const':
+                if not key2 in nconstvec:
+                    nconstvec.append(key2)
+                    
     nvec = sorted(nvec, key=default_sort_key)
     assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
     
     NoiseDict = {}
     PhiDict = {}
+    PhiConstDict = {}
+    
     for kk in range(len(nvec)):
         NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
         PhiDict[nvec[kk]] = Symbol('Phi_'+str(nvec[kk]))
+        
+    for kk in range(len(nconstvec)):
+        PhiConstDict[nconstvec[kk]] = V*Symbol('Phi_'+str(nconstvec[kk]))
+
         
     rhs_dict, substring = rhs(stoich)
     rhs_vKE = 0
@@ -3516,7 +3561,7 @@ def _doVanKampenExpansion(rhs, stoich):
                 term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             #term_num, term_denom = term.as_numer_denom()
-            rhs_vKE += rhs_dict[key][3]*(term.doit() - func)
+            rhs_vKE += rhs_dict[key][3].subs(PhiConstDict)*(term.doit() - func)
     elif len(nvec)==3:
         lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
                   - sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
@@ -3546,7 +3591,7 @@ def _doVanKampenExpansion(rhs, stoich):
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             else:
                 print('Something went wrong!')
-            rhs_vKE += rhs_dict[key][3]*(term.doit() - func)    
+            rhs_vKE += rhs_dict[key][3].subs(PhiConstDict)*(term.doit() - func)    
     else:
         lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
                   - sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
@@ -3586,7 +3631,7 @@ def _doVanKampenExpansion(rhs, stoich):
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             else:
                 print('Something went wrong!')
-            rhs_vKE += rhs_dict[key][3]*(term.doit() - func)
+            rhs_vKE += rhs_dict[key][3].subs(PhiConstDict)*(term.doit() - func)
     
     return rhs_vKE.expand(), lhs_vKE, substring
 
@@ -3643,7 +3688,7 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
@@ -3678,7 +3723,7 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
@@ -3840,7 +3885,7 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
@@ -4140,7 +4185,7 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
     #for reactant in reactants:
@@ -4502,7 +4547,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
 ## Function for formatting 2D plots. 
 #
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
-def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None, 
+def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None, 
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
                        xlab=None, ylab=None, curvelab=None, **kwargs):
     #print(kwargs)
@@ -4710,10 +4755,18 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None,
     #ax.set_ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
      
     if figure==None or ax_reformat==True:
-        xrange = [np.max(data_x[kk]) - np.min(data_x[kk]) for kk in range(len(data_x))]
-        yrange = [np.max(data_y[kk]) - np.min(data_y[kk]) for kk in range(len(data_y))]
-        max_xrange = max(xrange)
-        max_yrange = max(yrange) 
+        if choose_xrange:
+            max_xrange = choose_xrange[1]-choose_xrange[0]
+        else:
+            xrange = [np.max(data_x[kk]) - np.min(data_x[kk]) for kk in range(len(data_x))]
+            max_xrange = max(xrange)
+        
+        if choose_yrange:
+            max_yrange = choose_yrange[1]-choose_yrange[0]
+        else:
+            yrange = [np.max(data_y[kk]) - np.min(data_y[kk]) for kk in range(len(data_y))]
+            max_yrange = max(yrange) 
+        
         if max_xrange < 1.0:
             xMLocator_major = round_to_1(max_xrange/5)
         else:
@@ -4724,9 +4777,15 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None,
         else:
             yMLocator_major = round_to_1(max_yrange/10)
         yMLocator_minor = yMLocator_major/2
-
-        plt.xlim(np.min(data_x)-xMLocator_minor, np.max(data_x)+xMLocator_minor)
-        plt.ylim(np.min(data_y)-yMLocator_minor, np.max(data_y)+yMLocator_minor)
+        
+        if choose_xrange:
+            plt.xlim(choose_xrange[0]-xMLocator_minor, choose_xrange[1]+xMLocator_minor)
+        else:
+            plt.xlim(np.min(data_x)-xMLocator_minor, np.max(data_x)+xMLocator_minor)
+        if choose_yrange:
+            plt.ylim(choose_yrange[0]-yMLocator_minor, choose_yrange[1]+yMLocator_minor)
+        else:
+            plt.ylim(np.min(data_y)-yMLocator_minor, np.max(data_y)+yMLocator_minor)
 
         ax.xaxis.set_major_locator(ticker.MultipleLocator(xMLocator_major))
         ax.xaxis.set_minor_locator(ticker.MultipleLocator(xMLocator_minor))
