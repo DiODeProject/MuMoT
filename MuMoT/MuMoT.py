@@ -3482,9 +3482,7 @@ def _getStoichiometry(rules, const_reactants):
         for reactant in rule.rhsReactants:
             if reactant != 1:
                 if reactant not in rule.lhsReactants:
-                    if reactant in const_reactants:
-                        reactDict[reactant] = 'const'
-                    else:
+                    if reactant not in const_reactants:
                         reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
         stoich[ReactionNr.__next__()] = reactDict
         
