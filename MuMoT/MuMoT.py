@@ -56,8 +56,8 @@ get_ipython().magic('matplotlib nbagg')
 figureCounter = 1 # global figure counter for model views
 
 MAX_RANDOM_SEED = 4294967295
-INITIAL_RATE_VALUE = 10.0
-RATE_BOUND = 100.0
+INITIAL_RATE_VALUE = 0.5
+RATE_BOUND = 10.0
 RATE_STEP = 0.1
 MULTIPLOT_COLUMNS = 2
 
@@ -490,7 +490,7 @@ class MuMoTmodel:
             return    
 
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
+        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly                
 
 
@@ -715,7 +715,7 @@ class MuMoTmodel:
     ## general controller constructor with all rates as free parameters
     def _controller(self, contRefresh, displayController = True, plotLimitsSlider = False, **kwargs):
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
+        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly                
 
         # construct controller
@@ -940,7 +940,7 @@ class MuMoTcontroller:
         if plotLimits:
             ## @todo: remove hard coded values and limits
             self._plotLimitsWidget = widgets.FloatSlider(value = 1.0, min = 1.0, 
-                                         max = 10.0, step = 0.1, 
+                                         max = 10.0, step = 0.5, 
                                          description = "Plot limits", 
                                          continuous_update = False)
         if systemSize:
@@ -950,8 +950,10 @@ class MuMoTcontroller:
                                          description = "System size", 
                                          continuous_update = False)
         if not(silent):
-            display(self._plotLimitsWidget)
-            display(self._systemSizeWidget)
+            if plotLimits:
+                display(self._plotLimitsWidget)
+            if systemSize:
+                display(self._systemSizeWidget)
 
         widget = widgets.HTML()
         widget.value = 'foo' + str(widget) ## @todo why doesn't this work?
@@ -1773,7 +1775,11 @@ class MuMoTfieldView(MuMoTview):
 #                 name = name.replace('(','')
 #                 name = name.replace(')','')
                 paramNames.append(name)
-                paramValues.append(value.value)          
+                paramValues.append(value.value)
+            if self._controller._plotLimitsWidget != None:
+                plotLimits = self._controller._plotLimitsWidget.value
+            else:
+                plotLimits = 1                  
         else:
             paramNames = self._paramNames
             paramValues = self._paramValues            
@@ -1781,22 +1787,24 @@ class MuMoTfieldView(MuMoTview):
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
         
-        return (funcs, argNamesSymb, argDict, paramNames, paramValues)
+        
+        return (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits)
 
     ## get 2-dimensional field for plotting
     def _get_field2d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
-            (funcs, argNamesSymb, argDict, paramNames, paramValues) = self._get_field()
+            (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits) = self._get_field()
             self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
-            mask = self._mask.get((meshPoints, 2))
-            if mask is None:
-                mask = np.zeros(self._X.shape, dtype=bool)
-                upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
-                mask[upperright] = True
-                np.fill_diagonal(mask, False)
-                mask = np.flipud(mask)
-                self._mask[(meshPoints, 2)] = mask
+            if self._mumotModel._constantSystemSize:
+                mask = self._mask.get((meshPoints, 2))
+                if mask is None:
+                    mask = np.zeros(self._X.shape, dtype=bool)
+                    upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
+                    mask[upperright] = True
+                    np.fill_diagonal(mask, False)
+                    mask = np.flipud(mask)
+                    self._mask[(meshPoints, 2)] = mask
             self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             try:
@@ -1804,7 +1812,7 @@ class MuMoTfieldView(MuMoTview):
             except:
 #                self._speed = np.ones(self._X.shape, dtype=float)
                 self._speed = None
-            if self._mumotModel._constantSystemSize == True:
+            if self._mumotModel._constantSystemSize:
                 self._Xdot = np.ma.array(self._Xdot, mask=mask)
                 self._Ydot = np.ma.array(self._Ydot, mask=mask)        
         self._logs.append(log)
@@ -1813,18 +1821,19 @@ class MuMoTfieldView(MuMoTview):
     def _get_field3d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
-            (funcs, argNamesSymb, argDict, paramNames, paramValues) = self._get_field()
+            (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits) = self._get_field()
             self._Z, self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
-            mask = self._mask.get((meshPoints, 3))
-            if mask is None:
-#                mask = np.zeros(self._X.shape, dtype=bool)
-#                 upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
-#                 mask[upperright] = True
-#                 np.fill_diagonal(mask, False)
-#                 mask = np.flipud(mask)
-                mask = self._X + self._Y + self._Z >= 1
-#                mask = mask.astype(int)
-                self._mask[(meshPoints, 3)] = mask
+            if self._mumotModel._constantSystemSize:
+                mask = self._mask.get((meshPoints, 3))
+                if mask is None:
+    #                mask = np.zeros(self._X.shape, dtype=bool)
+    #                 upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
+    #                 mask[upperright] = True
+    #                 np.fill_diagonal(mask, False)
+    #                 mask = np.flipud(mask)
+                    mask = self._X + self._Y + self._Z >= 1
+    #                mask = mask.astype(int)
+                    self._mask[(meshPoints, 3)] = mask
             self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
             self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
             self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
@@ -1835,7 +1844,7 @@ class MuMoTfieldView(MuMoTview):
 #            self._Xdot = self._Xdot * mask
 #            self._Ydot = self._Ydot * mask
 #            self._Zdot = self._Zdot * mask
-            if self._mumotModel._constantSystemSize == True:
+            if self._mumotModel._constantSystemSize:
                 self._Xdot = np.ma.array(self._Xdot, mask=mask)
                 self._Ydot = np.ma.array(self._Ydot, mask=mask)        
                 self._Zdot = np.ma.array(self._Zdot, mask=mask)
@@ -1888,8 +1897,8 @@ class MuMoTstreamView(MuMoTfieldView):
             plt.xlim(0,1)
             plt.ylim(0,1)
         else:
-            ## @todo: plot limits to be set via slider in this case
-            pass
+            plt.xlim(0,self._X.max())
+            plt.ylim(0,self._Y.max())
         
         _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
                    ylab = self._ylab, fontsize=self._chooseFontSize)
@@ -1947,8 +1956,8 @@ class MuMoTvectorView(MuMoTfieldView):
             if self._mumotModel._constantSystemSize == True:
                 plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
             else:
-                ## @todo: plot limits to be set via slider in this case
-                pass
+                plt.xlim(0,self._X.max())
+                plt.ylim(0,self._Y.max())
             _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
                    ylab = self._ylab, fontsize=self._chooseFontSize)
     #        plt.set_aspect('equal') ## @todo
@@ -2013,7 +2022,7 @@ class MuMoTbifurcationView(MuMoTview):
 
         paramDict = {}
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (-RATE_BOUND, RATE_BOUND) ## @todo choose limit values sensibly
+        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly
         for rate in self._mumotModel._rates:
             paramDict[str(rate)] = initialRateValue ## @todo choose initial values sensibly
