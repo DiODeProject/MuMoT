@@ -3185,7 +3185,7 @@ class MuMoTSSAView(MuMoTview):
                 if reactantOccurencies > 0:
                     prob *= currentState[reactant] * reactantOccurencies
                 numReagents += reactantOccurencies
-            if numReagents > 1:
+            if prob > 0 and numReagents > 1:
                 prob /= sum(currentState.values())**( numReagents -1 ) 
             probabilitiesOfChange[reaction_id] = prob
 #         for rule in self._reactantsMatrix:
