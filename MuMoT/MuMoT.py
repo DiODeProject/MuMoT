@@ -2018,14 +2018,17 @@ class MuMoTbifurcationView(MuMoTview):
     def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, 
                  figure = None, params = None, **kwargs):
         super().__init__(model, controller, figure, params, **kwargs)
+        bifurcationParameter = self._pydstoolify(bifurcationParameter)
+        stateVariable1 = self._pydstoolify(stateVariable1)
+        stateVariable2 = self._pydstoolify(stateVariable2)
 
         paramDict = {}
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
         rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly
         for rate in self._mumotModel._rates:
-            paramDict[str(rate)] = initialRateValue ## @todo choose initial values sensibly
-        paramDict[str(self._mumotModel._systemSize)] = 1 ## @todo choose system size sensibly
+            paramDict[self._pydstoolify(rate)] = initialRateValue ## @todo choose initial values sensibly
+        paramDict[self._pydstoolify(self._mumotModel._systemSize)] = 1 ## @todo choose system size sensibly
         
         if 'fontsize' in kwargs:
             self._chooseFontSize = kwargs['fontsize']
@@ -2044,16 +2047,19 @@ class MuMoTbifurcationView(MuMoTview):
             
         self._bifInit = kwargs.get('BifParInit', 5)
         
-        self._initSV = kwargs.get('initSV', [])
-        if self._initSV != []:
-            assert (len(self._initSV) == len(self._mumotModel._reactants)),"Number of state variables and initial conditions must coincide!"     
+        tmpInitSV = kwargs.get('initSV', [])
+        self._initSV= []
+        if tmpInitSV != []:
+            assert (len(tmpInitSV) == len(self._mumotModel._reactants)),"Number of state variables and initial conditions must coincide!"
+            for pair in tmpInitSV:
+                self._initSV.append([self._pydstoolify(pair[0]), pair[1]])
         else:
             if kwargs.get('initRandom', False) == True:
                 for reactant in self._mumotModel._reactants:
-                    self._initSV.append([str(reactant), round(np.random.rand(), 2)])
+                    self._initSV.append([self._pydstoolify(reactant), round(np.random.rand(), 2)])
             else:
                 for reactant in self._mumotModel._reactants:
-                    self._initSV.append([str(reactant), 0.0])
+                    self._initSV.append([self._pydstoolify(reactant), 0.0])
                 
         with io.capture_output() as log:      
             name = 'MuMoT Model' + str(id(self))
@@ -2061,7 +2067,7 @@ class MuMoTbifurcationView(MuMoTview):
             self._pyDSmodel.pars = paramDict
             varspecs = {}
             for reactant in self._mumotModel._reactants:
-                varspecs[str(reactant)] = str(self._mumotModel._equations[reactant])
+                varspecs[self._pydstoolify(reactant)] = self._pydstoolify(self._mumotModel._equations[reactant])
             self._pyDSmodel.varspecs = varspecs
     
             if model._systemSize != None:
@@ -2096,7 +2102,7 @@ class MuMoTbifurcationView(MuMoTview):
     #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
     #            self._pyDSode.set(pars = self._pyDSmodel.pars )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
     #            self._pyDSode.pars = {bifurcationParameter: 0}             ## Lower bound of the bifurcation parameter (@todo: set dynamically?)
-            initconds = {stateVariable1: self._pyDSmodel.pars[str(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)} ## @todo: guess where steady states are?
+            initconds = {stateVariable1: self._pyDSmodel.pars[self._pydstoolify(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)} ## @todo: guess where steady states are?
             
             self._pyDSmodel.ics   = {}
             for kk in range(len(self._initSV)):
@@ -2296,6 +2302,15 @@ class MuMoTbifurcationView(MuMoTview):
 #        self._pyDScont.update(self._pyDScontArgs)                         ## @todo: what does this do?
         self._plot_bifurcation()
 
+    # utility function to mangle variable names in equations so they are accepted by PyDStool
+    def _pydstoolify(self, equation):
+        equation = str(equation)
+        equation = equation.replace('{', '')
+        equation = equation.replace('}', '')
+        equation = equation.replace('_', '')
+        equation = equation.replace('\\', '')
+        
+        return equation
 
 ## agent on networks view on model 
 class MuMoTmultiagentView(MuMoTview):
