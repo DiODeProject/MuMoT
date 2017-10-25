@@ -4545,7 +4545,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
 ## Function for formatting 2D plots. 
 #
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
-def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None, 
+def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None, 
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
                        xlab=None, ylab=None, curvelab=None, **kwargs):
     #print(kwargs)
@@ -4753,10 +4753,18 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None,
     #ax.set_ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
      
     if figure==None or ax_reformat==True:
-        xrange = [np.max(data_x[kk]) - np.min(data_x[kk]) for kk in range(len(data_x))]
-        yrange = [np.max(data_y[kk]) - np.min(data_y[kk]) for kk in range(len(data_y))]
-        max_xrange = max(xrange)
-        max_yrange = max(yrange) 
+        if choose_xrange:
+            max_xrange = choose_xrange[1]-choose_xrange[0]
+        else:
+            xrange = [np.max(data_x[kk]) - np.min(data_x[kk]) for kk in range(len(data_x))]
+            max_xrange = max(xrange)
+        
+        if choose_yrange:
+            max_yrange = choose_yrange[1]-choose_yrange[0]
+        else:
+            yrange = [np.max(data_y[kk]) - np.min(data_y[kk]) for kk in range(len(data_y))]
+            max_yrange = max(yrange) 
+        
         if max_xrange < 1.0:
             xMLocator_major = round_to_1(max_xrange/5)
         else:
@@ -4767,9 +4775,15 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, eigenvalues=None,
         else:
             yMLocator_major = round_to_1(max_yrange/10)
         yMLocator_minor = yMLocator_major/2
-
-        plt.xlim(np.min(data_x)-xMLocator_minor, np.max(data_x)+xMLocator_minor)
-        plt.ylim(np.min(data_y)-yMLocator_minor, np.max(data_y)+yMLocator_minor)
+        
+        if choose_xrange:
+            plt.xlim(choose_xrange[0]-xMLocator_minor, choose_xrange[1]+xMLocator_minor)
+        else:
+            plt.xlim(np.min(data_x)-xMLocator_minor, np.max(data_x)+xMLocator_minor)
+        if choose_yrange:
+            plt.ylim(choose_yrange[0]-yMLocator_minor, choose_yrange[1]+yMLocator_minor)
+        else:
+            plt.ylim(np.min(data_y)-yMLocator_minor, np.max(data_y)+yMLocator_minor)
 
         ax.xaxis.set_major_locator(ticker.MultipleLocator(xMLocator_major))
         ax.xaxis.set_minor_locator(ticker.MultipleLocator(xMLocator_minor))
