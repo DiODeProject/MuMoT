@@ -38,6 +38,7 @@ from mpl_toolkits.mplot3d import axes3d
 import networkx as nx #@UnresolvedImport
 from enum import Enum
 import json
+import sys
 
 import matplotlib.ticker as ticker
 from math import log10, floor
@@ -554,7 +555,8 @@ class MuMoTmodel:
         else:
             ## @todo check if the Initial State has valid length and positive values
 #             print("TODO: check if the Initial State has valid length and positive values")
-            initialState_str = ast.literal_eval(initialState) # translate string into dict
+#             initialState_str = ast.literal_eval(initialState) # translate string into dict
+            initialState_str = initialState
             initialState = {}
             for state,pop in initialState_str.items():
                 initialState[process_sympy(state)] = pop # convert string into SymPy symbol
@@ -610,7 +612,7 @@ class MuMoTmodel:
         if initialState=="Auto":
             first = True
             initialState = {}
-            for reactant in self._reactants:
+            for reactant in self._reactants|self._constantReactants:
                 if first:
 #                     print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
                     initialState[reactant] = MuMoTdefault._agents
@@ -620,7 +622,8 @@ class MuMoTmodel:
         else:
             ## @todo check if the Initial State has valid length and positive values
 #             print("TODO: check if the Initial State has valid length and positive values")
-            initialState_str = ast.literal_eval(initialState) # translate string into dict
+#             initialState_str = ast.literal_eval(initialState) # translate string into dict
+            initialState_str = initialState
             initialState = {}
             for state,pop in initialState_str.items():
                 initialState[process_sympy(state)] = pop # convert string into SymPy symbol
@@ -3099,8 +3102,9 @@ class MuMoTSSAView(MuMoTview):
 #                 print("DIct is " + str(rates_input_dict) )
                 for key in rates_input_dict.keys():
                     rates_input_dict[str(process_sympy(str(key)))] = rates_input_dict.pop(key) # replace the dictionary key with the str of the SymPy symbol
-#                 print("DIct is " + str(rates_input_dict) )
-                # create the self._ratesDict 
+                #print("DIct is " + str(rates_input_dict) )
+                #print("_mumotModel._rules is " + str(self._mumotModel._rules) )
+                # create the self._ratesDict
                 for rule in self._mumotModel._rules:
                     self._ratesDict[str(rule.rate)] = rates_input_dict[str(rule.rate)] 
                      
@@ -3159,6 +3163,7 @@ class MuMoTSSAView(MuMoTview):
     
     def _plot_timeEvolution(self):
         with io.capture_output() as log:
+#         if True:
             self._update_params()
             self._log("Stochastic Simulation Algorithm (SSA)")
             self._print_standalone_view_cmd()
@@ -3167,12 +3172,14 @@ class MuMoTSSAView(MuMoTview):
             np.random.seed(self._randomSeed)
             
             # organise rates and reactants into strunctures to run the SSA
-            self._createSSAmatrix(self._mumotModel._reactants, self._mumotModel._rules)
+            #print("Reactants are " + str(sorted(self._mumotModel._reactants, key=str)))
+            #print("Const Reactants are " + str(sorted(self._mumotModel._constantReactants, key=str)))
+            #self._createSSAmatrix()
             
             # Clearing the plot and setting the axes
             self._initFigure()
            
-            self._latestResults = self._runSSA(self._initialState, self._maxTime)
+            self._latestResults = self._runSSA()
             
             ## Final Plot
             if not self._realtimePlot:
@@ -3180,40 +3187,44 @@ class MuMoTSSAView(MuMoTview):
            
         self._logs.append(log)
         
-    def _runSSA(self, initialState, maxTime): 
+    def _runSSA(self): 
         # Create logging structs
 #         historyState = []
         evo = {}
         evo['time'] = [0]
-        for state,pop in initialState.items():
+        for state,pop in self._initialState.items():
             evo[state] = []
             evo[state].append(pop)
          
         ## @todo move the progress bar in the view
-        if self._controller != None: self._controller._progressBar.max = maxTime 
+        if self._controller != None: self._controller._progressBar.max = self._maxTime 
          
         t = 0
-        currentState = []
-        for reactant in sorted(self._mumotModel._reactants, key=str):
-            currentState.append(initialState[reactant])
+#         currentState = []
+#         for reactant in sorted(self._mumotModel._reactants|self._mumotModel._constantReactants, key=str):
+#             currentState.append(initialState[reactant])
 #         historyState.append( [t] + currentState )
+        currentState = copy.deepcopy(self._initialState)
  
-        while t < maxTime:
+        while t < self._maxTime:
             # update progress bar
             if self._controller != None: self._controller._progressBar.value = t
-            if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(t/maxTime*100)) + "%:"
+            if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(t/self._maxTime*100)) + "%:"
 #             print("Time: " + str(t))
              
             timeInterval,currentState = self._stepSSA(currentState)
+            if timeInterval == math.inf: timeInterval = self._maxTime-t
             # increment time
             t += timeInterval
              
             # log step
 #             historyState.append( [t] + currentState )
-            for state,pop in zip(sorted(self._mumotModel._reactants, key=str), currentState):
+#             for state,pop in zip(sorted(self._mumotModel._reactants|self._mumotModel._constantReactants, key=str), currentState):
+            for state,pop in currentState.items():
                 evo[state].append(pop)
             evo['time'].append(t)
-             
+            
+#             print (evo)
             ## Plotting each timestep
             if self._realtimePlot:
                 self._updateSSAFigure(evo, fullPlot=False)
@@ -3302,35 +3313,53 @@ class MuMoTSSAView(MuMoTview):
         # update the figure
         if not self._silent:
             self._figure.canvas.draw()
-    
-    def _createSSAmatrix(self, reactants, rules):
-#         self._reactantsList = []
-#         for reactant in reactants:
-#             self._reactantsList.append(reactant)
-        self._reactantsMatrix = []
-        self._ruleChanges = []
-        for rule in rules:
+        
+    ## @todo Deprecated method to be removed    
+    def _createSSAmatrix(self):
+        self._reactantsMatrix = [] # list of list: for each rule, there is a (sorted) list containing the rate value multiplied with the number of occurencies for each reactant
+        self._ruleChanges = [] # list of list: for each rule, there is a (sorted) list containing the change (e.g., +1, -1, 0) for each reactant 
+        for rule in self._mumotModel._rules:
+            print("rule: " + str(rule.rate))
             lineR = []
             lineC = []
-            for reactant in sorted(self._mumotModel._reactants, key=str):
+            for reactant in sorted(self._mumotModel._reactants|self._mumotModel._constantReactants, key=str):
                 before = rule.lhsReactants.count(reactant)
                 after = rule.rhsReactants.count(reactant)
                 lineR.append( before * self._ratesDict[str(rule.rate)] )
-                lineC.append( after - before )
+                if reactant in self._mumotModel._constantReactants:
+                    lineC.append( 0 )
+                else:
+                    lineC.append( after - before )
             self._reactantsMatrix.append(lineR)
             self._ruleChanges.append(lineC)  
             
     def _stepSSA(self, currentState): 
         # update transition probabilities accounting for the current state
-        probabilitiesOfChange = []
-        for rule in self._reactantsMatrix:
-            prob = sum([a*b for a,b in zip(rule,currentState)])
-            numReagents = sum(x > 0 for x in rule)
-            if numReagents > 1:
-                prob /= sum(currentState)**( numReagents -1 ) 
-            probabilitiesOfChange.append(prob)
-        probSum = sum(probabilitiesOfChange)
-        
+        probabilitiesOfChange = {}
+        for reaction_id, reaction in self._mumotModel._stoichiometry.items():
+            prob = self._ratesDict[str(reaction["rate"])]
+            numReagents = 0  
+            for reactant, re_stoch in reaction.items():
+                if reactant == 'rate': continue
+                if re_stoch == 'const':
+                    reactantOccurencies = 1
+                else:
+                    reactantOccurencies = re_stoch[0]
+                if reactantOccurencies > 0:
+                    prob *= currentState[reactant] * reactantOccurencies
+                numReagents += reactantOccurencies
+            if prob > 0 and numReagents > 1:
+                prob /= sum(currentState.values())**( numReagents -1 ) 
+            probabilitiesOfChange[reaction_id] = prob
+#         for rule in self._reactantsMatrix:
+#             prob = sum([a*b for a,b in zip(rule,currentState)])
+#             numReagents = sum(x > 0 for x in rule)
+#             if numReagents > 1:
+#                 prob /= sum(currentState)**( numReagents -1 ) 
+#             probabilitiesOfChange.append(prob)
+        probSum = sum(probabilitiesOfChange.values())
+        if probSum == 0: # no reaction are possible (the execution terminates with this population)
+            return (math.inf, currentState)
         # computing when is happening next reaction
         timeInterval = np.random.exponential( 1/probSum );
         
@@ -3341,21 +3370,39 @@ class MuMoTSSAView(MuMoTview):
         while (reaction == 0.0):
             reaction = np.random.random_sample()
         # Normalising probOfChange in the range [0,1]
-        probabilitiesOfChange = [pc/probSum for pc in probabilitiesOfChange]
-        index = -1
-        for i, prob in enumerate(probabilitiesOfChange):
-            if ( reaction >= bottom and reaction < (bottom + prob)):
-                index = i
+#         probabilitiesOfChange = [pc/probSum for pc in probabilitiesOfChange]
+        probabilitiesOfChange = {r_id: pc/probSum for r_id, pc in probabilitiesOfChange.items()}
+#         print("Prob of Change: " + str(probabilitiesOfChange))
+#         index = -1
+#         for i, prob in enumerate(probabilitiesOfChange):
+#             if ( reaction >= bottom and reaction < (bottom + prob)):
+#                 index = i
+#                 break
+#             bottom += prob
+#         
+#         if (index == -1):
+#             print("ERROR! Transition not found. Error in the algorithm execution.")
+#             sys.exit()
+        reaction_id = -1
+        for r_id, prob in probabilitiesOfChange.items():
+            if reaction >= bottom and reaction < (bottom + prob):
+                reaction_id = r_id
                 break
             bottom += prob
         
-        if (index == -1):
+        if (reaction_id == -1):
             print("ERROR! Transition not found. Error in the algorithm execution.")
             sys.exit()
-        #print(currentState)
-        #print(self._ruleChanges[index])
+#         print("current state: " + str(currentState))
+#         print("triggered change: " + str(self._mumotModel._stoichiometry[reaction_id]))
         # apply the change
-        currentState = list(np.array(currentState) + np.array(self._ruleChanges[index]) )
+#         currentState = list(np.array(currentState) + np.array(self._ruleChanges[index]) )
+        for reactant, re_stoch in self._mumotModel._stoichiometry[reaction_id].items():
+            if reactant == 'rate' or re_stoch == 'const': continue
+            currentState[reactant] += re_stoch[1] - re_stoch[0]
+            if (currentState[reactant] < 0):
+                print("ERROR! Population size became negative: " + str(currentState) + "; Error in the algorithm execution.")
+                sys.exit()
         #print(currentState)
                 
         return (timeInterval, currentState)
@@ -3374,7 +3421,7 @@ class MuMoTSSAView(MuMoTview):
          
         t = 0
         currentState = []
-        for reactant in sorted(self._mumotModel._reactants, key=str):
+        for reactant in sorted(self._mumotModel._reactants|self._mumotModel._constantReactants, key=str):
             currentState.append(self._initialState[reactant])
         historyState.append( [t] + currentState )
  
@@ -3385,7 +3432,7 @@ class MuMoTSSAView(MuMoTview):
 
             # log step
             historyState.append( [t] + currentState )
-            for state,pop in zip(sorted(self._mumotModel._reactants, key=str), currentState):
+            for state,pop in zip(sorted(self._mumotModel._reactants|self._mumotModel._constantReactants, key=str), currentState):
                 evo[state].append(pop)
             evo['time'].append(t)
                       
@@ -4522,6 +4569,7 @@ def _buildFig(object, figure = None):
 
 ## used for determining significant digits for axes formatting in plots MuMoTstreamView and MuMoTbifurcationView 
 def round_to_1(x):
+    if x == 0: return 1
     return round(x, -int(floor(log10(abs(x)))))
 
 ## Function for editing properties of 3D plots. 
