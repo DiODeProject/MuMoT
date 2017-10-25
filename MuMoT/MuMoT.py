@@ -1386,7 +1386,7 @@ class MuMoTview:
         self._controller = controller
         self._logs = []
         self._axes3d = False
-        self._plotLimits = 1
+        self._plotLimits = 6
         if params != None:
             self._paramNames, self._paramValues = zip(*params)
         
@@ -3385,7 +3385,7 @@ def parseModel(modelDescription):
     for (reactant, latexStr) in zip(model._constantReactants, constantReactants):
         model._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'    
     
-    model._stoichiometry = _getStoichiometry(model._rules)
+    model._stoichiometry = _getStoichiometry(model._rules, model._constantReactants)
     
     return model
 
@@ -3419,16 +3419,24 @@ def _deriveODEsFromRules(reactants, rules):
 
 ## produces dictionary with stoichiometry of all reactions with key ReactionNr
 # ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry
-def _getStoichiometry(rules):
+def _getStoichiometry(rules, const_reactants):
     stoich = {}
     ReactionNr = numbered_symbols(prefix='Reaction ', cls=Symbol, start=1)
     for rule in rules:
         reactDict = {'rate': rule.rate}
         for reactant in rule.lhsReactants:
-            reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
+            if reactant != 1:
+                if reactant in const_reactants:
+                    reactDict[reactant] = 'const'
+                else:
+                    reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
         for reactant in rule.rhsReactants:
-            if not reactant in rule.lhsReactants:
-                reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
+            if reactant != 1:
+                if reactant not in rule.lhsReactants:
+                    if reactant in const_reactants:
+                        reactDict[reactant] = 'const'
+                    else:
+                        reactDict[reactant] = [rule.lhsReactants.count(reactant), rule.rhsReactants.count(reactant)]
         stoich[ReactionNr.__next__()] = reactDict
         
     return stoich
@@ -3443,7 +3451,7 @@ def _deriveMasterEquation(stoichiometry):
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
                 if len(stoich[key1][key2]) == 3:
@@ -3459,16 +3467,19 @@ def _deriveMasterEquation(stoichiometry):
     for key1 in stoich:
         prod1 = 1
         prod2 = 1
+        rate_fact = 1
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 prod1 *= f(E_op(key2, stoich[key1][key2][0]-stoich[key1][key2][1]))
                 prod2 *= g(key2, stoich[key1][key2][0], V)
+            if stoich[key1][key2] == 'const':
+                rate_fact *= key2/V
         if len(nvec)==2:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t), stoich[key1]['rate'])
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t), stoich[key1]['rate']*rate_fact)
         elif len(nvec)==3:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t), stoich[key1]['rate'])
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t), stoich[key1]['rate']*rate_fact)
         else:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], nvec[3], t), stoich[key1]['rate'])
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], nvec[3], t), stoich[key1]['rate']*rate_fact)
 
     return sol_dict_rhs, substring
 
@@ -3478,19 +3489,30 @@ def _doVanKampenExpansion(rhs, stoich):
     P, E_op, x, y, v, w, t, m = symbols('P E_op x y v w t m')
     V = Symbol('V', real=True, constant=True)
     nvec = []
+    nconstvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
+            elif key2 != 'rate' and stoich[key1][key2] == 'const':
+                if not key2 in nconstvec:
+                    nconstvec.append(key2)
+                    
     nvec = sorted(nvec, key=default_sort_key)
     assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
     
     NoiseDict = {}
     PhiDict = {}
+    PhiConstDict = {}
+    
     for kk in range(len(nvec)):
         NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
         PhiDict[nvec[kk]] = Symbol('Phi_'+str(nvec[kk]))
+        
+    for kk in range(len(nconstvec)):
+        PhiConstDict[nconstvec[kk]] = V*Symbol('Phi_'+str(nconstvec[kk]))
+
         
     rhs_dict, substring = rhs(stoich)
     rhs_vKE = 0
@@ -3514,7 +3536,7 @@ def _doVanKampenExpansion(rhs, stoich):
                 term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             #term_num, term_denom = term.as_numer_denom()
-            rhs_vKE += rhs_dict[key][3]*(term.doit() - func)
+            rhs_vKE += rhs_dict[key][3].subs(PhiConstDict)*(term.doit() - func)
     elif len(nvec)==3:
         lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
                   - sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
@@ -3544,7 +3566,7 @@ def _doVanKampenExpansion(rhs, stoich):
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             else:
                 print('Something went wrong!')
-            rhs_vKE += rhs_dict[key][3]*(term.doit() - func)    
+            rhs_vKE += rhs_dict[key][3].subs(PhiConstDict)*(term.doit() - func)    
     else:
         lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
                   - sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
@@ -3584,7 +3606,7 @@ def _doVanKampenExpansion(rhs, stoich):
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             else:
                 print('Something went wrong!')
-            rhs_vKE += rhs_dict[key][3]*(term.doit() - func)
+            rhs_vKE += rhs_dict[key][3].subs(PhiConstDict)*(term.doit() - func)
     
     return rhs_vKE.expand(), lhs_vKE, substring
 
@@ -3641,7 +3663,7 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
@@ -3676,7 +3698,7 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
@@ -3838,7 +3860,7 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
@@ -4138,7 +4160,7 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     nvec = []
     for key1 in stoich:
         for key2 in stoich[key1]:
-            if not key2 == 'rate':
+            if key2 != 'rate' and stoich[key1][key2] != 'const':
                 if not key2 in nvec:
                     nvec.append(key2)
     #for reactant in reactants:
