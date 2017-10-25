@@ -1767,6 +1767,7 @@ class MuMoTfieldView(MuMoTview):
 
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
+        plotLimits = 1
         if self._controller != None:
             paramNames = []
             paramValues = []
@@ -1778,8 +1779,6 @@ class MuMoTfieldView(MuMoTview):
                 paramValues.append(value.value)
             if self._controller._plotLimitsWidget != None:
                 plotLimits = self._controller._plotLimitsWidget.value
-            else:
-                plotLimits = 1                  
         else:
             paramNames = self._paramNames
             paramValues = self._paramValues            
