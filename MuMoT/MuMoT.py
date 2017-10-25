@@ -18,6 +18,7 @@ from IPython.display import display, clear_output, Math, Latex, Javascript
 import ipywidgets.widgets as widgets
 from matplotlib import pyplot as plt
 import matplotlib.cm as cm
+import matplotlib.patches as mpatch
 import numpy as np
 from sympy import *
 import math
@@ -444,6 +445,33 @@ class MuMoTmodel:
                 out += " + "
             out = out[0:len(out) - 2] # delete the last ' + '
             display(Math(out))
+
+
+
+    ## construct interactive plot of noise around fixed points        
+    def fixedPointNoise(self, stateVariable1, stateVariable2, stateVariable3=None, **kwargs):
+        if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
+            
+            
+            n1, n2, n3, n4 = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+
+            # get stationary solution of moments of noise variables <eta_i> and <eta_i eta_j>
+            noiseStatSol = (n1,n2,n3,n4)#_getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+            
+            # construct controller
+            viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), **kwargs)
+            
+            # construct view
+            modelView = MuMoTnoiseView(self, viewController, noiseStatSol, stateVariable1, stateVariable2, **kwargs)
+                    
+            viewController.setView(modelView)
+            viewController._setReplotFunction(modelView._plot_field)         
+            
+            return viewController
+        else:
+            return None
+
+
 
     ## construct interactive stream plot        
     def stream(self, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
@@ -1695,9 +1723,17 @@ class MuMoTfieldView(MuMoTview):
         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
         
         eigList = []
+        #for nn in range(len(realEQsol)): 
+        #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
+        #    evSet = JACsub.eigenvals()
+        #    eigList.append(evSet)
         for nn in range(len(realEQsol)): 
+            evSet = {}
             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
-            evSet = JACsub.eigenvals()
+            #evSet = JACsub.eigenvals()
+            eigVects = JACsub.eigenvects()
+            for kk in range(len(eigVects)):
+                evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
             eigList.append(evSet)
         return realEQsol, eigList #returns two lists of dictionaries
     
@@ -1728,9 +1764,17 @@ class MuMoTfieldView(MuMoTview):
         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
         
         eigList = []
+        #for nn in range(len(realEQsol)): 
+        #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
+        #    evSet = JACsub.eigenvals()
+        #    eigList.append(evSet)
         for nn in range(len(realEQsol)): 
+            evSet = {}
             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
-            evSet = JACsub.eigenvals()
+            #evSet = JACsub.eigenvals()
+            eigVects = JACsub.eigenvects()
+            for kk in range(len(eigVects)):
+                evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
             eigList.append(evSet)
         return realEQsol, eigList #returns two lists of dictionaries
     
@@ -1826,6 +1870,102 @@ class MuMoTfieldView(MuMoTview):
                 self._Zdot = np.ma.array(self._Zdot, mask=mask)
         self._logs.append(log)
 
+
+## stream plot with noise ellipses view on model
+class MuMoTnoiseView(MuMoTfieldView):
+    ## solution 1st order moments (noise in vKE)
+    _SOL_1stOrderMomDict = None
+    ## replacement dictionary for symbols of 1st order moments
+    _NoiseSubs1stOrder = None
+    ## solution 2nd order moments (noise in vKE)
+    _SOL_2ndOrdMomDict = None
+    ## replacement dictionary for symbols of 2nd order moments
+    _NoiseSubs2ndOrder = None
+    ## solution 1st and 2nd order moments with replacement dictionaries
+    _noiseStatSol = None
+    
+    def __init__(self, model, controller, noiseStatSol, stateVariable1, stateVariable2, stateVariable3=None, figure = None, params = None, **kwargs):
+        if model._systemSize == None and model._constantSystemSize == True:
+            print("Cannot construct field-based plot until system size is set, using substitute()")
+            return
+        self._noiseStatSol = noiseStatSol
+        self._SOL_1stOrderMomDict, self._NoiseSubs1stOrder, self._SOL_2ndOrdMomDict, self._NoiseSubs2ndOrder = self._noiseStatSol
+        silent = kwargs.get('silent', False)
+        super().__init__(model, controller, stateVariable1, stateVariable2, stateVariable3, figure, params, **kwargs)
+        #print(self._SOL_1stOrderMomDict)
+    #print(SOL_2ndOrdMomDict)
+    def _plot_field(self):
+        super()._plot_field()
+        realEQsol, eigList = self._get_fixedPoints2d()
+        print(realEQsol)
+        print(self._SOL_1stOrderMomDict)
+        Evects = []
+        EvectsPlot = []
+        EV = []
+        EVplot = []
+        for kk in range(len(eigList)):
+            EVsub = []
+            EvectsSub = []
+            for key in eigList[kk]:
+                for jj in range(len(eigList[kk][key][1])):
+                    EvectsSub.append(eigList[kk][key][1][jj].evalf())
+                if eigList[kk][key][0] >1:
+                    for jj in range(eigList[kk][key][0]):
+                        EVsub.append(key.evalf())
+                else:
+                    EVsub.append(key.evalf())
+                    
+            EV.append(EVsub)
+            Evects.append(EvectsSub)
+            if self._mumotModel._constantSystemSize == True:
+                if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+                    EVplot.append(EVsub)
+                    EvectsPlot.append(EvectsSub)
+            else:
+                EVplot.append(EVsub)
+                EvectsPlot.append(EvectsSub)
+        
+        if self._mumotModel._constantSystemSize == True:
+            FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)], 
+                         [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
+        else:
+            FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
+                         [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
+        FixedPoints.append(EVplot)
+        
+            
+        self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
+        
+        if self._speed is not None:
+            fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
+        else:
+            fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = 'k') ## @todo: define colormap by user keyword
+        ells = [mpatch.Ellipse(xy=[FixedPoints[0][nn],FixedPoints[1][nn]], width=0.1, height=0.2, angle=-0.5*360) for nn in range(len(FixedPoints[0]))]
+        ax = plt.gca()
+        for ell in ells:
+            ax.add_artist(ell)
+            ell.set_alpha(0.25)
+            ell.set_facecolor('b')
+        if self._mumotModel._constantSystemSize == True:
+            plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')            
+            plt.xlim(0,1)
+            plt.ylim(0,1)
+        else:
+            plt.xlim(0,self._X.max())
+            plt.ylim(0,self._Y.max())
+        
+        _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
+                   ylab = self._ylab, fontsize=self._chooseFontSize)
+#        plt.set_aspect('equal') ## @todo
+
+        if self._showFixedPoints==True:
+            with io.capture_output() as log:
+                for kk in range(len(realEQsol)):
+                    print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]),
+                          'and eigenvectors:', str(Evects[kk]))
+            self._logs.append(log)
+
+
 ## stream plot view on model
 class MuMoTstreamView(MuMoTfieldView):
     def _plot_field(self):
@@ -1838,15 +1978,19 @@ class MuMoTstreamView(MuMoTfieldView):
             for kk in range(len(eigList)):
                 EVsub = []
                 for key in eigList[kk]:
-                    if eigList[kk][key] >1:
-                        for jj in range(eigList[kk][key]):
+                    if eigList[kk][key][0] >1:
+                        for jj in range(eigList[kk][key][0]):
                             EVsub.append(key.evalf())
                     else:
                         EVsub.append(key.evalf())
                         
                 EV.append(EVsub)
-                if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+                if self._mumotModel._constantSystemSize == True:
+                    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+                        EVplot.append(EVsub)
+                else:
                     EVplot.append(EVsub)
+            
             #EV = []
             #EVplot = []
             #for kk in range(len(eigList)):
@@ -1857,8 +2001,12 @@ class MuMoTstreamView(MuMoTfieldView):
             #    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
             #        EVplot.append(EVsub)
 
-            FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1)], 
-                         [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
+            if self._mumotModel._constantSystemSize == True:
+                FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)], 
+                             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
+            else:
+                FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
+                             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
             FixedPoints.append(EVplot)
         else:
             FixedPoints = None
@@ -1900,14 +2048,17 @@ class MuMoTvectorView(MuMoTfieldView):
                 for kk in range(len(eigList)):
                     EVsub = []
                     for key in eigList[kk]:
-                        if eigList[kk][key] >1:
-                            for jj in range(eigList[kk][key]):
+                        if eigList[kk][key][0] >1:
+                            for jj in range(eigList[kk][key][0]):
                                 EVsub.append(key.evalf())
                         else:
                             EVsub.append(key.evalf())
                             
                     EV.append(EVsub)
-                    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+                    if self._mumotModel._constantSystemSize == True:
+                        if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+                            EVplot.append(EVsub)
+                    else:
                         EVplot.append(EVsub)
 
                 #EV = []
@@ -1920,8 +2071,12 @@ class MuMoTvectorView(MuMoTfieldView):
                 #    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
                 #        EVplot.append(EVsub)
                 
-                FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1)], 
-                             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
+                if self._mumotModel._constantSystemSize == True:
+                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)], 
+                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
+                else:
+                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
+                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
                 FixedPoints.append(EVplot)
             else:
                 FixedPoints = None
@@ -1951,19 +2106,27 @@ class MuMoTvectorView(MuMoTfieldView):
                 for kk in range(len(eigList)):
                     EVsub = []
                     for key in eigList[kk]:
-                        if eigList[kk][key] >1:
-                            for jj in range(eigList[kk][key]):
+                        if eigList[kk][key][0] >1:
+                            for jj in range(eigList[kk][key][0]):
                                 EVsub.append(key.evalf())
                         else:
                             EVsub.append(key.evalf())
                             
                     EV.append(EVsub)
-                    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable3]) <= 1):
+                    if self._mumotModel._constantSystemSize == True:
+                        if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable3]) <= 1):
+                            EVplot.append(EVsub)
+                    else:
                         EVplot.append(EVsub)
-                
-                FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1)], 
-                             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)],
-                             [realEQsol[kk][self._stateVariable3] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable3]) <= 1)]]
+                    
+                if self._mumotModel._constantSystemSize == True:
+                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable3]) <= 1)], 
+                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable3]) <= 1)],
+                                 [realEQsol[kk][self._stateVariable3] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable3]) <= 1)]]
+                else:
+                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
+                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))],
+                                 [realEQsol[kk][self._stateVariable3] for kk in range(len(realEQsol))]]
                 FixedPoints.append(EVplot)
             else:
                 FixedPoints = None
@@ -4685,19 +4848,19 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                 for jj in range(len(solX_dict['solX_unst'])):
                     plt.plot(solX_dict['solX_unst'][jj], 
                              solY_dict['solY_unst'][jj], 
-                             c = line_color_list[3], 
+                             c = line_color_list[2], 
                              ls = linestyle_list[3], lw = LineThickness, label = r'unstable')
             if not solX_dict['solX_stab'] == []:            
                 for jj in range(len(solX_dict['solX_stab'])):
                     plt.plot(solX_dict['solX_stab'][jj], 
                              solY_dict['solY_stab'][jj], 
-                             c = line_color_list[2], 
+                             c = line_color_list[1], 
                              ls = linestyle_list[0], lw = LineThickness, label = r'stable')
             if not solX_dict['solX_saddle'] == []:            
                 for jj in range(len(solX_dict['solX_saddle'])):
                     plt.plot(solX_dict['solX_saddle'][jj], 
                              solY_dict['solY_saddle'][jj], 
-                             c = line_color_list[1], 
+                             c = line_color_list[0], 
                              ls = linestyle_list[1], lw = LineThickness, label = r'saddle')
                                     
                             
@@ -4776,7 +4939,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         if not specialPoints[0] == []:
             for jj in range(len(specialPoints[0])):
                 plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=15, 
-                         c=line_color_list[0])    
+                         c=line_color_list[-1])    
             for a,b,c in zip(specialPoints[0], specialPoints[1], specialPoints[2]): 
                 if a > plt.xlim()[0]+(plt.xlim()[1]-plt.xlim()[0])/2:
                     x_offset = -(plt.xlim()[1]-plt.xlim()[0])*0.02
@@ -4796,18 +4959,18 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                     lam1 = specialPoints[2][jj][0]
                     lam2 = specialPoints[2][jj][1]
                     if re(lam1) < 0 and re(lam2) < 0:
-                        FPcolor = line_color_list[2]
+                        FPcolor = line_color_list[1]
                         FPfill = 'full'
                     elif re(lam1) > 0 and re(lam2) > 0:
-                        FPcolor = line_color_list[3]
+                        FPcolor = line_color_list[2]
                         FPfill = 'none'
                     else:
-                        FPcolor = line_color_list[1]
+                        FPcolor = line_color_list[0]
                         FPfill = 'none'
                         
                 except:
                     print('Check input!')
-                    FPcolor=line_color_list[0]  
+                    FPcolor=line_color_list[-1]  
                     FPfill = 'none'
                      
                 plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=20, 
