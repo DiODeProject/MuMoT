@@ -550,12 +550,12 @@ class MuMoTmodel:
 
         # Setting some default values 
         ## @todo add possibility to customise these values from input line
-        MAParams['motionCorrelatedness'] = (0.5, 0.0, 1.0, 0.05)
-        MAParams['particleSpeed'] = (0.01, 0.0, 0.1, 0.005)
-        MAParams['visualisationType'] = 'evo' # default view is time-evolution
-        MAParams['scaling'] = (1, 0.01, 1, 0.01)
-        MAParams['showTrace'] = netType == 'dynamic'
-        MAParams['showInteractions'] = False
+        MAParams['motionCorrelatedness'] = kwargs.get('motionCorrelatedness', (0.5, 0.0, 1.0, 0.05))
+        MAParams['particleSpeed'] = kwargs.get('particleSpeed', (0.01, 0.0, 0.1, 0.005))
+        MAParams['visualisationType'] = kwargs.get('visualisationType', 'evo') # default view is time-evolution
+        MAParams['timestepSize'] = kwargs.get('timestepSize', (1, 0.01, 1, 0.01) )
+        MAParams['showTrace'] = kwargs.get('showTrace', netType == 'dynamic')
+        MAParams['showInteractions'] = kwargs.get('showInteractions', False)
         ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
         MAParams['realtimePlot'] = kwargs.get('realtimePlot', False)
         
@@ -1231,15 +1231,15 @@ class MuMoTmultiagentController(MuMoTcontroller):
         #display(widget)
         
         # Time scaling slider
-        scaling = MAParams['scaling']
-        widget =  widgets.FloatSlider(value = scaling[0],
-                                    min = scaling[1], 
-                                    max = scaling[2],
-                                    step = scaling[3],
-                            description = 'Time scaling', 
+        timestepSize = MAParams['timestepSize']
+        widget =  widgets.FloatSlider(value = timestepSize[0],
+                                    min = timestepSize[1], 
+                                    max = timestepSize[2],
+                                    step = timestepSize[3],
+                            description = 'Timestep size', 
                             continuous_update = continuousReplot
         )
-        self._widgetsExtraParams['scaling'] = widget
+        self._widgetsExtraParams['timestepSize'] = widget
         self._widgets.append(widget)
         advancedWidgets.append(widget)
         
@@ -1628,9 +1628,8 @@ class MuMoTmultiController(MuMoTcontroller):
 #             if controller._view == None: ## presume this controller is a multi controller (@todo check?)
 #                 controller._widgets = self._widgets
         
-        ## @todo possibly replace self._widgets with self._widgetsFreeParams? This is the only _widgets usage
-        for widget in self._widgets:
-            widget.on_trait_change(self._view._plot, 'value')
+        ## @todo handle correctly the re-draw only widgets and function
+        self._setReplotFunction( self._view._plot, self._view._plot)
 
         #silent = kwargs.get('silent', False)
         if not self._silent:
@@ -2319,7 +2318,7 @@ class MuMoTmultiagentView(MuMoTview):
     ## number of simulation timesteps
     _maxTime = None
     ## time scaling (i.e. lenght of each timestep)
-    _scaling = None
+    _timestepSize = None
     ## dictionary of rates
     _ratesDict = None
     ## visualisation type
@@ -2361,7 +2360,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._netParam = MAParams['netParam']
             self._motionCorrelatedness = MAParams['motionCorrelatedness']
             self._particleSpeed = MAParams['particleSpeed']
-            self._scaling = MAParams.get('scaling',1)
+            self._timestepSize = MAParams.get('timestepSize',1)
             self._showTrace = MAParams.get('showTrace',False)
             self._showInteractions = MAParams.get('showInteractions',False)
             self._realtimePlot = MAParams.get('realtimePlot', False)
@@ -2377,7 +2376,8 @@ class MuMoTmultiagentView(MuMoTview):
                 i += 1            
             
         self._logs.append(log)
-        self._plot_timeEvolution()
+        if not self._silent:
+            self._plot_timeEvolution()
         
     def _print_standalone_view_cmd(self):
         MAParams = {}
@@ -2392,7 +2392,7 @@ class MuMoTmultiagentView(MuMoTview):
         MAParams['netParam'] = self._netParam 
         MAParams['motionCorrelatedness'] = self._motionCorrelatedness
         MAParams['particleSpeed'] = self._particleSpeed
-        MAParams['scaling'] = self._scaling
+        MAParams['timestepSize'] = self._timestepSize
         MAParams['showTrace'] = self._showTrace
         MAParams['showInteractions'] = self._showInteractions
 #         sortedDict = "{"
@@ -2421,7 +2421,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._netParam = self._controller._widgetsExtraParams['netParam'].value
             self._motionCorrelatedness = self._controller._widgetsExtraParams['motionCorrelatedness'].value
             self._particleSpeed = self._controller._widgetsExtraParams['particleSpeed'].value
-            self._scaling = self._controller._widgetsExtraParams['scaling'].value
+            self._timestepSize = self._controller._widgetsExtraParams['timestepSize'].value
             self._showTrace = self._controller._widgetsPlotOnly['showTrace'].value
             self._showInteractions = self._controller._widgetsPlotOnly['showInteractions'].value
             self._realtimePlot = self._controller._widgetsExtraParams['realtimePlot'].value
@@ -2525,7 +2525,7 @@ class MuMoTmultiagentView(MuMoTview):
             plt.xlim((0, self._maxTime))
             plt.ylim((0, totAgents))
             #self._figure.show()
-            if not self._silent: _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
+            _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent))
         elif self._visualisationType == "graph": #and self._netType == NetworkType.DYNAMIC:
             plt.axes().set_aspect('equal')
         elif (self._visualisationType == "final"):
@@ -2745,25 +2745,25 @@ class MuMoTmultiagentView(MuMoTview):
             if (maxRates + voidRates) > maxRatesAll:
                 maxRatesAll = maxRates + voidRates
         #self._scaling = 1/maxRatesAll
-        if maxRatesAll>0: self._scaling = 1/maxRatesAll 
-        else: self._scaling = 1
-        if self._controller != None: self._update_scaling_widget(self._scaling)
-        print("Scaling factor s=" + str(self._scaling))
+        if maxRatesAll>0: self._timestepSize = 1/maxRatesAll 
+        else: self._timestepSize = 1
+        if self._controller != None: self._update_timestepSize_widget(self._timestepSize)
+        print("timestepSize s=" + str(self._timestepSize))
     
-    def _update_scaling_widget(self, scaling):
-        if (self._controller._widgetsExtraParams['scaling'].value > scaling):
-            self._controller._widgetsExtraParams['scaling'].value = scaling  
-        if (self._controller._widgetsExtraParams['scaling'].max > scaling):
-            self._controller._widgetsExtraParams['scaling'].max = scaling
-            self._controller._widgetsExtraParams['scaling'].min = scaling/100
-            self._controller._widgetsExtraParams['scaling'].step = scaling/100 
+    def _update_timestepSize_widget(self, timestepSize):
+        if (self._controller._widgetsExtraParams['timestepSize'].value > timestepSize):
+            self._controller._widgetsExtraParams['timestepSize'].value = timestepSize  
+        if (self._controller._widgetsExtraParams['timestepSize'].max > timestepSize):
+            self._controller._widgetsExtraParams['timestepSize'].max = timestepSize
+            self._controller._widgetsExtraParams['timestepSize'].min = timestepSize/100
+            self._controller._widgetsExtraParams['timestepSize'].step = timestepSize/100 
     
     def _applyScalingFactor(self):
-        # Multiply all rates by the scaling factor
+        # Multiply all rates by the scaling factor timestepSize
         for probSets in self._probabilities.values():
             for probSet in probSets.values():
                 for prob in probSet:
-                    prob[1] *= self._scaling
+                    prob[1] *= self._timestepSize
                     
     def _initGraph(self, graphType, numNodes, netParam=None):
         if (graphType == NetworkType.FULLY_CONNECTED):
@@ -2960,7 +2960,8 @@ class MuMoTSSAView(MuMoTview):
                 i += 1 
         
         self._logs.append(log)
-        self._plot_timeEvolution()
+        if not self._silent:
+            self._plot_timeEvolution()
 
     def _update_params(self):
         if self._controller != None:
@@ -3062,8 +3063,8 @@ class MuMoTSSAView(MuMoTview):
     
     def _initFigure(self):
         if not self._silent:
-            # Clearing the plot
             plt.figure(self._figureNum)
+            # Clearing the plot
             plt.clf()
 
         # Setting the axes
@@ -3077,7 +3078,8 @@ class MuMoTSSAView(MuMoTview):
 #                 # make legend
 #                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
 #                 self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
-            if not self._silent: _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
+            #if not self._silent: _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
+            _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent))
             #self._figure.show()
         elif (self._visualisationType == "final"):
 #             plt.axes().set_aspect('equal') #for piechart
