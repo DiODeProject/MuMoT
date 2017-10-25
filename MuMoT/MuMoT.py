@@ -734,7 +734,7 @@ class MuMoTmodel:
         return viewController
 
     def _check_state_variables(self, stateVariable1, stateVariable2, stateVariable3 = None):
-        if Symbol(stateVariable1) in self._reactants and Symbol(stateVariable2) in self._reactants and (stateVariable3 == None or Symbol(stateVariable3) in self._reactants):
+        if process_sympy(stateVariable1) in self._reactants and process_sympy(stateVariable2) in self._reactants and (stateVariable3 == None or process_sympy(stateVariable3) in self._reactants):
             if stateVariable1 != stateVariable2 and stateVariable1 != stateVariable3 and stateVariable2 != stateVariable3:
                 return True
             else:
@@ -1682,11 +1682,11 @@ class MuMoTfieldView(MuMoTview):
         if stateVariable3:
             self._zlab = kwargs.get('zlab', str(stateVariable3)) 
         
-        self._stateVariable1 = Symbol(stateVariable1)
-        self._stateVariable2 = Symbol(stateVariable2)
+        self._stateVariable1 = process_sympy(stateVariable1)
+        self._stateVariable2 = process_sympy(stateVariable2)
         if stateVariable3 != None:
             self._axes3d = True
-            self._stateVariable3 = Symbol(stateVariable3)
+            self._stateVariable3 = process_sympy(stateVariable3)
         _mask = {}
 
         if not(silent):
