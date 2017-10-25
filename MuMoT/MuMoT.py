@@ -898,8 +898,6 @@ class MuMoTcontroller:
     _view = None
     ## dictionary of LaTeX labels for widgets, with parameter name as key
     _paramLabelDict = None
-    ## list of widgets
-    _widgets = None
     ## dictionary of controller widgets only for the free parameters of the model, with parameter name as key
     _widgetsFreeParams = None
     ## dictionary of controller widgets for the special parameters (e.g., simulation length, initial state), with parameter name as key
@@ -922,7 +920,6 @@ class MuMoTcontroller:
     def __init__(self, paramValues, paramNames, paramLabelDict = {}, continuousReplot = False, plotLimits = False, systemSize = False, **kwargs):
         silent = kwargs.get('silent', False)
         self._paramLabelDict = paramLabelDict
-        self._widgets = []
         self._widgetsFreeParams = {}
         self._widgetsExtraParams = {}
         self._widgetsPlotOnly = {}
@@ -934,7 +931,6 @@ class MuMoTcontroller:
                                          description = r'\(' + self._paramLabelDict.get(pair[0],pair[0]) + r'\)', 
                                          continuous_update = continuousReplot)
             self._widgetsFreeParams[pair[0]] = widget
-            self._widgets.append(widget)
             if not(self._silent):
                 display(widget)
         if plotLimits:
@@ -1068,7 +1064,6 @@ class MuMoTSSAController(MuMoTcontroller):
                                          description = "State " + str(state), 
                                          continuous_update = continuousReplot)
             self._widgetsExtraParams['init'+str(state)] = widget
-            self._widgets.append(widget)
             advancedWidgets.append(widget)
             
         # Max time slider
@@ -1079,7 +1074,6 @@ class MuMoTSSAController(MuMoTcontroller):
                                          disabled=False,
                                          continuous_update = continuousReplot) 
         self._widgetsExtraParams['maxTime'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         
         # Random seed input field
@@ -1089,7 +1083,6 @@ class MuMoTSSAController(MuMoTcontroller):
             disabled=False
         )
         self._widgetsExtraParams['randomSeed'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         
         ## Toggle buttons for plotting style 
@@ -1103,7 +1096,6 @@ class MuMoTSSAController(MuMoTcontroller):
         #     icons=['check'] * 3
         )
         self._widgetsPlotOnly['visualisationType'] = plotToggle
-        self._widgets.append(plotToggle)
         advancedWidgets.append(plotToggle)
         
         ## Checkbox for realtime plot update
@@ -1113,7 +1105,6 @@ class MuMoTSSAController(MuMoTcontroller):
             disabled = False
         )
         self._widgetsExtraParams['realtimePlot'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         
         advancedPage = widgets.Box(children=advancedWidgets)
@@ -1152,7 +1143,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                          description = "State " + str(state), 
                                          continuous_update = continuousReplot)
             self._widgetsExtraParams['init'+str(state)] = widget
-            self._widgets.append(widget)
             advancedWidgets.append(widget)
         
         # Max time slider
@@ -1163,7 +1153,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                          disabled=False,
                                          continuous_update = continuousReplot) 
         self._widgetsExtraParams['maxTime'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         
         ## Network type dropdown selector
@@ -1192,7 +1181,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             disabled=True
         )
         self._widgetsExtraParams['netParam'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         
         # Agent speed
@@ -1204,7 +1192,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             disabled=True
         )
         self._widgetsExtraParams['particleSpeed'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         
         # Random walk correlatedness
@@ -1218,7 +1205,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             disabled=True
         )
         self._widgetsExtraParams['motionCorrelatedness'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         
         # Random seed input field
@@ -1228,7 +1214,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
             disabled=False
         )
         self._widgetsExtraParams['randomSeed'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         #display(widget)
         
@@ -1242,7 +1227,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             continuous_update = continuousReplot
         )
         self._widgetsExtraParams['timestepSize'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         
         ## Toggle buttons for plotting style 
@@ -1257,7 +1241,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
         #     icons=['check'] * 3
         )
         self._widgetsPlotOnly['visualisationType'] = plotToggle
-        self._widgets.append(plotToggle)
         advancedWidgets.append(plotToggle)
         
         # Particle display checkboxes
@@ -1267,7 +1250,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
             disabled = not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
         )
         self._widgetsPlotOnly['showTrace'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         widget = widgets.Checkbox(
             value = MAParams['showInteractions'],
@@ -1275,7 +1257,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
             disabled = not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
         )
         self._widgetsPlotOnly['showInteractions'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         
         widget = widgets.Checkbox(
@@ -1284,7 +1265,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
             disabled = False
         )
         self._widgetsExtraParams['realtimePlot'] = widget
-        self._widgets.append(widget)
         advancedWidgets.append(widget)
         
         self._update_net_params()
@@ -1627,8 +1607,6 @@ class MuMoTmultiController(MuMoTcontroller):
                 
         for controller in controllers:
             controller._setErrorWidget(self._errorMessage)
-#             if controller._view == None: ## presume this controller is a multi controller (@todo check?)
-#                 controller._widgets = self._widgets
         
         ## @todo handle correctly the re-draw only widgets and function
         self._setReplotFunction( self._view._plot, self._view._plot)
@@ -2076,7 +2054,6 @@ class MuMoTbifurcationView(MuMoTview):
     #                self._paramNames.append(str(self._systemSize))
     #                widget = widgets.FloatSlider(value = 1, min = _rateLimits[0], max = _rateLimits[1], step = _rateStep, description = str(self._systemSize), continuous_update = False)
     #                widget.on_trait_change(self._replot_bifurcation2D, 'value')
-    #                self._widgets.append(widget)
     #                display(widget)
             else:
                 print('Cannot attempt bifurcation plot until system size is set, using substitute()')
