@@ -416,11 +416,12 @@ class MuMoTmodel:
     ## displays noise in the stationary state
     def showNoiseStationarySol(self):
         SOL_1stOrderMom, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+        print('Stationary solutions of first and second order moments of noise:')
         for sol1 in SOL_1stOrderMom:
-            out = latex(sol1.subs(NoiseSubs1stOrder)) + ":= " + latex(SOL_1stOrderMom[sol1].subs(NoiseSubs1stOrder))
+            out = latex(sol1.subs(NoiseSubs1stOrder)) + latex(r'(t \to \infty)') + ":= " + latex(SOL_1stOrderMom[sol1].subs(NoiseSubs1stOrder))
             display(Math(out))
         for sol2 in SOL_2ndOrdMomDict:
-            out = latex(sol2.subs(NoiseSubs2ndOrder)) + " := " + latex(SOL_2ndOrdMomDict[sol2].subs(NoiseSubs2ndOrder))
+            out = latex(sol2.subs(NoiseSubs2ndOrder)) + latex(r'(t \to \infty)') + " := " + latex(SOL_2ndOrdMomDict[sol2].subs(NoiseSubs2ndOrder))
             display(Math(out))     
         
         
@@ -1900,8 +1901,8 @@ class MuMoTnoiseView(MuMoTfieldView):
     def _plot_field(self):
         super()._plot_field()
         realEQsol, eigList = self._get_fixedPoints2d()
-        print(realEQsol)
-        print(self._SOL_1stOrderMomDict)
+        #print(realEQsol)
+        #print(self._SOL_1stOrderMomDict)
         Evects = []
         EvectsPlot = []
         EV = []
@@ -4015,7 +4016,7 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
             EQsys1stOrdMom.append(eq1stOrderMoment)
             if M_1(NoiseDict[noise]) not in EOM_1stOrderMom:
                 EOM_1stOrderMom[M_1(NoiseDict[noise])] = eq1stOrderMoment
-                NoiseSubs1stOrder[M_1(NoiseDict[noise])] = r'<'+latex(NoiseDict[noise])+'>'
+                NoiseSubs1stOrder[M_1(NoiseDict[noise])] = r'\left< \vphantom{Dg}\right.' +latex(NoiseDict[noise]) + r'\left. \vphantom{Dg}\right>'
     
     NoiseSubs2ndOrder = {}
     EQsys2ndOrdMom = []
@@ -4055,7 +4056,7 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
                     EQsys2ndOrdMom.append(eq2ndOrderMoment)
                 if M_2(NoiseDict[noise1]*NoiseDict[noise2]) not in EOM_2ndOrderMom:
                     EOM_2ndOrderMom[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = eq2ndOrderMoment
-                    NoiseSubs2ndOrder[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = r'<'+latex(NoiseDict[noise1]*NoiseDict[noise2])+'>'
+                    NoiseSubs2ndOrder[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = r'\left< \vphantom{Dg}\right.' +latex(NoiseDict[noise1]*NoiseDict[noise2]) + r'\left. \vphantom{Dg}\right>' 
       
     return EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder 
 
