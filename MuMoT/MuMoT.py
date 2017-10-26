@@ -436,14 +436,22 @@ class MuMoTmodel:
             for reactant in rule.lhsReactants:
                 if type(reactant) is numbers.One:
                     reactant = Symbol('\emptyset')
+                if reactant in self._constantReactants:
+                    out += "(" 
                 out += latex(reactant)
+                if reactant in self._constantReactants:
+                    out += ")"                 
                 out += " + "
             out = out[0:len(out) - 2] # delete the last ' + '
             out += " \\xrightarrow{" + latex(rule.rate) + "}"
             for reactant in rule.rhsReactants:
                 if type(reactant) is numbers.One:
                     reactant = Symbol('\emptyset')
+                if reactant in self._constantReactants:
+                    out += "(" 
                 out += latex(reactant)
+                if reactant in self._constantReactants:
+                    out += ")"                 
                 out += " + "
             out = out[0:len(out) - 2] # delete the last ' + '
             display(Math(out))
@@ -944,6 +952,8 @@ class MuMoTcontroller:
     _plotLimitsWidget = None
     ## system size slider widget
     _systemSizeWidget = None    
+    ## bookmark button widget
+    _bookmarkWidget = None
     ## progress bar @todo: is this best put in base class when it is not always used?
     _progressBar = None
     ## used two progress bars, otherwise the previous cell bar (where controller is created) does not react anymore  @todo: is this best put in base class when it is not always used?
@@ -982,13 +992,19 @@ class MuMoTcontroller:
                 display(self._plotLimitsWidget)
             if systemSize:
                 display(self._systemSizeWidget)
+        self._bookmarkWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Paste bookmark to log', icon='bookmark')
+        self._bookmarkWidget.on_click(self._print_standalone_view_cmd)
+        display(self._bookmarkWidget)
 
         widget = widgets.HTML()
-        widget.value = 'foo' + str(widget) ## @todo why doesn't this work?
+        widget.value = ''
         self._errorMessage = widget
         if not(self._silent):
-            print('bar' + str(self._errorMessage))
             display(self._errorMessage)
+
+    def _print_standalone_view_cmd(self, foo):
+        self._view._print_standalone_view_cmd()
+        self._errorMessage.value = "Pasted bookmark to log - view with showLogs(tail = True)"
     
     ## set the functions that must be triggered when the widgets are changed.
     ## @param[in]    recomputeFunction    The function to be called when recomputing is necessary 
@@ -1391,8 +1407,12 @@ class MuMoTview:
     _paramValues = None
     ## silent flag (TRUE = do not try to acquire figure handle from pyplot)
     _silent = None
-    ## plot limits (for non-constant system size)
+    ## plot limits (for non-constant system size) @todo: not used?
     _plotLimits = None
+    ## command name that generates this view
+    _generatingCommand = None
+    ## generating keyword arguments
+    _generatingKwargs = None
     
     def __init__(self, model, controller, figure = None, params = None, **kwargs):
         self._silent = kwargs.get('silent', False)
@@ -1400,12 +1420,17 @@ class MuMoTview:
         self._controller = controller
         self._logs = []
         self._axes3d = False
-        self._plotLimits = 6
+        self._plotLimits = 6 ## @todo: why this magic number?
+        self._generatingKwargs = kwargs
         if params != None:
-            self._paramNames, self._paramValues = zip(*params)
+            self._paramNames= []
+            paramNames, self._paramValues = zip(*params)
+            for name in paramNames:
+                self._paramNames.append(name.replace('\\','')) ## @todo: have to rationalise how LaTeX characters are handled
         
         if not(self._silent):
             _buildFig(self, figure)
+    
 
     def _resetErrorMessage(self):
         if self._controller != None:
@@ -1511,6 +1536,7 @@ class MuMoTmultiView(MuMoTview):
 
     def __init__(self, controller, views, subPlotNum, **kwargs):
         super().__init__(None, controller, **kwargs)
+        self._generatingCommand = "mmt.multiView"
         self._views = views
         self._subPlotNum = subPlotNum
         for view in self._views:
@@ -1700,6 +1726,35 @@ class MuMoTfieldView(MuMoTview):
 
         if not(silent):
             self._plot_field()
+
+
+#    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
+
+    def _print_standalone_view_cmd(self):
+        with io.capture_output() as log:
+            logStr = self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
+            if self._stateVariable3 != None:
+                logStr += "'" + str(self._stateVariable3) + "', "
+            logStr += "params = ["
+            for name, value in self._controller._widgetsFreeParams.items():
+#                name = name.replace('\\', '\\\\')
+                name = name.replace('(', '')
+                name = name.replace(')', '')
+                logStr += "('" + name + "', " + str(value.value) + "), "
+            if len(self._controller._widgetsFreeParams.items()) > 0:
+                logStr = logStr[:-2] # throw away last ", "
+            logStr += "]"
+            if self._generatingKwargs != None:
+                logStr += ", "
+                for key in self._generatingKwargs:
+                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+                if len(self._generatingKwargs) > 0:
+                    logStr = logStr[:-2]  # throw away last ", "
+            logStr += ")"
+            print(logStr)    
+        self._logs.append(log)
+
+
             
     ## calculates stationary states of 2d system
     def _get_fixedPoints2d(self):
@@ -1806,7 +1861,7 @@ class MuMoTfieldView(MuMoTview):
                 plotLimits = self._controller._plotLimitsWidget.value
         else:
             paramNames = self._paramNames
-            paramValues = self._paramValues            
+            paramValues = self._paramValues           
         funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
@@ -1972,6 +2027,10 @@ class MuMoTnoiseView(MuMoTfieldView):
 
 ## stream plot view on model
 class MuMoTstreamView(MuMoTfieldView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._generatingCommand = "mmt.MuMoTstreamView"
+
     def _plot_field(self):
         super()._plot_field()
         if self._showFixedPoints==True:
@@ -2041,6 +2100,10 @@ class MuMoTstreamView(MuMoTfieldView):
 
 ## vector plot view on model
 class MuMoTvectorView(MuMoTfieldView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._generatingCommand = "mmt.MuMoTvectorView"
+
     def _plot_field(self):
         super()._plot_field()
         if self._stateVariable3 == None:
@@ -2162,6 +2225,7 @@ class MuMoTbifurcationView(MuMoTview):
     def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, 
                  figure = None, params = None, **kwargs):
         super().__init__(model, controller, figure, params, **kwargs)
+        self._generatingCommand = "mmt.MuMoTbifurcationView"
         bifurcationParameter = self._pydstoolify(bifurcationParameter)
         stateVariable1 = self._pydstoolify(stateVariable1)
         stateVariable2 = self._pydstoolify(stateVariable2)
@@ -3533,7 +3597,6 @@ def parseModel(modelDescription):
                             constantReactant = True
                             token = token.replace('(','')
                             token = token.replace(')','')
-                            print(token)
                         if token == '\emptyset':
                             model._constantSystemSize = False
                             constantReactant = True
