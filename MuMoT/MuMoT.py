@@ -454,7 +454,7 @@ class MuMoTmodel:
     def fixedPointNoise(self, stateVariable1, stateVariable2, stateVariable3=None, **kwargs):
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             
-            
+            kwargs['showNoise'] = True
             n1, n2, n3, n4 = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
 
             # get stationary solution of moments of noise variables <eta_i> and <eta_i eta_j>
@@ -462,6 +462,7 @@ class MuMoTmodel:
             
             # construct controller
             viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), **kwargs)
+            #viewController = self._controller(True, plotLimitsSlider = True, **kwargs)
             
             # construct view
             modelView = MuMoTnoiseView(self, viewController, noiseStatSol, stateVariable1, stateVariable2, **kwargs)
@@ -1400,7 +1401,7 @@ class MuMoTview:
         self._controller = controller
         self._logs = []
         self._axes3d = False
-        self._plotLimits = 6
+        self._plotLimits = 1
         if params != None:
             self._paramNames, self._paramValues = zip(*params)
         
@@ -1686,8 +1687,8 @@ class MuMoTfieldView(MuMoTview):
         else:
             self._chooseFontSize=None
         self._showFixedPoints = kwargs.get('showFixedPoints', True)
-        self._xlab = kwargs.get('xlab', str(stateVariable1))
-        self._ylab = kwargs.get('ylab', str(stateVariable2))
+        self._xlab = kwargs.get('xlab', r'$'+latex(Symbol('Phi_'+str(stateVariable1)))+'$')
+        self._ylab = kwargs.get('ylab', r'$'+latex(Symbol('Phi_'+str(stateVariable2)))+'$')
         if stateVariable3:
             self._zlab = kwargs.get('zlab', str(stateVariable3)) 
         
@@ -1700,27 +1701,83 @@ class MuMoTfieldView(MuMoTview):
 
         if not(silent):
             self._plot_field()
-            
-    ## calculates stationary states of 2d system
-    def _get_fixedPoints2d(self):
+    
+    ## gets and returns names and values from widgets
+    def _get_argDict(self):
+        plotLimits = 1
         if self._controller != None:
             paramNames = []
             paramValues = []
             for name, value in self._controller._widgetsFreeParams.items():
+                # throw away formatting for constant reactants
+                #name = name.replace('(','')
+                #name = name.replace(')','')
+                
                 paramNames.append(name)
-                paramValues.append(value.value)          
+                paramValues.append(value.value)
+            if self._controller._plotLimitsWidget != None:
+                plotLimits = self._controller._plotLimitsWidget.value
         else:
             paramNames = self._paramNames
-            paramValues = self._paramValues           
+            paramValues = self._paramValues   
+                 
+        #funcs = self._mumotModel._getFuncs()
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        for key in argDict:
+            if key in self._mumotModel._constantReactants:
+                argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
+        if self._controller._systemSizeWidget != None:
+            systemSize = Symbol('systemSize')
+            argDict[systemSize] = self._controller._systemSizeWidget.value
+        
+        return argDict
+    
+    
+    
             
+    ## calculates stationary states of 2d system
+    def _get_fixedPoints2d(self):
+        plotLimits = 1
+        if self._controller != None:
+            paramNames = []
+            paramValues = []
+            for name, value in self._controller._widgetsFreeParams.items():
+                # throw away formatting for constant reactants
+#                 name = name.replace('(','')
+#                 name = name.replace(')','')
+                paramNames.append(name)
+                paramValues.append(value.value)
+            if self._controller._plotLimitsWidget != None:
+                plotLimits = self._controller._plotLimitsWidget.value
+        else:
+            paramNames = self._paramNames
+            paramValues = self._paramValues            
+        funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
         argDict[self._mumotModel._systemSize] = 1
+       
+#         if self._controller != None:
+#             paramNames = []
+#             paramValues = []
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 paramNames.append(name)
+#                 paramValues.append(value.value)          
+#         else:
+#             paramNames = self._paramNames
+#             paramValues = self._paramValues           
+#             
+#         argNamesSymb = list(map(Symbol, paramNames))
+#         argDict = dict(zip(argNamesSymb, paramValues))
+#         argDict[self._mumotModel._systemSize] = 1
         
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
         eps=1e-8
         EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
+        #for kk in range(len(EQsol)):
+        #    print(EQsol[kk])
         realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
         
         MAT = Matrix([EQ1, EQ2])
@@ -1743,19 +1800,39 @@ class MuMoTfieldView(MuMoTview):
     
     ## calculates stationary states of 3d system
     def _get_fixedPoints3d(self):
+        plotLimits = 1
         if self._controller != None:
             paramNames = []
             paramValues = []
             for name, value in self._controller._widgetsFreeParams.items():
+                # throw away formatting for constant reactants
+#                 name = name.replace('(','')
+#                 name = name.replace(')','')
                 paramNames.append(name)
-                paramValues.append(value.value)          
+                paramValues.append(value.value)
+            if self._controller._plotLimitsWidget != None:
+                plotLimits = self._controller._plotLimitsWidget.value
         else:
             paramNames = self._paramNames
-            paramValues = self._paramValues           
-            
+            paramValues = self._paramValues            
+        funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
         argDict[self._mumotModel._systemSize] = 1
+        
+#         if self._controller != None:
+#             paramNames = []
+#             paramValues = []
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 paramNames.append(name)
+#                 paramValues.append(value.value)          
+#         else:
+#             paramNames = self._paramNames
+#             paramValues = self._paramValues           
+#             
+#         argNamesSymb = list(map(Symbol, paramNames))
+#         argDict = dict(zip(argNamesSymb, paramValues))
+#         argDict[self._mumotModel._systemSize] = 1
         
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
@@ -1885,24 +1962,67 @@ class MuMoTnoiseView(MuMoTfieldView):
     _SOL_2ndOrdMomDict = None
     ## replacement dictionary for symbols of 2nd order moments
     _NoiseSubs2ndOrder = None
-    ## solution 1st and 2nd order moments with replacement dictionaries
-    _noiseStatSol = None
+    ## set for checking number of time-dependent reactants
+    _checkReactants = None
+    ## set for checking constant reactants
+    _checkConstReactants = None
     
+    _noiseStatSol = None
+ 
     def __init__(self, model, controller, noiseStatSol, stateVariable1, stateVariable2, stateVariable3=None, figure = None, params = None, **kwargs):
         if model._systemSize == None and model._constantSystemSize == True:
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return
         self._noiseStatSol = noiseStatSol
         self._SOL_1stOrderMomDict, self._NoiseSubs1stOrder, self._SOL_2ndOrdMomDict, self._NoiseSubs2ndOrder = self._noiseStatSol
+        self._checkReactants = model._reactants
+        if model._constantReactants:
+            self._checkConstReactants = model._constantReactants
         silent = kwargs.get('silent', False)
-        super().__init__(model, controller, stateVariable1, stateVariable2, stateVariable3, figure, params, **kwargs)
-        #print(self._SOL_1stOrderMomDict)
-    #print(SOL_2ndOrdMomDict)
+        super().__init__(model, controller, stateVariable1, stateVariable2, stateVariable3, figure, params, **kwargs) 
+        
     def _plot_field(self):
         super()._plot_field()
+        
+        Phi_stateVar1 = Symbol('Phi_'+str(self._stateVariable1)) 
+        Phi_stateVar2 = Symbol('Phi_'+str(self._stateVariable2))
+        eta_stateVar1 = Symbol('eta_'+str(self._stateVariable1)) 
+        eta_stateVar2 = Symbol('eta_'+str(self._stateVariable2))
+        M_2 = Symbol('M_2')
+        
+        eta_cross = eta_stateVar1*eta_stateVar2
+        for key in self._SOL_2ndOrdMomDict:
+            if key == self._SOL_2ndOrdMomDict[key] or key in self._SOL_2ndOrdMomDict[key].args:
+                for key2 in self._SOL_2ndOrdMomDict:
+                    if key2 != key and key2 != M_2(eta_cross):
+                        self._SOL_2ndOrdMomDict[key] = self._SOL_2ndOrdMomDict[key].subs(key, self._SOL_2ndOrdMomDict[key2])
+                   
+        checkReactants = copy.deepcopy(self._checkReactants)
+        if self._checkConstReactants:
+            checkConstReactants = copy.deepcopy(self._checkConstReactants)
+            for reactant in checkReactants:
+                if reactant in checkConstReactants:
+                    checkReactants.remove(reactant)
+        assert (len(checkReactants) == 2),"Not implemented: This feature is available only for systems with exactly 2 time-dependent reactants!"
         realEQsol, eigList = self._get_fixedPoints2d()
-        #print(realEQsol)
-        #print(self._SOL_1stOrderMomDict)
+        systemSize = Symbol('systemSize')
+        argDict = self._get_argDict()
+        
+        PhiSubList = []
+        for kk in range(len(realEQsol)):
+            PhiSubDict={}
+            for solXi in realEQsol[kk]:
+                PhiSubDict[Symbol('Phi_'+str(solXi))] = realEQsol[kk][solXi]
+            PhiSubList.append(PhiSubDict)
+        
+        SOL_2ndOrdMomDictList = []
+        for nn in range(len(PhiSubList)):
+            SOL_2ndOrdMomDict = copy.deepcopy(self._SOL_2ndOrdMomDict)
+            for sol in SOL_2ndOrdMomDict:
+                SOL_2ndOrdMomDict[sol] = SOL_2ndOrdMomDict[sol].subs(PhiSubList[nn])
+                SOL_2ndOrdMomDict[sol] = SOL_2ndOrdMomDict[sol].subs(argDict)
+            SOL_2ndOrdMomDictList.append(SOL_2ndOrdMomDict)
+            
         Evects = []
         EvectsPlot = []
         EV = []
@@ -1928,28 +2048,72 @@ class MuMoTnoiseView(MuMoTfieldView):
             else:
                 EVplot.append(EVsub)
                 EvectsPlot.append(EvectsSub)
+
+        angle_ell_list = []
+        projection_angle_list = []
+        vec1 = Matrix([ [0], [1] ])
+        for nn in range(len(EvectsPlot)):
+            vec2 = EvectsPlot[nn][0]
+            vec2norm = vec2.norm()
+            vec2 = vec2/vec2norm
+            vec3 = EvectsPlot[nn][0]
+            vec3norm = vec3.norm()
+            vec3 = vec3/vec3norm
+            if vec2norm >= vec3norm:
+                angle_ell = acos(vec1.dot(vec2)/(vec1.norm()*vec2.norm())).evalf()
+            else:
+                angle_ell = acos(vec1.dot(vec3)/(vec1.norm()*vec3.norm())).evalf()
+            angle_ell = angle_ell.evalf()
+            projection_angle_list.append(angle_ell)
+            angle_ell_deg = 180*angle_ell/pi.evalf()
+            angle_ell_list.append(round(angle_ell_deg,5))
+        projection_angle_list = [abs(projection_angle_list[kk]) if abs(projection_angle_list[kk]) <= N(pi/2) else N(pi)-abs(projection_angle_list[kk]) for kk in range(len(projection_angle_list))]
         
         if self._mumotModel._constantSystemSize == True:
-            FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)], 
-                         [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
+            FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)], 
+                         [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)]]
+            Ell_width = [re(cos(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)]
+            Ell_height = [re(cos(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)]
+            #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)], 
+            #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
         else:
-            FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
-                         [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
-        FixedPoints.append(EVplot)
+            FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList))], 
+                         [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList))]]
+            Ell_width = [re(cos(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList))]
+            Ell_height = [re(cos(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList))]
+            #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
+            #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
+            #Ell_width = [SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)] for kk in range(len(SOL_2ndOrdMomDictList))]
+            #Ell_height = [SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)] for kk in range(len(SOL_2ndOrdMomDictList))] 
         
-            
+        # swap width and height of ellipse if width > height
+        for kk in range(len(Ell_width)):
+            ell_width_temp = Ell_width[kk]
+            ell_height_temp = Ell_height[kk]
+            if ell_width_temp > ell_height_temp:
+                Ell_height[kk] = ell_width_temp
+                Ell_width[kk] = ell_height_temp    
+        
+        FixedPoints.append(EVplot) 
+        
         self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
         
         if self._speed is not None:
             fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
         else:
             fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = 'k') ## @todo: define colormap by user keyword
-        ells = [mpatch.Ellipse(xy=[FixedPoints[0][nn],FixedPoints[1][nn]], width=0.1, height=0.2, angle=-0.5*360) for nn in range(len(FixedPoints[0]))]
+        ells = [mpatch.Ellipse(xy=[FixedPoints[0][nn],FixedPoints[1][nn]], width=Ell_width[nn]/systemSize.subs(argDict), height=Ell_height[nn]/systemSize.subs(argDict), angle= round(angle_ell_list[nn],5)) for nn in range(len(FixedPoints[0]))]
         ax = plt.gca()
-        for ell in ells:
-            ax.add_artist(ell)
-            ell.set_alpha(0.25)
-            ell.set_facecolor('b')
+        for kk in range(len(ells)):
+            ax.add_artist(ells[kk])
+            ells[kk].set_alpha(0.25)
+            if re(EVplot[kk][0]) < 0 and re(EVplot[kk][1]) < 0:
+                Fcolor = line_color_list[1]
+            elif re(EVplot[kk][0]) > 0 and re(EVplot[kk][1]) > 0:
+                Fcolor = line_color_list[2]
+            else:
+                Fcolor = line_color_list[0]
+            ells[kk].set_facecolor(Fcolor)
         if self._mumotModel._constantSystemSize == True:
             plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')            
             plt.xlim(0,1)
@@ -1958,8 +2122,8 @@ class MuMoTnoiseView(MuMoTfieldView):
             plt.xlim(0,self._X.max())
             plt.ylim(0,self._Y.max())
         
-        _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
-                   ylab = self._ylab, fontsize=self._chooseFontSize)
+        _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=True, 
+                           ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize)
 #        plt.set_aspect('equal') ## @todo
 
         if self._showFixedPoints==True:
@@ -1968,7 +2132,6 @@ class MuMoTnoiseView(MuMoTfieldView):
                     print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]),
                           'and eigenvectors:', str(Evects[kk]))
             self._logs.append(log)
-
 
 ## stream plot view on model
 class MuMoTstreamView(MuMoTfieldView):
@@ -3467,7 +3630,6 @@ def parseModel(modelDescription):
     rules = []
     model = MuMoTmodel()
     
-
     for rule in modelRules:
         if (len(rule) > 0):
             tokens = rule.split()
@@ -3533,7 +3695,7 @@ def parseModel(modelDescription):
                             constantReactant = True
                             token = token.replace('(','')
                             token = token.replace(')','')
-                            print(token)
+                            #print(token)
                         if token == '\emptyset':
                             model._constantSystemSize = False
                             constantReactant = True
@@ -3910,7 +4072,7 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
     for key1 in stoich:
         for key2 in stoich[key1]:
             if key2 != 'rate' and stoich[key1][key2] != 'const':
-                if not key2 in nvec:
+                if key2 not in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
     assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
@@ -3922,7 +4084,7 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
     
     NoiseSub1stOrder = {}
     NoiseSub2ndOrder = {}
-    
+
     if len(NoiseDict)==2:
         Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],t)
     elif len(NoiseDict)==3:
@@ -4398,7 +4560,7 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
                     symSub = phisub
                     PhiSubDict[key] = PhiSubDict[key].subs({sym: symSub})
                 else:
-                    PhiSubDict[key] = PhiSubDict[key].subs({sym: 1})
+                    PhiSubDict[key] = PhiSubDict[key].subs({sym: 1}) #here we assume that if a reactant in the substitution string is not a time-dependent reactant it can only be the total number of reactants which is constant, i.e. 1=N/N
     
     
     if len(Vlist_lhs)-1 == 2:
@@ -5022,7 +5184,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                     FPcolor=line_color_list[-1]  
                     FPfill = 'none'
                      
-                plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=20, 
+                plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=12, 
                          c=FPcolor, fillstyle=FPfill, mew=4, mec=FPcolor)
     
     if curvelab != None:
