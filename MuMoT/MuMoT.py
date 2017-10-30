@@ -20,6 +20,7 @@ from matplotlib import pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.patches as mpatch
 import numpy as np
+from scipy.integrate import odeint
 from sympy import *
 import math
 import PyDSTool as dst
@@ -457,23 +458,42 @@ class MuMoTmodel:
             display(Math(out))
 
 
+    ## construct interactive time evolution plot for state variables      
+    def numSimStateVar(self, stateVariable1, SV1_0, stateVariable2, SV2_0, stateVariable3 = None, SV3_0 = None, stateVariable4 = None, SV4_0 = None, **kwargs):
+        try:
+            # construct controller
+            viewController = self._controller(False, **kwargs)
+            
+            # construct view
+            modelView = MuMoTtimeEvoStateVarView(self, viewController, stateVariable1, SV1_0, stateVariable2, SV2_0, stateVariable3, SV3_0, stateVariable4, SV4_0, **kwargs)
+                    
+            viewController.setView(modelView)
+            viewController._setReplotFunction(modelView._plot_NumSolODE)         
+            
+            return viewController
+        
+        except:
+            return None
 
+    
     ## construct interactive plot of noise around fixed points        
     def fixedPointNoise(self, stateVariable1, stateVariable2, stateVariable3=None, **kwargs):
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             
             kwargs['showNoise'] = True
             n1, n2, n3, n4 = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
-
+            # n3 is second order solution and will be used by MuMoTnoiseView
+            
+            
             # get stationary solution of moments of noise variables <eta_i> and <eta_i eta_j>
-            noiseStatSol = (n1,n2,n3,n4)#_getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+            #noiseStatSol = (n1,n2,n3,n4)#_getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
             
             # construct controller
-            viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), **kwargs)
+            viewController = self._controller(False, plotLimitsSlider = not(self._constantSystemSize), **kwargs)
             #viewController = self._controller(True, plotLimitsSlider = True, **kwargs)
             
             # construct view
-            modelView = MuMoTnoiseView(self, viewController, noiseStatSol, stateVariable1, stateVariable2, **kwargs)
+            modelView = MuMoTnoiseView(self, viewController, n3, stateVariable1, stateVariable2, **kwargs)
                     
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_field)         
@@ -987,7 +1007,8 @@ class MuMoTcontroller:
             self._systemSizeWidget = widgets.IntSlider(value = 5, min = 5, 
                                          max = 100, step = 1, 
                                          description = "System size", 
-                                         continuous_update = False)
+                                         continuous_update = False)  
+        
         if not(silent):
             if plotLimits:
                 display(self._plotLimitsWidget)
@@ -1676,7 +1697,298 @@ class MuMoTmultiController(MuMoTcontroller):
         if not self._silent:
             self._view._plot()
 
+## time evolution view on model including state variables and noise (specialised by MuMoTtimeEvoStateVarView and MuMoTtimeEvoNoiseView)
+class MuMoTtimeEvolutionView(MuMoTview):
+    ## 1st state variable
+    _stateVariable1 = None
+    ## 2nd state variable 
+    _stateVariable2 = None
+    ## 3rd state variable 
+    _stateVariable3 = None
+    ## 4th state variable 
+    _stateVariable4 = None
+    ## initial condition 1st state variable
+    _SV1_0 = None
+    ## initial condition 2nd state variable
+    _SV2_0 = None
+    ## initial condition 3rd state variable
+    _SV3_0 = None
+    ## initial condition 4th state variable
+    _SV4_0 = None
+    ## end time of numerical simulation
+    _tend = None
+    ## time step of numerical simulation
+    _tstep = None
+    
+  
+    def __init__(self, model, controller, stateVariable1, SV1_0, stateVariable2, SV2_0, stateVariable3 = None, SV3_0 = None, stateVariable4 = None, SV4_0 = None, tend = 100, tstep = 0.01, figure = None, params = None, **kwargs):
+        #if model._systemSize == None and model._constantSystemSize == True:
+        #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
+        #    return
+        silent = kwargs.get('silent', False)
+        super().__init__(model, controller, figure, params, **kwargs)
+        
+        if 'fontsize' in kwargs:
+            self._chooseFontSize = kwargs['fontsize']
+        else:
+            self._chooseFontSize=None
+        self._xlab = kwargs.get('xlab', r'time t')
+        self._ylab = kwargs.get('ylab', r'evolution of states')
+        
+        self._legend_loc = kwargs.get('legend_loc', 'upper left')
+        
+        self._stateVariable1 = process_sympy(stateVariable1)
+        self._SV1_0 = SV1_0
+        self._stateVariable2 = process_sympy(stateVariable2)
+        self._SV2_0 = SV2_0
+        if stateVariable3 != None and SV3_0 != None:
+            self._stateVariable3 = process_sympy(stateVariable3)
+            self._SV3_0 = SV3_0
+        if stateVariable4 != None and SV4_0 != None:
+            self._stateVariable4 = process_sympy(stateVariable4)
+            self._SV4_0 = SV4_0
+            
+        self._tend = tend
+        self._tstep = tstep
+        
+        if not(silent):
+            self._plot_NumSolODE()
 
+    
+    ## gets and returns names and values from widgets
+    def _get_argDict(self):
+        plotLimits = 1
+        if self._controller != None:
+            paramNames = []
+            paramValues = []
+            for name, value in self._controller._widgetsFreeParams.items():
+                # throw away formatting for constant reactants
+                #name = name.replace('(','')
+                #name = name.replace(')','')
+                
+                paramNames.append(name)
+                paramValues.append(value.value)
+            if self._controller._plotLimitsWidget != None:
+                plotLimits = self._controller._plotLimitsWidget.value
+        else:
+            paramNames = self._paramNames
+            paramValues = self._paramValues   
+                 
+        #funcs = self._mumotModel._getFuncs()
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        for key in argDict:
+            if key in self._mumotModel._constantReactants:
+                argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
+        if self._controller._systemSizeWidget != None:
+            systemSize = Symbol('systemSize')
+            argDict[systemSize] = self._controller._systemSizeWidget.value
+        
+        return argDict
+     
+    
+    ## calculates right-hand side of ODE system
+    def _get_eqsODE(self, y_old, time):
+        SVsub = {}
+        SVsub[self._stateVariable1] = y_old[0]
+        SVsub[self._stateVariable2] = y_old[1]
+        if self._stateVariable3:
+            SVsub[self._stateVariable3] = y_old[2]
+        if self._stateVariable4:
+            SVsub[self._stateVariable4] = y_old[3]
+        plotLimits = 1
+        if self._controller != None:
+            paramNames = []
+            paramValues = []
+            for name, value in self._controller._widgetsFreeParams.items():
+                # throw away formatting for constant reactants
+#                 name = name.replace('(','')
+#                 name = name.replace(')','')
+                paramNames.append(name)
+                paramValues.append(value.value)
+            if self._controller._plotLimitsWidget != None:
+                plotLimits = self._controller._plotLimitsWidget.value
+        else:
+            paramNames = self._paramNames
+            paramValues = self._paramValues            
+        funcs = self._mumotModel._getFuncs()
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        argDict[self._mumotModel._systemSize] = 1
+        
+        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+        EQ1 = EQ1.subs(SVsub)
+        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+        EQ2 = EQ2.subs(SVsub)
+        ode_sys = [EQ1, EQ2]
+        if self._stateVariable3:
+            EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
+            EQ3 = EQ3.subs(SVsub)
+            ode_sys.append(EQ3)
+        if self._stateVariable4:
+            EQ4 = self._mumotModel._equations[self._stateVariable4].subs(argDict)
+            EQ4 = EQ4.subs(SVsub)
+            ode_sys.append(EQ4)
+            
+        return ode_sys
+    
+    
+            
+    ## calculates stationary states of 2d system
+    def _get_fixedPoints2d(self):
+        plotLimits = 1
+        if self._controller != None:
+            paramNames = []
+            paramValues = []
+            for name, value in self._controller._widgetsFreeParams.items():
+                # throw away formatting for constant reactants
+#                 name = name.replace('(','')
+#                 name = name.replace(')','')
+                paramNames.append(name)
+                paramValues.append(value.value)
+            if self._controller._plotLimitsWidget != None:
+                plotLimits = self._controller._plotLimitsWidget.value
+        else:
+            paramNames = self._paramNames
+            paramValues = self._paramValues            
+        funcs = self._mumotModel._getFuncs()
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        argDict[self._mumotModel._systemSize] = 1
+        
+        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+        eps=1e-8
+        EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
+        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
+        
+        MAT = Matrix([EQ1, EQ2])
+        JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
+        
+        eigList = []
+        for nn in range(len(realEQsol)): 
+            evSet = {}
+            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
+            #evSet = JACsub.eigenvals()
+            eigVects = JACsub.eigenvects()
+            for kk in range(len(eigVects)):
+                evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
+            eigList.append(evSet)
+        return realEQsol, eigList #returns two lists of dictionaries
+    
+    ## calculates stationary states of 3d system
+    def _get_fixedPoints3d(self):
+        plotLimits = 1
+        if self._controller != None:
+            paramNames = []
+            paramValues = []
+            for name, value in self._controller._widgetsFreeParams.items():
+                # throw away formatting for constant reactants
+#                 name = name.replace('(','')
+#                 name = name.replace(')','')
+                paramNames.append(name)
+                paramValues.append(value.value)
+            if self._controller._plotLimitsWidget != None:
+                plotLimits = self._controller._plotLimitsWidget.value
+        else:
+            paramNames = self._paramNames
+            paramValues = self._paramValues            
+        funcs = self._mumotModel._getFuncs()
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        argDict[self._mumotModel._systemSize] = 1
+        
+        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+        EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
+        eps=1e-8
+        EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
+        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps and Abs(im(EQsol[kk][self._stateVariable3]))<=eps)]
+        
+        MAT = Matrix([EQ1, EQ2, EQ3])
+        JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
+        
+        eigList = []
+        for nn in range(len(realEQsol)): 
+            evSet = {}
+            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
+            #evSet = JACsub.eigenvals()
+            eigVects = JACsub.eigenvects()
+            for kk in range(len(eigVects)):
+                evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
+            eigList.append(evSet)
+        return realEQsol, eigList #returns two lists of dictionaries
+    
+    
+    def _plot_NumSolODE(self):
+        if not(self._silent): ## @todo is this necessary?
+            plt.figure(self._figureNum)
+            plt.clf()
+            self._resetErrorMessage()
+        self._showErrorMessage(str(self))
+        
+    
+    def _print_standalone_view_cmd(self):
+        with io.capture_output() as log:
+            print('Bookmark feature for standalone view not implemented for time-dependent soultion of ODE.')
+#             logStr = self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
+#             if self._stateVariable3 != None:
+#                 logStr += "'" + str(self._stateVariable3) + "', "
+#             logStr += "params = ["
+#             for name, value in self._controller._widgetsFreeParams.items():
+# #                name = name.replace('\\', '\\\\')
+#                 name = name.replace('(', '')
+#                 name = name.replace(')', '')
+#                 logStr += "('" + name + "', " + str(value.value) + "), "
+#             if len(self._controller._widgetsFreeParams.items()) > 0:
+#                 logStr = logStr[:-2] # throw away last ", "
+#             logStr += "]"
+#             if self._generatingKwargs != None:
+#                 logStr += ", "
+#                 for key in self._generatingKwargs:
+#                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+#                 if len(self._generatingKwargs) > 0:
+#                     logStr = logStr[:-2]  # throw away last ", "
+#             logStr += ")"
+#             print(logStr)    
+        self._logs.append(log)
+        
+
+## numerical solution of state variables plot view on model
+class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._generatingCommand = "mmt.MuMoTtimeEvoStateVarView"
+
+    def _plot_NumSolODE(self):
+        super()._plot_NumSolODE()
+        
+        NrDP = int(self._tend/self._tstep) + 1
+        time = np.linspace(0, self._tend, NrDP)
+        
+        y0 = [self._SV1_0, self._SV2_0]
+        if self._SV3_0:
+            y0.append(self._SV3_0)
+        if self._SV4_0:
+            y0.append(self._SV4_0)
+        
+        sol_ODE = odeint(self._get_eqsODE, y0, time)  
+          
+        x_data = [time for kk in range(len(self._get_eqsODE(y0, time)))]
+        y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
+        
+        c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
+        if self._stateVariable3:
+            c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable3)))+'$')
+        if self._stateVariable4:
+            c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
+        
+        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
+                           fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True)
+#        plt.set_aspect('equal') ## @todo
+
+
+        
 
 ## field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
 class MuMoTfieldView(MuMoTview):
@@ -1768,27 +2080,31 @@ class MuMoTfieldView(MuMoTview):
 
     def _print_standalone_view_cmd(self):
         with io.capture_output() as log:
-            logStr = self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
-            if self._stateVariable3 != None:
-                logStr += "'" + str(self._stateVariable3) + "', "
-            logStr += "params = ["
-            for name, value in self._controller._widgetsFreeParams.items():
-#                name = name.replace('\\', '\\\\')
-                name = name.replace('(', '')
-                name = name.replace(')', '')
-                logStr += "('" + name + "', " + str(value.value) + "), "
-            if len(self._controller._widgetsFreeParams.items()) > 0:
-                logStr = logStr[:-2] # throw away last ", "
-            logStr += "]"
-            if self._generatingKwargs != None:
-                logStr += ", "
-                for key in self._generatingKwargs:
-                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-                if len(self._generatingKwargs) > 0:
-                    logStr = logStr[:-2]  # throw away last ", "
-            logStr += ")"
-            print(logStr)    
-        self._logs.append(log)
+            if self._generatingCommand == 'mmt.MuMoTnoiseView':
+                print('Bookmark functionality not implemented for MuMoTnoiseView')
+                #logStr = self._generatingCommand + "(<modelName>, None, '" + str(self._SOL_2ndOrdMomDict) + "', '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) + "', "
+            else:
+                logStr = self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
+                if self._stateVariable3 != None:
+                    logStr += "'" + str(self._stateVariable3) + "', "
+                logStr += "params = ["
+                for name, value in self._controller._widgetsFreeParams.items():
+    #                name = name.replace('\\', '\\\\')
+                    name = name.replace('(', '')
+                    name = name.replace(')', '')
+                    logStr += "('" + name + "', " + str(value.value) + "), "
+                if len(self._controller._widgetsFreeParams.items()) > 0:
+                    logStr = logStr[:-2] # throw away last ", "
+                logStr += "]"
+                if self._generatingKwargs != None:
+                    logStr += ", "
+                    for key in self._generatingKwargs:
+                        logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+                    if len(self._generatingKwargs) > 0:
+                        logStr = logStr[:-2]  # throw away last ", "
+                logStr += ")"
+                print(logStr)    
+            self._logs.append(log)
 
             
     ## calculates stationary states of 2d system
@@ -2024,17 +2340,19 @@ class MuMoTnoiseView(MuMoTfieldView):
     
     _noiseStatSol = None
  
-    def __init__(self, model, controller, noiseStatSol, stateVariable1, stateVariable2, stateVariable3=None, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure = None, params = None, **kwargs):
         if model._systemSize == None and model._constantSystemSize == True:
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return
-        self._noiseStatSol = noiseStatSol
-        self._SOL_1stOrderMomDict, self._NoiseSubs1stOrder, self._SOL_2ndOrdMomDict, self._NoiseSubs2ndOrder = self._noiseStatSol
+        #self._noiseStatSol = noiseStatSol
+        #self._SOL_1stOrderMomDict, self._NoiseSubs1stOrder, self._SOL_2ndOrdMomDict, self._NoiseSubs2ndOrder = self._noiseStatSol
+        self._SOL_2ndOrdMomDict = SOL_2ndOrd
         self._checkReactants = model._reactants
         if model._constantReactants:
             self._checkConstReactants = model._constantReactants
         silent = kwargs.get('silent', False)
         super().__init__(model, controller, stateVariable1, stateVariable2, stateVariable3, figure, params, **kwargs) 
+        self._generatingCommand = "mmt.MuMoTnoiseView"
         
     def _plot_field(self):
         super()._plot_field()
@@ -5249,12 +5567,15 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                      
                 plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=12, 
                          c=FPcolor, fillstyle=FPfill, mew=4, mec=FPcolor)
-    
+    if kwargs.get('grid', False) == True:
+        plt.grid()
+        
     if curvelab != None:
-        if 'legend_loc' in kwargs:
-            legend_loc = kwargs['legend_loc']
-        else:
-            legend_loc = 'upper left'
+        #if 'legend_loc' in kwargs:
+        #    legend_loc = kwargs['legend_loc']
+        #else:
+        #    legend_loc = 'upper left'
+        legend_loc = kwargs.get('legend_loc', 'upper left')
         plt.legend(loc=str(legend_loc), fontsize=20, ncol=2)
         
     for tick in ax.xaxis.get_major_ticks():
