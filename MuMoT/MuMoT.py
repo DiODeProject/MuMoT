@@ -64,6 +64,10 @@ RATE_BOUND = 10.0
 RATE_STEP = 0.1
 MULTIPLOT_COLUMNS = 2
 
+INITIAL_COND_INIT_VAL = 0.0
+INITIAL_COND_INIT_BOUND = 1.0
+
+
 line_color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
 
 # enum possible Network types
@@ -459,13 +463,15 @@ class MuMoTmodel:
 
 
     ## construct interactive time evolution plot for state variables      
-    def numSimStateVar(self, stateVariable1, SV1_0, stateVariable2, SV2_0, stateVariable3 = None, SV3_0 = None, stateVariable4 = None, SV4_0 = None, **kwargs):
+    def numSimStateVar(self, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, **kwargs):
         try:
+            kwargs['showInitSV'] = True
+            
             # construct controller
             viewController = self._controller(False, **kwargs)
             
             # construct view
-            modelView = MuMoTtimeEvoStateVarView(self, viewController, stateVariable1, SV1_0, stateVariable2, SV2_0, stateVariable3, SV3_0, stateVariable4, SV4_0, **kwargs)
+            modelView = MuMoTtimeEvoStateVarView(self, viewController, stateVariable1, stateVariable2, stateVariable3, stateVariable4, **kwargs)
                     
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_NumSolODE)         
@@ -789,6 +795,14 @@ class MuMoTmodel:
             paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
 #            paramNames.append('(' + latex(reactant) + ')')
             paramNames.append(str(reactant))
+        if kwargs.get('showInitSV', False) == True:
+            initialInitCondValue = INITIAL_COND_INIT_VAL
+            initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
+            for reactant in self._reactants:
+                if reactant not in self._constantReactants:
+                    paramNames.append(latex(Symbol('Phi^0_'+str(reactant))))
+                    paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))
+            
         systemSizeSlider = kwargs.get('showNoise', False)
         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, plotLimitsSlider, systemSizeSlider, **kwargs)
 
@@ -1707,21 +1721,13 @@ class MuMoTtimeEvolutionView(MuMoTview):
     _stateVariable3 = None
     ## 4th state variable 
     _stateVariable4 = None
-    ## initial condition 1st state variable
-    _SV1_0 = None
-    ## initial condition 2nd state variable
-    _SV2_0 = None
-    ## initial condition 3rd state variable
-    _SV3_0 = None
-    ## initial condition 4th state variable
-    _SV4_0 = None
     ## end time of numerical simulation
     _tend = None
     ## time step of numerical simulation
     _tstep = None
     
   
-    def __init__(self, model, controller, stateVariable1, SV1_0, stateVariable2, SV2_0, stateVariable3 = None, SV3_0 = None, stateVariable4 = None, SV4_0 = None, tend = 100, tstep = 0.01, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, tend = 100, tstep = 0.01, figure = None, params = None, **kwargs):
         #if model._systemSize == None and model._constantSystemSize == True:
         #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
         #    return
@@ -1738,15 +1744,11 @@ class MuMoTtimeEvolutionView(MuMoTview):
         self._legend_loc = kwargs.get('legend_loc', 'upper left')
         
         self._stateVariable1 = process_sympy(stateVariable1)
-        self._SV1_0 = SV1_0
         self._stateVariable2 = process_sympy(stateVariable2)
-        self._SV2_0 = SV2_0
-        if stateVariable3 != None and SV3_0 != None:
+        if stateVariable3 != None:
             self._stateVariable3 = process_sympy(stateVariable3)
-            self._SV3_0 = SV3_0
-        if stateVariable4 != None and SV4_0 != None:
+        if stateVariable4 != None:
             self._stateVariable4 = process_sympy(stateVariable4)
-            self._SV4_0 = SV4_0
             
         self._tend = tend
         self._tstep = tstep
@@ -1785,7 +1787,23 @@ class MuMoTtimeEvolutionView(MuMoTview):
             argDict[systemSize] = self._controller._systemSizeWidget.value
         
         return argDict
-     
+    
+    
+    def _getInitCondsFromSlider(self):
+        if self._controller != None:
+            paramNames = []
+            paramValues = []
+            for reactant in self._mumotModel._reactants:
+                if reactant not in self._mumotModel._constantReactants:
+                    for name, value in self._controller._widgetsFreeParams.items():
+                        if name == latex(Symbol('Phi^0_'+str(reactant))):
+                            paramNames.append(name)
+                            paramValues.append(value.value)
+                
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        
+        return argDict
     
     ## calculates right-hand side of ODE system
     def _get_eqsODE(self, y_old, time):
@@ -1966,11 +1984,19 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         NrDP = int(self._tend/self._tstep) + 1
         time = np.linspace(0, self._tend, NrDP)
         
-        y0 = [self._SV1_0, self._SV2_0]
-        if self._SV3_0:
-            y0.append(self._SV3_0)
-        if self._SV4_0:
-            y0.append(self._SV4_0)
+        initDict = self._getInitCondsFromSlider()
+        assert (2 <= len(initDict) <= 4),"Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!"
+
+        
+        SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
+        SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
+        y0 = [SV1_0, SV2_0]
+        if len(initDict) > 2:
+            SV3_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable3))))]
+            y0.append(SV3_0)
+        if len(initDict) > 3:
+            SV4_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable4))))]
+            y0.append(SV4_0)
         
         sol_ODE = odeint(self._get_eqsODE, y0, time)  
           
