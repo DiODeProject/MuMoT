@@ -1062,8 +1062,8 @@ class MuMoTcontroller:
     def setView(self, view):
         self._view = view
 
-    def showLogs(self):
-        self._view.showLogs()
+    def showLogs(self, tail = False):
+        self._view.showLogs(tail)
         
     def multirun(self, iterations, randomSeeds="Auto", visualisationType="evo", downloadData=False):
         # Creating the progress bar (useful to give user progress status for long executions)
@@ -1507,9 +1507,18 @@ class MuMoTview:
         print("at", datetime.datetime.now())
         
                         
-    def showLogs(self):
-        for log in self._logs:
-            log.show()
+    def showLogs(self, tail = False):
+        if tail:
+            tailLength = 5
+            print("Showing last " + str(min(tailLength, len(self._logs))) + " of " + str(len(self._logs)) + " log entries:")
+            for log in reversed(self._logs):
+                log.show()
+                tailLength -= 1
+                if tailLength == 0:
+                    break
+        else:
+            for log in self._logs:
+                log.show()
             
     def _multirun(self, iterations, randomSeeds):
         colors = cm.rainbow(np.linspace(0, 1, len( self._mumotModel._reactants ) ))  # @UndefinedVariable
