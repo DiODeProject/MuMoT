@@ -1461,10 +1461,18 @@ class MuMoTview:
         #self._plotLimits = 6 ## @todo: why this magic number?
         self._generatingKwargs = kwargs
         if params != None:
-            self._paramNames= []
+            self._paramNames = []
             paramNames, self._paramValues = zip(*params)
             for name in paramNames:
-                self._paramNames.append(name.replace('\\','')) ## @todo: have to rationalise how LaTeX characters are handled
+#                self._paramNames.append(name.replace('\\','')) ## @todo: have to rationalise how LaTeX characters are handled
+                expr = process_sympy(name.replace('\\\\','\\'))
+                atoms = expr.atoms()
+                if len(atoms) > 1:
+                    raise SyntaxError("Non-singleton parameter name in parameter " + name)
+                for atom in atoms:
+                    # parameter name should contain a single atom
+                    pass
+                self._paramNames.append(atom)
         
         if not(self._silent):
             _buildFig(self, figure)
@@ -1498,7 +1506,7 @@ class MuMoTview:
                 paramNames.append(name)
                 paramValues.append(self._controller._widgetsExtraParams[name].value)
         else:
-            paramNames = self._paramNames
+            paramNames = map(str, self._paramNames)
             paramValues = self._paramValues
             ## @todo: in soloView, this does not show the extra parameters (we should make clearer what the use of showLogs) 
 
@@ -1511,11 +1519,8 @@ class MuMoTview:
         if tail:
             tailLength = 5
             print("Showing last " + str(min(tailLength, len(self._logs))) + " of " + str(len(self._logs)) + " log entries:")
-            for log in reversed(self._logs):
+            for log in self._logs[-tailLength:]:
                 log.show()
-                tailLength -= 1
-                if tailLength == 0:
-                    break
         else:
             for log in self._logs:
                 log.show()
@@ -1782,7 +1787,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
             if self._controller._plotLimitsWidget != None:
                 plotLimits = self._controller._plotLimitsWidget.value
         else:
-            paramNames = self._paramNames
+            paramNames = map(str, self._paramNames)
             paramValues = self._paramValues   
                  
         #funcs = self._mumotModel._getFuncs()
@@ -1836,7 +1841,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
             if self._controller._plotLimitsWidget != None:
                 plotLimits = self._controller._plotLimitsWidget.value
         else:
-            paramNames = self._paramNames
+            paramNames = map(str, self._paramNames)
             paramValues = self._paramValues            
         funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
@@ -1876,7 +1881,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
             if self._controller._plotLimitsWidget != None:
                 plotLimits = self._controller._plotLimitsWidget.value
         else:
-            paramNames = self._paramNames
+            paramNames = map(str, self._paramNames)
             paramValues = self._paramValues            
         funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
@@ -1918,7 +1923,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
             if self._controller._plotLimitsWidget != None:
                 plotLimits = self._controller._plotLimitsWidget.value
         else:
-            paramNames = self._paramNames
+            paramNames = map(str, self._paramNames)
             paramValues = self._paramValues            
         funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
@@ -2094,7 +2099,7 @@ class MuMoTfieldView(MuMoTview):
             if self._controller._plotLimitsWidget != None:
                 plotLimits = self._controller._plotLimitsWidget.value
         else:
-            paramNames = self._paramNames
+            paramNames = map(str, self._paramNames)
             paramValues = self._paramValues   
                  
         #funcs = self._mumotModel._getFuncs()
@@ -2125,19 +2130,21 @@ class MuMoTfieldView(MuMoTview):
                 logStr += "params = ["
                 for name, value in self._controller._widgetsFreeParams.items():
     #                name = name.replace('\\', '\\\\')
+                    if name in self._mumotModel._ratesLaTeX:
+                        name = self._mumotModel._ratesLaTeX[name]
                     name = name.replace('(', '')
                     name = name.replace(')', '')
-                    logStr += "('" + name + "', " + str(value.value) + "), "
+                    logStr += "('" + latex(name) + "', " + str(value.value) + "), "
                 if len(self._controller._widgetsFreeParams.items()) > 0:
                     logStr = logStr[:-2] # throw away last ", "
                 logStr += "]"
-                if self._generatingKwargs != None:
+                if len(self._generatingKwargs) > 0:
                     logStr += ", "
                     for key in self._generatingKwargs:
                         logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-                    if len(self._generatingKwargs) > 0:
-                        logStr = logStr[:-2]  # throw away last ", "
+                    logStr = logStr[:-2]  # throw away last ", "
                 logStr += ")"
+                logStr = logStr.replace('\\', '\\\\')
                 print(logStr)    
             self._logs.append(log)
 
@@ -2157,7 +2164,7 @@ class MuMoTfieldView(MuMoTview):
             if self._controller._plotLimitsWidget != None:
                 plotLimits = self._controller._plotLimitsWidget.value
         else:
-            paramNames = self._paramNames
+            paramNames = map(str, self._paramNames)
             paramValues = self._paramValues            
         funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
@@ -2171,7 +2178,7 @@ class MuMoTfieldView(MuMoTview):
 #                 paramNames.append(name)
 #                 paramValues.append(value.value)          
 #         else:
-#             paramNames = self._paramNames
+#             paramNames = map(str, self._paramNames)
 #             paramValues = self._paramValues           
 #             
 #         argNamesSymb = list(map(Symbol, paramNames))
@@ -2219,7 +2226,7 @@ class MuMoTfieldView(MuMoTview):
             if self._controller._plotLimitsWidget != None:
                 plotLimits = self._controller._plotLimitsWidget.value
         else:
-            paramNames = self._paramNames
+            paramNames = map(str, self._paramNames)
             paramValues = self._paramValues            
         funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
@@ -2233,7 +2240,7 @@ class MuMoTfieldView(MuMoTview):
 #                 paramNames.append(name)
 #                 paramValues.append(value.value)          
 #         else:
-#             paramNames = self._paramNames
+#             paramNames = map(str, self._paramNames)
 #             paramValues = self._paramValues           
 #             
 #         argNamesSymb = list(map(Symbol, paramNames))
@@ -2288,7 +2295,7 @@ class MuMoTfieldView(MuMoTview):
             if self._controller._plotLimitsWidget != None:
                 plotLimits = self._controller._plotLimitsWidget.value
         else:
-            paramNames = self._paramNames
+            paramNames = map(str, self._paramNames)
             paramValues = self._paramValues           
         funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
