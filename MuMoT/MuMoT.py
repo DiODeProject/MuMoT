@@ -511,17 +511,17 @@ class MuMoTmodel:
 
 
     ## construct interactive stream plot        
-    def stream(self, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
+    def stream(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             if stateVariable3 != None:
                 print("3d stream plots not currently supported")
                 
                 return None
             # construct controller
-            viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), **kwargs)
+            viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
             
             # construct view
-            modelView = MuMoTstreamView(self, viewController, stateVariable1, stateVariable2, **kwargs)
+            modelView = MuMoTstreamView(self, viewController, stateVariable1, stateVariable2, params = params, **kwargs)
                     
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_field)         
@@ -531,13 +531,13 @@ class MuMoTmodel:
             return None
 
     ## construct interactive vector plot        
-    def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, **kwargs):
+    def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             # construct controller
-            viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), **kwargs)
+            viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
             
             # construct view
-            modelView = MuMoTvectorView(self, viewController, stateVariable1, stateVariable2, stateVariable3, **kwargs)
+            modelView = MuMoTvectorView(self, viewController, stateVariable1, stateVariable2, stateVariable3, params = params, **kwargs)
                     
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_field)         
@@ -547,7 +547,7 @@ class MuMoTmodel:
             return None
         
     ## construct interactive PyDSTool plot
-    def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, **kwargs):
+    def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, params = None, **kwargs):
         if self._systemSize != None:
             pass
         else:
@@ -780,7 +780,7 @@ class MuMoTmodel:
         return self._solutions
 
     ## general controller constructor with all rates as free parameters
-    def _controller(self, contRefresh, displayController = True, plotLimitsSlider = False, **kwargs):
+    def _controller(self, contRefresh, displayController = True, plotLimitsSlider = False, params = None, **kwargs):
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
         rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly                
@@ -804,7 +804,7 @@ class MuMoTmodel:
                     paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))
             
         systemSizeSlider = kwargs.get('showNoise', False)
-        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, plotLimitsSlider, systemSizeSlider, **kwargs)
+        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, plotLimitsSlider, systemSizeSlider, params, **kwargs)
 
         return viewController
 
@@ -994,48 +994,65 @@ class MuMoTcontroller:
     ## used two progress bars, otherwise the previous cell bar (where controller is created) does not react anymore  @todo: is this best put in base class when it is not always used?
     _progressBar_multi = None 
 
-    def __init__(self, paramValues, paramNames, paramLabelDict = {}, continuousReplot = False, plotLimits = False, systemSize = False, **kwargs):
+    def __init__(self, paramValues, paramNames, paramLabelDict = {}, continuousReplot = False, plotLimits = False, systemSize = False, params = None, **kwargs):
         silent = kwargs.get('silent', False)
+        self._silent = silent
         self._paramLabelDict = paramLabelDict
         self._widgetsFreeParams = {}
         self._widgetsExtraParams = {}
         self._widgetsPlotOnly = {}
-        self._silent = kwargs.get('silent', False)
         unsortedPairs = zip(paramNames, paramValues)
+        fixedParams = None
+        if params is not None:
+            fixedParams, foo = zip(*params)
+            fixedParamsDecoded = []
+            for fixedParam in fixedParams:
+                expr = process_sympy(fixedParam.replace('\\\\','\\'))
+                atoms = expr.atoms()
+                if len(atoms) > 1:
+                    raise SyntaxError("Non-singleton parameter name in parameter " + fixedParam)
+                for atom in atoms:
+                    # parameter name should contain a single atom
+                    pass
+                fixedParamsDecoded.append(str(atom))                
         for pair in sorted(unsortedPairs):
-            widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
-                                         max = pair[1][2], step = pair[1][3], 
-                                         description = r'\(' + self._paramLabelDict.get(pair[0],pair[0]) + r'\)', 
-                                         continuous_update = continuousReplot)
-            self._widgetsFreeParams[pair[0]] = widget
-            if not(self._silent):
-                display(widget)
+            if fixedParams is None or pair[0] not in fixedParamsDecoded: 
+                widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
+                                             max = pair[1][2], step = pair[1][3], 
+                                             description = r'\(' + self._paramLabelDict.get(pair[0],pair[0]) + r'\)', 
+                                             continuous_update = continuousReplot)
+                self._widgetsFreeParams[pair[0]] = widget
+                if not(self._silent):
+                    display(widget)
         if plotLimits:
-            ## @todo: remove hard coded values and limits
-            self._plotLimitsWidget = widgets.FloatSlider(value = 1.0, min = 1.0, 
-                                         max = 10.0, step = 0.5, 
-                                         description = "Plot limits", 
-                                         continuous_update = False)
+            if fixedParams is None or 'plotLimits' not in fixedParams:             
+                ## @todo: remove hard coded values and limits
+                self._plotLimitsWidget = widgets.FloatSlider(value = 1.0, min = 1.0, 
+                                             max = 10.0, step = 0.5, 
+                                             description = "Plot limits", 
+                                             continuous_update = False)
+                if not silent:
+                    display(self._plotLimitsWidget)
+                
         if systemSize:
-            ## @todo: remove hard coded values and limits
-            self._systemSizeWidget = widgets.IntSlider(value = 5, min = 5, 
-                                         max = 100, step = 1, 
-                                         description = "System size", 
-                                         continuous_update = False)  
-        
-        if not(silent):
-            if plotLimits:
-                display(self._plotLimitsWidget)
-            if systemSize:
-                display(self._systemSizeWidget)
-        self._bookmarkWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Paste bookmark to log', icon='bookmark')
+            if fixedParams is None or 'systemSize' not in fixedParams:
+                ## @todo: remove hard coded values and limits
+                self._systemSizeWidget = widgets.IntSlider(value = 5, min = 5, 
+                                             max = 100, step = 1, 
+                                             description = "System size", 
+                                             continuous_update = False)
+                if not silent:  
+                    display(self._systemSizeWidget)
+                        
+        self._bookmarkWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Paste bookmark to log', icon='fa-bookmark')
         self._bookmarkWidget.on_click(self._print_standalone_view_cmd)
-        display(self._bookmarkWidget)
+        if not silent:
+            display(self._bookmarkWidget)
 
         widget = widgets.HTML()
         widget.value = ''
         self._errorMessage = widget
-        if not(self._silent):
+        if not silent:
             display(self._errorMessage)
 
     def _print_standalone_view_cmd(self, foo):
@@ -1499,19 +1516,19 @@ class MuMoTview:
 
     def _log(self, analysis):
         print("Starting", analysis, "with parameters ", end='')
+        paramNames = []
+        paramValues = []
         if self._controller != None:
-            paramNames = []
-            paramValues = []
-            ## @todo: if the afphabetic order is not good, the view could store the desired order in (paramNames) when the controller is constructed
+            ## @todo: if the alphabetic order is not good, the view could store the desired order in (paramNames) when the controller is constructed
             for name in sorted(self._controller._widgetsFreeParams.keys()):
                 paramNames.append(name)
                 paramValues.append(self._controller._widgetsFreeParams[name].value)
             for name in sorted(self._controller._widgetsExtraParams.keys()):
                 paramNames.append(name)
                 paramValues.append(self._controller._widgetsExtraParams[name].value)
-        else:
-            paramNames = map(str, self._paramNames)
-            paramValues = self._paramValues
+        if self._paramNames is not None:
+            paramNames += map(str, self._paramNames)
+            paramValues += self._paramValues
             ## @todo: in soloView, this does not show the extra parameters (we should make clearer what the use of showLogs) 
 
         for i in zip(paramNames, paramValues):
@@ -1541,6 +1558,155 @@ class MuMoTview:
             systemSize = defaultSize
             
         return systemSize
+
+    ## gets and returns names and values from widgets
+    def _get_argDict(self):
+        #plotLimits = self._getPlotLimits()
+        systemSize = Symbol('systemSize')
+        argDict[systemSize] = self._getSystemSize()
+        paramNames = []
+        paramValues = []
+        if self._controller is not None:
+            for name, value in self._controller._widgetsFreeParams.items():
+                # throw away formatting for constant reactants
+                #name = name.replace('(','')
+                #name = name.replace(')','')
+                
+                paramNames.append(name)
+                paramValues.append(value.value)
+        if self._paramNames is not None:
+            paramNames += map(str, self._paramNames)
+            paramValues += self._paramValues   
+                 
+        #funcs = self._mumotModel._getFuncs()
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        for key in argDict:
+            if key in self._mumotModel._constantReactants:
+                argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
+        
+        return argDict
+
+
+    def _get_fixedPoints2d(self):
+        #plotLimits = self._controller._getPlotLimits()
+        paramNames = []
+        paramValues = []
+        if self._controller is not None:
+            for name, value in self._controller._widgetsFreeParams.items():
+                # throw away formatting for constant reactants
+#                 name = name.replace('(','')
+#                 name = name.replace(')','')
+                paramNames.append(name)
+                paramValues.append(value.value)
+        if self._paramNames is not None:
+            paramNames += map(str, self._paramNames)
+            paramValues += self._paramValues            
+        funcs = self._mumotModel._getFuncs()
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        argDict[self._mumotModel._systemSize] = 1
+       
+#         if self._controller != None:
+#             paramNames = []
+#             paramValues = []
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 paramNames.append(name)
+#                 paramValues.append(value.value)          
+#         else:
+#             paramNames = map(str, self._paramNames)
+#             paramValues = self._paramValues           
+#             
+#         argNamesSymb = list(map(Symbol, paramNames))
+#         argDict = dict(zip(argNamesSymb, paramValues))
+#         argDict[self._mumotModel._systemSize] = 1
+        
+        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+        eps=1e-8
+        EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
+        #for kk in range(len(EQsol)):
+        #    print(EQsol[kk])
+        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
+        
+        MAT = Matrix([EQ1, EQ2])
+        JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
+        
+        eigList = []
+        #for nn in range(len(realEQsol)): 
+        #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
+        #    evSet = JACsub.eigenvals()
+        #    eigList.append(evSet)
+        for nn in range(len(realEQsol)): 
+            evSet = {}
+            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
+            #evSet = JACsub.eigenvals()
+            eigVects = JACsub.eigenvects()
+            for kk in range(len(eigVects)):
+                evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
+            eigList.append(evSet)
+        return realEQsol, eigList #returns two lists of dictionaries
+    
+    ## calculates stationary states of 3d system
+    def _get_fixedPoints3d(self):
+        #plotLimits = self._controller._getPlotLimits()
+        paramNames = []
+        paramValues = []
+        if self._controller is not None:
+            for name, value in self._controller._widgetsFreeParams.items():
+                # throw away formatting for constant reactants
+#                 name = name.replace('(','')
+#                 name = name.replace(')','')
+                paramNames.append(name)
+                paramValues.append(value.value)
+        if self._paramNames is not None:
+            paramNames += map(str, self._paramNames)
+            paramValues += self._paramValues            
+        funcs = self._mumotModel._getFuncs()
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        argDict[self._mumotModel._systemSize] = 1
+        
+#         if self._controller != None:
+#             paramNames = []
+#             paramValues = []
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 paramNames.append(name)
+#                 paramValues.append(value.value)          
+#         else:
+#             paramNames = map(str, self._paramNames)
+#             paramValues = self._paramValues           
+#             
+#         argNamesSymb = list(map(Symbol, paramNames))
+#         argDict = dict(zip(argNamesSymb, paramValues))
+#         argDict[self._mumotModel._systemSize] = 1
+        
+        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+        EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
+        eps=1e-8
+        EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
+        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps and Abs(im(EQsol[kk][self._stateVariable3]))<=eps)]
+        
+        MAT = Matrix([EQ1, EQ2, EQ3])
+        JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
+        
+        eigList = []
+        #for nn in range(len(realEQsol)): 
+        #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
+        #    evSet = JACsub.eigenvals()
+        #    eigList.append(evSet)
+        for nn in range(len(realEQsol)): 
+            evSet = {}
+            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
+            #evSet = JACsub.eigenvals()
+            eigVects = JACsub.eigenvects()
+            for kk in range(len(eigVects)):
+                evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
+            eigList.append(evSet)
+        return realEQsol, eigList #returns two lists of dictionaries
+    
+
         
                         
     def showLogs(self, tail = False):
@@ -1798,37 +1964,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
         if not(silent):
             self._plot_NumSolODE()
 
-    
-    ## gets and returns names and values from widgets
-    def _get_argDict(self):
-        plotLimits = 1
-        if self._controller != None:
-            paramNames = []
-            paramValues = []
-            for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-                #name = name.replace('(','')
-                #name = name.replace(')','')
-                
-                paramNames.append(name)
-                paramValues.append(value.value)
-            plotLimits = self._getPlotLimits()
-        else:
-            paramNames = map(str, self._paramNames)
-            paramValues = self._paramValues   
-                 
-        #funcs = self._mumotModel._getFuncs()
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
-        for key in argDict:
-            if key in self._mumotModel._constantReactants:
-                argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
-        if self._controller._systemSizeWidget != None:
-            systemSize = Symbol('systemSize')
-            argDict[systemSize] = self._controller._systemSizeWidget.value
         
-        return argDict
-    
     
     def _getInitCondsFromSlider(self):
         if self._controller != None:
@@ -1856,18 +1992,18 @@ class MuMoTtimeEvolutionView(MuMoTview):
         if self._stateVariable4:
             SVsub[self._stateVariable4] = y_old[3]
         #plotLimits = self._controller._getPlotLimits()
-        if self._controller != None:
-            paramNames = []
-            paramValues = []
+        paramNames = []
+        paramValues = []
+        if self._controller is not None:
             for name, value in self._controller._widgetsFreeParams.items():
                 # throw away formatting for constant reactants
 #                 name = name.replace('(','')
 #                 name = name.replace(')','')
                 paramNames.append(name)
                 paramValues.append(value.value)
-        else:
-            paramNames = map(str, self._paramNames)
-            paramValues = self._paramValues            
+        if self._paramNames is not None:
+            paramNames += map(str, self._paramNames)
+            paramValues += self._paramValues            
         funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
@@ -1892,119 +2028,119 @@ class MuMoTtimeEvolutionView(MuMoTview):
     
             
     ## calculates stationary states of 2d system
-    def _get_fixedPoints2d(self):
-        #plotLimits = self._controller._getPlotLimits()
-        if self._controller != None:
-            paramNames = []
-            paramValues = []
-            for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-#                 name = name.replace('(','')
-#                 name = name.replace(')','')
-                paramNames.append(name)
-                paramValues.append(value.value)
-        else:
-            paramNames = map(str, self._paramNames)
-            paramValues = self._paramValues            
-        funcs = self._mumotModel._getFuncs()
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
-        argDict[self._mumotModel._systemSize] = 1
-        
-        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
-        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
-        eps=1e-8
-        EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
-        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
-        
-        MAT = Matrix([EQ1, EQ2])
-        JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
-        
-        eigList = []
-        for nn in range(len(realEQsol)): 
-            evSet = {}
-            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
-            #evSet = JACsub.eigenvals()
-            eigVects = JACsub.eigenvects()
-            for kk in range(len(eigVects)):
-                evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
-            eigList.append(evSet)
-        return realEQsol, eigList #returns two lists of dictionaries
-    
-    ## calculates stationary states of 3d system
-    def _get_fixedPoints3d(self):
-        #plotLimits = self._controller._getPlotLimits()
-        if self._controller != None:
-            paramNames = []
-            paramValues = []
-            for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-#                 name = name.replace('(','')
-#                 name = name.replace(')','')
-                paramNames.append(name)
-                paramValues.append(value.value)
-        else:
-            paramNames = map(str, self._paramNames)
-            paramValues = self._paramValues            
-        funcs = self._mumotModel._getFuncs()
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
-        argDict[self._mumotModel._systemSize] = 1
-        
-        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
-        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
-        EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
-        eps=1e-8
-        EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
-        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps and Abs(im(EQsol[kk][self._stateVariable3]))<=eps)]
-        
-        MAT = Matrix([EQ1, EQ2, EQ3])
-        JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
-        
-        eigList = []
-        for nn in range(len(realEQsol)): 
-            evSet = {}
-            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
-            #evSet = JACsub.eigenvals()
-            eigVects = JACsub.eigenvects()
-            for kk in range(len(eigVects)):
-                evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
-            eigList.append(evSet)
-        return realEQsol, eigList #returns two lists of dictionaries
-    
-    
-    def _plot_NumSolODE(self):
-        if not(self._silent): ## @todo is this necessary?
-            plt.figure(self._figureNum)
-            plt.clf()
-            self._resetErrorMessage()
-        self._showErrorMessage(str(self))
-        
-    
-    def _print_standalone_view_cmd(self):
-        with io.capture_output() as log:
-            print('Bookmark feature for standalone view not implemented for time-dependent soultion of ODE.')
-#             logStr = self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
-#             if self._stateVariable3 != None:
-#                 logStr += "'" + str(self._stateVariable3) + "', "
-#             logStr += "params = ["
+#     def _get_fixedPoints2d(self):
+#         #plotLimits = self._controller._getPlotLimits()
+#         paramNames = []
+#         paramValues = []
+#         if self._controller is not None:
 #             for name, value in self._controller._widgetsFreeParams.items():
-# #                name = name.replace('\\', '\\\\')
-#                 name = name.replace('(', '')
-#                 name = name.replace(')', '')
-#                 logStr += "('" + name + "', " + str(value.value) + "), "
-#             if len(self._controller._widgetsFreeParams.items()) > 0:
-#                 logStr = logStr[:-2] # throw away last ", "
-#             logStr += "]"
-#             if self._generatingKwargs != None:
-#                 logStr += ", "
-#                 for key in self._generatingKwargs:
-#                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-#                 if len(self._generatingKwargs) > 0:
-#                     logStr = logStr[:-2]  # throw away last ", "
-#             logStr += ")"
-#             print(logStr)    
-        self._logs.append(log)
+#                 # throw away formatting for constant reactants
+# #                 name = name.replace('(','')
+# #                 name = name.replace(')','')
+#                 paramNames.append(name)
+#                 paramValues.append(value.value)
+#         if self._paramNames is not None:
+#             paramNames += map(str, self._paramNames)
+#             paramValues += self._paramValues            
+#         funcs = self._mumotModel._getFuncs()
+#         argNamesSymb = list(map(Symbol, paramNames))
+#         argDict = dict(zip(argNamesSymb, paramValues))
+#         argDict[self._mumotModel._systemSize] = 1
+#         
+#         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+#         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+#         eps=1e-8
+#         EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
+#         realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
+#         
+#         MAT = Matrix([EQ1, EQ2])
+#         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
+#         
+#         eigList = []
+#         for nn in range(len(realEQsol)): 
+#             evSet = {}
+#             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
+#             #evSet = JACsub.eigenvals()
+#             eigVects = JACsub.eigenvects()
+#             for kk in range(len(eigVects)):
+#                 evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
+#             eigList.append(evSet)
+#         return realEQsol, eigList #returns two lists of dictionaries
+#     
+#     ## calculates stationary states of 3d system
+#     def _get_fixedPoints3d(self):
+#         #plotLimits = self._controller._getPlotLimits()
+#         paramNames = []
+#         paramValues = []
+#         if self._controller != None:
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 # throw away formatting for constant reactants
+# #                 name = name.replace('(','')
+# #                 name = name.replace(')','')
+#                 paramNames.append(name)
+#                 paramValues.append(value.value)
+#         if self._paramNames is not None:
+#             paramNames += map(str, self._paramNames)
+#             paramValues += self._paramValues            
+#         funcs = self._mumotModel._getFuncs()
+#         argNamesSymb = list(map(Symbol, paramNames))
+#         argDict = dict(zip(argNamesSymb, paramValues))
+#         argDict[self._mumotModel._systemSize] = 1
+#         
+#         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+#         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+#         EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
+#         eps=1e-8
+#         EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
+#         realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps and Abs(im(EQsol[kk][self._stateVariable3]))<=eps)]
+#         
+#         MAT = Matrix([EQ1, EQ2, EQ3])
+#         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
+#         
+#         eigList = []
+#         for nn in range(len(realEQsol)): 
+#             evSet = {}
+#             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
+#             #evSet = JACsub.eigenvals()
+#             eigVects = JACsub.eigenvects()
+#             for kk in range(len(eigVects)):
+#                 evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
+#             eigList.append(evSet)
+#         return realEQsol, eigList #returns two lists of dictionaries
+#     
+#     
+#     def _plot_NumSolODE(self):
+#         if not(self._silent): ## @todo is this necessary?
+#             plt.figure(self._figureNum)
+#             plt.clf()
+#             self._resetErrorMessage()
+#         self._showErrorMessage(str(self))
+#         
+#     
+#     def _print_standalone_view_cmd(self):
+#         with io.capture_output() as log:
+#             print('Bookmark feature for standalone view not implemented for time-dependent soultion of ODE.')
+# #             logStr = self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
+# #             if self._stateVariable3 != None:
+# #                 logStr += "'" + str(self._stateVariable3) + "', "
+# #             logStr += "params = ["
+# #             for name, value in self._controller._widgetsFreeParams.items():
+# # #                name = name.replace('\\', '\\\\')
+# #                 name = name.replace('(', '')
+# #                 name = name.replace(')', '')
+# #                 logStr += "('" + name + "', " + str(value.value) + "), "
+# #             if len(self._controller._widgetsFreeParams.items()) > 0:
+# #                 logStr = logStr[:-2] # throw away last ", "
+# #             logStr += "]"
+# #             if self._generatingKwargs != None:
+# #                 logStr += ", "
+# #                 for key in self._generatingKwargs:
+# #                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+# #                 if len(self._generatingKwargs) > 0:
+# #                     logStr = logStr[:-2]  # throw away last ", "
+# #             logStr += ")"
+# #             print(logStr)    
+#         self._logs.append(log)
         
 
 ## numerical solution of state variables plot view on model
@@ -2104,35 +2240,6 @@ class MuMoTfieldView(MuMoTview):
             self._plot_field()
 
     
-    ## gets and returns names and values from widgets
-    def _get_argDict(self):
-        #plotLimits = self._controller._getPlotLimits()
-        if self._controller != None:
-            paramNames = []
-            paramValues = []
-            for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-                #name = name.replace('(','')
-                #name = name.replace(')','')
-                
-                paramNames.append(name)
-                paramValues.append(value.value)
-        else:
-            paramNames = map(str, self._paramNames)
-            paramValues = self._paramValues   
-                 
-        #funcs = self._mumotModel._getFuncs()
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
-        for key in argDict:
-            if key in self._mumotModel._constantReactants:
-                argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
-        if self._controller._systemSizeWidget != None:
-            systemSize = Symbol('systemSize')
-            argDict[systemSize] = self._controller._systemSizeWidget.value
-        
-        return argDict
-    
 
 
 #    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
@@ -2143,7 +2250,7 @@ class MuMoTfieldView(MuMoTview):
                 print('Bookmark functionality not implemented for MuMoTnoiseView')
                 #logStr = self._generatingCommand + "(<modelName>, None, '" + str(self._SOL_2ndOrdMomDict) + "', '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) + "', "
             else:
-                logStr = self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
+                logStr = "bookmark = " + self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
                 if self._stateVariable3 != None:
                     logStr += "'" + str(self._stateVariable3) + "', "
                 logStr += "params = ["
@@ -2154,6 +2261,13 @@ class MuMoTfieldView(MuMoTview):
                     name = name.replace('(', '')
                     name = name.replace(')', '')
                     logStr += "('" + latex(name) + "', " + str(value.value) + "), "
+                for name, value in zip(self._paramNames, self._paramValues):
+                    name= repr(name)
+                    if name in self._mumotModel._ratesLaTeX:
+                        name = self._mumotModel._ratesLaTeX[name]
+                    name = name.replace('(', '')
+                    name = name.replace(')', '')
+                    logStr += "('" + latex(name) + "', " + str(value) + "), "                
                 logStr += "('plotLimits', " + str(self._getPlotLimits()) + "), "
                 logStr += "('systemSize', " + str(self._getSystemSize()) + "), "
 #                if len(self._controller._widgetsFreeParams.items()) > 0:
@@ -2171,123 +2285,123 @@ class MuMoTfieldView(MuMoTview):
 
             
     ## calculates stationary states of 2d system
-    def _get_fixedPoints2d(self):
-        #plotLimits = self._controller._getPlotLimits()
-        if self._controller != None:
-            paramNames = []
-            paramValues = []
-            for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-#                 name = name.replace('(','')
-#                 name = name.replace(')','')
-                paramNames.append(name)
-                paramValues.append(value.value)
-        else:
-            paramNames = map(str, self._paramNames)
-            paramValues = self._paramValues            
-        funcs = self._mumotModel._getFuncs()
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
-        argDict[self._mumotModel._systemSize] = 1
-       
+#     def _get_fixedPoints2d(self):
+#         #plotLimits = self._controller._getPlotLimits()
 #         if self._controller != None:
 #             paramNames = []
 #             paramValues = []
 #             for name, value in self._controller._widgetsFreeParams.items():
+#                 # throw away formatting for constant reactants
+# #                 name = name.replace('(','')
+# #                 name = name.replace(')','')
 #                 paramNames.append(name)
-#                 paramValues.append(value.value)          
+#                 paramValues.append(value.value)
 #         else:
 #             paramNames = map(str, self._paramNames)
-#             paramValues = self._paramValues           
-#             
+#             paramValues = self._paramValues            
+#         funcs = self._mumotModel._getFuncs()
 #         argNamesSymb = list(map(Symbol, paramNames))
 #         argDict = dict(zip(argNamesSymb, paramValues))
 #         argDict[self._mumotModel._systemSize] = 1
-        
-        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
-        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
-        eps=1e-8
-        EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
-        #for kk in range(len(EQsol)):
-        #    print(EQsol[kk])
-        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
-        
-        MAT = Matrix([EQ1, EQ2])
-        JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
-        
-        eigList = []
-        #for nn in range(len(realEQsol)): 
-        #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
-        #    evSet = JACsub.eigenvals()
-        #    eigList.append(evSet)
-        for nn in range(len(realEQsol)): 
-            evSet = {}
-            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
-            #evSet = JACsub.eigenvals()
-            eigVects = JACsub.eigenvects()
-            for kk in range(len(eigVects)):
-                evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
-            eigList.append(evSet)
-        return realEQsol, eigList #returns two lists of dictionaries
-    
-    ## calculates stationary states of 3d system
-    def _get_fixedPoints3d(self):
-        #plotLimits = self._controller._getPlotLimits()
-        if self._controller != None:
-            paramNames = []
-            paramValues = []
-            for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-#                 name = name.replace('(','')
-#                 name = name.replace(')','')
-                paramNames.append(name)
-                paramValues.append(value.value)
-        else:
-            paramNames = map(str, self._paramNames)
-            paramValues = self._paramValues            
-        funcs = self._mumotModel._getFuncs()
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
-        argDict[self._mumotModel._systemSize] = 1
-        
+#        
+# #         if self._controller != None:
+# #             paramNames = []
+# #             paramValues = []
+# #             for name, value in self._controller._widgetsFreeParams.items():
+# #                 paramNames.append(name)
+# #                 paramValues.append(value.value)          
+# #         else:
+# #             paramNames = map(str, self._paramNames)
+# #             paramValues = self._paramValues           
+# #             
+# #         argNamesSymb = list(map(Symbol, paramNames))
+# #         argDict = dict(zip(argNamesSymb, paramValues))
+# #         argDict[self._mumotModel._systemSize] = 1
+#         
+#         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+#         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+#         eps=1e-8
+#         EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
+#         #for kk in range(len(EQsol)):
+#         #    print(EQsol[kk])
+#         realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
+#         
+#         MAT = Matrix([EQ1, EQ2])
+#         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
+#         
+#         eigList = []
+#         #for nn in range(len(realEQsol)): 
+#         #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
+#         #    evSet = JACsub.eigenvals()
+#         #    eigList.append(evSet)
+#         for nn in range(len(realEQsol)): 
+#             evSet = {}
+#             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
+#             #evSet = JACsub.eigenvals()
+#             eigVects = JACsub.eigenvects()
+#             for kk in range(len(eigVects)):
+#                 evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
+#             eigList.append(evSet)
+#         return realEQsol, eigList #returns two lists of dictionaries
+#     
+#     ## calculates stationary states of 3d system
+#     def _get_fixedPoints3d(self):
+#         #plotLimits = self._controller._getPlotLimits()
 #         if self._controller != None:
 #             paramNames = []
 #             paramValues = []
 #             for name, value in self._controller._widgetsFreeParams.items():
+#                 # throw away formatting for constant reactants
+# #                 name = name.replace('(','')
+# #                 name = name.replace(')','')
 #                 paramNames.append(name)
-#                 paramValues.append(value.value)          
+#                 paramValues.append(value.value)
 #         else:
 #             paramNames = map(str, self._paramNames)
-#             paramValues = self._paramValues           
-#             
+#             paramValues = self._paramValues            
+#         funcs = self._mumotModel._getFuncs()
 #         argNamesSymb = list(map(Symbol, paramNames))
 #         argDict = dict(zip(argNamesSymb, paramValues))
 #         argDict[self._mumotModel._systemSize] = 1
-        
-        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
-        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
-        EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
-        eps=1e-8
-        EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
-        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps and Abs(im(EQsol[kk][self._stateVariable3]))<=eps)]
-        
-        MAT = Matrix([EQ1, EQ2, EQ3])
-        JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
-        
-        eigList = []
-        #for nn in range(len(realEQsol)): 
-        #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
-        #    evSet = JACsub.eigenvals()
-        #    eigList.append(evSet)
-        for nn in range(len(realEQsol)): 
-            evSet = {}
-            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
-            #evSet = JACsub.eigenvals()
-            eigVects = JACsub.eigenvects()
-            for kk in range(len(eigVects)):
-                evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
-            eigList.append(evSet)
-        return realEQsol, eigList #returns two lists of dictionaries
+#         
+# #         if self._controller != None:
+# #             paramNames = []
+# #             paramValues = []
+# #             for name, value in self._controller._widgetsFreeParams.items():
+# #                 paramNames.append(name)
+# #                 paramValues.append(value.value)          
+# #         else:
+# #             paramNames = map(str, self._paramNames)
+# #             paramValues = self._paramValues           
+# #             
+# #         argNamesSymb = list(map(Symbol, paramNames))
+# #         argDict = dict(zip(argNamesSymb, paramValues))
+# #         argDict[self._mumotModel._systemSize] = 1
+#         
+#         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+#         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+#         EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
+#         eps=1e-8
+#         EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
+#         realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps and Abs(im(EQsol[kk][self._stateVariable3]))<=eps)]
+#         
+#         MAT = Matrix([EQ1, EQ2, EQ3])
+#         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
+#         
+#         eigList = []
+#         #for nn in range(len(realEQsol)): 
+#         #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
+#         #    evSet = JACsub.eigenvals()
+#         #    eigList.append(evSet)
+#         for nn in range(len(realEQsol)): 
+#             evSet = {}
+#             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
+#             #evSet = JACsub.eigenvals()
+#             eigVects = JACsub.eigenvects()
+#             for kk in range(len(eigVects)):
+#                 evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
+#             eigList.append(evSet)
+#         return realEQsol, eigList #returns two lists of dictionaries
     
     
     def _plot_field(self):
@@ -2300,18 +2414,18 @@ class MuMoTfieldView(MuMoTview):
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
         plotLimits = self._getPlotLimits()
-        if self._controller != None:
-            paramNames = []
-            paramValues = []
+        paramNames = []
+        paramValues = []
+        if self._controller is not None:
             for name, value in self._controller._widgetsFreeParams.items():
                 # throw away formatting for constant reactants
 #                 name = name.replace('(','')
 #                 name = name.replace(')','')
                 paramNames.append(name)
                 paramValues.append(value.value)
-        else:
-            paramNames = map(str, self._paramNames)
-            paramValues = self._paramValues           
+        if self._paramNames is not None:
+            paramNames += map(str, self._paramNames)
+            paramValues += self._paramValues           
         funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
