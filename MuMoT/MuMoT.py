@@ -1104,6 +1104,7 @@ class MuMoTcontroller:
 
     def _setErrorWidget(self, errorWidget):
         self._errorMessage = errorWidget
+
             
     def _downloadFile(self, data_to_download):
         js_download = """
@@ -1465,14 +1466,17 @@ class MuMoTview:
             paramNames, self._paramValues = zip(*params)
             for name in paramNames:
 #                self._paramNames.append(name.replace('\\','')) ## @todo: have to rationalise how LaTeX characters are handled
-                expr = process_sympy(name.replace('\\\\','\\'))
-                atoms = expr.atoms()
-                if len(atoms) > 1:
-                    raise SyntaxError("Non-singleton parameter name in parameter " + name)
-                for atom in atoms:
-                    # parameter name should contain a single atom
-                    pass
-                self._paramNames.append(atom)
+                if name == 'plotLimits' or name == 'systemSize':
+                    self._paramNames.append(name)
+                else:
+                    expr = process_sympy(name.replace('\\\\','\\'))
+                    atoms = expr.atoms()
+                    if len(atoms) > 1:
+                        raise SyntaxError("Non-singleton parameter name in parameter " + name)
+                    for atom in atoms:
+                        # parameter name should contain a single atom
+                        pass
+                    self._paramNames.append(atom)
         
         if not(self._silent):
             _buildFig(self, figure)
@@ -1513,6 +1517,30 @@ class MuMoTview:
         for i in zip(paramNames, paramValues):
             print('(' + i[0] + '=' + repr(i[1]) + '), ', end='')
         print("at", datetime.datetime.now())
+        
+
+    def _getPlotLimits(self, defaultLimits = 1):
+        if self._controller is not None and self._controller._plotLimitsWidget != None:
+            plotLimits = self._controller._plotLimitsWidget.value
+        elif self._paramNames is not None and 'plotLimits' in self._paramNames:
+            ## @todo: this is crying out to be refactored as a dictionary - no time just now
+            plotLimits = self._paramValues[self._paramNames.index('plotLimits')]
+        else:
+            plotLimits = defaultLimits
+            
+        return plotLimits
+
+
+    def _getSystemSize(self, defaultSize = 1):
+        if self._controller is not None and self._controller._systemSizeWidget != None:
+            systemSize = self._controller._systemSizeWidget.value
+        elif self._paramNames is not None and 'systemSize' in self._paramNames:
+            ## @todo: this is crying out to be refactored as a dictionary - no time just now
+            systemSize = self._paramValues[self._paramNames.index('systemSize')]
+        else:
+            systemSize = defaultSize
+            
+        return systemSize
         
                         
     def showLogs(self, tail = False):
@@ -1784,8 +1812,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
                 
                 paramNames.append(name)
                 paramValues.append(value.value)
-            if self._controller._plotLimitsWidget != None:
-                plotLimits = self._controller._plotLimitsWidget.value
+            plotLimits = self._getPlotLimits()
         else:
             paramNames = map(str, self._paramNames)
             paramValues = self._paramValues   
@@ -1828,7 +1855,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
             SVsub[self._stateVariable3] = y_old[2]
         if self._stateVariable4:
             SVsub[self._stateVariable4] = y_old[3]
-        plotLimits = 1
+        #plotLimits = self._controller._getPlotLimits()
         if self._controller != None:
             paramNames = []
             paramValues = []
@@ -1838,8 +1865,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #                 name = name.replace(')','')
                 paramNames.append(name)
                 paramValues.append(value.value)
-            if self._controller._plotLimitsWidget != None:
-                plotLimits = self._controller._plotLimitsWidget.value
         else:
             paramNames = map(str, self._paramNames)
             paramValues = self._paramValues            
@@ -1868,7 +1893,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
             
     ## calculates stationary states of 2d system
     def _get_fixedPoints2d(self):
-        plotLimits = 1
+        #plotLimits = self._controller._getPlotLimits()
         if self._controller != None:
             paramNames = []
             paramValues = []
@@ -1878,8 +1903,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #                 name = name.replace(')','')
                 paramNames.append(name)
                 paramValues.append(value.value)
-            if self._controller._plotLimitsWidget != None:
-                plotLimits = self._controller._plotLimitsWidget.value
         else:
             paramNames = map(str, self._paramNames)
             paramValues = self._paramValues            
@@ -1910,7 +1933,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
     
     ## calculates stationary states of 3d system
     def _get_fixedPoints3d(self):
-        plotLimits = 1
+        #plotLimits = self._controller._getPlotLimits()
         if self._controller != None:
             paramNames = []
             paramValues = []
@@ -1920,8 +1943,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #                 name = name.replace(')','')
                 paramNames.append(name)
                 paramValues.append(value.value)
-            if self._controller._plotLimitsWidget != None:
-                plotLimits = self._controller._plotLimitsWidget.value
         else:
             paramNames = map(str, self._paramNames)
             paramValues = self._paramValues            
@@ -2085,7 +2106,7 @@ class MuMoTfieldView(MuMoTview):
     
     ## gets and returns names and values from widgets
     def _get_argDict(self):
-        plotLimits = 1
+        #plotLimits = self._controller._getPlotLimits()
         if self._controller != None:
             paramNames = []
             paramValues = []
@@ -2096,8 +2117,6 @@ class MuMoTfieldView(MuMoTview):
                 
                 paramNames.append(name)
                 paramValues.append(value.value)
-            if self._controller._plotLimitsWidget != None:
-                plotLimits = self._controller._plotLimitsWidget.value
         else:
             paramNames = map(str, self._paramNames)
             paramValues = self._paramValues   
@@ -2135,8 +2154,10 @@ class MuMoTfieldView(MuMoTview):
                     name = name.replace('(', '')
                     name = name.replace(')', '')
                     logStr += "('" + latex(name) + "', " + str(value.value) + "), "
-                if len(self._controller._widgetsFreeParams.items()) > 0:
-                    logStr = logStr[:-2] # throw away last ", "
+                logStr += "('plotLimits', " + str(self._getPlotLimits()) + "), "
+                logStr += "('systemSize', " + str(self._getSystemSize()) + "), "
+#                if len(self._controller._widgetsFreeParams.items()) > 0:
+                logStr = logStr[:-2] # throw away last ", "
                 logStr += "]"
                 if len(self._generatingKwargs) > 0:
                     logStr += ", "
@@ -2151,7 +2172,7 @@ class MuMoTfieldView(MuMoTview):
             
     ## calculates stationary states of 2d system
     def _get_fixedPoints2d(self):
-        plotLimits = 1
+        #plotLimits = self._controller._getPlotLimits()
         if self._controller != None:
             paramNames = []
             paramValues = []
@@ -2161,8 +2182,6 @@ class MuMoTfieldView(MuMoTview):
 #                 name = name.replace(')','')
                 paramNames.append(name)
                 paramValues.append(value.value)
-            if self._controller._plotLimitsWidget != None:
-                plotLimits = self._controller._plotLimitsWidget.value
         else:
             paramNames = map(str, self._paramNames)
             paramValues = self._paramValues            
@@ -2213,7 +2232,7 @@ class MuMoTfieldView(MuMoTview):
     
     ## calculates stationary states of 3d system
     def _get_fixedPoints3d(self):
-        plotLimits = 1
+        #plotLimits = self._controller._getPlotLimits()
         if self._controller != None:
             paramNames = []
             paramValues = []
@@ -2223,8 +2242,6 @@ class MuMoTfieldView(MuMoTview):
 #                 name = name.replace(')','')
                 paramNames.append(name)
                 paramValues.append(value.value)
-            if self._controller._plotLimitsWidget != None:
-                plotLimits = self._controller._plotLimitsWidget.value
         else:
             paramNames = map(str, self._paramNames)
             paramValues = self._paramValues            
@@ -2282,7 +2299,7 @@ class MuMoTfieldView(MuMoTview):
 
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
-        plotLimits = 1
+        plotLimits = self._getPlotLimits()
         if self._controller != None:
             paramNames = []
             paramValues = []
@@ -2292,8 +2309,6 @@ class MuMoTfieldView(MuMoTview):
 #                 name = name.replace(')','')
                 paramNames.append(name)
                 paramValues.append(value.value)
-            if self._controller._plotLimitsWidget != None:
-                plotLimits = self._controller._plotLimitsWidget.value
         else:
             paramNames = map(str, self._paramNames)
             paramValues = self._paramValues           
