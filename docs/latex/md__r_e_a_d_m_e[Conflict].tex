@@ -1,0 +1,43 @@
+\subsection*{Multiscale Modelling Tool }
+
+Repository should contain following files/folders\+:
+\begin{DoxyItemize}
+\item {\ttfamily Mu\+Mo\+T/\+Mu\+Mo\+T.\+py} (main functionality)
+\item {\ttfamily process\+\_\+latex/process\+\_\+latex.\+py} (La\+TeX parser, imported from \href{https://github.com/augustt198/latex2sympy}{\tt latex2sympy} project and updated for Python 3)
+\item {\ttfamily gen} (includes submodules used by Mu\+MoT, important\+: there must be an empty file called {\ttfamily \+\_\+\+\_\+init\+\_\+\+\_\+.\+py} (with 2 underscores before and after init in the filename) in that folder, so Python can recognise the modules)
+\item {\ttfamily Mu\+Mo\+Ttest.\+py} and other demo files
+\end{DoxyItemize}
+
+\section*{Dependencies\+:}
+
+You need to install the following tools\+: Py\+D\+S\+Tool, graphviz (graph visualization) and antlr4 4.\+5.\+3 (parser generator). It is possible to use pip. Open a terminal window and type\+:
+
+
+\begin{DoxyItemize}
+\item {\ttfamily pip install pydstool}
+\item {\ttfamily pip install graphviz}
+\item {\ttfamily pip install antlr4-\/python3-\/runtime=4.\+5.\+3}
+\end{DoxyItemize}
+
+\section*{Test}
+
+To test your installation run the {\ttfamily Mu\+Mo\+Tdemo.\+ipynb} and {\ttfamily Mu\+Mo\+Ttest.\+ipynb} notebooks.
+
+\section*{Documentation}
+
+Read the documentation at \href{https://diodeproject.github.io/MuMoT/}{\tt https\+://diodeproject.\+github.\+io/\+Mu\+Mo\+T/}
+
+\section*{House rules}
+
+
+\begin{DoxyItemize}
+\item Update the \href{http://www.stack.nl/~dimitri/doxygen/index.html}{\tt Doxygen} documentation when making substantive changes
+\begin{DoxyItemize}
+\item include \href{http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#pythonblocks}{\tt Python comment blocks} for classes, functions, etc.
+\item use `\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000001}{Todo}]` for reminders\end{DoxyRefDesc}
+
+\end{DoxyItemize}
+\item Update {\ttfamily Mu\+Mo\+Ttest.\+ipynb} to add tests for new functionality -\/ always run this notebook before committing
+\item Write code using Python \href{https://www.python.org/dev/peps/pep-0008/#naming-conventions}{\tt naming conventions} 
+\end{DoxyItemize}

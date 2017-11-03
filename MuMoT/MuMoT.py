@@ -566,10 +566,10 @@ class MuMoTmodel:
             if str(rate) != bifurcationParameter:
                 paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
                 paramNames.append(str(rate))
-        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False, **kwargs)
+        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False, params = params, **kwargs)
 
         # construct view
-        modelView = MuMoTbifurcationView(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, **kwargs)
+        modelView = MuMoTbifurcationView(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, params = params, **kwargs)
         
         viewController.setView(modelView)
         viewController._setReplotFunction(modelView._replot_bifurcation)
@@ -1056,8 +1056,9 @@ class MuMoTcontroller:
             display(self._errorMessage)
 
     def _print_standalone_view_cmd(self, foo):
-        self._view._print_standalone_view_cmd()
         self._errorMessage.value = "Pasted bookmark to log - view with showLogs(tail = True)"
+        self._view._print_standalone_view_cmd()
+
     
     ## set the functions that must be triggered when the widgets are changed.
     ## @param[in]    recomputeFunction    The function to be called when recomputing is necessary 
@@ -1534,7 +1535,45 @@ class MuMoTview:
         for i in zip(paramNames, paramValues):
             print('(' + i[0] + '=' + repr(i[1]) + '), ', end='')
         print("at", datetime.datetime.now())
-        
+
+    def _print_standalone_view_cmd(self):
+        logStr = self._build_bookmark()
+        if not self._silent and logStr is not None:
+            with io.capture_output() as log:
+                print(logStr)    
+            self._logs.append(log)
+        else:
+            return logStr
+
+
+    def _get_bookmarks_params(self):
+        logStr = "params = ["
+        for name, value in self._controller._widgetsFreeParams.items():
+#                name = name.replace('\\', '\\\\')
+            if name in self._mumotModel._ratesLaTeX:
+                name = self._mumotModel._ratesLaTeX[name]
+            name = name.replace('(', '')
+            name = name.replace(')', '')
+            logStr += "('" + latex(name) + "', " + str(value.value) + "), "
+        if self._paramNames != None:
+            for name, value in zip(self._paramNames, self._paramValues):
+                name= repr(name)
+                if name in self._mumotModel._ratesLaTeX:
+                    name = self._mumotModel._ratesLaTeX[name]
+                name = name.replace('(', '')
+                name = name.replace(')', '')
+                logStr += "('" + latex(name) + "', " + str(value) + "), "
+                
+        return logStr        
+
+
+    def _build_bookmark(self):
+        self._resetErrorMessage()
+        self._showErrorMessage("Bookmark functionality not implemented for class " + self._generatingCommand)
+
+        return
+
+
 
     def _getPlotLimits(self, defaultLimits = 1):
         if self._controller is not None and self._controller._plotLimitsWidget != None:
@@ -1817,6 +1856,19 @@ class MuMoTmultiView(MuMoTview):
     def _setLog(self, log):
         for view in self._views:
             view._setLog(log)
+
+
+    def _print_standalone_view_cmd(self):
+        with io.capture_output() as log:
+            logStr = "bookmark = " + self._generatingCommand + "(["
+            for view in self._views:
+                logStr += view._print_standalone_view_cmd() + ", "
+            ## @todo: delete last ,
+            logStr += "], "
+            ## @todo: keywords
+            print(logStr)
+        self._logs.append(log)
+
 
 
 ## multi-view controller
@@ -2244,44 +2296,29 @@ class MuMoTfieldView(MuMoTview):
 
 #    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
 
-    def _print_standalone_view_cmd(self):
-        with io.capture_output() as log:
-            if self._generatingCommand == 'mmt.MuMoTnoiseView':
-                print('Bookmark functionality not implemented for MuMoTnoiseView')
-                #logStr = self._generatingCommand + "(<modelName>, None, '" + str(self._SOL_2ndOrdMomDict) + "', '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) + "', "
-            else:
-                logStr = "bookmark = " + self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
-                if self._stateVariable3 != None:
-                    logStr += "'" + str(self._stateVariable3) + "', "
-                logStr += "params = ["
-                for name, value in self._controller._widgetsFreeParams.items():
-    #                name = name.replace('\\', '\\\\')
-                    if name in self._mumotModel._ratesLaTeX:
-                        name = self._mumotModel._ratesLaTeX[name]
-                    name = name.replace('(', '')
-                    name = name.replace(')', '')
-                    logStr += "('" + latex(name) + "', " + str(value.value) + "), "
-                for name, value in zip(self._paramNames, self._paramValues):
-                    name= repr(name)
-                    if name in self._mumotModel._ratesLaTeX:
-                        name = self._mumotModel._ratesLaTeX[name]
-                    name = name.replace('(', '')
-                    name = name.replace(')', '')
-                    logStr += "('" + latex(name) + "', " + str(value) + "), "                
-                logStr += "('plotLimits', " + str(self._getPlotLimits()) + "), "
-                logStr += "('systemSize', " + str(self._getSystemSize()) + "), "
+    def _build_bookmark(self):
+        if not self._silent:
+            logStr = "bookmark = "
+        else:
+            logStr = ""
+        logStr += self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
+        if self._stateVariable3 != None:
+            logStr += "'" + str(self._stateVariable3) + "', "
+        logStr += self._get_bookmarks_params()
+        logStr += "('plotLimits', " + str(self._getPlotLimits()) + "), "
+        logStr += "('systemSize', " + str(self._getSystemSize()) + "), "
 #                if len(self._controller._widgetsFreeParams.items()) > 0:
-                logStr = logStr[:-2] # throw away last ", "
-                logStr += "]"
-                if len(self._generatingKwargs) > 0:
-                    logStr += ", "
-                    for key in self._generatingKwargs:
-                        logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-                    logStr = logStr[:-2]  # throw away last ", "
-                logStr += ")"
-                logStr = logStr.replace('\\', '\\\\')
-                print(logStr)    
-            self._logs.append(log)
+        logStr = logStr[:-2] # throw away last ", "
+        logStr += "]"
+        if len(self._generatingKwargs) > 0:
+            logStr += ", "
+            for key in self._generatingKwargs:
+                logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+            logStr = logStr[:-2]  # throw away last ", "
+        logStr += ")"
+        logStr = logStr.replace('\\', '\\\\')
+        
+        return logStr
 
             
     ## calculates stationary states of 2d system
