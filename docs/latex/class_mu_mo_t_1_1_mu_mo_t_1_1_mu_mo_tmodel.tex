@@ -1,0 +1,622 @@
+\hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel}{}\section{Mu\+Mo\+Tmodel Class Reference}
+\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel}\index{Mu\+Mo\+Tmodel@{Mu\+Mo\+Tmodel}}
+
+
+class describing a model  
+
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2eec4a3b8deda7c717c06ed89c24d570}{substitute} (self, subs\+String)
+\begin{DoxyCompactList}\small\item\em create new model with variable substitutions listed as comma separated string of assignments \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_affc6fae7ea26f85cde5366af8af85200}{visualise} (self)
+\begin{DoxyCompactList}\small\item\em build a graphical representation of the model if result cannot be plotted check for installation of libltdl -\/ eg on Mac see if X\+Quartz requires update or do\+:~\newline
+ {\ttfamily brew install libtool -\/-\/universal} ~\newline
+ {\ttfamily brew link libtool} \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a824eaf8994c839c0a9f17539f298974f}{show\+Constant\+Reactants} (self)
+\begin{DoxyCompactList}\small\item\em show a sorted La\+TeX representation of the model\textquotesingle{}s constant reactants \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2feaf6de25201c1e6503cd2ed131a1f2}{show\+Reactants} (self)
+\begin{DoxyCompactList}\small\item\em show a sorted La\+TeX representation of the model\textquotesingle{}s reactants \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a9c88600ec8eda7be7b7faeacd99f1682}{show\+Rates} (self)
+\begin{DoxyCompactList}\small\item\em show a sorted La\+TeX representation of the model\textquotesingle{}s rate parameters \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a37bb7737e6b0ac4737b32541f20bafc4}{show\+Rates\+O\+LD} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aa3a519a3aac92f7c132c63fb12d3de13}{show\+O\+D\+Es} (self)
+\begin{DoxyCompactList}\small\item\em show a La\+TeX representation of the model system of O\+D\+Es \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4ee4dff9d907c7245917bec93795d663}{show\+Stoichiometry} (self)
+\begin{DoxyCompactList}\small\item\em displays stoichiometry as a dictionary with keys Reaction\+Nr, Reaction\+Nr represents another dictionary with reaction rate, reactants and their stoichiometry \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2d73fce0efa141df05f6d5e14959a135}{show\+Master\+Equation} (self)
+\begin{DoxyCompactList}\small\item\em displays Master equation expressed with ladder operators \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a870a1b1e8bba9034173be730dfb6fbbb}{show\+Van\+Kampen\+Expansion} (self)
+\begin{DoxyCompactList}\small\item\em shows van Kampen expansion when the operators are expanded up to second order \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a7d00fbda7051f341284a7d4d5edbec52}{show\+O\+D\+Es\+\_\+v\+KE} (self)
+\begin{DoxyCompactList}\small\item\em shows O\+D\+Es derived from the leading term in van Kampen expansion \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a999055f8c8e7e3107eb127e2a3122100}{show\+Fokker\+Planck\+Equation} (self)
+\begin{DoxyCompactList}\small\item\em shows Fokker-\/\+Planck equation derived from term $\sim$ O(1) in van Kampen expansion this is the linear noise approximation \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a44e2cab71795814aac670b94182ff064}{show\+Noise\+E\+OM} (self)
+\begin{DoxyCompactList}\small\item\em displays equations of motion of first and second order moments of noise \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a13c400d0d33921d51d4b27e7a52e3ee0}{show\+Noise\+Stationary\+Sol} (self)
+\begin{DoxyCompactList}\small\item\em displays noise in the stationary state \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ab4f4398c3f210fe4ea6e720401357691}{show} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a9e0c203e97f89240cb7d6635c893cc7b}{num\+Sim\+State\+Var} (self, state\+Variable1, state\+Variable2, state\+Variable3=None, state\+Variable4=None, kwargs)
+\begin{DoxyCompactList}\small\item\em construct interactive time evolution plot for state variables \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a7d1753df12ca6dff0b250bdd8f9334a4}{fixed\+Point\+Noise} (self, state\+Variable1, state\+Variable2, state\+Variable3=None, kwargs)
+\begin{DoxyCompactList}\small\item\em construct interactive plot of noise around fixed points \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aaf3b4e03fc25612260987fe724e52f72}{stream} (self, state\+Variable1, state\+Variable2, state\+Variable3=None, params=None, kwargs)
+\begin{DoxyCompactList}\small\item\em construct interactive stream plot \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a1c44daee619f1124bcd661f400864dfa}{vector} (self, state\+Variable1, state\+Variable2, state\+Variable3=None, params=None, kwargs)
+\begin{DoxyCompactList}\small\item\em construct interactive vector plot \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2f69e41c1c2d862ed3815a6de1fe79bf}{bifurcation} (self, bifurcation\+Parameter, state\+Variable1, state\+Variable2=None, params=None, kwargs)
+\begin{DoxyCompactList}\small\item\em construct interactive Py\+D\+S\+Tool plot \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a55f7cab206306b09d38863395f186dbc}{multiagent} (self, net\+Type=\char`\"{}full\char`\"{}, initial\+State=\char`\"{}Auto\char`\"{}, max\+Time=\char`\"{}Auto\char`\"{}, random\+Seed=\char`\"{}Auto\char`\"{}, kwargs)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ac3c78f7f98887f29a4f0d50dd023c465}{S\+SA} (self, initial\+State=\char`\"{}Auto\char`\"{}, max\+Time=\char`\"{}Auto\char`\"{}, random\+Seed=\char`\"{}Auto\char`\"{}, kwargs)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ae64f0875afe3067b97ba370b354b9213}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a41a65d7030dd1006b177d0bc24e1a12b}{\+\_\+\+\_\+del\+\_\+\+\_\+} (self)
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ac8f6319b8c81e7c48d1f892603bcd307}{\+\_\+get\+\_\+solutions} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4b8c84d4acb2f972908c67cd8dcf2a8e}{\+\_\+controller} (self, cont\+Refresh, display\+Controller=True, plot\+Limits\+Slider=False, params=None, kwargs)
+\begin{DoxyCompactList}\small\item\em general controller constructor with all rates as free parameters \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_abef2b7019d8de30c16d7ade84ad45e09}{\+\_\+check\+\_\+state\+\_\+variables} (self, state\+Variable1, state\+Variable2, state\+Variable3=None)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aa69fe5568e12577be5a63232d689e45e}{\+\_\+get\+Funcs} (self)
+\begin{DoxyCompactList}\small\item\em lambdify sympy equations for numerical integration, plotting, etc. \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a0965e5e61aa8f0d4e399e3b534d31a4c}{\+\_\+get\+Arg\+Tuple2d} (self, arg\+Names, arg\+Values, arg\+Dict, state\+Variable1, state\+Variable2, X, Y)
+\begin{DoxyCompactList}\small\item\em get tuple to evalute functions returned by \+\_\+get\+Funcs with, for 2d field-\/based plots \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4a81885dd0451b6af31285c234b61d2a}{\+\_\+get\+Arg\+Tuple3d} (self, arg\+Names, arg\+Values, arg\+Dict, state\+Variable1, state\+Variable2, state\+Variable3, X, Y, Z)
+\begin{DoxyCompactList}\small\item\em get tuple to evalute functions returned by \+\_\+get\+Funcs with, for 2d field-\/based plots \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_af547c59d7ec82de308ee85b118fc7295}{\+\_\+get\+Arg\+Tuple} (self, arg\+Names, arg\+Values, arg\+Dict, reactants, reactant\+Values)
+\begin{DoxyCompactList}\small\item\em get tuple to evalute functions returned by \+\_\+get\+Funcs with \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ad1478cdd69a86f50f84e0528f829573c}{\+\_\+local\+La\+Te\+Ximage\+File} (self, source)
+\begin{DoxyCompactList}\small\item\em render La\+TeX source to local image file \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a9e9a430da6d323cc4411c070e0c7eee5}{\+\_\+py\+D\+Smodel}
+\end{DoxyCompactItemize}
+\subsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a3bffcba47fea374758cdf6e1abc66b6a}{\+\_\+rules} = None
+\begin{DoxyCompactList}\small\item\em list of rules \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ab78b4926218dd610cd20b0fd9816f96b}{\+\_\+reactants} = None
+\begin{DoxyCompactList}\small\item\em set of reactants \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a1aa86325ba55af1dd7e22124081a30f3}{\+\_\+constant\+Reactants} = None
+\begin{DoxyCompactList}\small\item\em set of fixed-\/concentration reactants (boundary conditions) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_afaae7e86425ed04f1e39b4bb8039b1b4}{\+\_\+system\+Size} = None
+\begin{DoxyCompactList}\small\item\em parameter that determines system size, set by using \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2eec4a3b8deda7c717c06ed89c24d570}{substitute()} \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a283d55739d3410d93094fb529670e0cb}{\+\_\+constant\+System\+Size} = None
+\begin{DoxyCompactList}\small\item\em is system size constant or not? \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_accfd4bbcd94ec3ce4a064fec53921700}{\+\_\+reactants\+La\+TeX} = None
+\begin{DoxyCompactList}\small\item\em list of La\+TeX strings describing reactants ( \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a45fe1a3c95be7c7db64a0199619569a9}{\+\_\+rates} = None
+\begin{DoxyCompactList}\small\item\em set of rates \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a795ce014c05817c0ac931270e961020f}{\+\_\+rates\+La\+TeX} = None
+\begin{DoxyCompactList}\small\item\em dictionary of La\+TeX strings describing rates and constant reactants ( \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ab9682b098aac7aac3179a3773749fd71}{\+\_\+equations} = None
+\begin{DoxyCompactList}\small\item\em dictionary of O\+DE righthand sides with reactant as key \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a31c9407d55747598fa4c9efdd6f9293d}{\+\_\+solutions} = None
+\begin{DoxyCompactList}\small\item\em set of solutions to equations \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a1169ac9500b9a6214b2566582bb64308}{\+\_\+stoichiometry} = None
+\begin{DoxyCompactList}\small\item\em summary of stoichiometry as nested dictionaries \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a8ef9f9e4473f46043da1484716b18268}{\+\_\+funcs} = None
+\begin{DoxyCompactList}\small\item\em dictionary of lambdified functions for integration, plotting, etc. \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a04c0353d4e8a6c3f2e0a1fb36ed9a832}{\+\_\+args} = None
+\begin{DoxyCompactList}\small\item\em tuple of argument symbols for lambdified functions \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aaabcff4440dc0ded9f9f880c9f86c6c1}{\+\_\+dot} = None
+\begin{DoxyCompactList}\small\item\em graphviz visualisation of model \end{DoxyCompactList}\item 
+string \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a385c519c2aed996e4bad454f870fed0c}{\+\_\+render\+Image\+Format} = \textquotesingle{}png\textquotesingle{}
+\begin{DoxyCompactList}\small\item\em image format used for rendering edge labels for model visualisation \end{DoxyCompactList}\item 
+string \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4ac4f3325e967c92d03e2c4e023a0d5d}{\+\_\+tmpdirpath} = \textquotesingle{}\+\_\+\+\_\+mumot\+\_\+files\+\_\+\+\_\+\textquotesingle{}
+\begin{DoxyCompactList}\small\item\em local path for creation of temporary storage \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ad2feb50403a36ab7c591c04e0cf33cc4}{\+\_\+tmpdir} = None
+\begin{DoxyCompactList}\small\item\em temporary storage for image files, etc. \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a3f2d20ce626e9e6cdc4a4662727121e6}{\+\_\+tmpfiles} = None
+\begin{DoxyCompactList}\small\item\em list of temporary files created \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+class describing a model 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ae64f0875afe3067b97ba370b354b9213}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ae64f0875afe3067b97ba370b354b9213}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
+{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a41a65d7030dd1006b177d0bc24e1a12b}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a41a65d7030dd1006b177d0bc24e1a12b}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+\+\_\+del\+\_\+\+\_\+@{\+\_\+\+\_\+del\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+del\+\_\+\+\_\+@{\+\_\+\+\_\+del\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+del\+\_\+\+\_\+()}{\_\_del\_\_()}}
+{\footnotesize\ttfamily def \+\_\+\+\_\+del\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_abef2b7019d8de30c16d7ade84ad45e09}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_abef2b7019d8de30c16d7ade84ad45e09}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+check\+\_\+state\+\_\+variables@{\+\_\+check\+\_\+state\+\_\+variables}}
+\index{\+\_\+check\+\_\+state\+\_\+variables@{\+\_\+check\+\_\+state\+\_\+variables}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+check\+\_\+state\+\_\+variables()}{\_check\_state\_variables()}}
+{\footnotesize\ttfamily def \+\_\+check\+\_\+state\+\_\+variables (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{state\+Variable1,  }\item[{}]{state\+Variable2,  }\item[{}]{state\+Variable3 = {\ttfamily None} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4b8c84d4acb2f972908c67cd8dcf2a8e}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4b8c84d4acb2f972908c67cd8dcf2a8e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+controller@{\+\_\+controller}}
+\index{\+\_\+controller@{\+\_\+controller}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+controller()}{\_controller()}}
+{\footnotesize\ttfamily def \+\_\+controller (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{cont\+Refresh,  }\item[{}]{display\+Controller = {\ttfamily True},  }\item[{}]{plot\+Limits\+Slider = {\ttfamily False},  }\item[{}]{params = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+general controller constructor with all rates as free parameters 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ac8f6319b8c81e7c48d1f892603bcd307}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ac8f6319b8c81e7c48d1f892603bcd307}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+get\+\_\+solutions@{\+\_\+get\+\_\+solutions}}
+\index{\+\_\+get\+\_\+solutions@{\+\_\+get\+\_\+solutions}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+get\+\_\+solutions()}{\_get\_solutions()}}
+{\footnotesize\ttfamily def \+\_\+get\+\_\+solutions (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_af547c59d7ec82de308ee85b118fc7295}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_af547c59d7ec82de308ee85b118fc7295}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+get\+Arg\+Tuple@{\+\_\+get\+Arg\+Tuple}}
+\index{\+\_\+get\+Arg\+Tuple@{\+\_\+get\+Arg\+Tuple}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+get\+Arg\+Tuple()}{\_getArgTuple()}}
+{\footnotesize\ttfamily def \+\_\+get\+Arg\+Tuple (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{arg\+Names,  }\item[{}]{arg\+Values,  }\item[{}]{arg\+Dict,  }\item[{}]{reactants,  }\item[{}]{reactant\+Values }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+get tuple to evalute functions returned by \+\_\+get\+Funcs with 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a0965e5e61aa8f0d4e399e3b534d31a4c}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a0965e5e61aa8f0d4e399e3b534d31a4c}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+get\+Arg\+Tuple2d@{\+\_\+get\+Arg\+Tuple2d}}
+\index{\+\_\+get\+Arg\+Tuple2d@{\+\_\+get\+Arg\+Tuple2d}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+get\+Arg\+Tuple2d()}{\_getArgTuple2d()}}
+{\footnotesize\ttfamily def \+\_\+get\+Arg\+Tuple2d (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{arg\+Names,  }\item[{}]{arg\+Values,  }\item[{}]{arg\+Dict,  }\item[{}]{state\+Variable1,  }\item[{}]{state\+Variable2,  }\item[{}]{X,  }\item[{}]{Y }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+get tuple to evalute functions returned by \+\_\+get\+Funcs with, for 2d field-\/based plots 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4a81885dd0451b6af31285c234b61d2a}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4a81885dd0451b6af31285c234b61d2a}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+get\+Arg\+Tuple3d@{\+\_\+get\+Arg\+Tuple3d}}
+\index{\+\_\+get\+Arg\+Tuple3d@{\+\_\+get\+Arg\+Tuple3d}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+get\+Arg\+Tuple3d()}{\_getArgTuple3d()}}
+{\footnotesize\ttfamily def \+\_\+get\+Arg\+Tuple3d (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{arg\+Names,  }\item[{}]{arg\+Values,  }\item[{}]{arg\+Dict,  }\item[{}]{state\+Variable1,  }\item[{}]{state\+Variable2,  }\item[{}]{state\+Variable3,  }\item[{}]{X,  }\item[{}]{Y,  }\item[{}]{Z }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+get tuple to evalute functions returned by \+\_\+get\+Funcs with, for 2d field-\/based plots 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aa69fe5568e12577be5a63232d689e45e}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aa69fe5568e12577be5a63232d689e45e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+get\+Funcs@{\+\_\+get\+Funcs}}
+\index{\+\_\+get\+Funcs@{\+\_\+get\+Funcs}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+get\+Funcs()}{\_getFuncs()}}
+{\footnotesize\ttfamily def \+\_\+get\+Funcs (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+lambdify sympy equations for numerical integration, plotting, etc. 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ad1478cdd69a86f50f84e0528f829573c}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ad1478cdd69a86f50f84e0528f829573c}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+local\+La\+Te\+Ximage\+File@{\+\_\+local\+La\+Te\+Ximage\+File}}
+\index{\+\_\+local\+La\+Te\+Ximage\+File@{\+\_\+local\+La\+Te\+Ximage\+File}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+local\+La\+Te\+Ximage\+File()}{\_localLaTeXimageFile()}}
+{\footnotesize\ttfamily def \+\_\+local\+La\+Te\+Ximage\+File (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{source }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+render La\+TeX source to local image file 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2f69e41c1c2d862ed3815a6de1fe79bf}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2f69e41c1c2d862ed3815a6de1fe79bf}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!bifurcation@{bifurcation}}
+\index{bifurcation@{bifurcation}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{bifurcation()}{bifurcation()}}
+{\footnotesize\ttfamily def bifurcation (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{bifurcation\+Parameter,  }\item[{}]{state\+Variable1,  }\item[{}]{state\+Variable2 = {\ttfamily None},  }\item[{}]{params = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+construct interactive Py\+D\+S\+Tool plot 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a7d1753df12ca6dff0b250bdd8f9334a4}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a7d1753df12ca6dff0b250bdd8f9334a4}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!fixed\+Point\+Noise@{fixed\+Point\+Noise}}
+\index{fixed\+Point\+Noise@{fixed\+Point\+Noise}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{fixed\+Point\+Noise()}{fixedPointNoise()}}
+{\footnotesize\ttfamily def fixed\+Point\+Noise (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{state\+Variable1,  }\item[{}]{state\+Variable2,  }\item[{}]{state\+Variable3 = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+construct interactive plot of noise around fixed points 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a55f7cab206306b09d38863395f186dbc}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a55f7cab206306b09d38863395f186dbc}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!multiagent@{multiagent}}
+\index{multiagent@{multiagent}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{multiagent()}{multiagent()}}
+{\footnotesize\ttfamily def multiagent (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{net\+Type = {\ttfamily \char`\"{}full\char`\"{}},  }\item[{}]{initial\+State = {\ttfamily \char`\"{}Auto\char`\"{}},  }\item[{}]{max\+Time = {\ttfamily \char`\"{}Auto\char`\"{}},  }\item[{}]{random\+Seed = {\ttfamily \char`\"{}Auto\char`\"{}},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a9e0c203e97f89240cb7d6635c893cc7b}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a9e0c203e97f89240cb7d6635c893cc7b}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!num\+Sim\+State\+Var@{num\+Sim\+State\+Var}}
+\index{num\+Sim\+State\+Var@{num\+Sim\+State\+Var}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{num\+Sim\+State\+Var()}{numSimStateVar()}}
+{\footnotesize\ttfamily def num\+Sim\+State\+Var (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{state\+Variable1,  }\item[{}]{state\+Variable2,  }\item[{}]{state\+Variable3 = {\ttfamily None},  }\item[{}]{state\+Variable4 = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+construct interactive time evolution plot for state variables 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ab4f4398c3f210fe4ea6e720401357691}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ab4f4398c3f210fe4ea6e720401357691}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show@{show}}
+\index{show@{show}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show()}{show()}}
+{\footnotesize\ttfamily def show (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a824eaf8994c839c0a9f17539f298974f}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a824eaf8994c839c0a9f17539f298974f}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+Constant\+Reactants@{show\+Constant\+Reactants}}
+\index{show\+Constant\+Reactants@{show\+Constant\+Reactants}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+Constant\+Reactants()}{showConstantReactants()}}
+{\footnotesize\ttfamily def show\+Constant\+Reactants (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+show a sorted La\+TeX representation of the model\textquotesingle{}s constant reactants 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a999055f8c8e7e3107eb127e2a3122100}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a999055f8c8e7e3107eb127e2a3122100}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+Fokker\+Planck\+Equation@{show\+Fokker\+Planck\+Equation}}
+\index{show\+Fokker\+Planck\+Equation@{show\+Fokker\+Planck\+Equation}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+Fokker\+Planck\+Equation()}{showFokkerPlanckEquation()}}
+{\footnotesize\ttfamily def show\+Fokker\+Planck\+Equation (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+shows Fokker-\/\+Planck equation derived from term $\sim$ O(1) in van Kampen expansion this is the linear noise approximation 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2d73fce0efa141df05f6d5e14959a135}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2d73fce0efa141df05f6d5e14959a135}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+Master\+Equation@{show\+Master\+Equation}}
+\index{show\+Master\+Equation@{show\+Master\+Equation}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+Master\+Equation()}{showMasterEquation()}}
+{\footnotesize\ttfamily def show\+Master\+Equation (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+displays Master equation expressed with ladder operators 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a44e2cab71795814aac670b94182ff064}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a44e2cab71795814aac670b94182ff064}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+Noise\+E\+OM@{show\+Noise\+E\+OM}}
+\index{show\+Noise\+E\+OM@{show\+Noise\+E\+OM}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+Noise\+E\+O\+M()}{showNoiseEOM()}}
+{\footnotesize\ttfamily def show\+Noise\+E\+OM (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+displays equations of motion of first and second order moments of noise 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a13c400d0d33921d51d4b27e7a52e3ee0}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a13c400d0d33921d51d4b27e7a52e3ee0}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+Noise\+Stationary\+Sol@{show\+Noise\+Stationary\+Sol}}
+\index{show\+Noise\+Stationary\+Sol@{show\+Noise\+Stationary\+Sol}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+Noise\+Stationary\+Sol()}{showNoiseStationarySol()}}
+{\footnotesize\ttfamily def show\+Noise\+Stationary\+Sol (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+displays noise in the stationary state 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aa3a519a3aac92f7c132c63fb12d3de13}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aa3a519a3aac92f7c132c63fb12d3de13}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+O\+D\+Es@{show\+O\+D\+Es}}
+\index{show\+O\+D\+Es@{show\+O\+D\+Es}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+O\+D\+Es()}{showODEs()}}
+{\footnotesize\ttfamily def show\+O\+D\+Es (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+show a La\+TeX representation of the model system of O\+D\+Es 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a7d00fbda7051f341284a7d4d5edbec52}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a7d00fbda7051f341284a7d4d5edbec52}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+O\+D\+Es\+\_\+v\+KE@{show\+O\+D\+Es\+\_\+v\+KE}}
+\index{show\+O\+D\+Es\+\_\+v\+KE@{show\+O\+D\+Es\+\_\+v\+KE}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+O\+D\+Es\+\_\+v\+K\+E()}{showODEs\_vKE()}}
+{\footnotesize\ttfamily def show\+O\+D\+Es\+\_\+v\+KE (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+shows O\+D\+Es derived from the leading term in van Kampen expansion 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a9c88600ec8eda7be7b7faeacd99f1682}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a9c88600ec8eda7be7b7faeacd99f1682}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+Rates@{show\+Rates}}
+\index{show\+Rates@{show\+Rates}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+Rates()}{showRates()}}
+{\footnotesize\ttfamily def show\+Rates (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+show a sorted La\+TeX representation of the model\textquotesingle{}s rate parameters 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a37bb7737e6b0ac4737b32541f20bafc4}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a37bb7737e6b0ac4737b32541f20bafc4}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+Rates\+O\+LD@{show\+Rates\+O\+LD}}
+\index{show\+Rates\+O\+LD@{show\+Rates\+O\+LD}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+Rates\+O\+L\+D()}{showRatesOLD()}}
+{\footnotesize\ttfamily def show\+Rates\+O\+LD (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2feaf6de25201c1e6503cd2ed131a1f2}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2feaf6de25201c1e6503cd2ed131a1f2}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+Reactants@{show\+Reactants}}
+\index{show\+Reactants@{show\+Reactants}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+Reactants()}{showReactants()}}
+{\footnotesize\ttfamily def show\+Reactants (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+show a sorted La\+TeX representation of the model\textquotesingle{}s reactants 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4ee4dff9d907c7245917bec93795d663}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4ee4dff9d907c7245917bec93795d663}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+Stoichiometry@{show\+Stoichiometry}}
+\index{show\+Stoichiometry@{show\+Stoichiometry}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+Stoichiometry()}{showStoichiometry()}}
+{\footnotesize\ttfamily def show\+Stoichiometry (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+displays stoichiometry as a dictionary with keys Reaction\+Nr, Reaction\+Nr represents another dictionary with reaction rate, reactants and their stoichiometry 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a870a1b1e8bba9034173be730dfb6fbbb}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a870a1b1e8bba9034173be730dfb6fbbb}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!show\+Van\+Kampen\+Expansion@{show\+Van\+Kampen\+Expansion}}
+\index{show\+Van\+Kampen\+Expansion@{show\+Van\+Kampen\+Expansion}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{show\+Van\+Kampen\+Expansion()}{showVanKampenExpansion()}}
+{\footnotesize\ttfamily def show\+Van\+Kampen\+Expansion (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+shows van Kampen expansion when the operators are expanded up to second order 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ac3c78f7f98887f29a4f0d50dd023c465}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ac3c78f7f98887f29a4f0d50dd023c465}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!S\+SA@{S\+SA}}
+\index{S\+SA@{S\+SA}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{S\+S\+A()}{SSA()}}
+{\footnotesize\ttfamily def S\+SA (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{initial\+State = {\ttfamily \char`\"{}Auto\char`\"{}},  }\item[{}]{max\+Time = {\ttfamily \char`\"{}Auto\char`\"{}},  }\item[{}]{random\+Seed = {\ttfamily \char`\"{}Auto\char`\"{}},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aaf3b4e03fc25612260987fe724e52f72}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aaf3b4e03fc25612260987fe724e52f72}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!stream@{stream}}
+\index{stream@{stream}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{stream()}{stream()}}
+{\footnotesize\ttfamily def stream (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{state\+Variable1,  }\item[{}]{state\+Variable2,  }\item[{}]{state\+Variable3 = {\ttfamily None},  }\item[{}]{params = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+construct interactive stream plot 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2eec4a3b8deda7c717c06ed89c24d570}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2eec4a3b8deda7c717c06ed89c24d570}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!substitute@{substitute}}
+\index{substitute@{substitute}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{substitute()}{substitute()}}
+{\footnotesize\ttfamily def substitute (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{subs\+String }\end{DoxyParamCaption})}
+
+
+
+create new model with variable substitutions listed as comma separated string of assignments 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a1c44daee619f1124bcd661f400864dfa}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a1c44daee619f1124bcd661f400864dfa}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!vector@{vector}}
+\index{vector@{vector}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{vector()}{vector()}}
+{\footnotesize\ttfamily def vector (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{state\+Variable1,  }\item[{}]{state\+Variable2,  }\item[{}]{state\+Variable3 = {\ttfamily None},  }\item[{}]{params = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+construct interactive vector plot 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_affc6fae7ea26f85cde5366af8af85200}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_affc6fae7ea26f85cde5366af8af85200}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!visualise@{visualise}}
+\index{visualise@{visualise}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{visualise()}{visualise()}}
+{\footnotesize\ttfamily def visualise (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+build a graphical representation of the model if result cannot be plotted check for installation of libltdl -\/ eg on Mac see if X\+Quartz requires update or do\+:~\newline
+ {\ttfamily brew install libtool -\/-\/universal} ~\newline
+ {\ttfamily brew link libtool} 
+
+
+
+\subsection{Field Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a04c0353d4e8a6c3f2e0a1fb36ed9a832}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a04c0353d4e8a6c3f2e0a1fb36ed9a832}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+args@{\+\_\+args}}
+\index{\+\_\+args@{\+\_\+args}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+args}{\_args}}
+{\footnotesize\ttfamily \+\_\+args = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+tuple of argument symbols for lambdified functions 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a1aa86325ba55af1dd7e22124081a30f3}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a1aa86325ba55af1dd7e22124081a30f3}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+constant\+Reactants@{\+\_\+constant\+Reactants}}
+\index{\+\_\+constant\+Reactants@{\+\_\+constant\+Reactants}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+constant\+Reactants}{\_constantReactants}}
+{\footnotesize\ttfamily \+\_\+constant\+Reactants = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+set of fixed-\/concentration reactants (boundary conditions) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a283d55739d3410d93094fb529670e0cb}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a283d55739d3410d93094fb529670e0cb}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+constant\+System\+Size@{\+\_\+constant\+System\+Size}}
+\index{\+\_\+constant\+System\+Size@{\+\_\+constant\+System\+Size}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+constant\+System\+Size}{\_constantSystemSize}}
+{\footnotesize\ttfamily \+\_\+constant\+System\+Size = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+is system size constant or not? 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aaabcff4440dc0ded9f9f880c9f86c6c1}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_aaabcff4440dc0ded9f9f880c9f86c6c1}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+dot@{\+\_\+dot}}
+\index{\+\_\+dot@{\+\_\+dot}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+dot}{\_dot}}
+{\footnotesize\ttfamily \+\_\+dot = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+graphviz visualisation of model 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000006}{Todo}]\+: only display if used\+: for now, guess it is used if system size is non-\/constant \end{DoxyRefDesc}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ab9682b098aac7aac3179a3773749fd71}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ab9682b098aac7aac3179a3773749fd71}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+equations@{\+\_\+equations}}
+\index{\+\_\+equations@{\+\_\+equations}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+equations}{\_equations}}
+{\footnotesize\ttfamily \+\_\+equations = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+dictionary of O\+DE righthand sides with reactant as key 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a8ef9f9e4473f46043da1484716b18268}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a8ef9f9e4473f46043da1484716b18268}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+funcs@{\+\_\+funcs}}
+\index{\+\_\+funcs@{\+\_\+funcs}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+funcs}{\_funcs}}
+{\footnotesize\ttfamily \+\_\+funcs = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+dictionary of lambdified functions for integration, plotting, etc. 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a9e9a430da6d323cc4411c070e0c7eee5}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a9e9a430da6d323cc4411c070e0c7eee5}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+py\+D\+Smodel@{\+\_\+py\+D\+Smodel}}
+\index{\+\_\+py\+D\+Smodel@{\+\_\+py\+D\+Smodel}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+py\+D\+Smodel}{\_pyDSmodel}}
+{\footnotesize\ttfamily \+\_\+py\+D\+Smodel\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a45fe1a3c95be7c7db64a0199619569a9}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a45fe1a3c95be7c7db64a0199619569a9}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+rates@{\+\_\+rates}}
+\index{\+\_\+rates@{\+\_\+rates}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+rates}{\_rates}}
+{\footnotesize\ttfamily \+\_\+rates = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+set of rates 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a795ce014c05817c0ac931270e961020f}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a795ce014c05817c0ac931270e961020f}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+rates\+La\+TeX@{\+\_\+rates\+La\+TeX}}
+\index{\+\_\+rates\+La\+TeX@{\+\_\+rates\+La\+TeX}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+rates\+La\+TeX}{\_ratesLaTeX}}
+{\footnotesize\ttfamily \+\_\+rates\+La\+TeX = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+dictionary of La\+TeX strings describing rates and constant reactants ( 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000003}{Todo}]\+: rename) \end{DoxyRefDesc}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ab78b4926218dd610cd20b0fd9816f96b}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ab78b4926218dd610cd20b0fd9816f96b}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+reactants@{\+\_\+reactants}}
+\index{\+\_\+reactants@{\+\_\+reactants}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+reactants}{\_reactants}}
+{\footnotesize\ttfamily \+\_\+reactants = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+set of reactants 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_accfd4bbcd94ec3ce4a064fec53921700}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_accfd4bbcd94ec3ce4a064fec53921700}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+reactants\+La\+TeX@{\+\_\+reactants\+La\+TeX}}
+\index{\+\_\+reactants\+La\+TeX@{\+\_\+reactants\+La\+TeX}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+reactants\+La\+TeX}{\_reactantsLaTeX}}
+{\footnotesize\ttfamily \+\_\+reactants\+La\+TeX = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+list of La\+TeX strings describing reactants ( 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000002}{Todo}]\+: depracated?) \end{DoxyRefDesc}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a385c519c2aed996e4bad454f870fed0c}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a385c519c2aed996e4bad454f870fed0c}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+render\+Image\+Format@{\+\_\+render\+Image\+Format}}
+\index{\+\_\+render\+Image\+Format@{\+\_\+render\+Image\+Format}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+render\+Image\+Format}{\_renderImageFormat}}
+{\footnotesize\ttfamily string \+\_\+render\+Image\+Format = \textquotesingle{}png\textquotesingle{}\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+image format used for rendering edge labels for model visualisation 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a3bffcba47fea374758cdf6e1abc66b6a}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a3bffcba47fea374758cdf6e1abc66b6a}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+rules@{\+\_\+rules}}
+\index{\+\_\+rules@{\+\_\+rules}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+rules}{\_rules}}
+{\footnotesize\ttfamily \+\_\+rules = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+list of rules 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a31c9407d55747598fa4c9efdd6f9293d}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a31c9407d55747598fa4c9efdd6f9293d}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+solutions@{\+\_\+solutions}}
+\index{\+\_\+solutions@{\+\_\+solutions}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+solutions}{\_solutions}}
+{\footnotesize\ttfamily \+\_\+solutions = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+set of solutions to equations 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a1169ac9500b9a6214b2566582bb64308}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a1169ac9500b9a6214b2566582bb64308}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+stoichiometry@{\+\_\+stoichiometry}}
+\index{\+\_\+stoichiometry@{\+\_\+stoichiometry}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+stoichiometry}{\_stoichiometry}}
+{\footnotesize\ttfamily \+\_\+stoichiometry = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+summary of stoichiometry as nested dictionaries 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_afaae7e86425ed04f1e39b4bb8039b1b4}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_afaae7e86425ed04f1e39b4bb8039b1b4}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+system\+Size@{\+\_\+system\+Size}}
+\index{\+\_\+system\+Size@{\+\_\+system\+Size}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+system\+Size}{\_systemSize}}
+{\footnotesize\ttfamily \+\_\+system\+Size = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+parameter that determines system size, set by using \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a2eec4a3b8deda7c717c06ed89c24d570}{substitute()} 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ad2feb50403a36ab7c591c04e0cf33cc4}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_ad2feb50403a36ab7c591c04e0cf33cc4}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+tmpdir@{\+\_\+tmpdir}}
+\index{\+\_\+tmpdir@{\+\_\+tmpdir}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+tmpdir}{\_tmpdir}}
+{\footnotesize\ttfamily \+\_\+tmpdir = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+temporary storage for image files, etc. 
+
+used in visualising model \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4ac4f3325e967c92d03e2c4e023a0d5d}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a4ac4f3325e967c92d03e2c4e023a0d5d}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+tmpdirpath@{\+\_\+tmpdirpath}}
+\index{\+\_\+tmpdirpath@{\+\_\+tmpdirpath}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+tmpdirpath}{\_tmpdirpath}}
+{\footnotesize\ttfamily string \+\_\+tmpdirpath = \textquotesingle{}\+\_\+\+\_\+mumot\+\_\+files\+\_\+\+\_\+\textquotesingle{}\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+local path for creation of temporary storage 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a3f2d20ce626e9e6cdc4a4662727121e6}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmodel_a3f2d20ce626e9e6cdc4a4662727121e6}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}!\+\_\+tmpfiles@{\+\_\+tmpfiles}}
+\index{\+\_\+tmpfiles@{\+\_\+tmpfiles}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmodel}}
+\subsubsection{\texorpdfstring{\+\_\+tmpfiles}{\_tmpfiles}}
+{\footnotesize\ttfamily \+\_\+tmpfiles = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+list of temporary files created 
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+Mu\+Mo\+T/\hyperlink{_mu_mo_t_8py}{Mu\+Mo\+T.\+py}\end{DoxyCompactItemize}

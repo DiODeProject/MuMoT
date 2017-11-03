@@ -1,0 +1,493 @@
+\hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view}{}\section{Mu\+Mo\+Tmultiagent\+View Class Reference}
+\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view}\index{Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+Tmultiagent\+View}}
+
+
+agent on networks view on model  
+
+
+Inheritance diagram for Mu\+Mo\+Tmultiagent\+View\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a3245dc2f896377d0265400e8181e7502}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, model, controller, M\+A\+Params, figure=None, rates=None, kwargs)
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a3af54c33f997937b14f422e772d5280a}{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a47b00aaebcccf3c8dc2183a406404349}{\+\_\+update\+\_\+params} (self)
+\begin{DoxyCompactList}\small\item\em reads the new parameters (in case they changed in the controller) this function should only update local parameters and not compute data \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ace35072dcd3e51e67107f62b4de0d5fe}{\+\_\+plot\+\_\+time\+Evolution} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a57cea7fd9ea5c1805b9c18fc4b0adc0b}{\+\_\+redraw\+Only} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a62eb4d7a110764c65c992b5508540535}{\+\_\+run\+Multiagent} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a054aa0e8c130babbca21a6ff0e0fd31a}{\+\_\+init\+Figure} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a62d65f09387ea7930e7e2567edd23a9d}{\+\_\+update\+Multiagent\+Figure} (self, i, evo, position\+History, pos\+\_\+layout)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a51d421aacb4cd83af5f1c2e60c3dff9c}{\+\_\+single\+Run} (self, random\+Seed)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a63242960a1d4db3a17cc8657a8ee7da1}{\+\_\+convert\+Rates\+Into\+Probabilities} (self, reactants, rules)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad360a89687fc9a0298c853d76b8b8d95}{\+\_\+init\+Probabilities\+Map} (self, reactants, rules)
+\begin{DoxyCompactList}\small\item\em derive the transition probabilities map from reaction rules \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a064b5783c9e87092a7059fb632b56585}{\+\_\+compute\+Scaling\+Factor} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5e541babe7e44e6888eb0ba92460cae2}{\+\_\+update\+\_\+timestep\+Size\+\_\+widget} (self, timestep\+Size)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_acc41eb1ddfc93fea7e67aa85c9d7f6fc}{\+\_\+apply\+Scaling\+Factor} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a0d226d5fb0e02291c96e1ff63a08047e}{\+\_\+init\+Graph} (self, graph\+Type, num\+Nodes, net\+Param=None)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a4b9b689b183e0a18c7f60e48b6beafef}{\+\_\+init\+Multiagent} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a80b7d1f8c2f44ea9f4154b79f0baacfb}{\+\_\+step\+Multiagent} (self)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a87f5913cd055f8e4eaa70b058ad7d77b}{\+\_\+step\+One\+Agent} (self, agent, neighs)
+\begin{DoxyCompactList}\small\item\em one timestep for one agent \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aba4da96cc2e7682af895cda4b1310790}{\+\_\+update\+Position} (self, x, y, o, speed, correlatedness)
+\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad3df4b96d9dec10c8b806eb6697c6028}{\+\_\+get\+Neighbours} (self, agent, positions, distance\+\_\+range)
+\begin{DoxyCompactList}\small\item\em return the (index) list of neighbours of \textquotesingle{}agent\textquotesingle{} \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aa88fd0656cfcc7c9671c2bcc61d7726e}{\+\_\+distance\+\_\+on\+\_\+torus} (self, x\+\_\+1, y\+\_\+1, x\+\_\+2, y\+\_\+2)
+\begin{DoxyCompactList}\small\item\em returns the minimum distance calucalted on the torus given by periodic boundary conditions \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a15f56ca9811d1e67d721fa64f9b0dc1e}{\+\_\+controller}
+\end{DoxyCompactItemize}
+\subsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a6aaed74c935ed5380691798f75527a18}{\+\_\+colors} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aaf2c34c5022e4e3c872dbee11e50ea9b}{\+\_\+probabilities} = None
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a752f43042d51a40fed348b434aad0fd8}{\+\_\+graph} = None
+\begin{DoxyCompactList}\small\item\em structure to store the communication network \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a7d10cd5e301b167444880f57705e2b9e}{\+\_\+net\+Type} = None
+\begin{DoxyCompactList}\small\item\em type of network used in the M-\/A simulation \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a187bc5499c4da612a9290851be253050}{\+\_\+net\+Param} = None
+\begin{DoxyCompactList}\small\item\em network parameter which varies with respect to each type of network (for Erdos-\/\+Renyi is linking probability, for Barabasi-\/\+Albert is the number of edge per new node, for spatial is the communication range) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a957e6b462fc11cb442a866d5b61367a0}{\+\_\+particle\+Speed} = None
+\begin{DoxyCompactList}\small\item\em speed of the particle on one timestep (only for dynamic net\+Type) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aa120ae2cb05f320428d90e34a49102ab}{\+\_\+motion\+Correlatedness} = None
+\begin{DoxyCompactList}\small\item\em corelatedness in the random walk motion (only for dynamic net\+Type) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5032de31aad9de4528138249999e7d5f}{\+\_\+agents} = None
+\begin{DoxyCompactList}\small\item\em list of agents involved in the simulation \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8be9986760a86837e04718906d18d596}{\+\_\+positions} = None
+\begin{DoxyCompactList}\small\item\em list of agents\textquotesingle{} positions \end{DoxyCompactList}\item 
+int \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a372c083f5428e7f8a68298ec9dcca941}{\+\_\+arena\+\_\+width} = 1
+\begin{DoxyCompactList}\small\item\em Arena size\+: width. \end{DoxyCompactList}\item 
+int \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a12711c70e125709b78f820722ba74d09}{\+\_\+arena\+\_\+height} = 1
+\begin{DoxyCompactList}\small\item\em Arena size\+: height. \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8afeb8cf5705c6b521f7d6658dab955b}{\+\_\+initial\+State} = None
+\begin{DoxyCompactList}\small\item\em the system state at the start of the simulation (timestep zero) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a79e90c970112c845893400f85a2590dd}{\+\_\+random\+Seed} = None
+\begin{DoxyCompactList}\small\item\em random seed \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a956572b83e957005ef90a30995891585}{\+\_\+max\+Time} = None
+\begin{DoxyCompactList}\small\item\em number of simulation timesteps \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad87100e87c83f6311376fa905bb9f579}{\+\_\+timestep\+Size} = None
+\begin{DoxyCompactList}\small\item\em time scaling (i.\+e. \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a7c4303b3e2a8784a0cc16cd523069203}{\+\_\+rates\+Dict} = None
+\begin{DoxyCompactList}\small\item\em dictionary of rates \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ae8c8d7969b8ab8f31df9d1d1d10eabb9}{\+\_\+visualisation\+Type} = None
+\begin{DoxyCompactList}\small\item\em visualisation type \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a756f7d76f2b84a0dd60ffd6b7683dd3a}{\+\_\+show\+Trace} = None
+\begin{DoxyCompactList}\small\item\em visualise the agent trace (on moving particles) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad3f953eaa70c3e4eee2dde80e57c638f}{\+\_\+show\+Interactions} = None
+\begin{DoxyCompactList}\small\item\em visualise the agent trace (on moving particles) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a194d04e5fee40987d78aa7e1f721ea28}{\+\_\+realtime\+Plot} = None
+\begin{DoxyCompactList}\small\item\em realtime\+Plot flag (T\+R\+UE = the plot is updated each timestep of the simulation; F\+A\+L\+SE = it is updated once at the end of the simulation) \end{DoxyCompactList}\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8da8c49a2b0ccc518cf7f333bdbd17a6}{\+\_\+latest\+Results} = None
+\begin{DoxyCompactList}\small\item\em latest computed results \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+agent on networks view on model 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a3245dc2f896377d0265400e8181e7502}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a3245dc2f896377d0265400e8181e7502}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
+{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{model,  }\item[{}]{controller,  }\item[{}]{M\+A\+Params,  }\item[{}]{figure = {\ttfamily None},  }\item[{}]{rates = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_acc41eb1ddfc93fea7e67aa85c9d7f6fc}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_acc41eb1ddfc93fea7e67aa85c9d7f6fc}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+apply\+Scaling\+Factor@{\+\_\+apply\+Scaling\+Factor}}
+\index{\+\_\+apply\+Scaling\+Factor@{\+\_\+apply\+Scaling\+Factor}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+apply\+Scaling\+Factor()}{\_applyScalingFactor()}}
+{\footnotesize\ttfamily def \+\_\+apply\+Scaling\+Factor (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a064b5783c9e87092a7059fb632b56585}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a064b5783c9e87092a7059fb632b56585}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+compute\+Scaling\+Factor@{\+\_\+compute\+Scaling\+Factor}}
+\index{\+\_\+compute\+Scaling\+Factor@{\+\_\+compute\+Scaling\+Factor}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+compute\+Scaling\+Factor()}{\_computeScalingFactor()}}
+{\footnotesize\ttfamily def \+\_\+compute\+Scaling\+Factor (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a63242960a1d4db3a17cc8657a8ee7da1}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a63242960a1d4db3a17cc8657a8ee7da1}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+convert\+Rates\+Into\+Probabilities@{\+\_\+convert\+Rates\+Into\+Probabilities}}
+\index{\+\_\+convert\+Rates\+Into\+Probabilities@{\+\_\+convert\+Rates\+Into\+Probabilities}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+convert\+Rates\+Into\+Probabilities()}{\_convertRatesIntoProbabilities()}}
+{\footnotesize\ttfamily def \+\_\+convert\+Rates\+Into\+Probabilities (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{reactants,  }\item[{}]{rules }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aa88fd0656cfcc7c9671c2bcc61d7726e}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aa88fd0656cfcc7c9671c2bcc61d7726e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+distance\+\_\+on\+\_\+torus@{\+\_\+distance\+\_\+on\+\_\+torus}}
+\index{\+\_\+distance\+\_\+on\+\_\+torus@{\+\_\+distance\+\_\+on\+\_\+torus}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+distance\+\_\+on\+\_\+torus()}{\_distance\_on\_torus()}}
+{\footnotesize\ttfamily def \+\_\+distance\+\_\+on\+\_\+torus (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{x\+\_\+1,  }\item[{}]{y\+\_\+1,  }\item[{}]{x\+\_\+2,  }\item[{}]{y\+\_\+2 }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+returns the minimum distance calucalted on the torus given by periodic boundary conditions 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad3df4b96d9dec10c8b806eb6697c6028}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad3df4b96d9dec10c8b806eb6697c6028}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+get\+Neighbours@{\+\_\+get\+Neighbours}}
+\index{\+\_\+get\+Neighbours@{\+\_\+get\+Neighbours}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+get\+Neighbours()}{\_getNeighbours()}}
+{\footnotesize\ttfamily def \+\_\+get\+Neighbours (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{agent,  }\item[{}]{positions,  }\item[{}]{distance\+\_\+range }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+return the (index) list of neighbours of \textquotesingle{}agent\textquotesingle{} 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a054aa0e8c130babbca21a6ff0e0fd31a}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a054aa0e8c130babbca21a6ff0e0fd31a}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+init\+Figure@{\+\_\+init\+Figure}}
+\index{\+\_\+init\+Figure@{\+\_\+init\+Figure}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+init\+Figure()}{\_initFigure()}}
+{\footnotesize\ttfamily def \+\_\+init\+Figure (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a0d226d5fb0e02291c96e1ff63a08047e}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a0d226d5fb0e02291c96e1ff63a08047e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+init\+Graph@{\+\_\+init\+Graph}}
+\index{\+\_\+init\+Graph@{\+\_\+init\+Graph}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+init\+Graph()}{\_initGraph()}}
+{\footnotesize\ttfamily def \+\_\+init\+Graph (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{graph\+Type,  }\item[{}]{num\+Nodes,  }\item[{}]{net\+Param = {\ttfamily None} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a4b9b689b183e0a18c7f60e48b6beafef}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a4b9b689b183e0a18c7f60e48b6beafef}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+init\+Multiagent@{\+\_\+init\+Multiagent}}
+\index{\+\_\+init\+Multiagent@{\+\_\+init\+Multiagent}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+init\+Multiagent()}{\_initMultiagent()}}
+{\footnotesize\ttfamily def \+\_\+init\+Multiagent (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad360a89687fc9a0298c853d76b8b8d95}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad360a89687fc9a0298c853d76b8b8d95}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+init\+Probabilities\+Map@{\+\_\+init\+Probabilities\+Map}}
+\index{\+\_\+init\+Probabilities\+Map@{\+\_\+init\+Probabilities\+Map}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+init\+Probabilities\+Map()}{\_initProbabilitiesMap()}}
+{\footnotesize\ttfamily def \+\_\+init\+Probabilities\+Map (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{reactants,  }\item[{}]{rules }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+derive the transition probabilities map from reaction rules 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ace35072dcd3e51e67107f62b4de0d5fe}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ace35072dcd3e51e67107f62b4de0d5fe}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+plot\+\_\+time\+Evolution@{\+\_\+plot\+\_\+time\+Evolution}}
+\index{\+\_\+plot\+\_\+time\+Evolution@{\+\_\+plot\+\_\+time\+Evolution}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+plot\+\_\+time\+Evolution()}{\_plot\_timeEvolution()}}
+{\footnotesize\ttfamily def \+\_\+plot\+\_\+time\+Evolution (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a3af54c33f997937b14f422e772d5280a}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a3af54c33f997937b14f422e772d5280a}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd@{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd}}
+\index{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd@{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd()}{\_print\_standalone\_view\_cmd()}}
+{\footnotesize\ttfamily def \+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a57cea7fd9ea5c1805b9c18fc4b0adc0b}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a57cea7fd9ea5c1805b9c18fc4b0adc0b}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+redraw\+Only@{\+\_\+redraw\+Only}}
+\index{\+\_\+redraw\+Only@{\+\_\+redraw\+Only}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+redraw\+Only()}{\_redrawOnly()}}
+{\footnotesize\ttfamily def \+\_\+redraw\+Only (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a62eb4d7a110764c65c992b5508540535}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a62eb4d7a110764c65c992b5508540535}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+run\+Multiagent@{\+\_\+run\+Multiagent}}
+\index{\+\_\+run\+Multiagent@{\+\_\+run\+Multiagent}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+run\+Multiagent()}{\_runMultiagent()}}
+{\footnotesize\ttfamily def \+\_\+run\+Multiagent (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a51d421aacb4cd83af5f1c2e60c3dff9c}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a51d421aacb4cd83af5f1c2e60c3dff9c}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+single\+Run@{\+\_\+single\+Run}}
+\index{\+\_\+single\+Run@{\+\_\+single\+Run}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+single\+Run()}{\_singleRun()}}
+{\footnotesize\ttfamily def \+\_\+single\+Run (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{random\+Seed }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a80b7d1f8c2f44ea9f4154b79f0baacfb}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a80b7d1f8c2f44ea9f4154b79f0baacfb}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+step\+Multiagent@{\+\_\+step\+Multiagent}}
+\index{\+\_\+step\+Multiagent@{\+\_\+step\+Multiagent}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+step\+Multiagent()}{\_stepMultiagent()}}
+{\footnotesize\ttfamily def \+\_\+step\+Multiagent (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a87f5913cd055f8e4eaa70b058ad7d77b}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a87f5913cd055f8e4eaa70b058ad7d77b}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+step\+One\+Agent@{\+\_\+step\+One\+Agent}}
+\index{\+\_\+step\+One\+Agent@{\+\_\+step\+One\+Agent}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+step\+One\+Agent()}{\_stepOneAgent()}}
+{\footnotesize\ttfamily def \+\_\+step\+One\+Agent (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{agent,  }\item[{}]{neighs }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+one timestep for one agent 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a47b00aaebcccf3c8dc2183a406404349}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a47b00aaebcccf3c8dc2183a406404349}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+update\+\_\+params@{\+\_\+update\+\_\+params}}
+\index{\+\_\+update\+\_\+params@{\+\_\+update\+\_\+params}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+update\+\_\+params()}{\_update\_params()}}
+{\footnotesize\ttfamily def \+\_\+update\+\_\+params (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+reads the new parameters (in case they changed in the controller) this function should only update local parameters and not compute data 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5e541babe7e44e6888eb0ba92460cae2}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5e541babe7e44e6888eb0ba92460cae2}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+update\+\_\+timestep\+Size\+\_\+widget@{\+\_\+update\+\_\+timestep\+Size\+\_\+widget}}
+\index{\+\_\+update\+\_\+timestep\+Size\+\_\+widget@{\+\_\+update\+\_\+timestep\+Size\+\_\+widget}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+update\+\_\+timestep\+Size\+\_\+widget()}{\_update\_timestepSize\_widget()}}
+{\footnotesize\ttfamily def \+\_\+update\+\_\+timestep\+Size\+\_\+widget (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{timestep\+Size }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a62d65f09387ea7930e7e2567edd23a9d}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a62d65f09387ea7930e7e2567edd23a9d}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+update\+Multiagent\+Figure@{\+\_\+update\+Multiagent\+Figure}}
+\index{\+\_\+update\+Multiagent\+Figure@{\+\_\+update\+Multiagent\+Figure}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+update\+Multiagent\+Figure()}{\_updateMultiagentFigure()}}
+{\footnotesize\ttfamily def \+\_\+update\+Multiagent\+Figure (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{i,  }\item[{}]{evo,  }\item[{}]{position\+History,  }\item[{}]{pos\+\_\+layout }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aba4da96cc2e7682af895cda4b1310790}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aba4da96cc2e7682af895cda4b1310790}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+update\+Position@{\+\_\+update\+Position}}
+\index{\+\_\+update\+Position@{\+\_\+update\+Position}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+update\+Position()}{\_updatePosition()}}
+{\footnotesize\ttfamily def \+\_\+update\+Position (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{x,  }\item[{}]{y,  }\item[{}]{o,  }\item[{}]{speed,  }\item[{}]{correlatedness }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+\subsection{Field Documentation}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5032de31aad9de4528138249999e7d5f}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a5032de31aad9de4528138249999e7d5f}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+agents@{\+\_\+agents}}
+\index{\+\_\+agents@{\+\_\+agents}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+agents}{\_agents}}
+{\footnotesize\ttfamily \+\_\+agents = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+list of agents involved in the simulation 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a12711c70e125709b78f820722ba74d09}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a12711c70e125709b78f820722ba74d09}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+arena\+\_\+height@{\+\_\+arena\+\_\+height}}
+\index{\+\_\+arena\+\_\+height@{\+\_\+arena\+\_\+height}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+arena\+\_\+height}{\_arena\_height}}
+{\footnotesize\ttfamily int \+\_\+arena\+\_\+height = 1\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Arena size\+: height. 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a372c083f5428e7f8a68298ec9dcca941}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a372c083f5428e7f8a68298ec9dcca941}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+arena\+\_\+width@{\+\_\+arena\+\_\+width}}
+\index{\+\_\+arena\+\_\+width@{\+\_\+arena\+\_\+width}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+arena\+\_\+width}{\_arena\_width}}
+{\footnotesize\ttfamily int \+\_\+arena\+\_\+width = 1\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Arena size\+: width. 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a6aaed74c935ed5380691798f75527a18}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a6aaed74c935ed5380691798f75527a18}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+colors@{\+\_\+colors}}
+\index{\+\_\+colors@{\+\_\+colors}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+colors}{\_colors}}
+{\footnotesize\ttfamily \+\_\+colors = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a15f56ca9811d1e67d721fa64f9b0dc1e}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a15f56ca9811d1e67d721fa64f9b0dc1e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+controller@{\+\_\+controller}}
+\index{\+\_\+controller@{\+\_\+controller}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+controller}{\_controller}}
+{\footnotesize\ttfamily \+\_\+controller\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a752f43042d51a40fed348b434aad0fd8}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a752f43042d51a40fed348b434aad0fd8}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+graph@{\+\_\+graph}}
+\index{\+\_\+graph@{\+\_\+graph}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+graph}{\_graph}}
+{\footnotesize\ttfamily \+\_\+graph = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+structure to store the communication network 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8afeb8cf5705c6b521f7d6658dab955b}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8afeb8cf5705c6b521f7d6658dab955b}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+initial\+State@{\+\_\+initial\+State}}
+\index{\+\_\+initial\+State@{\+\_\+initial\+State}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+initial\+State}{\_initialState}}
+{\footnotesize\ttfamily \+\_\+initial\+State = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+the system state at the start of the simulation (timestep zero) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8da8c49a2b0ccc518cf7f333bdbd17a6}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8da8c49a2b0ccc518cf7f333bdbd17a6}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+latest\+Results@{\+\_\+latest\+Results}}
+\index{\+\_\+latest\+Results@{\+\_\+latest\+Results}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+latest\+Results}{\_latestResults}}
+{\footnotesize\ttfamily \+\_\+latest\+Results = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+latest computed results 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a956572b83e957005ef90a30995891585}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a956572b83e957005ef90a30995891585}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+max\+Time@{\+\_\+max\+Time}}
+\index{\+\_\+max\+Time@{\+\_\+max\+Time}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+max\+Time}{\_maxTime}}
+{\footnotesize\ttfamily \+\_\+max\+Time = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+number of simulation timesteps 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aa120ae2cb05f320428d90e34a49102ab}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aa120ae2cb05f320428d90e34a49102ab}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+motion\+Correlatedness@{\+\_\+motion\+Correlatedness}}
+\index{\+\_\+motion\+Correlatedness@{\+\_\+motion\+Correlatedness}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+motion\+Correlatedness}{\_motionCorrelatedness}}
+{\footnotesize\ttfamily \+\_\+motion\+Correlatedness = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+corelatedness in the random walk motion (only for dynamic net\+Type) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a187bc5499c4da612a9290851be253050}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a187bc5499c4da612a9290851be253050}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+net\+Param@{\+\_\+net\+Param}}
+\index{\+\_\+net\+Param@{\+\_\+net\+Param}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+net\+Param}{\_netParam}}
+{\footnotesize\ttfamily \+\_\+net\+Param = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+network parameter which varies with respect to each type of network (for Erdos-\/\+Renyi is linking probability, for Barabasi-\/\+Albert is the number of edge per new node, for spatial is the communication range) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a7d10cd5e301b167444880f57705e2b9e}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a7d10cd5e301b167444880f57705e2b9e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+net\+Type@{\+\_\+net\+Type}}
+\index{\+\_\+net\+Type@{\+\_\+net\+Type}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+net\+Type}{\_netType}}
+{\footnotesize\ttfamily \+\_\+net\+Type = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+type of network used in the M-\/A simulation 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a957e6b462fc11cb442a866d5b61367a0}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a957e6b462fc11cb442a866d5b61367a0}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+particle\+Speed@{\+\_\+particle\+Speed}}
+\index{\+\_\+particle\+Speed@{\+\_\+particle\+Speed}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+particle\+Speed}{\_particleSpeed}}
+{\footnotesize\ttfamily \+\_\+particle\+Speed = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+speed of the particle on one timestep (only for dynamic net\+Type) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8be9986760a86837e04718906d18d596}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a8be9986760a86837e04718906d18d596}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+positions@{\+\_\+positions}}
+\index{\+\_\+positions@{\+\_\+positions}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+positions}{\_positions}}
+{\footnotesize\ttfamily \+\_\+positions = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+list of agents\textquotesingle{} positions 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000064}{Todo}]\+: implement network generate by placing points (with local communication range) randomly in 2D space \end{DoxyRefDesc}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aaf2c34c5022e4e3c872dbee11e50ea9b}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_aaf2c34c5022e4e3c872dbee11e50ea9b}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+probabilities@{\+\_\+probabilities}}
+\index{\+\_\+probabilities@{\+\_\+probabilities}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+probabilities}{\_probabilities}}
+{\footnotesize\ttfamily \+\_\+probabilities = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a79e90c970112c845893400f85a2590dd}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a79e90c970112c845893400f85a2590dd}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+random\+Seed@{\+\_\+random\+Seed}}
+\index{\+\_\+random\+Seed@{\+\_\+random\+Seed}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+random\+Seed}{\_randomSeed}}
+{\footnotesize\ttfamily \+\_\+random\+Seed = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+random seed 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a7c4303b3e2a8784a0cc16cd523069203}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a7c4303b3e2a8784a0cc16cd523069203}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+rates\+Dict@{\+\_\+rates\+Dict}}
+\index{\+\_\+rates\+Dict@{\+\_\+rates\+Dict}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+rates\+Dict}{\_ratesDict}}
+{\footnotesize\ttfamily \+\_\+rates\+Dict = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+dictionary of rates 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000060}{Todo}]moving it to general method? \end{DoxyRefDesc}
+
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000061}{Todo}]moving it to general method? \end{DoxyRefDesc}
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a194d04e5fee40987d78aa7e1f721ea28}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a194d04e5fee40987d78aa7e1f721ea28}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+realtime\+Plot@{\+\_\+realtime\+Plot}}
+\index{\+\_\+realtime\+Plot@{\+\_\+realtime\+Plot}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+realtime\+Plot}{\_realtimePlot}}
+{\footnotesize\ttfamily \+\_\+realtime\+Plot = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+realtime\+Plot flag (T\+R\+UE = the plot is updated each timestep of the simulation; F\+A\+L\+SE = it is updated once at the end of the simulation) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad3f953eaa70c3e4eee2dde80e57c638f}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad3f953eaa70c3e4eee2dde80e57c638f}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+show\+Interactions@{\+\_\+show\+Interactions}}
+\index{\+\_\+show\+Interactions@{\+\_\+show\+Interactions}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+show\+Interactions}{\_showInteractions}}
+{\footnotesize\ttfamily \+\_\+show\+Interactions = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+visualise the agent trace (on moving particles) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a756f7d76f2b84a0dd60ffd6b7683dd3a}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_a756f7d76f2b84a0dd60ffd6b7683dd3a}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+show\+Trace@{\+\_\+show\+Trace}}
+\index{\+\_\+show\+Trace@{\+\_\+show\+Trace}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+show\+Trace}{\_showTrace}}
+{\footnotesize\ttfamily \+\_\+show\+Trace = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+visualise the agent trace (on moving particles) 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad87100e87c83f6311376fa905bb9f579}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ad87100e87c83f6311376fa905bb9f579}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+timestep\+Size@{\+\_\+timestep\+Size}}
+\index{\+\_\+timestep\+Size@{\+\_\+timestep\+Size}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+timestep\+Size}{\_timestepSize}}
+{\footnotesize\ttfamily \+\_\+timestep\+Size = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+time scaling (i.\+e. 
+
+lenght of each timestep) \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ae8c8d7969b8ab8f31df9d1d1d10eabb9}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tmultiagent_view_ae8c8d7969b8ab8f31df9d1d1d10eabb9}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}!\+\_\+visualisation\+Type@{\+\_\+visualisation\+Type}}
+\index{\+\_\+visualisation\+Type@{\+\_\+visualisation\+Type}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tmultiagent\+View}}
+\subsubsection{\texorpdfstring{\+\_\+visualisation\+Type}{\_visualisationType}}
+{\footnotesize\ttfamily \+\_\+visualisation\+Type = None\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+visualisation type 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000062}{Todo}]replot only the last part (rather than all the line) xdata.\+append( \mbox{[}i-\/1,i\mbox{]} ) pop = evo\mbox{[}state\mbox{]} ydata.\+append( pop\mbox{[}len(pop)-\/2\+:len(pop)\mbox{]} ) plt.\+plot(evo\mbox{[}state\mbox{]}, color=self.\+\_\+colors\mbox{[}state\mbox{]}) \end{DoxyRefDesc}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+Mu\+Mo\+T/\hyperlink{_mu_mo_t_8py}{Mu\+Mo\+T.\+py}\end{DoxyCompactItemize}
