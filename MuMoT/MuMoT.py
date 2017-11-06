@@ -1007,14 +1007,17 @@ class MuMoTcontroller:
             fixedParams, foo = zip(*params)
             fixedParamsDecoded = []
             for fixedParam in fixedParams:
-                expr = process_sympy(fixedParam.replace('\\\\','\\'))
-                atoms = expr.atoms()
-                if len(atoms) > 1:
-                    raise SyntaxError("Non-singleton parameter name in parameter " + fixedParam)
-                for atom in atoms:
-                    # parameter name should contain a single atom
+                if fixedParam == 'plotLimits' or fixedParam == 'systemSize':
                     pass
-                fixedParamsDecoded.append(str(atom))                
+                else:
+                    expr = process_sympy(fixedParam.replace('\\\\','\\'))
+                    atoms = expr.atoms()
+                    if len(atoms) > 1:
+                        raise SyntaxError("Non-singleton parameter name in parameter " + fixedParam)
+                    for atom in atoms:
+                        # parameter name should contain a single atom
+                        pass
+                    fixedParamsDecoded.append(str(atom))                
         for pair in sorted(unsortedPairs):
             if fixedParams is None or pair[0] not in fixedParamsDecoded: 
                 widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
@@ -1046,13 +1049,14 @@ class MuMoTcontroller:
                         
         self._bookmarkWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Paste bookmark to log', icon='fa-bookmark')
         self._bookmarkWidget.on_click(self._print_standalone_view_cmd)
-        if not silent:
+        bookmark = kwargs.get('bookmark', True)
+        if not silent and bookmark:
             display(self._bookmarkWidget)
 
         widget = widgets.HTML()
         widget.value = ''
         self._errorMessage = widget
-        if not silent:
+        if not silent and bookmark:
             display(self._errorMessage)
 
     def _print_standalone_view_cmd(self, foo):
@@ -1480,22 +1484,7 @@ class MuMoTview:
         #self._plotLimits = 6 ## @todo: why this magic number?
         self._generatingKwargs = kwargs
         if params != None:
-            self._paramNames = []
-            paramNames, self._paramValues = zip(*params)
-            for name in paramNames:
-#                self._paramNames.append(name.replace('\\','')) ## @todo: have to rationalise how LaTeX characters are handled
-                if name == 'plotLimits' or name == 'systemSize':
-                    self._paramNames.append(name)
-                else:
-                    expr = process_sympy(name.replace('\\\\','\\'))
-                    atoms = expr.atoms()
-                    if len(atoms) > 1:
-                        raise SyntaxError("Non-singleton parameter name in parameter " + name)
-                    for atom in atoms:
-                        # parameter name should contain a single atom
-                        pass
-                    self._paramNames.append(atom)
-        
+            (self._paramNames, self._paramValues) = _process_params(params)
         if not(self._silent):
             _buildFig(self, figure)
     
@@ -1536,8 +1525,9 @@ class MuMoTview:
             print('(' + i[0] + '=' + repr(i[1]) + '), ', end='')
         print("at", datetime.datetime.now())
 
-    def _print_standalone_view_cmd(self):
-        logStr = self._build_bookmark()
+
+    def _print_standalone_view_cmd(self, includeParams = False):
+        logStr = self._build_bookmark(includeParams)
         if not self._silent and logStr is not None:
             with io.capture_output() as log:
                 print(logStr)    
@@ -1546,23 +1536,32 @@ class MuMoTview:
             return logStr
 
 
-    def _get_bookmarks_params(self):
+    def _get_bookmarks_params(self, refModel = None):
+        if refModel is not None:
+            model = refModel
+        else:
+            model = self._mumotModel
         logStr = "params = ["
         for name, value in self._controller._widgetsFreeParams.items():
 #                name = name.replace('\\', '\\\\')
-            if name in self._mumotModel._ratesLaTeX:
-                name = self._mumotModel._ratesLaTeX[name]
+            if name in model._ratesLaTeX:
+                name = model._ratesLaTeX[name]
             name = name.replace('(', '')
             name = name.replace(')', '')
             logStr += "('" + latex(name) + "', " + str(value.value) + "), "
         if self._paramNames != None:
             for name, value in zip(self._paramNames, self._paramValues):
                 name= repr(name)
-                if name in self._mumotModel._ratesLaTeX:
-                    name = self._mumotModel._ratesLaTeX[name]
+                if name in model._ratesLaTeX:
+                    name = model._ratesLaTeX[name]
                 name = name.replace('(', '')
                 name = name.replace(')', '')
                 logStr += "('" + latex(name) + "', " + str(value) + "), "
+        logStr += "('plotLimits', " + str(self._getPlotLimits()) + "), "
+        logStr += "('systemSize', " + str(self._getSystemSize()) + "), "
+#                if len(self._controller._widgetsFreeParams.items()) > 0:
+        logStr = logStr[:-2] # throw away last ", "
+        logStr += "]"
                 
         return logStr        
 
@@ -1576,11 +1575,12 @@ class MuMoTview:
 
 
     def _getPlotLimits(self, defaultLimits = 1):
-        if self._controller is not None and self._controller._plotLimitsWidget != None:
-            plotLimits = self._controller._plotLimitsWidget.value
-        elif self._paramNames is not None and 'plotLimits' in self._paramNames:
+        # if we don't do the check in this order setting plot limits via params will not work in multi controllers 
+        if self._paramNames is not None and 'plotLimits' in self._paramNames:
             ## @todo: this is crying out to be refactored as a dictionary - no time just now
             plotLimits = self._paramValues[self._paramNames.index('plotLimits')]
+        elif self._controller is not None and self._controller._plotLimitsWidget is not None:
+            plotLimits = self._controller._plotLimitsWidget.value
         else:
             plotLimits = defaultLimits
             
@@ -1588,11 +1588,12 @@ class MuMoTview:
 
 
     def _getSystemSize(self, defaultSize = 1):
-        if self._controller is not None and self._controller._systemSizeWidget != None:
-            systemSize = self._controller._systemSizeWidget.value
-        elif self._paramNames is not None and 'systemSize' in self._paramNames:
+        # if we don't do the check in this order setting system size via params will not work in multi controllers
+        if self._paramNames is not None and 'systemSize' in self._paramNames:
             ## @todo: this is crying out to be refactored as a dictionary - no time just now
             systemSize = self._paramValues[self._paramNames.index('systemSize')]
+        elif self._controller is not None and self._controller._systemSizeWidget is not None:
+            systemSize = self._controller._systemSizeWidget.value
         else:
             systemSize = defaultSize
             
@@ -1821,7 +1822,7 @@ class MuMoTmultiView(MuMoTview):
 
     def __init__(self, controller, views, subPlotNum, **kwargs):
         super().__init__(None, controller, **kwargs)
-        self._generatingCommand = "mmt.multiView"
+        self._generatingCommand = "mmt.MuMoTmultiController"
         self._views = views
         self._subPlotNum = subPlotNum
         for view in self._views:
@@ -1837,6 +1838,7 @@ class MuMoTmultiView(MuMoTview):
     def _plot(self):
         plt.figure(self._figureNum)
         plt.clf()
+        self._resetErrorMessage()
         if self._shareAxes:
             # hold should already be on
             for func, subPlotNum, axes3d in self._controller._replotFunctions:
@@ -1859,18 +1861,25 @@ class MuMoTmultiView(MuMoTview):
 
 
     def _print_standalone_view_cmd(self):
-        super()._build_bookmark()
-        
-        return
-        
-        ## @todo: implement bookmark functionality for multiviews
+        for view in self._views:
+            pass
+        model = view._mumotModel
         with io.capture_output() as log:
             logStr = "bookmark = " + self._generatingCommand + "(["
             for view in self._views:
-                logStr += view._print_standalone_view_cmd() + ", "
-            ## @todo: delete last ,
+                logStr += view._print_standalone_view_cmd(False) + ", "
+            logStr = logStr[:-2]  # throw away last ", "
             logStr += "], "
-            ## @todo: keywords
+            logStr += self._get_bookmarks_params(model)
+            if len(self._generatingKwargs) > 0:
+                logStr += ", "
+                for key in self._generatingKwargs:
+                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+                logStr = logStr[:-2]  # throw away last ", "
+            logStr += ", bookmark = False"
+            logStr += ")"
+            logStr = logStr.replace('\\', '\\\\')
+
             print(logStr)
         self._logs.append(log)
 
@@ -1894,29 +1903,12 @@ class MuMoTmultiController(MuMoTcontroller):
         views = []
         subPlotNum = 1
         if params is not None:
-            fixedParamNames = []
-            fixedParamValues = []
-            for name, value in params:
-#                self._paramNames.append(name.replace('\\','')) ## @todo: have to rationalise how LaTeX characters are handled
-                if name == 'plotLimits' or name == 'systemSize':
-                    fixedParamNames.append(name)
-                else:
-                    expr = process_sympy(name.replace('\\\\','\\'))
-                    atoms = expr.atoms()
-                    if len(atoms) > 1:
-                        raise SyntaxError("Non-singleton parameter name in parameter " + name)
-                    for atom in atoms:
-                        # parameter name should contain a single atom
-                        pass
-                    fixedParamNames.append(str(atom))
-                fixedParamValues.append(value)
+            (fixedParamNames, fixedParamValues) = _process_params(params)
         for controller in controllers:
             # pass through the fixed params to each constituent view
             view = controller._view
             if params is not None:
-                view._paramNames = fixedParamNames
-                view._paramValues = fixedParamValues
-            
+                (view._paramNames, view._paramValues) = _process_params(params)
             for name, value in controller._widgetsFreeParams.items():
                 if params is None or name not in fixedParamNames:
                     paramValueDict[name] = (value.value, value.min, value.max, value.step)
@@ -1989,6 +1981,8 @@ class MuMoTmultiController(MuMoTcontroller):
                 display(self._progressBar)
 
         self._view = MuMoTmultiView(self, views, subPlotNum - 1, **kwargs)
+        self._view._paramNames = fixedParamNames
+        self._view._paramValues = fixedParamValues
                 
         for controller in controllers:
             controller._setErrorWidget(self._errorMessage)
@@ -2325,25 +2319,21 @@ class MuMoTfieldView(MuMoTview):
 
 #    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
 
-    def _build_bookmark(self):
+    def _build_bookmark(self, includeParams = False):
         if not self._silent:
             logStr = "bookmark = "
         else:
             logStr = ""
-        logStr += self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
+        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
         if self._stateVariable3 != None:
             logStr += "'" + str(self._stateVariable3) + "', "
-        logStr += self._get_bookmarks_params()
-        logStr += "('plotLimits', " + str(self._getPlotLimits()) + "), "
-        logStr += "('systemSize', " + str(self._getSystemSize()) + "), "
-#                if len(self._controller._widgetsFreeParams.items()) > 0:
-        logStr = logStr[:-2] # throw away last ", "
-        logStr += "]"
+        if includeParams:
+            logStr += self._get_bookmarks_params()
         if len(self._generatingKwargs) > 0:
-            logStr += ", "
             for key in self._generatingKwargs:
                 logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
             logStr = logStr[:-2]  # throw away last ", "
+        logStr += ", bookmark = False"
         logStr += ")"
         logStr = logStr.replace('\\', '\\\\')
         
@@ -2747,7 +2737,7 @@ class MuMoTnoiseView(MuMoTfieldView):
 class MuMoTstreamView(MuMoTfieldView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._generatingCommand = "mmt.MuMoTstreamView"
+        self._generatingCommand = "stream"
 
     def _plot_field(self):
         super()._plot_field()
@@ -2820,7 +2810,7 @@ class MuMoTstreamView(MuMoTfieldView):
 class MuMoTvectorView(MuMoTfieldView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._generatingCommand = "mmt.MuMoTvectorView"
+        self._generatingCommand = "vector"
 
     def _plot_field(self):
         super()._plot_field()
@@ -2943,7 +2933,7 @@ class MuMoTbifurcationView(MuMoTview):
     def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, 
                  figure = None, params = None, **kwargs):
         super().__init__(model, controller, figure, params, **kwargs)
-        self._generatingCommand = "mmt.MuMoTbifurcationView"
+        self._generatingCommand = "bifurcation"
         bifurcationParameter = self._pydstoolify(bifurcationParameter)
         stateVariable1 = self._pydstoolify(stateVariable1)
         stateVariable2 = self._pydstoolify(stateVariable2)
@@ -5325,8 +5315,24 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     return ODEsys
  
 
-
-
+def _process_params(params):
+    paramsRet = []
+    paramNames, paramValues = zip(*params)
+    for name in paramNames:
+#                self._paramNames.append(name.replace('\\','')) ## @todo: have to rationalise how LaTeX characters are handled
+        if name == 'plotLimits' or name == 'systemSize':
+            paramsRet.append(name)
+        else:
+            expr = process_sympy(name.replace('\\\\','\\'))
+            atoms = expr.atoms()
+            if len(atoms) > 1:
+                raise SyntaxError("Non-singleton parameter name in parameter " + name)
+            for atom in atoms:
+                # parameter name should contain a single atom
+                pass
+            paramsRet.append(atom)
+            
+    return (paramsRet, paramValues)
 
     
 def _raiseModelError(expected, read, rule):
