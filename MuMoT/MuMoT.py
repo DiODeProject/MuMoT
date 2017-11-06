@@ -1859,6 +1859,11 @@ class MuMoTmultiView(MuMoTview):
 
 
     def _print_standalone_view_cmd(self):
+        super()._build_bookmark()
+        
+        return
+        
+        ## @todo: implement bookmark functionality for multiviews
         with io.capture_output() as log:
             logStr = "bookmark = " + self._generatingCommand + "(["
             for view in self._views:
@@ -1876,7 +1881,7 @@ class MuMoTmultiController(MuMoTcontroller):
     ## replot function list to invoke on views
     _replotFunctions = None
 
-    def __init__(self, controllers, **kwargs):
+    def __init__(self, controllers, params = None, **kwargs):
         global figureCounter
 
         self._silent = kwargs.get('silent', False)
@@ -1888,9 +1893,33 @@ class MuMoTmultiController(MuMoTcontroller):
         #widgetsExtraParamsTmp = {} # cannot be the final dict already, because it will be erased when constructor is called
         views = []
         subPlotNum = 1
+        if params is not None:
+            fixedParamNames = []
+            fixedParamValues = []
+            for name, value in params:
+#                self._paramNames.append(name.replace('\\','')) ## @todo: have to rationalise how LaTeX characters are handled
+                if name == 'plotLimits' or name == 'systemSize':
+                    fixedParamNames.append(name)
+                else:
+                    expr = process_sympy(name.replace('\\\\','\\'))
+                    atoms = expr.atoms()
+                    if len(atoms) > 1:
+                        raise SyntaxError("Non-singleton parameter name in parameter " + name)
+                    for atom in atoms:
+                        # parameter name should contain a single atom
+                        pass
+                    fixedParamNames.append(str(atom))
+                fixedParamValues.append(value)
         for controller in controllers:
+            # pass through the fixed params to each constituent view
+            view = controller._view
+            if params is not None:
+                view._paramNames = fixedParamNames
+                view._paramValues = fixedParamValues
+            
             for name, value in controller._widgetsFreeParams.items():
-                paramValueDict[name] = (value.value, value.min, value.max, value.step)
+                if params is None or name not in fixedParamNames:
+                    paramValueDict[name] = (value.value, value.min, value.max, value.step)
             paramLabelDict.update(controller._paramLabelDict)
 #             for name, value in controller._widgetsExtraParams.items():
 #                 widgetsExtraParamsTmp[name] = value
@@ -1924,7 +1953,7 @@ class MuMoTmultiController(MuMoTcontroller):
 #                 self._replotFunctions.append(view._controller._replotFunction)
 #             view._controller = self
         
-        super().__init__(paramValues, paramNames, paramLabelDict, False, **kwargs)
+        super().__init__(paramValues, paramNames, paramLabelDict, False, params = params, **kwargs)
         
         addProgressBar = False
         for controller in controllers:
