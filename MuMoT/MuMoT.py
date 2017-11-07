@@ -1897,6 +1897,7 @@ class MuMoTmultiController(MuMoTcontroller):
         self._replotFunctions = []
         paramNames = []
         paramValues = []
+        fixedParamNames = None
         paramValueDict = {}
         paramLabelDict = {}
         #widgetsExtraParamsTmp = {} # cannot be the final dict already, because it will be erased when constructor is called
@@ -1981,8 +1982,9 @@ class MuMoTmultiController(MuMoTcontroller):
                 display(self._progressBar)
 
         self._view = MuMoTmultiView(self, views, subPlotNum - 1, **kwargs)
-        self._view._paramNames = fixedParamNames
-        self._view._paramValues = fixedParamValues
+        if fixedParamNames is not None:
+            self._view._paramNames = fixedParamNames
+            self._view._paramValues = fixedParamValues
                 
         for controller in controllers:
             controller._setErrorWidget(self._errorMessage)
