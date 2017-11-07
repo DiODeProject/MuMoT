@@ -1017,7 +1017,11 @@ class MuMoTcontroller:
                     for atom in atoms:
                         # parameter name should contain a single atom
                         pass
-                    fixedParamsDecoded.append(str(atom))                
+                    fixedParamsDecoded.append(str(atom))    
+## @todo: refactor the above to use _process_params (below didn't work when first tried)                                
+#        fixedParamsDecoded = None
+#        if params is not None:
+#            (fixedParamsDecoded, foo) = _process_params(params)
         for pair in sorted(unsortedPairs):
             if fixedParams is None or pair[0] not in fixedParamsDecoded: 
                 widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
@@ -1038,7 +1042,7 @@ class MuMoTcontroller:
                     display(self._plotLimitsWidget)
                 
         if systemSize:
-            if fixedParams is None or 'systemSize' not in fixedParams:
+            if fixedParamsDecoded is None or 'systemSize' not in fixedParams:
                 ## @todo: remove hard coded values and limits
                 self._systemSizeWidget = widgets.IntSlider(value = 5, min = 5, 
                                              max = 100, step = 1, 
@@ -1526,7 +1530,7 @@ class MuMoTview:
         print("at", datetime.datetime.now())
 
 
-    def _print_standalone_view_cmd(self, includeParams = False):
+    def _print_standalone_view_cmd(self, includeParams = True):
         logStr = self._build_bookmark(includeParams)
         if not self._silent and logStr is not None:
             with io.capture_output() as log:
@@ -1900,6 +1904,8 @@ class MuMoTmultiController(MuMoTcontroller):
         fixedParamNames = None
         paramValueDict = {}
         paramLabelDict = {}
+        plotLimits = False
+        systemSize = False
         #widgetsExtraParamsTmp = {} # cannot be the final dict already, because it will be erased when constructor is called
         views = []
         subPlotNum = 1
@@ -1913,6 +1919,10 @@ class MuMoTmultiController(MuMoTcontroller):
             for name, value in controller._widgetsFreeParams.items():
                 if params is None or name not in fixedParamNames:
                     paramValueDict[name] = (value.value, value.min, value.max, value.step)
+            if controller._plotLimitsWidget is not None:
+                plotLimits = True
+            if controller._systemSizeWidget is not None:
+                systemSize = True
             paramLabelDict.update(controller._paramLabelDict)
 #             for name, value in controller._widgetsExtraParams.items():
 #                 widgetsExtraParamsTmp[name] = value
@@ -1946,7 +1956,7 @@ class MuMoTmultiController(MuMoTcontroller):
 #                 self._replotFunctions.append(view._controller._replotFunction)
 #             view._controller = self
         
-        super().__init__(paramValues, paramNames, paramLabelDict, False, params = params, **kwargs)
+        super().__init__(paramValues, paramNames, paramLabelDict, False, plotLimits, systemSize, params = params, **kwargs)
         
         addProgressBar = False
         for controller in controllers:
@@ -2321,7 +2331,7 @@ class MuMoTfieldView(MuMoTview):
 
 #    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
 
-    def _build_bookmark(self, includeParams = False):
+    def _build_bookmark(self, includeParams = True):
         if not self._silent:
             logStr = "bookmark = "
         else:
@@ -2330,12 +2340,11 @@ class MuMoTfieldView(MuMoTview):
         if self._stateVariable3 != None:
             logStr += "'" + str(self._stateVariable3) + "', "
         if includeParams:
-            logStr += self._get_bookmarks_params()
+            logStr += self._get_bookmarks_params() + ", "
         if len(self._generatingKwargs) > 0:
             for key in self._generatingKwargs:
                 logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-            logStr = logStr[:-2]  # throw away last ", "
-        logStr += ", bookmark = False"
+        logStr += "bookmark = False"
         logStr += ")"
         logStr = logStr.replace('\\', '\\\\')
         
@@ -3228,6 +3237,26 @@ class MuMoTbifurcationView(MuMoTview):
         equation = equation.replace('\\', '')
         
         return equation
+    
+    
+    def _build_bookmark(self, includeParams = True):
+        if not self._silent:
+            logStr = "bookmark = "
+        else:
+            logStr = ""
+        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._bifurcationParameter) + "', '" + str(self._stateVariable1) +"', "
+        if self._stateVariable2 != None:
+            logStr += "'" + str(self._stateVariable2) + "', "
+        if includeParams:
+            logStr += self._get_bookmarks_params() + ", "
+        if len(self._generatingKwargs) > 0:
+            for key in self._generatingKwargs:
+                logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+        logStr += "bookmark = False"
+        logStr += ")"
+        logStr = logStr.replace('\\', '\\\\')
+        
+        return logStr    
 
 ## agent on networks view on model 
 class MuMoTmultiagentView(MuMoTview):
