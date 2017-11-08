@@ -2313,7 +2313,7 @@ class MuMoTfieldView(MuMoTview):
         self._xlab = kwargs.get('xlab', r'$'+latex(Symbol('Phi_'+str(stateVariable1)))+'$')
         self._ylab = kwargs.get('ylab', r'$'+latex(Symbol('Phi_'+str(stateVariable2)))+'$')
         if stateVariable3:
-            self._zlab = kwargs.get('zlab', str(stateVariable3)) 
+            self._zlab = kwargs.get('zlab', r'$'+latex(Symbol('Phi_'+str(stateVariable3)))+'$') 
         
         self._stateVariable1 = process_sympy(stateVariable1)
         self._stateVariable2 = process_sympy(stateVariable2)
@@ -5404,8 +5404,9 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
         Xdat, Ydat = np.meshgrid(pointsMesh, pointsMesh)
         Zdat = 1 - Xdat - Ydat
         Zdat[Zdat<0] = 0
-        ax.plot_surface(Xdat, Ydat, Zdat, rstride=20, cstride=20, color='grey', alpha=0.25)
-    
+        #ax.plot_surface(Xdat, Ydat, Zdat, rstride=20, cstride=20, color='grey', alpha=0.25)
+        ax.plot_wireframe(Xdat, Ydat, Zdat, rstride=1, cstride=1, color='grey', alpha=0.5)
+        
     if xlab==None:
         try:
             xlabelstr = ax.xaxis.get_label_text()
@@ -5761,14 +5762,14 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         if choose_xrange:
             max_xrange = choose_xrange[1]-choose_xrange[0]
         else:
-            xrange = [np.max(data_x[kk]) - np.min(data_x[kk]) for kk in range(len(data_x))]
-            max_xrange = max(xrange)
+            #xrange = [np.max(data_x[kk]) - np.min(data_x[kk]) for kk in range(len(data_x))]
+            max_xrange = np.max(data_x) - np.min(data_x)  # max(xrange)
         
         if choose_yrange:
             max_yrange = choose_yrange[1]-choose_yrange[0]
         else:
-            yrange = [np.max(data_y[kk]) - np.min(data_y[kk]) for kk in range(len(data_y))]
-            max_yrange = max(yrange) 
+            #yrange = [np.max(data_y[kk]) - np.min(data_y[kk]) for kk in range(len(data_y))]
+            max_yrange = np.max(data_y) - np.min(data_y) #max(yrange) 
         
         if max_xrange < 1.0:
             xMLocator_major = round_to_1(max_xrange/5)
