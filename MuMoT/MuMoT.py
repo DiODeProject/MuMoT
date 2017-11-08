@@ -463,15 +463,15 @@ class MuMoTmodel:
 
 
     ## construct interactive time evolution plot for state variables      
-    def numSimStateVar(self, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, **kwargs):
+    def numSimStateVar(self, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, params = None, **kwargs):
         try:
             kwargs['showInitSV'] = True
             
             # construct controller
-            viewController = self._controller(False, **kwargs)
+            viewController = self._controller(False, params = params, **kwargs)
             
             # construct view
-            modelView = MuMoTtimeEvoStateVarView(self, viewController, stateVariable1, stateVariable2, stateVariable3, stateVariable4, **kwargs)
+            modelView = MuMoTtimeEvoStateVarView(self, viewController, stateVariable1, stateVariable2, stateVariable3, stateVariable4, params = params, **kwargs)
                     
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_NumSolODE)         
@@ -483,7 +483,7 @@ class MuMoTmodel:
 
     
     ## construct interactive plot of noise around fixed points        
-    def fixedPointNoise(self, stateVariable1, stateVariable2, stateVariable3=None, **kwargs):
+    def fixedPointNoise(self, stateVariable1, stateVariable2, stateVariable3=None, params = None, **kwargs):
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             
             kwargs['showNoise'] = True
@@ -495,11 +495,11 @@ class MuMoTmodel:
             #noiseStatSol = (n1,n2,n3,n4)#_getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
             
             # construct controller
-            viewController = self._controller(False, plotLimitsSlider = not(self._constantSystemSize), **kwargs)
+            viewController = self._controller(False, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
             #viewController = self._controller(True, plotLimitsSlider = True, **kwargs)
             
             # construct view
-            modelView = MuMoTnoiseView(self, viewController, n3, stateVariable1, stateVariable2, **kwargs)
+            modelView = MuMoTnoiseView(self, viewController, n3, stateVariable1, stateVariable2, params = params, **kwargs)
                     
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_field)         
@@ -1003,6 +1003,7 @@ class MuMoTcontroller:
         self._widgetsPlotOnly = {}
         unsortedPairs = zip(paramNames, paramValues)
         fixedParams = None
+ #       fixedParamsDecoded = None
         if params is not None:
             fixedParams, foo = zip(*params)
             fixedParamsDecoded = []
@@ -1042,7 +1043,7 @@ class MuMoTcontroller:
                     display(self._plotLimitsWidget)
                 
         if systemSize:
-            if fixedParamsDecoded is None or 'systemSize' not in fixedParams:
+            if fixedParams is None or 'systemSize' not in fixedParams:
                 ## @todo: remove hard coded values and limits
                 self._systemSizeWidget = widgets.IntSlider(value = 5, min = 5, 
                                              max = 100, step = 1, 
@@ -1607,7 +1608,7 @@ class MuMoTview:
     def _get_argDict(self):
         #plotLimits = self._getPlotLimits()
         systemSize = Symbol('systemSize')
-        argDict[systemSize] = self._getSystemSize()
+        #argDict[systemSize] = self._getSystemSize()
         paramNames = []
         paramValues = []
         if self._controller is not None:
@@ -1628,6 +1629,8 @@ class MuMoTview:
         for key in argDict:
             if key in self._mumotModel._constantReactants:
                 argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
+                
+        argDict[systemSize] = self._getSystemSize()
         
         return argDict
 
@@ -2047,22 +2050,21 @@ class MuMoTtimeEvolutionView(MuMoTview):
             
         self._tend = tend
         self._tstep = tstep
-        
         if not(silent):
             self._plot_NumSolODE()
 
         
     
     def _getInitCondsFromSlider(self):
-        if self._controller != None:
-            paramNames = []
-            paramValues = []
-            for reactant in self._mumotModel._reactants:
-                if reactant not in self._mumotModel._constantReactants:
-                    for name, value in self._controller._widgetsFreeParams.items():
-                        if name == latex(Symbol('Phi^0_'+str(reactant))):
-                            paramNames.append(name)
-                            paramValues.append(value.value)
+        #if self._controller != None:
+        paramNames = []
+        paramValues = []
+        for reactant in self._mumotModel._reactants:
+            if reactant not in self._mumotModel._constantReactants:
+                for name, value in self._controller._widgetsFreeParams.items():
+                    if name == latex(Symbol('Phi^0_'+str(reactant))):
+                        paramNames.append(name)
+                        paramValues.append(value.value)
                 
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
@@ -2196,12 +2198,12 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #         return realEQsol, eigList #returns two lists of dictionaries
 #     
 #     
-#     def _plot_NumSolODE(self):
-#         if not(self._silent): ## @todo is this necessary?
-#             plt.figure(self._figureNum)
-#             plt.clf()
-#             self._resetErrorMessage()
-#         self._showErrorMessage(str(self))
+    def _plot_NumSolODE(self):
+        if not(self._silent): ## @todo is this necessary?
+            plt.figure(self._figureNum)
+            plt.clf()
+            self._resetErrorMessage()
+        self._showErrorMessage(str(self))
 #         
 #     
 #     def _print_standalone_view_cmd(self):
@@ -2235,13 +2237,10 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._generatingCommand = "mmt.MuMoTtimeEvoStateVarView"
-
     def _plot_NumSolODE(self):
         super()._plot_NumSolODE()
-        
         NrDP = int(self._tend/self._tstep) + 1
         time = np.linspace(0, self._tend, NrDP)
-        
         initDict = self._getInitCondsFromSlider()
         assert (2 <= len(initDict) <= 4),"Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!"
 
