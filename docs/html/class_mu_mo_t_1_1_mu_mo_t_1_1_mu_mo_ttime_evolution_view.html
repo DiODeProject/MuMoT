@@ -117,7 +117,7 @@ Public Member Functions</h2></td></tr>
 <tr class="inherit_header pub_methods_class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview.html">MuMoTview</a></td></tr>
 <tr class="memitem:a367325b3bd7ca4a7b7ec4107f9aa6a16 inherit pub_methods_class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview.html#a367325b3bd7ca4a7b7ec4107f9aa6a16">__init__</a> (self, model, controller, figure=None, params=None, kwargs)</td></tr>
 <tr class="separator:a367325b3bd7ca4a7b7ec4107f9aa6a16 inherit pub_methods_class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a64ca78b9bf9f0f3150077ab79405a674 inherit pub_methods_class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview.html#a64ca78b9bf9f0f3150077ab79405a674">showLogs</a> (self, tail=False)</td></tr>
+<tr class="memitem:a64ca78b9bf9f0f3150077ab79405a674 inherit pub_methods_class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview.html#a64ca78b9bf9f0f3150077ab79405a674">showLogs</a> (self, tail=<a class="el" href="namespace_mu_mo_t_1_1_mu_mo_t.html#a36cde68b055f3f2ee671020af4ccf4e2">False</a>)</td></tr>
 <tr class="separator:a64ca78b9bf9f0f3150077ab79405a674 inherit pub_methods_class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
@@ -127,6 +127,12 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:ac73bb501e7bfd03ba030d3ec04688232"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view.html#ac73bb501e7bfd03ba030d3ec04688232">_get_eqsODE</a> (self, y_old, time)</td></tr>
 <tr class="memdesc:ac73bb501e7bfd03ba030d3ec04688232"><td class="mdescLeft">&#160;</td><td class="mdescRight">calculates right-hand side of ODE system  <a href="#ac73bb501e7bfd03ba030d3ec04688232">More...</a><br /></td></tr>
 <tr class="separator:ac73bb501e7bfd03ba030d3ec04688232"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a588142f52d59a2abf3229d40beffbe7e"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view.html#a588142f52d59a2abf3229d40beffbe7e">_plot_NumSolODE</a> (self)</td></tr>
+<tr class="memdesc:a588142f52d59a2abf3229d40beffbe7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">calculates stationary states of 2d system def _get_fixedPoints2d(self): #plotLimits = self._controller._getPlotLimits() paramNames = [] paramValues = [] if self._controller is not None: for name, value in self._controller._widgetsFreeParams.items(): </p><h1>throw away formatting for constant reactants</h1>
+<h1>name = name.replace('(','')</h1>
+<h1>name = name.replace(')','')</h1>
+paramNames.append(name) paramValues.append(value.value) if self._paramNames is not None: paramNames += map(str, self._paramNames) paramValues += self._paramValues funcs = self._mumotModel._getFuncs() argNamesSymb = list(map(Symbol, paramNames)) argDict = dict(zip(argNamesSymb, paramValues)) argDict[self._mumotModel._systemSize] = 1  <a href="#a588142f52d59a2abf3229d40beffbe7e">More...</a><br /></td></tr>
+<tr class="separator:a588142f52d59a2abf3229d40beffbe7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
@@ -346,6 +352,48 @@ Additional Inherited Members</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="a588142f52d59a2abf3229d40beffbe7e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a588142f52d59a2abf3229d40beffbe7e">&#9670;&nbsp;</a></span>_plot_NumSolODE()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">def _plot_NumSolODE </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>self</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>calculates stationary states of 2d system def _get_fixedPoints2d(self): #plotLimits = self._controller._getPlotLimits() paramNames = [] paramValues = [] if self._controller is not None: for name, value in self._controller._widgetsFreeParams.items(): </p><h1>throw away formatting for constant reactants</h1>
+<h1>name = name.replace('(','')</h1>
+<h1>name = name.replace(')','')</h1>
+paramNames.append(name) paramValues.append(value.value) if self._paramNames is not None: paramNames += map(str, self._paramNames) paramValues += self._paramValues funcs = self._mumotModel._getFuncs() argNamesSymb = list(map(Symbol, paramNames)) argDict = dict(zip(argNamesSymb, paramValues)) argDict[self._mumotModel._systemSize] = 1 </p>
+<p>EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict) EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict) eps=1e-8 EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True) realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))&lt;=eps and Abs(im(EQsol[kk][self._stateVariable2]))&lt;=eps)]</p>
+<p>MAT = Matrix([EQ1, EQ2]) JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])</p>
+<p>eigList = [] for nn in range(len(realEQsol)): evSet = {} JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])]) #evSet = JACsub.eigenvals() eigVects = JACsub.eigenvects() for kk in range(len(eigVects)): evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2]) eigList.append(evSet) return realEQsol, eigList #returns two lists of dictionaries</p>
+<h2>calculates stationary states of 3d system</h2>
+<p>def _get_fixedPoints3d(self): #plotLimits = self._controller._getPlotLimits() paramNames = [] paramValues = [] if self._controller != None: for name, value in self._controller._widgetsFreeParams.items(): </p><h1>throw away formatting for constant reactants</h1>
+<h1>name = name.replace('(','')</h1>
+<h1>name = name.replace(')','')</h1>
+<p>paramNames.append(name) paramValues.append(value.value) if self._paramNames is not None: paramNames += map(str, self._paramNames) paramValues += self._paramValues funcs = self._mumotModel._getFuncs() argNamesSymb = list(map(Symbol, paramNames)) argDict = dict(zip(argNamesSymb, paramValues)) argDict[self._mumotModel._systemSize] = 1</p>
+<p>EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict) EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict) EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict) eps=1e-8 EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True) realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))&lt;=eps and Abs(im(EQsol[kk][self._stateVariable2]))&lt;=eps and Abs(im(EQsol[kk][self._stateVariable3]))&lt;=eps)]</p>
+<p>MAT = Matrix([EQ1, EQ2, EQ3]) JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])</p>
+<p>eigList = [] for nn in range(len(realEQsol)): evSet = {} JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])]) #evSet = JACsub.eigenvals() eigVects = JACsub.eigenvects() for kk in range(len(eigVects)): evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2]) eigList.append(evSet) return realEQsol, eigList #returns two lists of dictionaries </p>
 
 </div>
 </div>

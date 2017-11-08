@@ -14,24 +14,20 @@ Inheritance diagram for Mu\+Mo\+Tcontroller\+:\begin{figure}[H]
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a2b7e9681302740635162f2f8f0dddebf}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, param\+Values, param\+Names, param\+Label\+Dict=\{\}, continuous\+Replot=False, plot\+Limits=False, system\+Size=False, params=None, kwargs)
-\item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a40e22e664ecb6e379377ee1cea60073c}{set\+View} (self, view)
-\item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a64ca78b9bf9f0f3150077ab79405a674}{show\+Logs} (self, tail=False)
-\item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a1ce217feec26521a4854a69da8fddc98}{multirun} (self, iterations, random\+Seeds=\char`\"{}Auto\char`\"{}, visualisation\+Type=\char`\"{}evo\char`\"{}, download\+Data=False)
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a2b7e9681302740635162f2f8f0dddebf}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, param\+Values, param\+Names, param\+Label\+Dict=\{\}, continuous\+Replot=\hyperlink{namespace_mu_mo_t_1_1_mu_mo_t_a36cde68b055f3f2ee671020af4ccf4e2}{False}, plot\+Limits=\hyperlink{namespace_mu_mo_t_1_1_mu_mo_t_a36cde68b055f3f2ee671020af4ccf4e2}{False}, system\+Size=\hyperlink{namespace_mu_mo_t_1_1_mu_mo_t_a36cde68b055f3f2ee671020af4ccf4e2}{False}, params=None, kwargs)
 \end{DoxyCompactItemize}
-\subsection*{Private Member Functions}
+\subsection*{Static Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a9f047d3081e6af35b4ea932aea4fc619}{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd} (self, foo)
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a7018be3799b9e7cec083030398c0530f}{fixed\+Params}
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a4a4234d36117d729f15b9952790efdef}{\+\_\+set\+Replot\+Function} (self, recompute\+Function, redraw\+Function=None)
-\begin{DoxyCompactList}\small\item\em set the functions that must be triggered when the widgets are changed. \end{DoxyCompactList}\item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_aef34ced86f7a9b37af011c0536798897}{\+\_\+set\+Error\+Widget} (self, error\+Widget)
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_afdba98970961edb29f88241b9d99d890}{foo}
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_ab703aa8fe14c83d5f12fa82d4e2c42d9}{\+\_\+download\+File} (self, data\+\_\+to\+\_\+download)
+list \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a8ae52d3e73fa16e877bf17d4af74c80d}{fixed\+Params\+Decoded} = \mbox{[}$\,$\mbox{]}
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a0358810928b8858d2b7cbfc344ba792a}{expr} = process\+\_\+sympy(fixed\+Param.\+replace(\textquotesingle{}\textbackslash{}\textbackslash{}\textbackslash{}\textbackslash{}\textquotesingle{},\textquotesingle{}\textbackslash{}\textbackslash{}\textquotesingle{}))
+\item 
+\hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a1e15bdfe806c9eac0e6af33fa402bdde}{atoms} = expr.\+atoms()
 \end{DoxyCompactItemize}
 \subsection*{Private Attributes}
 \begin{DoxyCompactItemize}
@@ -75,63 +71,7 @@ class describing a controller for a model view
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
 \index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
 \subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
-{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{param\+Values,  }\item[{}]{param\+Names,  }\item[{}]{param\+Label\+Dict = {\ttfamily \{\}},  }\item[{}]{continuous\+Replot = {\ttfamily False},  }\item[{}]{plot\+Limits = {\ttfamily False},  }\item[{}]{system\+Size = {\ttfamily False},  }\item[{}]{params = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
-
-
-
-\subsection{Member Function Documentation}
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_ab703aa8fe14c83d5f12fa82d4e2c42d9}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_ab703aa8fe14c83d5f12fa82d4e2c42d9}} 
-\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+download\+File@{\+\_\+download\+File}}
-\index{\+\_\+download\+File@{\+\_\+download\+File}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
-\subsubsection{\texorpdfstring{\+\_\+download\+File()}{\_downloadFile()}}
-{\footnotesize\ttfamily def \+\_\+download\+File (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{data\+\_\+to\+\_\+download }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
-
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a9f047d3081e6af35b4ea932aea4fc619}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a9f047d3081e6af35b4ea932aea4fc619}} 
-\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd@{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd}}
-\index{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd@{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
-\subsubsection{\texorpdfstring{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd()}{\_print\_standalone\_view\_cmd()}}
-{\footnotesize\ttfamily def \+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{foo }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
-
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_aef34ced86f7a9b37af011c0536798897}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_aef34ced86f7a9b37af011c0536798897}} 
-\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+set\+Error\+Widget@{\+\_\+set\+Error\+Widget}}
-\index{\+\_\+set\+Error\+Widget@{\+\_\+set\+Error\+Widget}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
-\subsubsection{\texorpdfstring{\+\_\+set\+Error\+Widget()}{\_setErrorWidget()}}
-{\footnotesize\ttfamily def \+\_\+set\+Error\+Widget (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{error\+Widget }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
-
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a4a4234d36117d729f15b9952790efdef}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a4a4234d36117d729f15b9952790efdef}} 
-\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+set\+Replot\+Function@{\+\_\+set\+Replot\+Function}}
-\index{\+\_\+set\+Replot\+Function@{\+\_\+set\+Replot\+Function}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
-\subsubsection{\texorpdfstring{\+\_\+set\+Replot\+Function()}{\_setReplotFunction()}}
-{\footnotesize\ttfamily def \+\_\+set\+Replot\+Function (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{recompute\+Function,  }\item[{}]{redraw\+Function = {\ttfamily None} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
-
-
-
-set the functions that must be triggered when the widgets are changed. 
-
-
-\begin{DoxyParams}[1]{Parameters}
-\mbox{\tt in}  & {\em recompute\+Function} & The function to be called when recomputing is necessary \\
-\hline
-\mbox{\tt in}  & {\em redraw\+Function} & The function to be called when only redrawing (relying on previous computation) is sufficient \\
-\hline
-\end{DoxyParams}
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a1ce217feec26521a4854a69da8fddc98}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a1ce217feec26521a4854a69da8fddc98}} 
-\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!multirun@{multirun}}
-\index{multirun@{multirun}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
-\subsubsection{\texorpdfstring{multirun()}{multirun()}}
-{\footnotesize\ttfamily def multirun (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{iterations,  }\item[{}]{random\+Seeds = {\ttfamily \char`\"{}Auto\char`\"{}},  }\item[{}]{visualisation\+Type = {\ttfamily \char`\"{}evo\char`\"{}},  }\item[{}]{download\+Data = {\ttfamily False} }\end{DoxyParamCaption})}
-
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a40e22e664ecb6e379377ee1cea60073c}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a40e22e664ecb6e379377ee1cea60073c}} 
-\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!set\+View@{set\+View}}
-\index{set\+View@{set\+View}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
-\subsubsection{\texorpdfstring{set\+View()}{setView()}}
-{\footnotesize\ttfamily def set\+View (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{view }\end{DoxyParamCaption})}
-
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a64ca78b9bf9f0f3150077ab79405a674}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a64ca78b9bf9f0f3150077ab79405a674}} 
-\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!show\+Logs@{show\+Logs}}
-\index{show\+Logs@{show\+Logs}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
-\subsubsection{\texorpdfstring{show\+Logs()}{showLogs()}}
-{\footnotesize\ttfamily def show\+Logs (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{tail = {\ttfamily False} }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily def \+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{param\+Values,  }\item[{}]{param\+Names,  }\item[{}]{param\+Label\+Dict = {\ttfamily \{\}},  }\item[{}]{continuous\+Replot = {\ttfamily \hyperlink{namespace_mu_mo_t_1_1_mu_mo_t_a36cde68b055f3f2ee671020af4ccf4e2}{False}},  }\item[{}]{plot\+Limits = {\ttfamily \hyperlink{namespace_mu_mo_t_1_1_mu_mo_t_a36cde68b055f3f2ee671020af4ccf4e2}{False}},  }\item[{}]{system\+Size = {\ttfamily \hyperlink{namespace_mu_mo_t_1_1_mu_mo_t_a36cde68b055f3f2ee671020af4ccf4e2}{False}},  }\item[{}]{params = {\ttfamily None},  }\item[{}]{kwargs }\end{DoxyParamCaption})}
 
 
 
@@ -176,8 +116,6 @@ dictionary of La\+TeX labels for widgets, with parameter name as key
 
 plot limits slider widget 
 
-\begin{DoxyRefDesc}{Todo}
-\item[\hyperlink{todo__todo000022}{Todo}]\+: remove hard coded values and limits \end{DoxyRefDesc}
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a018864aa22d2adb0d3958fb0adbce8e2}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a018864aa22d2adb0d3958fb0adbce8e2}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+progress\+Bar@{\+\_\+progress\+Bar}}
 \index{\+\_\+progress\+Bar@{\+\_\+progress\+Bar}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
@@ -189,7 +127,7 @@ plot limits slider widget
 progress bar 
 
 \begin{DoxyRefDesc}{Todo}
-\item[\hyperlink{todo__todo000020}{Todo}]\+: is this best put in base class when it is not always used? \end{DoxyRefDesc}
+\item[\hyperlink{todo__todo000023}{Todo}]\+: is this best put in base class when it is not always used? \end{DoxyRefDesc}
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a1da52cde6b2b94a1005eaa6898d2f8c5}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a1da52cde6b2b94a1005eaa6898d2f8c5}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+progress\+Bar\+\_\+multi@{\+\_\+progress\+Bar\+\_\+multi}}
 \index{\+\_\+progress\+Bar\+\_\+multi@{\+\_\+progress\+Bar\+\_\+multi}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
@@ -201,7 +139,7 @@ progress bar
 used two progress bars, otherwise the previous cell bar (where controller is created) does not react anymore 
 
 \begin{DoxyRefDesc}{Todo}
-\item[\hyperlink{todo__todo000021}{Todo}]\+: is this best put in base class when it is not always used? \end{DoxyRefDesc}
+\item[\hyperlink{todo__todo000024}{Todo}]\+: is this best put in base class when it is not always used? \end{DoxyRefDesc}
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a04e66f2b7e3c67b0e96f318acbfa7f0e}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a04e66f2b7e3c67b0e96f318acbfa7f0e}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+replot\+Function@{\+\_\+replot\+Function}}
 \index{\+\_\+replot\+Function@{\+\_\+replot\+Function}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
@@ -228,8 +166,6 @@ replot function widgets have been assigned (for use by \hyperlink{class_mu_mo_t_
 
 system size slider widget 
 
-\begin{DoxyRefDesc}{Todo}
-\item[\hyperlink{todo__todo000023}{Todo}]\+: remove hard coded values and limits \end{DoxyRefDesc}
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a27dd8543b5188cdfe40f622d267fe2c5}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a27dd8543b5188cdfe40f622d267fe2c5}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!\+\_\+view@{\+\_\+view}}
 \index{\+\_\+view@{\+\_\+view}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
@@ -265,6 +201,36 @@ dictionary of controller widgets only for the free parameters of the model, with
 
 
 dictionary of controller widgets, with parameter that influence only the plotting and not the computation 
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a1e15bdfe806c9eac0e6af33fa402bdde}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a1e15bdfe806c9eac0e6af33fa402bdde}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!atoms@{atoms}}
+\index{atoms@{atoms}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
+\subsubsection{\texorpdfstring{atoms}{atoms}}
+{\footnotesize\ttfamily atoms = expr.\+atoms()\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a0358810928b8858d2b7cbfc344ba792a}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a0358810928b8858d2b7cbfc344ba792a}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!expr@{expr}}
+\index{expr@{expr}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
+\subsubsection{\texorpdfstring{expr}{expr}}
+{\footnotesize\ttfamily expr = process\+\_\+sympy(fixed\+Param.\+replace(\textquotesingle{}\textbackslash{}\textbackslash{}\textbackslash{}\textbackslash{}\textquotesingle{},\textquotesingle{}\textbackslash{}\textbackslash{}\textquotesingle{}))\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a7018be3799b9e7cec083030398c0530f}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a7018be3799b9e7cec083030398c0530f}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!fixed\+Params@{fixed\+Params}}
+\index{fixed\+Params@{fixed\+Params}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
+\subsubsection{\texorpdfstring{fixed\+Params}{fixedParams}}
+{\footnotesize\ttfamily fixed\+Params\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a8ae52d3e73fa16e877bf17d4af74c80d}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_a8ae52d3e73fa16e877bf17d4af74c80d}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!fixed\+Params\+Decoded@{fixed\+Params\+Decoded}}
+\index{fixed\+Params\+Decoded@{fixed\+Params\+Decoded}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
+\subsubsection{\texorpdfstring{fixed\+Params\+Decoded}{fixedParamsDecoded}}
+{\footnotesize\ttfamily list fixed\+Params\+Decoded = \mbox{[}$\,$\mbox{]}\hspace{0.3cm}{\ttfamily [static]}}
+
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_afdba98970961edb29f88241b9d99d890}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tcontroller_afdba98970961edb29f88241b9d99d890}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}!foo@{foo}}
+\index{foo@{foo}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tcontroller}}
+\subsubsection{\texorpdfstring{foo}{foo}}
+{\footnotesize\ttfamily foo\hspace{0.3cm}{\ttfamily [static]}}
 
 
 

@@ -22,7 +22,15 @@ def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view_a5e770e3
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view_ae0c30bb947416bd557c983fe668513a8}{\+\_\+get\+Init\+Conds\+From\+Slider} (self)
 \item 
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view_ac73bb501e7bfd03ba030d3ec04688232}{\+\_\+get\+\_\+eqs\+O\+DE} (self, y\+\_\+old, time)
-\begin{DoxyCompactList}\small\item\em calculates right-\/hand side of O\+DE system \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em calculates right-\/hand side of O\+DE system \end{DoxyCompactList}\item 
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view_a588142f52d59a2abf3229d40beffbe7e}{\+\_\+plot\+\_\+\+Num\+Sol\+O\+DE} (self)
+\begin{DoxyCompactList}\small\item\em calculates stationary states of 2d system def \+\_\+get\+\_\+fixed\+Points2d(self)\+: \#plot\+Limits = self.\+\_\+controller.\+\_\+get\+Plot\+Limits() param\+Names = \mbox{[}\mbox{]} param\+Values = \mbox{[}\mbox{]} if self.\+\_\+controller is not None\+: for name, value in self.\+\_\+controller.\+\_\+widgets\+Free\+Params.\+items()\+: \subsection*{throw away formatting for constant reactants}
+
+\subsection*{name = name.\+replace(\textquotesingle{}(\textquotesingle{},\textquotesingle{}\textquotesingle{})}
+
+\subsection*{name = name.\+replace(\textquotesingle{})\textquotesingle{},\textquotesingle{}\textquotesingle{})}
+
+param\+Names.\+append(name) param\+Values.\+append(value.\+value) if self.\+\_\+param\+Names is not None\+: param\+Names += map(str, self.\+\_\+param\+Names) param\+Values += self.\+\_\+param\+Values funcs = self.\+\_\+mumot\+Model.\+\_\+get\+Funcs() arg\+Names\+Symb = list(map(\+Symbol, param\+Names)) arg\+Dict = dict(zip(arg\+Names\+Symb, param\+Values)) arg\+Dict\mbox{[}self.\+\_\+mumot\+Model.\+\_\+system\+Size\mbox{]} = 1 \end{DoxyCompactList}\end{DoxyCompactItemize}
 \subsection*{Private Attributes}
 \begin{DoxyCompactItemize}
 \item 
@@ -81,7 +89,43 @@ calculates right-\/hand side of O\+DE system
 \subsubsection{\texorpdfstring{\+\_\+get\+Init\+Conds\+From\+Slider()}{\_getInitCondsFromSlider()}}
 {\footnotesize\ttfamily def \+\_\+get\+Init\+Conds\+From\+Slider (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
 
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view_a588142f52d59a2abf3229d40beffbe7e}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view_a588142f52d59a2abf3229d40beffbe7e}} 
+\index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Ttime\+Evolution\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Ttime\+Evolution\+View}!\+\_\+plot\+\_\+\+Num\+Sol\+O\+DE@{\+\_\+plot\+\_\+\+Num\+Sol\+O\+DE}}
+\index{\+\_\+plot\+\_\+\+Num\+Sol\+O\+DE@{\+\_\+plot\+\_\+\+Num\+Sol\+O\+DE}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Ttime\+Evolution\+View@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Ttime\+Evolution\+View}}
+\subsubsection{\texorpdfstring{\+\_\+plot\+\_\+\+Num\+Sol\+O\+D\+E()}{\_plot\_NumSolODE()}}
+{\footnotesize\ttfamily def \+\_\+plot\+\_\+\+Num\+Sol\+O\+DE (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
 
+
+
+calculates stationary states of 2d system def \+\_\+get\+\_\+fixed\+Points2d(self)\+: \#plot\+Limits = self.\+\_\+controller.\+\_\+get\+Plot\+Limits() param\+Names = \mbox{[}\mbox{]} param\+Values = \mbox{[}\mbox{]} if self.\+\_\+controller is not None\+: for name, value in self.\+\_\+controller.\+\_\+widgets\+Free\+Params.\+items()\+: \subsection*{throw away formatting for constant reactants}
+
+\subsection*{name = name.\+replace(\textquotesingle{}(\textquotesingle{},\textquotesingle{}\textquotesingle{})}
+
+\subsection*{name = name.\+replace(\textquotesingle{})\textquotesingle{},\textquotesingle{}\textquotesingle{})}
+
+param\+Names.\+append(name) param\+Values.\+append(value.\+value) if self.\+\_\+param\+Names is not None\+: param\+Names += map(str, self.\+\_\+param\+Names) param\+Values += self.\+\_\+param\+Values funcs = self.\+\_\+mumot\+Model.\+\_\+get\+Funcs() arg\+Names\+Symb = list(map(\+Symbol, param\+Names)) arg\+Dict = dict(zip(arg\+Names\+Symb, param\+Values)) arg\+Dict\mbox{[}self.\+\_\+mumot\+Model.\+\_\+system\+Size\mbox{]} = 1 
+
+E\+Q1 = self.\+\_\+mumot\+Model.\+\_\+equations\mbox{[}self.\+\_\+state\+Variable1\mbox{]}.subs(arg\+Dict) E\+Q2 = self.\+\_\+mumot\+Model.\+\_\+equations\mbox{[}self.\+\_\+state\+Variable2\mbox{]}.subs(arg\+Dict) eps=1e-\/8 E\+Qsol = solve((E\+Q1, E\+Q2), (self.\+\_\+state\+Variable1, self.\+\_\+state\+Variable2), dict=True) real\+E\+Qsol = \mbox{[}\{self.\+\_\+state\+Variable1\+: re(E\+Qsol\mbox{[}kk\mbox{]}\mbox{[}self.\+\_\+state\+Variable1\mbox{]}), self.\+\_\+state\+Variable2\+: re(E\+Qsol\mbox{[}kk\mbox{]}\mbox{[}self.\+\_\+state\+Variable2\mbox{]})\} for kk in range(len(\+E\+Qsol)) if (Abs(im(E\+Qsol\mbox{[}kk\mbox{]}\mbox{[}self.\+\_\+state\+Variable1\mbox{]}))$<$=eps and Abs(im(E\+Qsol\mbox{[}kk\mbox{]}\mbox{[}self.\+\_\+state\+Variable2\mbox{]}))$<$=eps)\mbox{]}
+
+M\+AT = Matrix(\mbox{[}\+E\+Q1, E\+Q2\mbox{]}) J\+AC = M\+A\+T.\+jacobian(\mbox{[}self.\+\_\+state\+Variable1,self.\+\_\+state\+Variable2\mbox{]})
+
+eig\+List = \mbox{[}\mbox{]} for nn in range(len(real\+E\+Qsol))\+: ev\+Set = \{\} J\+A\+Csub=J\+A\+C.\+subs(\mbox{[}(self.\+\_\+state\+Variable1, real\+E\+Qsol\mbox{[}nn\mbox{]}\mbox{[}self.\+\_\+state\+Variable1\mbox{]}), (self.\+\_\+state\+Variable2, real\+E\+Qsol\mbox{[}nn\mbox{]}\mbox{[}self.\+\_\+state\+Variable2\mbox{]})\mbox{]}) \#ev\+Set = J\+A\+Csub.\+eigenvals() eig\+Vects = J\+A\+Csub.\+eigenvects() for kk in range(len(eig\+Vects))\+: ev\+Set\mbox{[}eig\+Vects\mbox{[}kk\mbox{]}\mbox{[}0\mbox{]}\mbox{]} = (eig\+Vects\mbox{[}kk\mbox{]}\mbox{[}1\mbox{]}, eig\+Vects\mbox{[}kk\mbox{]}\mbox{[}2\mbox{]}) eig\+List.\+append(ev\+Set) return real\+E\+Qsol, eig\+List \#returns two lists of dictionaries
+
+\subsubsection*{calculates stationary states of 3d system}
+
+def \+\_\+get\+\_\+fixed\+Points3d(self)\+: \#plot\+Limits = self.\+\_\+controller.\+\_\+get\+Plot\+Limits() param\+Names = \mbox{[}\mbox{]} param\+Values = \mbox{[}\mbox{]} if self.\+\_\+controller != None\+: for name, value in self.\+\_\+controller.\+\_\+widgets\+Free\+Params.\+items()\+: \subsection*{throw away formatting for constant reactants}
+
+\subsection*{name = name.\+replace(\textquotesingle{}(\textquotesingle{},\textquotesingle{}\textquotesingle{})}
+
+\subsection*{name = name.\+replace(\textquotesingle{})\textquotesingle{},\textquotesingle{}\textquotesingle{})}
+
+param\+Names.\+append(name) param\+Values.\+append(value.\+value) if self.\+\_\+param\+Names is not None\+: param\+Names += map(str, self.\+\_\+param\+Names) param\+Values += self.\+\_\+param\+Values funcs = self.\+\_\+mumot\+Model.\+\_\+get\+Funcs() arg\+Names\+Symb = list(map(\+Symbol, param\+Names)) arg\+Dict = dict(zip(arg\+Names\+Symb, param\+Values)) arg\+Dict\mbox{[}self.\+\_\+mumot\+Model.\+\_\+system\+Size\mbox{]} = 1
+
+E\+Q1 = self.\+\_\+mumot\+Model.\+\_\+equations\mbox{[}self.\+\_\+state\+Variable1\mbox{]}.subs(arg\+Dict) E\+Q2 = self.\+\_\+mumot\+Model.\+\_\+equations\mbox{[}self.\+\_\+state\+Variable2\mbox{]}.subs(arg\+Dict) E\+Q3 = self.\+\_\+mumot\+Model.\+\_\+equations\mbox{[}self.\+\_\+state\+Variable3\mbox{]}.subs(arg\+Dict) eps=1e-\/8 E\+Qsol = solve((E\+Q1, E\+Q2, E\+Q3), (self.\+\_\+state\+Variable1, self.\+\_\+state\+Variable2, self.\+\_\+state\+Variable3), dict=True) real\+E\+Qsol = \mbox{[}\{self.\+\_\+state\+Variable1\+: re(E\+Qsol\mbox{[}kk\mbox{]}\mbox{[}self.\+\_\+state\+Variable1\mbox{]}), self.\+\_\+state\+Variable2\+: re(E\+Qsol\mbox{[}kk\mbox{]}\mbox{[}self.\+\_\+state\+Variable2\mbox{]}), self.\+\_\+state\+Variable3\+: re(E\+Qsol\mbox{[}kk\mbox{]}\mbox{[}self.\+\_\+state\+Variable3\mbox{]})\} for kk in range(len(\+E\+Qsol)) if (Abs(im(E\+Qsol\mbox{[}kk\mbox{]}\mbox{[}self.\+\_\+state\+Variable1\mbox{]}))$<$=eps and Abs(im(E\+Qsol\mbox{[}kk\mbox{]}\mbox{[}self.\+\_\+state\+Variable2\mbox{]}))$<$=eps and Abs(im(E\+Qsol\mbox{[}kk\mbox{]}\mbox{[}self.\+\_\+state\+Variable3\mbox{]}))$<$=eps)\mbox{]}
+
+M\+AT = Matrix(\mbox{[}\+E\+Q1, E\+Q2, E\+Q3\mbox{]}) J\+AC = M\+A\+T.\+jacobian(\mbox{[}self.\+\_\+state\+Variable1,self.\+\_\+state\+Variable2,self.\+\_\+state\+Variable3\mbox{]})
+
+eig\+List = \mbox{[}\mbox{]} for nn in range(len(real\+E\+Qsol))\+: ev\+Set = \{\} J\+A\+Csub=J\+A\+C.\+subs(\mbox{[}(self.\+\_\+state\+Variable1, real\+E\+Qsol\mbox{[}nn\mbox{]}\mbox{[}self.\+\_\+state\+Variable1\mbox{]}), (self.\+\_\+state\+Variable2, real\+E\+Qsol\mbox{[}nn\mbox{]}\mbox{[}self.\+\_\+state\+Variable2\mbox{]}), (self.\+\_\+state\+Variable3, real\+E\+Qsol\mbox{[}nn\mbox{]}\mbox{[}self.\+\_\+state\+Variable3\mbox{]})\mbox{]}) \#ev\+Set = J\+A\+Csub.\+eigenvals() eig\+Vects = J\+A\+Csub.\+eigenvects() for kk in range(len(eig\+Vects))\+: ev\+Set\mbox{[}eig\+Vects\mbox{[}kk\mbox{]}\mbox{[}0\mbox{]}\mbox{]} = (eig\+Vects\mbox{[}kk\mbox{]}\mbox{[}1\mbox{]}, eig\+Vects\mbox{[}kk\mbox{]}\mbox{[}2\mbox{]}) eig\+List.\+append(ev\+Set) return real\+E\+Qsol, eig\+List \#returns two lists of dictionaries 
 
 \subsection{Field Documentation}
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view_a6a353a1ef9443ae375948d592ed6cec6}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view_a6a353a1ef9443ae375948d592ed6cec6}} 

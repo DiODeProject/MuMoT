@@ -16,7 +16,7 @@ Inheritance diagram for Mu\+Mo\+Tview\+:\begin{figure}[H]
 \item 
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a367325b3bd7ca4a7b7ec4107f9aa6a16}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, model, controller, figure=None, params=None, kwargs)
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a64ca78b9bf9f0f3150077ab79405a674}{show\+Logs} (self, tail=False)
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a64ca78b9bf9f0f3150077ab79405a674}{show\+Logs} (self, tail=\hyperlink{namespace_mu_mo_t_1_1_mu_mo_t_a36cde68b055f3f2ee671020af4ccf4e2}{False})
 \end{DoxyCompactItemize}
 \subsection*{Static Public Attributes}
 \begin{DoxyCompactItemize}
@@ -54,9 +54,9 @@ def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_abfc1e19ed53c088799d1f4
 \item 
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a8b4ffd0e4999bd45c6ca33fe0f40d1e3}{\+\_\+log} (self, analysis)
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a3af54c33f997937b14f422e772d5280a}{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd} (self)
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a6bb5bfabb47ee55d6a2bc15d5f4d5647}{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd} (self, include\+Params=True)
 \item 
-def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a36fe54d1f3a78f448ecd2a7eef8290d1}{\+\_\+get\+\_\+bookmarks\+\_\+params} (self)
+def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_aea1b653181171af98949b9df4d4cc8c3}{\+\_\+get\+\_\+bookmarks\+\_\+params} (self, ref\+Model=None)
 \item 
 def \hyperlink{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a118471f0e7fd4912146ed08084aa4b52}{\+\_\+build\+\_\+bookmark} (self)
 \item 
@@ -132,11 +132,11 @@ class describing a view on a model
 
 gets and returns names and values from widgets 
 
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a36fe54d1f3a78f448ecd2a7eef8290d1}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a36fe54d1f3a78f448ecd2a7eef8290d1}} 
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_aea1b653181171af98949b9df4d4cc8c3}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_aea1b653181171af98949b9df4d4cc8c3}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+get\+\_\+bookmarks\+\_\+params@{\+\_\+get\+\_\+bookmarks\+\_\+params}}
 \index{\+\_\+get\+\_\+bookmarks\+\_\+params@{\+\_\+get\+\_\+bookmarks\+\_\+params}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
 \subsubsection{\texorpdfstring{\+\_\+get\+\_\+bookmarks\+\_\+params()}{\_get\_bookmarks\_params()}}
-{\footnotesize\ttfamily def \+\_\+get\+\_\+bookmarks\+\_\+params (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+{\footnotesize\ttfamily def \+\_\+get\+\_\+bookmarks\+\_\+params (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{ref\+Model = {\ttfamily None} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
 
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a89e6ad27bf7180f0dce5eb29527e8b73}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a89e6ad27bf7180f0dce5eb29527e8b73}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+get\+\_\+fixed\+Points2d@{\+\_\+get\+\_\+fixed\+Points2d}}
@@ -178,11 +178,11 @@ calculates stationary states of 3d system
 \subsubsection{\texorpdfstring{\+\_\+multirun()}{\_multirun()}}
 {\footnotesize\ttfamily def \+\_\+multirun (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{iterations,  }\item[{}]{random\+Seeds }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
 
-\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a3af54c33f997937b14f422e772d5280a}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a3af54c33f997937b14f422e772d5280a}} 
+\mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a6bb5bfabb47ee55d6a2bc15d5f4d5647}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a6bb5bfabb47ee55d6a2bc15d5f4d5647}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd@{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd}}
 \index{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd@{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
 \subsubsection{\texorpdfstring{\+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd()}{\_print\_standalone\_view\_cmd()}}
-{\footnotesize\ttfamily def \+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+{\footnotesize\ttfamily def \+\_\+print\+\_\+standalone\+\_\+view\+\_\+cmd (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{include\+Params = {\ttfamily True} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
 
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a6822b561e2f9b618639714cd1545772e}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a6822b561e2f9b618639714cd1545772e}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+reset\+Error\+Message@{\+\_\+reset\+Error\+Message}}
@@ -216,7 +216,7 @@ overwrite this method for views that allow the \textquotesingle{}multirun\textqu
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!show\+Logs@{show\+Logs}}
 \index{show\+Logs@{show\+Logs}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}
 \subsubsection{\texorpdfstring{show\+Logs()}{showLogs()}}
-{\footnotesize\ttfamily def show\+Logs (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{tail = {\ttfamily False} }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily def show\+Logs (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{tail = {\ttfamily \hyperlink{namespace_mu_mo_t_1_1_mu_mo_t_a36cde68b055f3f2ee671020af4ccf4e2}{False}} }\end{DoxyParamCaption})}
 
 
 
@@ -242,7 +242,7 @@ overwrite this method for views that allow the \textquotesingle{}multirun\textqu
 Controller that controls this view. 
 
 \begin{DoxyRefDesc}{Todo}
-\item[\hyperlink{todo__todo000026}{Todo}]
+\item[\hyperlink{todo__todo000027}{Todo}]
 \begin{DoxyItemize}
 \item could become None 
 \end{DoxyItemize}\end{DoxyRefDesc}
@@ -337,7 +337,7 @@ parameter values when used without controller
 plot limits (for non-\/constant system size) 
 
 \begin{DoxyRefDesc}{Todo}
-\item[\hyperlink{todo__todo000027}{Todo}]\+: not used? \end{DoxyRefDesc}
+\item[\hyperlink{todo__todo000028}{Todo}]\+: not used? \end{DoxyRefDesc}
 \mbox{\Hypertarget{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a909146a3c119c927727c7d533042b184}\label{class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_tview_a909146a3c119c927727c7d533042b184}} 
 \index{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}!\+\_\+silent@{\+\_\+silent}}
 \index{\+\_\+silent@{\+\_\+silent}!Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview@{Mu\+Mo\+T\+::\+Mu\+Mo\+T\+::\+Mu\+Mo\+Tview}}

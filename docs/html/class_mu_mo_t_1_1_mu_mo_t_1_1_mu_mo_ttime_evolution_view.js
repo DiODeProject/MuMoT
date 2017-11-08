@@ -3,6 +3,7 @@ var class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view =
     [ "__init__", "class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view.html#a5e770e35882c7ca31a269958f19a6850", null ],
     [ "_get_eqsODE", "class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view.html#ac73bb501e7bfd03ba030d3ec04688232", null ],
     [ "_getInitCondsFromSlider", "class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view.html#ae0c30bb947416bd557c983fe668513a8", null ],
+    [ "_plot_NumSolODE", "class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view.html#a588142f52d59a2abf3229d40beffbe7e", null ],
     [ "_chooseFontSize", "class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view.html#a6a353a1ef9443ae375948d592ed6cec6", null ],
     [ "_legend_loc", "class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view.html#a11488f79e0409b71b0bb257c81ae4687", null ],
     [ "_stateVariable1", "class_mu_mo_t_1_1_mu_mo_t_1_1_mu_mo_ttime_evolution_view.html#aa14fa36730691becc6f3136899545416", null ],
