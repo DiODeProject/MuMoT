@@ -3,7 +3,6 @@ Multiscale Modelling Tool
 ---
 Repository should contain following files/folders:
 * `MuMoT/MuMoT.py` (main functionality)
-* `process_latex/process_latex.py` (LaTeX parser, imported from [latex2sympy](https://github.com/augustt198/latex2sympy) project and updated for Python 3)
 * `gen` (includes submodules used by MuMoT, important: there must be an empty file called `__init__.py` (with 2 underscores before and after init in the filename) in that folder, so Python can recognise the modules)
 * `MuMoTtest.py` and other demo files
 
