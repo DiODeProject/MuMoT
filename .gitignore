@@ -1,3 +1,16 @@
-.ipynb_checkpoints/
+# general things to ignore
+build/
+dist/
+*.egg-info/
+*.egg
+*.py[cod]
 __pycache__/
-.cache/
+*.so
+*~
+
+# due to using tox and pytest
+.tox
+.cache
+
+# due to having Jupyter Notebooks
+.ipynb_checkpoints/
