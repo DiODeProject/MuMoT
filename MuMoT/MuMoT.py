@@ -5624,12 +5624,13 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     ax = fig.gca(projection='3d')
     
     if kwargs.get('showPlane', False) == True:
-        pointsMesh = np.linspace(0, 1, 11)
-        Xdat, Ydat = np.meshgrid(pointsMesh, pointsMesh)
-        Zdat = 1 - Xdat - Ydat
-        Zdat[Zdat<0] = 0
+        #pointsMesh = np.linspace(0, 1, 11)
+        #Xdat, Ydat = np.meshgrid(pointsMesh, pointsMesh)
+        #Zdat = 1 - Xdat - Ydat
+        #Zdat[Zdat<0] = 0
         #ax.plot_surface(Xdat, Ydat, Zdat, rstride=20, cstride=20, color='grey', alpha=0.25)
-        ax.plot_wireframe(Xdat, Ydat, Zdat, rstride=1, cstride=1, color='grey', alpha=0.5)
+        #ax.plot_wireframe(Xdat, Ydat, Zdat, rstride=1, cstride=1, color='grey', alpha=0.5)
+        ax.plot([1,0,0,1], [0,1,0,0], [0,0,1,0], linewidth=2, c='k')
         
     if xlab==None:
         try:
