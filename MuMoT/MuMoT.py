@@ -795,14 +795,28 @@ class MuMoTmodel:
             paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
 #            paramNames.append('(' + latex(reactant) + ')')
             paramNames.append(str(reactant))
+#         if kwargs.get('showInitSV', False) == True:
+#             initialInitCondValue = INITIAL_COND_INIT_VAL
+#             initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
+#             for reactant in self._reactants:
+#                 if reactant not in self._constantReactants:
+#                     paramNames.append(latex(Symbol('Phi^0_'+str(reactant))))
+#                     paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
         if kwargs.get('showInitSV', False) == True:
-            initialInitCondValue = INITIAL_COND_INIT_VAL
             initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
+            initCondsSV = kwargs.get('initCondsSV', False)
             for reactant in self._reactants:
                 if reactant not in self._constantReactants:
                     paramNames.append(latex(Symbol('Phi^0_'+str(reactant))))
-                    paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))
-            
+                    if initCondsSV != False:
+                        # check input of initCondsSV
+                        if str(reactant) not in initCondsSV:
+                            print('Warning: symbol for reactant  '+str(reactant)+' not in initCondsSV. Make sure to use the same symbols for the initial conditions as introduced when creating the model.')
+                        initialInitCondValue = initCondsSV[str(reactant)]
+                    else:
+                        initialInitCondValue = INITIAL_COND_INIT_VAL   
+                    paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
+                        
         systemSizeSlider = kwargs.get('showNoise', False)
         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, plotLimitsSlider, systemSizeSlider, params, **kwargs)
 
@@ -2009,7 +2023,7 @@ class MuMoTmultiController(MuMoTcontroller):
         if not self._silent:
             self._view._plot()
 
-## time evolution view on model including state variables and noise (specialised by MuMoTtimeEvoStateVarView and MuMoTtimeEvoNoiseView)
+## time evolution view on model including state variables and noise (specialised by MuMoTtimeEvoStateVarView and ...)
 class MuMoTtimeEvolutionView(MuMoTview):
     ## 1st state variable
     _stateVariable1 = None
@@ -2019,13 +2033,20 @@ class MuMoTtimeEvolutionView(MuMoTview):
     _stateVariable3 = None
     ## 4th state variable 
     _stateVariable4 = None
-    ## end time of numerical simulation
+    ## initial conditions of state variables for numerical solution of ODE system
+    _initCondsSV = None
+    ## end time of numerical simulation of ODE system of the state variables
     _tend = None
-    ## time step of numerical simulation
+    ## time step of numerical simulation of ODE system of the state variables
     _tstep = None
-    
-  
-    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, tend = 100, tstep = 0.01, figure = None, params = None, **kwargs):
+    ## defines fontsize on the axes
+    _chooseFontSize = None
+    ## string that defines the x-label
+    _xlab = None
+    ## legend location: combinations like 'upper left', lower right, or 'center center' are allowed (9 options in total)
+    _legend_loc = None
+
+    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, figure = None, params = None, **kwargs):
         #if model._systemSize == None and model._constantSystemSize == True:
         #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
         #    return
@@ -2037,9 +2058,10 @@ class MuMoTtimeEvolutionView(MuMoTview):
         else:
             self._chooseFontSize=None
         self._xlab = kwargs.get('xlab', r'time t')
-        self._ylab = kwargs.get('ylab', r'evolution of states')
+        #self._ylab = kwargs.get('ylab', r'evolution of states')
         
         self._legend_loc = kwargs.get('legend_loc', 'upper left')
+        self._legend_fontsize = kwargs.get('legend_fontsize', 18)
         
         self._stateVariable1 = process_sympy(stateVariable1)
         self._stateVariable2 = process_sympy(stateVariable2)
@@ -2048,10 +2070,59 @@ class MuMoTtimeEvolutionView(MuMoTview):
         if stateVariable4 != None:
             self._stateVariable4 = process_sympy(stateVariable4)
             
-        self._tend = tend
-        self._tstep = tstep
+        self._tend = kwargs.get('tend', 100)
+        self._tstep = kwargs.get('tstep', 0.01)
+        
+        self._initCondsSV = kwargs.get('initCondsSV', False)
+        
         if not(silent):
             self._plot_NumSolODE()
+
+
+
+
+# class MuMoTtimeEvolutionView(MuMoTview):
+#     ## 1st state variable
+#     _stateVariable1 = None
+#     ## 2nd state variable 
+#     _stateVariable2 = None
+#     ## 3rd state variable 
+#     _stateVariable3 = None
+#     ## 4th state variable 
+#     _stateVariable4 = None
+#     ## end time of numerical simulation
+#     _tend = None
+#     ## time step of numerical simulation
+#     _tstep = None
+#     
+#   
+#     def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, tend = 100, tstep = 0.01, figure = None, params = None, **kwargs):
+#         #if model._systemSize == None and model._constantSystemSize == True:
+#         #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
+#         #    return
+#         silent = kwargs.get('silent', False)
+#         super().__init__(model, controller, figure, params, **kwargs)
+#         
+#         if 'fontsize' in kwargs:
+#             self._chooseFontSize = kwargs['fontsize']
+#         else:
+#             self._chooseFontSize=None
+#         self._xlab = kwargs.get('xlab', r'time t')
+#         self._ylab = kwargs.get('ylab', r'evolution of states')
+#         
+#         self._legend_loc = kwargs.get('legend_loc', 'upper left')
+#         
+#         self._stateVariable1 = process_sympy(stateVariable1)
+#         self._stateVariable2 = process_sympy(stateVariable2)
+#         if stateVariable3 != None:
+#             self._stateVariable3 = process_sympy(stateVariable3)
+#         if stateVariable4 != None:
+#             self._stateVariable4 = process_sympy(stateVariable4)
+#             
+#         self._tend = tend
+#         self._tstep = tstep
+#         if not(silent):
+#             self._plot_NumSolODE()
 
         
     
@@ -2080,23 +2151,25 @@ class MuMoTtimeEvolutionView(MuMoTview):
             SVsub[self._stateVariable3] = y_old[2]
         if self._stateVariable4:
             SVsub[self._stateVariable4] = y_old[3]
-        #plotLimits = self._controller._getPlotLimits()
-        paramNames = []
-        paramValues = []
-        if self._controller is not None:
-            for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-#                 name = name.replace('(','')
-#                 name = name.replace(')','')
-                paramNames.append(name)
-                paramValues.append(value.value)
-        if self._paramNames is not None:
-            paramNames += map(str, self._paramNames)
-            paramValues += self._paramValues            
-        funcs = self._mumotModel._getFuncs()
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
-        argDict[self._mumotModel._systemSize] = 1
+#         #plotLimits = self._controller._getPlotLimits()
+#         paramNames = []
+#         paramValues = []
+#         if self._controller is not None:
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 # throw away formatting for constant reactants
+# #                 name = name.replace('(','')
+# #                 name = name.replace(')','')
+#                 paramNames.append(name)
+#                 paramValues.append(value.value)
+#         if self._paramNames is not None:
+#             paramNames += map(str, self._paramNames)
+#             paramValues += self._paramValues            
+#         funcs = self._mumotModel._getFuncs()
+#         argNamesSymb = list(map(Symbol, paramNames))
+#         argDict = dict(zip(argNamesSymb, paramValues))
+#         argDict[self._mumotModel._systemSize] = 1
+        
+        argDict = self._get_argDict()
         
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
         EQ1 = EQ1.subs(SVsub)
@@ -2114,9 +2187,108 @@ class MuMoTtimeEvolutionView(MuMoTview):
             
         return ode_sys
     
-    
+    def _plot_NumSolODE(self):
+        if not(self._silent): ## @todo is this necessary?
+            plt.figure(self._figureNum)
+            plt.clf()
+            self._resetErrorMessage()
+        self._showErrorMessage(str(self))
+        
+        
+    def _numericSol2ndOrdMoment(self, EOM_2ndOrdMomDict, steadyStateDict, argDict):
+        for sol in EOM_2ndOrdMomDict:
+            EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(steadyStateDict)
+            EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(argDict)
+        
+        eta_SV1 = Symbol('eta_'+str(self._stateVariable1))
+        eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
+        M_1, M_2 = symbols('M_1 M_2')
+        if self._stateVariable3:
+            eta_SV3 = Symbol('eta_'+str(self._stateVariable3))
             
-    ## calculates stationary states of 2d system
+        SOL_2ndOrdMomDict = {} 
+        EQsys2ndOrdMom = []
+        if self._stateVariable3:
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)])
+            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
+                                                             M_2(eta_SV2*eta_SV2), 
+                                                             M_2(eta_SV3*eta_SV3), 
+                                                             M_2(eta_SV1*eta_SV2), 
+                                                             M_2(eta_SV1*eta_SV3), 
+                                                             M_2(eta_SV2*eta_SV3)]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
+            
+            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
+            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
+            SOL_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)] = SOL_2ndOrderMom[2]
+            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[3]
+            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)] = SOL_2ndOrderMom[4]
+            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)] = SOL_2ndOrderMom[5]
+        
+        else:
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
+            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
+                                                             M_2(eta_SV2*eta_SV2), 
+                                                             M_2(eta_SV1*eta_SV2)]))[0] #only one set of solutions (if any) in linear system of equations
+            
+            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
+            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
+            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[2]
+            
+        return SOL_2ndOrdMomDict
+    
+    
+# class MuMoTtimeEvolutionView(MuMoTview):
+#     ## 1st state variable
+#     _stateVariable1 = None
+#     ## 2nd state variable 
+#     _stateVariable2 = None
+#     ## 3rd state variable 
+#     _stateVariable3 = None
+#     ## 4th state variable 
+#     _stateVariable4 = None
+#     ## end time of numerical simulation
+#     _tend = None
+#     ## time step of numerical simulation
+#     _tstep = None
+#     
+#   
+#     def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, tend = 100, tstep = 0.01, figure = None, params = None, **kwargs):
+#         #if model._systemSize == None and model._constantSystemSize == True:
+#         #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
+#         #    return
+#         silent = kwargs.get('silent', False)
+#         super().__init__(model, controller, figure, params, **kwargs)
+#         
+#         if 'fontsize' in kwargs:
+#             self._chooseFontSize = kwargs['fontsize']
+#         else:
+#             self._chooseFontSize=None
+#         self._xlab = kwargs.get('xlab', r'time t')
+#         self._ylab = kwargs.get('ylab', r'evolution of states')
+#         
+#         self._legend_loc = kwargs.get('legend_loc', 'upper left')
+#         
+#         self._stateVariable1 = process_sympy(stateVariable1)
+#         self._stateVariable2 = process_sympy(stateVariable2)
+#         if stateVariable3 != None:
+#             self._stateVariable3 = process_sympy(stateVariable3)
+#         if stateVariable4 != None:
+#             self._stateVariable4 = process_sympy(stateVariable4)
+#             
+#         self._tend = tend
+#         self._tstep = tstep
+#         if not(silent):
+#             self._plot_NumSolODE()           
+# 
+#  
+#    ## calculates stationary states of 2d system
 #     def _get_fixedPoints2d(self):
 #         #plotLimits = self._controller._getPlotLimits()
 #         paramNames = []
@@ -2197,15 +2369,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #             eigList.append(evSet)
 #         return realEQsol, eigList #returns two lists of dictionaries
 #     
-#     
-    def _plot_NumSolODE(self):
-        if not(self._silent): ## @todo is this necessary?
-            plt.figure(self._figureNum)
-            plt.clf()
-            self._resetErrorMessage()
-        self._showErrorMessage(str(self))
-#         
-#     
+#
 #     def _print_standalone_view_cmd(self):
 #         with io.capture_output() as log:
 #             print('Bookmark feature for standalone view not implemented for time-dependent soultion of ODE.')
@@ -2232,17 +2396,39 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #         self._logs.append(log)
         
 
+
 ## numerical solution of state variables plot view on model
 class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
+    ## y-label with default specific to this MuMoTtimeEvoStateVarView class (can be set via keyword)
+    _ylab = None
+    
     def __init__(self, *args, **kwargs):
+        self._ylab = kwargs.get('ylab', r'evolution of states')
         super().__init__(*args, **kwargs)
         self._generatingCommand = "mmt.MuMoTtimeEvoStateVarView"
+
     def _plot_NumSolODE(self):
         super()._plot_NumSolODE()
+        
+        # check input
+        if self._stateVariable1 not in self._mumotModel._reactants:
+            self._showErrorMessage('Warning:  '+str(self._stateVariable1)+'  is no reactant in the current model.')
+        if self._stateVariable2 not in self._mumotModel._reactants:
+            self._showErrorMessage('Warning:  '+str(self._stateVariable2)+'  is no reactant in the current model.')
+        if self._stateVariable3:
+            if self._stateVariable3 not in self._mumotModel._reactants:
+                self._showErrorMessage('Warning:  '+str(self._stateVariable3)+'  is no reactant in the current model.')
+        if self._stateVariable4:
+            if self._stateVariable4 not in self._mumotModel._reactants:
+                self._showErrorMessage('Warning:  '+str(self._stateVariable4)+'  is no reactant in the current model.')
+        
+        
         NrDP = int(self._tend/self._tstep) + 1
         time = np.linspace(0, self._tend, NrDP)
+        
         initDict = self._getInitCondsFromSlider()
-        assert (2 <= len(initDict) <= 4),"Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!"
+        if len(initDict) < 2 or len(initDict) > 4:
+            self._showErrorMessage("Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!")
 
         
         SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
@@ -2269,6 +2455,44 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
                            fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True)
 #        plt.set_aspect('equal') ## @todo
+
+
+# class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self._generatingCommand = "mmt.MuMoTtimeEvoStateVarView"
+#     def _plot_NumSolODE(self):
+#         super()._plot_NumSolODE()
+#         NrDP = int(self._tend/self._tstep) + 1
+#         time = np.linspace(0, self._tend, NrDP)
+#         initDict = self._getInitCondsFromSlider()
+#         assert (2 <= len(initDict) <= 4),"Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!"
+# 
+#         
+#         SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
+#         SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
+#         y0 = [SV1_0, SV2_0]
+#         if len(initDict) > 2:
+#             SV3_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable3))))]
+#             y0.append(SV3_0)
+#         if len(initDict) > 3:
+#             SV4_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable4))))]
+#             y0.append(SV4_0)
+#         
+#         sol_ODE = odeint(self._get_eqsODE, y0, time)  
+#           
+#         x_data = [time for kk in range(len(self._get_eqsODE(y0, time)))]
+#         y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
+#         
+#         c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
+#         if self._stateVariable3:
+#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable3)))+'$')
+#         if self._stateVariable4:
+#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
+#         
+#         _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
+#                            fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True)
+# #        plt.set_aspect('equal') ## @todo
 
 
         
