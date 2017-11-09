@@ -1,5 +1,3 @@
-pydstool
-graphviz
-antlr4-python3-runtime==4.5.3
-sympy>=1.1.1
-latex2sympy3==0.1.1
+-e git+https://github.com/willfurnass/latex2sympy@BUG_ensure_gen_pkg_installed#egg=latex2sympy
+
+-e .
