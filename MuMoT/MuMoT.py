@@ -422,12 +422,26 @@ class MuMoTmodel:
     def showNoiseStationarySol(self):
         SOL_1stOrderMom, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         print('Stationary solutions of first and second order moments of noise:')
-        for sol1 in SOL_1stOrderMom:
-            out = latex(sol1.subs(NoiseSubs1stOrder)) + latex(r'(t \to \infty)') + ":= " + latex(SOL_1stOrderMom[sol1].subs(NoiseSubs1stOrder))
-            display(Math(out))
-        for sol2 in SOL_2ndOrdMomDict:
-            out = latex(sol2.subs(NoiseSubs2ndOrder)) + latex(r'(t \to \infty)') + " := " + latex(SOL_2ndOrdMomDict[sol2].subs(NoiseSubs2ndOrder))
-            display(Math(out))     
+        if SOL_1stOrderMom == None:
+            print('Noise 1st-order moments could not be calculated analytically.')
+            return None
+        else:
+            for sol1 in SOL_1stOrderMom:
+                out = latex(sol1.subs(NoiseSubs1stOrder)) + latex(r'(t \to \infty)') + ":= " + latex(SOL_1stOrderMom[sol1].subs(NoiseSubs1stOrder))
+                display(Math(out))
+        if SOL_2ndOrdMomDict == None:
+            print('Noise 2nd-order moments could not be calculated analytically.')
+            return None
+        else:
+            for sol2 in SOL_2ndOrdMomDict:
+                out = latex(sol2.subs(NoiseSubs2ndOrder)) + latex(r'(t \to \infty)') + " := " + latex(SOL_2ndOrdMomDict[sol2].subs(NoiseSubs2ndOrder))
+                display(Math(out)) 
+#         for sol1 in SOL_1stOrderMom:
+#             out = latex(sol1.subs(NoiseSubs1stOrder)) + latex(r'(t \to \infty)') + ":= " + latex(SOL_1stOrderMom[sol1].subs(NoiseSubs1stOrder))
+#             display(Math(out))
+#         for sol2 in SOL_2ndOrdMomDict:
+#             out = latex(sol2.subs(NoiseSubs2ndOrder)) + latex(r'(t \to \infty)') + " := " + latex(SOL_2ndOrdMomDict[sol2].subs(NoiseSubs2ndOrder))
+#             display(Math(out))     
         
         
         
@@ -472,6 +486,30 @@ class MuMoTmodel:
             
             # construct view
             modelView = MuMoTtimeEvoStateVarView(self, viewController, stateVariable1, stateVariable2, stateVariable3, stateVariable4, params = params, **kwargs)
+                    
+            viewController.setView(modelView)
+            viewController._setReplotFunction(modelView._plot_NumSolODE)         
+            
+            return viewController
+        
+        except:
+            return None
+    
+    ## construct interactive time evolution plot for noise around fixed points         
+    def numSimNoiseCorrelations(self, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, params = None, **kwargs):
+        try:
+            kwargs['showInitSV'] = True
+            kwargs['showNoise'] = True
+            
+            EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+            #SOL_1stOrderMom, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+            
+            
+            # construct controller
+            viewController = self._controller(False, params = params, **kwargs)
+            
+            # construct view
+            modelView = MuMoTtimeEvoNoiseCorrView(self, viewController, EOM_1stOrderMom, EOM_2ndOrderMom, stateVariable1, stateVariable2, stateVariable3, stateVariable4, params = params, **kwargs)
                     
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_NumSolODE)         
@@ -802,6 +840,7 @@ class MuMoTmodel:
 #                 if reactant not in self._constantReactants:
 #                     paramNames.append(latex(Symbol('Phi^0_'+str(reactant))))
 #                     paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
+
         if kwargs.get('showInitSV', False) == True:
             initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
             initCondsSV = kwargs.get('initCondsSV', False)
@@ -811,7 +850,7 @@ class MuMoTmodel:
                     if initCondsSV != False:
                         # check input of initCondsSV
                         if str(reactant) not in initCondsSV:
-                            print('Warning: symbol for reactant  '+str(reactant)+' not in initCondsSV. Make sure to use the same symbols for the initial conditions as introduced when creating the model.')
+                            print('Warning: symbol for reactant  '+str(reactant)+'  not in initCondsSV. Make sure to use the same symbols for the initial conditions as introduced when creating the model.')
                         initialInitCondValue = initCondsSV[str(reactant)]
                     else:
                         initialInitCondValue = INITIAL_COND_INIT_VAL   
@@ -1640,54 +1679,48 @@ class MuMoTview:
         #funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
-        for key in argDict:
-            if key in self._mumotModel._constantReactants:
-                argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
+        #for key in argDict:
+        #    if key in self._mumotModel._constantReactants:
+        #        argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
                 
-        argDict[systemSize] = self._getSystemSize()
-        
+        if self._mumotModel._systemSize:
+            argDict[self._mumotModel._systemSize] = self._getSystemSize()
+        else:
+            argDict[systemSize] = self._getSystemSize()
         return argDict
 
 
     def _get_fixedPoints2d(self):
-        #plotLimits = self._controller._getPlotLimits()
-        paramNames = []
-        paramValues = []
-        if self._controller is not None:
-            for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-#                 name = name.replace('(','')
-#                 name = name.replace(')','')
-                paramNames.append(name)
-                paramValues.append(value.value)
-        if self._paramNames is not None:
-            paramNames += map(str, self._paramNames)
-            paramValues += self._paramValues            
-        funcs = self._mumotModel._getFuncs()
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
-        argDict[self._mumotModel._systemSize] = 1
-       
-#         if self._controller != None:
-#             paramNames = []
-#             paramValues = []
+#         #plotLimits = self._controller._getPlotLimits()
+#         paramNames = []
+#         paramValues = []
+#         if self._controller is not None:
 #             for name, value in self._controller._widgetsFreeParams.items():
+#                 # throw away formatting for constant reactants
+# #                 name = name.replace('(','')
+# #                 name = name.replace(')','')
 #                 paramNames.append(name)
-#                 paramValues.append(value.value)          
-#         else:
-#             paramNames = map(str, self._paramNames)
-#             paramValues = self._paramValues           
-#             
+#                 paramValues.append(value.value)
+#         if self._paramNames is not None:
+#             paramNames += map(str, self._paramNames)
+#             paramValues += self._paramValues            
+#         funcs = self._mumotModel._getFuncs()
 #         argNamesSymb = list(map(Symbol, paramNames))
 #         argDict = dict(zip(argNamesSymb, paramValues))
 #         argDict[self._mumotModel._systemSize] = 1
-        
+       
+        argDict = self._get_argDict()
+                
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
         eps=1e-8
         EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
-        #for kk in range(len(EQsol)):
-        #    print(EQsol[kk])
+        
+        for nn in range(len(EQsol)):
+            if len(EQsol[nn]) != 2:
+                self._showErrorMessage('Some or all solutions are NOT unique.')
+                return None, None
+        
         realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
         
         MAT = Matrix([EQ1, EQ2])
@@ -1710,43 +1743,37 @@ class MuMoTview:
     
     ## calculates stationary states of 3d system
     def _get_fixedPoints3d(self):
-        #plotLimits = self._controller._getPlotLimits()
-        paramNames = []
-        paramValues = []
-        if self._controller is not None:
-            for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-#                 name = name.replace('(','')
-#                 name = name.replace(')','')
-                paramNames.append(name)
-                paramValues.append(value.value)
-        if self._paramNames is not None:
-            paramNames += map(str, self._paramNames)
-            paramValues += self._paramValues            
-        funcs = self._mumotModel._getFuncs()
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
-        argDict[self._mumotModel._systemSize] = 1
-        
-#         if self._controller != None:
-#             paramNames = []
-#             paramValues = []
+#         #plotLimits = self._controller._getPlotLimits()
+#         paramNames = []
+#         paramValues = []
+#         if self._controller is not None:
 #             for name, value in self._controller._widgetsFreeParams.items():
+#                 # throw away formatting for constant reactants
+# #                 name = name.replace('(','')
+# #                 name = name.replace(')','')
 #                 paramNames.append(name)
-#                 paramValues.append(value.value)          
-#         else:
-#             paramNames = map(str, self._paramNames)
-#             paramValues = self._paramValues           
-#             
+#                 paramValues.append(value.value)
+#         if self._paramNames is not None:
+#             paramNames += map(str, self._paramNames)
+#             paramValues += self._paramValues            
+#         funcs = self._mumotModel._getFuncs()
 #         argNamesSymb = list(map(Symbol, paramNames))
 #         argDict = dict(zip(argNamesSymb, paramValues))
 #         argDict[self._mumotModel._systemSize] = 1
+        
+        argDict = self._get_argDict()
         
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
         EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
         eps=1e-8
         EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
+        
+        for nn in range(len(EQsol)):
+            if len(EQsol[nn]) != 3:
+                self._showErrorMessage('Some or all solutions are NOT unique.')
+                return None, None
+        
         realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps and Abs(im(EQsol[kk][self._stateVariable3]))<=eps)]
         
         MAT = Matrix([EQ1, EQ2, EQ3])
@@ -1765,6 +1792,7 @@ class MuMoTview:
             for kk in range(len(eigVects)):
                 evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
             eigList.append(evSet)
+            
         return realEQsol, eigList #returns two lists of dictionaries
     
 
@@ -2123,8 +2151,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #         self._tstep = tstep
 #         if not(silent):
 #             self._plot_NumSolODE()
-
-        
+      
     
     def _getInitCondsFromSlider(self):
         #if self._controller != None:
@@ -2142,6 +2169,8 @@ class MuMoTtimeEvolutionView(MuMoTview):
         
         return argDict
     
+    
+
     ## calculates right-hand side of ODE system
     def _get_eqsODE(self, y_old, time):
         SVsub = {}
@@ -2164,10 +2193,10 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #         if self._paramNames is not None:
 #             paramNames += map(str, self._paramNames)
 #             paramValues += self._paramValues            
-#         funcs = self._mumotModel._getFuncs()
+#         #funcs = self._mumotModel._getFuncs()
 #         argNamesSymb = list(map(Symbol, paramNames))
 #         argDict = dict(zip(argNamesSymb, paramValues))
-#         argDict[self._mumotModel._systemSize] = 1
+# #         argDict[self._mumotModel._systemSize] = 1
         
         argDict = self._get_argDict()
         
@@ -2184,7 +2213,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
             EQ4 = self._mumotModel._equations[self._stateVariable4].subs(argDict)
             EQ4 = EQ4.subs(SVsub)
             ode_sys.append(EQ4)
-            
+               
         return ode_sys
     
     def _plot_NumSolODE(self):
@@ -2453,7 +2482,8 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
         
         _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
-                           fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True)
+                           fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
+                           legend_fontsize=self._legend_fontsize)
 #        plt.set_aspect('equal') ## @todo
 
 
@@ -2494,7 +2524,237 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
 #                            fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True)
 # #        plt.set_aspect('equal') ## @todo
 
+class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
+    ## equations of motion for first order moments of noise variables
+    _EOM_1stOrdMomDict = None
+    ## equations of motion for second order moments of noise variables
+    _EOM_2ndOrdMomDict = None
+    ## upper bound of simulation time for noise-noise correlation functions (can be set via keyword)
+    _tendNoise = None
+    ## time step of simulation for noise-noise correlation functions (can be set via keyword)
+    _tstepNoise = None
+    ## y-label with default specific to this MuMoTtimeEvoNoiseCorrView class (can be set via keyword)
+    _ylab = None
 
+    def __init__(self, model, controller, EOM_1stOrdMom, EOM_2ndOrdMom, stateVariable1, stateVariable2, stateVariable3=None, stateVariable4=None, figure = None, params = None, **kwargs):
+        self._EOM_1stOrdMomDict = EOM_1stOrdMom
+        self._EOM_2ndOrdMomDict = EOM_2ndOrdMom
+        self._tendNoise = kwargs.get('tendNoise', 50)
+        self._tstepNoise= kwargs.get('tstepNoise', 0.01)
+        self._ylab = kwargs.get('ylab', 'noise-noise correlation')
+        silent = kwargs.get('silent', False)
+        super().__init__(model, controller, stateVariable1, stateVariable2, stateVariable3, stateVariable4, figure, params, **kwargs)
+        #super().__init__(*args, **kwargs)
+        self._generatingCommand = "mmt.MuMoTtimeEvoNoiseCorrView"
+        
+    def _plot_NumSolODE(self):
+        super()._plot_NumSolODE()
+        
+        # check input
+        if self._stateVariable1 not in self._mumotModel._reactants:
+            self._showErrorMessage('Warning:  '+str(self._stateVariable1)+'  is no reactant in the current model.')
+        if self._stateVariable2 not in self._mumotModel._reactants:
+            self._showErrorMessage('Warning:  '+str(self._stateVariable2)+'  is no reactant in the current model.')
+        if self._stateVariable3:
+            if self._stateVariable3 not in self._mumotModel._reactants:
+                self._showErrorMessage('Warning:  '+str(self._stateVariable3)+'  is no reactant in the current model.')
+        if self._stateVariable4:
+            if self._stateVariable4 not in self._mumotModel._reactants:
+                self._showErrorMessage('Warning:  '+str(self._stateVariable4)+'  is no reactant in the current model.')
+
+        eps = 5e-3
+        systemSize = Symbol('systemSize')
+        
+        NrDP = int(self._tend/self._tstep) + 1
+        time = np.linspace(0, self._tend, NrDP)
+        
+        initDict = self._getInitCondsFromSlider()
+        
+        if len(initDict) < 2 or len(initDict) > 3:
+            self._showErrorMessage("Not implemented: This feature is available only for systems with 2 or 3 time-dependent reactants!")
+            return
+        
+        SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
+        SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
+        y0 = [SV1_0, SV2_0]
+        if self._stateVariable3:
+            SV3_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable3))))]
+            y0.append(SV3_0)
+            
+        sol_ODE = odeint(self._get_eqsODE, y0, time)
+        
+        if self._stateVariable3:
+            realEQsol, eigList = self._get_fixedPoints3d()
+        else:
+            realEQsol, eigList = self._get_fixedPoints2d()
+   
+        y_stationary = [sol_ODE[-1, kk] for kk in range(len(y0))]
+        
+        if realEQsol != [] and realEQsol != None:
+            steadyStateReached = False
+            for kk in range(len(realEQsol)):
+                if self._stateVariable3:
+                    if abs(realEQsol[kk][self._stateVariable1] - y_stationary[0]) <= eps and abs(realEQsol[kk][self._stateVariable2] - y_stationary[1]) <= eps and abs(realEQsol[kk][self._stateVariable3] - y_stationary[2]) <= eps:
+                        if all(sign(re(lam)) < 0 for lam in eigList[kk]) == True:
+                            steadyStateReached = True
+                            steadyStateDict = {self._stateVariable1: realEQsol[kk][self._stateVariable1], self._stateVariable2: realEQsol[kk][self._stateVariable2], self._stateVariable3: realEQsol[kk][self._stateVariable3]}
+    
+                else:
+                    if abs(realEQsol[kk][self._stateVariable1] - y_stationary[0]) <= eps and abs(realEQsol[kk][self._stateVariable2] - y_stationary[1]) <= eps:
+                        if all(sign(re(lam)) < 0 for lam in eigList[kk]) == True:
+                            steadyStateReached = True
+                            steadyStateDict = {self._stateVariable1: realEQsol[kk][self._stateVariable1], self._stateVariable2: realEQsol[kk][self._stateVariable2]}
+            
+            if steadyStateReached == False:
+                self._showErrorMessage('Stable steady state has not been reached: Try changing the initial conditions or model parameters using the sliders provided, increase simulation time, or decrease timestep tstep.') 
+                return
+        else:
+            steadyStateReached = 'uncertain'
+            self._showErrorMessage('Warning: steady state may have not been reached. Substituted values of state variables at t=tend (tend can be set via keyword \'tend = >number<\').')
+            if self._stateVariable3:
+                steadyStateDict = {self._stateVariable1: y_stationary[0], self._stateVariable2: y_stationary[1], self._stateVariable3: y_stationary[2]}
+            else:
+                steadyStateDict = {self._stateVariable1: y_stationary[0], self._stateVariable2: y_stationary[1]}    
+        
+        with io.capture_output() as log:
+            if steadyStateReached == 'uncertain':
+                print('This plot depicts the noise-noise auto-correlation and cross-correlation functions around the following state (this might NOT be a steady state).')  
+            else:  
+                print('This plot depicts the noise-noise auto-correlation and cross-correlation functions around the following stable steady state:')
+            for reactant in steadyStateDict:
+                out = latex(Symbol('Phi^s_'+str(reactant))) + '=' + latex(steadyStateDict[reactant])
+                display(Math(out))
+        self._logs.append(log)
+        
+        argDict = self._get_argDict()
+        for key in argDict:
+            if key in self._mumotModel._constantReactants:
+                argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
+        for key in steadyStateDict:
+            if key in self._mumotModel._reactants:
+                steadyStateDict[Symbol('Phi_'+str(key))] = steadyStateDict.pop(key)
+        
+        EOM_1stOrdMomDict = copy.deepcopy(self._EOM_1stOrdMomDict)
+        for sol in EOM_1stOrdMomDict:
+            EOM_1stOrdMomDict[sol] = EOM_1stOrdMomDict[sol].subs(steadyStateDict)
+            EOM_1stOrdMomDict[sol] = EOM_1stOrdMomDict[sol].subs(argDict)
+        
+        EOM_2ndOrdMomDict = copy.deepcopy(self._EOM_2ndOrdMomDict)
+        
+        SOL_2ndOrdMomDict = self._numericSol2ndOrdMoment(EOM_2ndOrdMomDict, steadyStateDict, argDict)
+        
+        time_depend_noise=[]
+        for reactant in self._mumotModel._reactants:
+            if reactant not in self._mumotModel._constantReactants:
+                time_depend_noise.append(Symbol('eta_'+str(reactant)))
+        
+        noiseCorrEOM = []
+        noiseCorrEOMdict = {}
+        for sym in time_depend_noise:
+            for key in EOM_1stOrdMomDict:
+                noiseCorrEOMdict[sym*key] = expand(sym*EOM_1stOrdMomDict[key])
+        
+        eta_SV1 = Symbol('eta_'+str(self._stateVariable1))
+        eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
+        M_1, M_2 = symbols('M_1 M_2')
+        cVar1, cVar2, cVar3, cVar4 = symbols('cVar1 cVar2 cVar3 cVar4')
+        if self._stateVariable3:
+            eta_SV3 = Symbol('eta_'+str(self._stateVariable3))
+            cVar5, cVar6, cVar7, cVar8, cVar9 = symbols('cVar5 cVar6 cVar7 cVar8 cVar9')
+        
+        cVarSubdict = {}    
+        if len(time_depend_noise) == 2:
+            cVarSubdict[eta_SV1*M_1(eta_SV1)] = cVar1
+            cVarSubdict[eta_SV2*M_1(eta_SV2)] = cVar2
+            cVarSubdict[eta_SV1*M_1(eta_SV2)] = cVar3
+            cVarSubdict[eta_SV2*M_1(eta_SV1)] = cVar4
+            #auto-correlation
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV1*M_1(eta_SV1)])
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV2*M_1(eta_SV2)])
+            # cross-correlation
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV1*M_1(eta_SV2)])
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV2*M_1(eta_SV1)])
+        elif len(time_depend_noise) == 3:
+            cVarSubdict[eta_SV1*M_1(eta_SV1)] = cVar1
+            cVarSubdict[eta_SV2*M_1(eta_SV2)] = cVar2
+            cVarSubdict[eta_SV3*M_1(eta_SV3)] = cVar3
+            cVarSubdict[eta_SV1*M_1(eta_SV2)] = cVar4
+            cVarSubdict[eta_SV2*M_1(eta_SV1)] = cVar5
+            cVarSubdict[eta_SV1*M_1(eta_SV3)] = cVar6
+            cVarSubdict[eta_SV3*M_1(eta_SV1)] = cVar7
+            cVarSubdict[eta_SV2*M_1(eta_SV3)] = cVar8
+            cVarSubdict[eta_SV3*M_1(eta_SV2)] = cVar9
+            #auto-correlation
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV1*M_1(eta_SV1)])
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV2*M_1(eta_SV2)])
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV3*M_1(eta_SV3)])
+            # cross-correlation
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV1*M_1(eta_SV2)])
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV2*M_1(eta_SV1)])
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV1*M_1(eta_SV3)])
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV3*M_1(eta_SV1)])
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV2*M_1(eta_SV3)])
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV3*M_1(eta_SV2)])
+        else:
+            self._showErrorMessage('Only implemented for 2 or 3 time-dependent noise variables.')
+         
+        for kk in range(len(noiseCorrEOM)):
+            noiseCorrEOM[kk] = noiseCorrEOM[kk].subs(cVarSubdict)
+        
+        def noiseODEsys(yin, t):
+            dydt = copy.deepcopy(noiseCorrEOM)
+            for kk in range(len(dydt)):
+                if self._stateVariable3:
+                    dydt[kk] = dydt[kk].subs({cVar1: yin[0], cVar2: yin[1], cVar3: yin[2], cVar4: yin[3],
+                                              cVar5: yin[4], cVar6: yin[5], cVar7: yin[6], cVar8: yin[7], cVar9: yin[8]})
+                else:
+                    dydt[kk] = dydt[kk].subs({cVar1: yin[0], cVar2: yin[1], cVar3: yin[2], cVar4: yin[3]})
+                dydt[kk] = dydt[kk].evalf()
+            return dydt
+        
+        NrDP = int(self._tendNoise/self._tstepNoise) + 1
+        time = np.linspace(0, self._tendNoise, NrDP)
+        if self._stateVariable3:
+            y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)], SOL_2ndOrdMomDict[M_2(eta_SV2**2)], SOL_2ndOrdMomDict[M_2(eta_SV3**2)], 
+                  SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)],
+                  SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)],
+                  SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)], SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)]]
+        else:
+            y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)], SOL_2ndOrdMomDict[M_2(eta_SV2**2)], 
+                  SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)]]
+        sol_ODE = odeint(noiseODEsys, y0, time) # sol_ODE overwritten
+        
+        x_data = [time for kk in range(len(y0))]  
+        y_data = [sol_ODE[:, kk] for kk in range(len(y0))]
+        noiseNorm = systemSize.subs(argDict)
+        noiseNorm = N(noiseNorm)
+        for nn in range(len(y_data)):
+            y_temp=np.copy(y_data[nn])
+            for kk in range(len(y_temp)):
+                y_temp[kk] = y_temp[kk]/noiseNorm
+            y_data[nn] = y_temp
+            
+        if self._stateVariable3:
+            c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
+                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV2)+'(0)'+ '>$',
+                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV3)+'(0)'+ '>$', 
+                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
+                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV2)+'(0)'+ '>$',
+                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
+                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV3)+'(0)'+ '>$',
+                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV2)+'(0)'+ '>$', 
+                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV3)+'(0)'+ '>$']
+            
+        else:
+            c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
+                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV2)+'(0)'+ '>$', 
+                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
+                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV2)+'(0)'+ '>$']
+       
+        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
+                           fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True, 
+                           legend_fontsize=self._legend_fontsize)
+#        plt.set_aspect('equal') ## @todo
         
 
 ## field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
@@ -2841,6 +3101,9 @@ class MuMoTnoiseView(MuMoTfieldView):
         realEQsol, eigList = self._get_fixedPoints2d()
         systemSize = Symbol('systemSize')
         argDict = self._get_argDict()
+        for key in argDict:
+            if key in self._mumotModel._constantReactants:
+                argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
         
         PhiSubList = []
         for kk in range(len(realEQsol)):
@@ -5112,17 +5375,25 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
     else:
         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]]),M_1(NoiseDict[nvec[2]]),M_1(NoiseDict[nvec[3]])], dict=True)
     
+    if len(SOL_1stOrderMom[0]) != len(NoiseDict):
+        print('Solution for 1st order noise moments NOT unique!')
+        return None, None, None, None
                     
     SOL_2ndOrdMomDict = {} 
     if len(NoiseDict)==2:
-        SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])]))[0] #only one set of solutions (if any) in linear system of equations
+        SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), 
+                                                         M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), 
+                                                         M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])]))[0] #only one set of solutions (if any) in linear system of equations
         
         if M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]) in SOL_2ndOrderMom:
-            ZsubDict = {M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]): 0}
-            SOL_2ndOrderMomMod = []
-            for nn in range(len(SOL_2ndOrderMom)):
-                SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
-            SOL_2ndOrderMom = SOL_2ndOrderMomMod
+            print('Solution for 2nd order noise moments NOT unique!')
+            return None, None, None, None
+        
+#             ZsubDict = {M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]): 0}
+#             SOL_2ndOrderMomMod = []
+#             for nn in range(len(SOL_2ndOrderMom)):
+#                 SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
+#             SOL_2ndOrderMom = SOL_2ndOrderMomMod
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[1]
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[2]
@@ -5134,16 +5405,18 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
                                                          M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]), 
                                                          M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]]), 
                                                          M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]])]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
-        ZsubDict = {}
+#         ZsubDict = {}
         for noise1 in NoiseDict:
             for noise2 in NoiseDict:
                 if M_2(NoiseDict[noise1]*NoiseDict[noise2]) in SOL_2ndOrderMom:
-                    ZsubDict[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = 0
-        if len(ZsubDict) > 0:
-            SOL_2ndOrderMomMod = []
-            for nn in range(len(SOL_2ndOrderMom)):
-                SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
-        SOL_2ndOrderMom = SOL_2ndOrderMomMod
+                    print('Solution for 2nd order noise moments NOT unique!')
+                    return None, None, None, None
+#                     ZsubDict[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = 0
+#         if len(ZsubDict) > 0:
+#             SOL_2ndOrderMomMod = []
+#             for nn in range(len(SOL_2ndOrderMom)):
+#                 SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
+#         SOL_2ndOrderMom = SOL_2ndOrderMomMod
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[1]
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[2]
@@ -5162,16 +5435,18 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
                                                          M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]]),
                                                          M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[3]]),
                                                          M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[3]])]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
-        ZsubDict = {}
+#         ZsubDict = {}
         for noise1 in NoiseDict:
             for noise2 in NoiseDict:
                 if M_2(NoiseDict[noise1]*NoiseDict[noise2]) in SOL_2ndOrderMom:
-                    ZsubDict[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = 0
-        if len(ZsubDict) > 0:
-            SOL_2ndOrderMomMod = []
-            for nn in range(len(SOL_2ndOrderMom)):
-                SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
-        SOL_2ndOrderMom = SOL_2ndOrderMomMod
+                    print('Solution for 2nd order noise moments NOT unique!')
+                    return None, None, None, None
+#                     ZsubDict[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = 0
+#         if len(ZsubDict) > 0:
+#             SOL_2ndOrderMomMod = []
+#             for nn in range(len(SOL_2ndOrderMom)):
+#                 SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
+#         SOL_2ndOrderMom = SOL_2ndOrderMomMod
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[1]
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[2]
@@ -6074,8 +6349,9 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         #    legend_loc = kwargs['legend_loc']
         #else:
         #    legend_loc = 'upper left'
+        legend_fontsize = kwargs.get('legend_fontsize', 20)
         legend_loc = kwargs.get('legend_loc', 'upper left')
-        plt.legend(loc=str(legend_loc), fontsize=20, ncol=2)
+        plt.legend(loc=str(legend_loc), fontsize=legend_fontsize, ncol=2)
         
     for tick in ax.xaxis.get_major_ticks():
                     tick.label.set_fontsize(18) 
