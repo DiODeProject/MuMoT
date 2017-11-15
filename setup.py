@@ -14,6 +14,8 @@ setup(name='MuMoT',
       package_dir={'': '.'},
       python_requires='>=3',
       license='GPL-3.0',
+      # Use patched latex2sympy whilst waiting for https://github.com/jackatbancast/latex2sympy/pull/1 to be merged
+      dependency_links=['https://github.com/willfurnass/latex2sympy/tarball/BUG_ensure_gen_pkg_installed#egg=latex2sympy-0.0.1-patched'],
       install_requires=[
           'graphviz',
           'ipython',
@@ -23,5 +25,6 @@ setup(name='MuMoT',
           'pydstool',
           'scipy<1.0.0',
           'sympy>=1.1.1',
+          'latex2sympy==0.0.1-patched',
           ],
       )

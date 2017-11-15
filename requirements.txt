@@ -1,3 +1,0 @@
--e git+https://github.com/willfurnass/latex2sympy@BUG_ensure_gen_pkg_installed#egg=latex2sympy
-
--e .
