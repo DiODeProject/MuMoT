@@ -34,6 +34,7 @@ import ipywidgets.widgets as widgets
 import matplotlib.cm as cm
 import matplotlib.patches as mpatch
 import matplotlib.ticker as ticker
+from mpl_toolkits.mplot3d import Axes3D
 import networkx as nx  # @UnresolvedImport
 import numpy as np
 import PyDSTool as dst
