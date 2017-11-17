@@ -4698,9 +4698,13 @@ class MuMoTSSAView(MuMoTview):
         if self._controller != None:
             # getting the rates
             ## @todo moving it to general method?
+            freeParamDict = {}
+            for name, value in self._controller._widgetsFreeParams.items():
+                freeParamDict[ Symbol(name) ] = value.value
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
-                self._ratesDict[str(rule.rate)] = self._controller._widgetsFreeParams[str(rule.rate)].value
+                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
+
             # getting other parameters specific to SSA
             for state in self._initialState.keys():
                 self._initialState[state] = self._controller._widgetsExtraParams['init'+str(state)].value
