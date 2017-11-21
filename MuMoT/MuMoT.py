@@ -63,6 +63,7 @@ INITIAL_RATE_VALUE = 0.5
 RATE_BOUND = 10.0
 RATE_STEP = 0.1
 MULTIPLOT_COLUMNS = 2
+EMPTYSET_SYMBOL = process_sympy('1')
 
 INITIAL_COND_INIT_VAL = 0.0
 INITIAL_COND_INIT_BOUND = 1.0
@@ -666,7 +667,7 @@ class MuMoTmodel:
         if initialState=="Auto":
             first = True
             initialState = {}
-            for reactant in self._reactants:
+            for reactant in self._reactants|self._constantReactants:
                 if first:
 #                     print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
                     initialState[reactant] = MuMoTdefault._agents
@@ -4037,6 +4038,7 @@ class MuMoTmultiagentView(MuMoTview):
     _agents = None
     ## list of agents' positions
     _positions = None
+    _positionHistory = None
     ## Arena size: width
     _arena_width = 1
     ## Arena size: height
@@ -4175,13 +4177,13 @@ class MuMoTmultiagentView(MuMoTview):
             # init the network
             self._initGraph(graphType=self._netType, numNodes=sum(self._initialState.values()), netParam=self._netParam)
             
-            self._convertRatesIntoProbabilities(self._mumotModel._reactants, self._mumotModel._rules)
+            self._convertRatesIntoProbabilities()
 
             # Clearing the plot and setting the axes
             self._initFigure()
             
             self._latestResults = self._runMultiagent()
-            print("Temporal evolution per state: " + str(self._latestResults[0]))
+#             print("Temporal evolution per state: " + str(self._latestResults[0]))
             
             ## Final Plot
             if not self._realtimePlot:
@@ -4208,11 +4210,11 @@ class MuMoTmultiagentView(MuMoTview):
             
         dynamicNetwork = self._netType == NetworkType.DYNAMIC
         if dynamicNetwork:
-            positionHistory = []
+            self._positionHistory = []
             for _ in np.arange(sum(self._initialState.values())):
-                positionHistory.append( [] )
+                self._positionHistory.append( [] )
         else:
-            positionHistory = None
+            self._positionHistory = None
             
         # init progress bar
         if self._controller != None: self._controller._progressBar.max = self._maxTime
@@ -4229,7 +4231,7 @@ class MuMoTmultiagentView(MuMoTview):
             if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(i/self._maxTime*100)) + "%:"
             if dynamicNetwork: # and self._showTrace:
                 for idx, _ in enumerate(self._agents): # second element _ is the agent (unused)
-                    positionHistory[idx].append( self._positions[idx] )
+                    self._positionHistory[idx].append( self._positions[idx] )
             
             currentState = self._stepMultiagent()
                     
@@ -4239,12 +4241,12 @@ class MuMoTmultiagentView(MuMoTview):
             
             ## Plotting
             if self._realtimePlot:
-                self._updateMultiagentFigure(i, evo, positionHistory=positionHistory, pos_layout=pos_layout)
+                self._updateMultiagentFigure(i, evo, positionHistory=self._positionHistory, pos_layout=pos_layout)
 
                 
         if self._controller != None: self._controller._progressBar.description = "Completed 100%:"
 #         print("State distribution each timestep: " + str(historyState))
-        return (evo, positionHistory, pos_layout)
+        return (evo, self._positionHistory, pos_layout)
         
     def _initFigure(self):
         if not self._silent:
@@ -4394,82 +4396,135 @@ class MuMoTmultiagentView(MuMoTview):
 #         print("Temporal evolution per state: " + str(evo))
         return (historyState,evo) 
     
-    def _convertRatesIntoProbabilities(self, reactants, rules):
-        self._initProbabilitiesMap(reactants, rules)
+    def _convertRatesIntoProbabilities(self):
+        self._initProbabilitiesMap()
         #print(self._probabilities)
         self._computeScalingFactor()
         self._applyScalingFactor()
         #print(self._probabilities)
     
     ## derive the transition probabilities map from reaction rules
-    def _initProbabilitiesMap(self, reactants, rules):
+    def _initProbabilitiesMap(self):
         self._probabilities = {}
-        assignedDestReactants = {}
-        for reactant in reactants:
+        for reactant in self._mumotModel._reactants | self._mumotModel._constantReactants | {EMPTYSET_SYMBOL} :
             probSets = {}
             probSets['void'] = []
-            for rule in rules:
-                if not len(rule.lhsReactants) == len(rule.rhsReactants):
-                    print('Raction with varying number of reactacts is not currently supported in multiagent/SSA simulations.' +
-                          ' Please, keep the same number of reactants on the left and right handside of each reaction rule.')
-                    return 1
-                for react in rule.lhsReactants:
+            for rule in self._mumotModel._rules:
+                # replacing the constantReactants in the right-handside with EMPTYSET_SYMBOL
+                #rhsReactants = [x if not x in self._mumotModel._constantReactants else EMPTYSET_SYMBOL for x in rule.rhsReactants]
+                # check on number of reactants
+                if len(rule.lhsReactants) > 2 or len(rule.rhsReactants) > 2:
+                    errorMsg = 'Reactions with more than 2 reactacts are not currently supported in multiagent simulations, please use at max two reagents per reaction rule.'
+                    print(errorMsg)
+                    raise ValueError(errorMsg)
+                # check on double change reaction
+                if len(rule.lhsReactants) == 2 and rule.lhsReactants[0] != rule.rhsReactants[0] and rule.lhsReactants[1] != rule.rhsReactants[1]:
+                    # accepted only if one of source is EMPTYSET or a constantReactant
+                    if not (EMPTYSET_SYMBOL in rule.lhsReactants or rule.lhsReactants[0] in self._mumotModel._constantReactants or rule.lhsReactants[1] in self._mumotModel._constantReactants):
+                        errorMsg = 'In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' both reagents change state. This type of rules are currently not supported. Sorry'
+                        print(errorMsg)
+                        raise ValueError(errorMsg)
+                
+#                 constantReactantsIssue = False
+#                 if len(rule.lhsReactants) == 1 and rule.rhsReactants[0] in self._mumotModel._constantReactants:
+#                     constantReactantsIssue = True
+#                 if len(rule.lhsReactants) == 2:
+#                     if rule.lhsReactants[0] in self._mumotModel._constantReactants and not (rule.lhsReactants[0] == rule.rhsReactants[0] or EMPTYSET_SYMBOL in rule.rhsReactants):
+#                         constantReactantsIssue = True
+#                     if rule.lhsReactants[1] in self._mumotModel._constantReactants and not (rule.lhsReactants[1] == rule.rhsReactants[1] or EMPTYSET_SYMBOL in rule.rhsReactants):
+#                         constantReactantsIssue = True
+#                 if constantReactantsIssue:
+                if rule.rhsReactants[0] in self._mumotModel._constantReactants or (len(rule.rhsReactants) == 2 and rule.rhsReactants[1] in self._mumotModel._constantReactants):
+                    errorMsg = 'In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' constant reactant are not properly used.' \
+                                'Constant reactants cannot appear on the right-handside of a rule. Replace the constant reactant on the right-handside with the EMPTYSET.'
+                    print(errorMsg)
+                    raise ValueError(errorMsg)
+                if len(rule.rhsReactants) == 2 and (rule.rhsReactants[0] in self._mumotModel._constantReactants or rule.rhsReactants[1] in self._mumotModel._constantReactants) and (not EMPTYSET_SYMBOL in rule.rhsReactants):
+                    errorMsg = 'Costant reactants on left-handside should match EMPTYSETs on the right-handside. In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ', this is violated.'
+                    print(errorMsg)
+                    raise ValueError(errorMsg)
+#                 print( "Analysing rule" + str(rule) + " which has lhr: " + str(rule.lhsReactants )+ " and rhr: " + str(rule.rhsReactants) )
+                for idx, react in enumerate(rule.lhsReactants):
                     if react == reactant:
                         numReagents = len(rule.lhsReactants)
                         # if individual transition (i.e. no interaction needed)
                         if numReagents == 1:
-                            probSets['void'].append( [rule.rate, self._ratesDict[str(rule.rate)], rule.rhsReactants[0]] )
+                            if reactant in self._mumotModel._constantReactants:
+                                if probSets.get('splitting') == None:
+                                    probSets['splitting'] = []
+                                probSets['splitting'].append( [rule.rate, self._ratesDict[str(rule.rate)], [reactant, rule.rhsReactants[0]] ] )
+                            else:
+                                probSets['void'].append( [rule.rate, self._ratesDict[str(rule.rate)], rule.rhsReactants[0]] )
                         
                         # if interaction transition
                         elif numReagents == 2:
-                            # checking if the considered reactant is active or passive in the interaction (i.e. change state afterwards)
-                            if reactant not in rule.rhsReactants: # add entry only if the reactant is passive (i.e. change state afterwards)
-                                # determining the otherReactant, which is NOT the considered one
-                                if rule.lhsReactants[0] == reactant:
-                                    otherReact = rule.lhsReactants[1]
+                            # if the reactant is the EMPTYSET_SYMBOL, I throw exception for 'double-births' or I 'continue' next loop
+                            if react == EMPTYSET_SYMBOL:
+                                if rule.lhsReactants[0] == EMPTYSET_SYMBOL and rule.lhsReactants[1] == EMPTYSET_SYMBOL:
+                                    #births.append( [rule.rate, self._ratesDict[str(rule.rate)], [rhsReactants[0], rhsReactants[1]] ] )
+                                    errorMsg = 'Double birth ' + str(rule.rhsReactants) + ' currently not supported. Sorry'
+                                    print(errorMsg)
+                                    raise ValueError(errorMsg)
                                 else:
-                                    otherReact = rule.lhsReactants[0]
-                                # determining the destReactant
-                                if rule.rhsReactants[0] in assignedDestReactants.get(rule, []) or rule.rhsReactants[0] == otherReact :
-                                    destReact = rule.rhsReactants[1]
-                                else:
-                                    destReact = rule.rhsReactants[0]
-                                # this is necessary to keep track of the assigned reactant when both reactants change on the right-handside
-                                if assignedDestReactants.get(rule) == None:
-                                    assignedDestReactants[rule] = []
-                                assignedDestReactants[rule].append(destReact)
+                                    continue # this case is handled through splitting by the other reagent
                                 
+                            # determining the otherReactant, which is NOT the considered one
+                            if idx == 0:
+                                otherReact = rule.lhsReactants[1]
+                            else:
+                                otherReact = rule.lhsReactants[0]
+                            
+                            # treating in a special way the splitting (i.e., the other reagent is EMPTY)
+                            if otherReact == EMPTYSET_SYMBOL:
+                                # add the reaction to the probSets dictionary
+                                if probSets.get('splitting') == None:
+                                    probSets['splitting'] = []
+                                probSets['splitting'].append( [rule.rate, self._ratesDict[str(rule.rate)], [rule.rhsReactants[0], rule.rhsReactants[1]] ] )
+                            
+                            # treating in a special way the constant reactantants (if they are not with EMPTY)
+                            elif reactant in self._mumotModel._constantReactants:
+                                continue
+                            # compensating the (possible) mixed order of constant reactant rules 
+                            if otherReact in self._mumotModel._constantReactants:
+                                if rule.rhsReactants[idx] == EMPTYSET_SYMBOL:
+                                    if idx == 0:
+                                        targetReact = rule.rhsReactants[1]
+                                    else:
+                                        targetReact = rule.rhsReactants[0]
+                                else:
+                                    targetReact = rule.rhsReactants[idx]
+                                    
                                 if probSets.get(otherReact) == None:
                                     probSets[otherReact] = []
-                                    
-                                probSets[otherReact].append( [rule.rate, self._ratesDict[str(rule.rate)], destReact] )
-                            else:
-                                if rule.lhsReactants.count(reactant) == 2: 
-                                    ## @todo: treat in a special way the 'self' interaction!
-                                    warningMsg = "WARNING!! Reactant " + str(reactant) + " has a self-reaction " + str(rule.rate) + " which is not currently properly handled."
-                                    self._showErrorMessage(warningMsg + "<br>")
-                                    
-                                    print(warningMsg)
+                                probSets[otherReact].append( [rule.rate, self._ratesDict[str(rule.rate)], targetReact] )
+                                                                        
+                            # if the reactant undergoes a state change
+                            elif not rule.rhsReactants[idx] == reactant:                                
+                                # add the reaction to the probSets dictionary
+                                if probSets.get(otherReact) == None:
+                                    probSets[otherReact] = []
+                                probSets[otherReact].append( [rule.rate, self._ratesDict[str(rule.rate)], rule.rhsReactants[idx]] )
                             
-                        elif numReagents > 2:
-                            print('More than two reagents in one rule. Unhandled situation, please use at max two reagents per reaction rule')
-                            return 1
+#                         elif numReagents > 2:
+#                             print('Reactions with more than 2 reactacts are not currently supported in multiagent simulations, please use at max two reagents per reaction rule')
+#                             return 1
                         
             self._probabilities[reactant] = probSets
-            print("React " + str(reactant))
-            print(probSets)
+#             print("React " + str(reactant))
+#             print(probSets)
 
     def _computeScalingFactor(self):
         # Determining the minimum speed of the process (thus the max-scaling factor)
         maxRatesAll = 0
-        for probSets in self._probabilities.values():
+        for reactant, probSets in self._probabilities.items():
+            if reactant == EMPTYSET_SYMBOL: continue # not considering the spontaneous births as limiting component for simulation step
             voidRates = 0
             maxRates = 0
             for react, probSet in probSets.items():
                 tmpRates = 0
                 for prob in probSet:
                     #print("adding P=" + str(prob[1]))
-                    if react == 'void':
+                    if react == 'void' or react == 'splitting' :
                         voidRates += prob[1]
                     else:
                         tmpRates += prob[1]
@@ -4479,18 +4534,25 @@ class MuMoTmultiagentView(MuMoTview):
             if (maxRates + voidRates) > maxRatesAll:
                 maxRatesAll = maxRates + voidRates
         #self._scaling = 1/maxRatesAll
-        if maxRatesAll>0: self._timestepSize = 1/maxRatesAll 
-        else: self._timestepSize = 1
-        if self._controller != None: self._update_timestepSize_widget(self._timestepSize)
-        print("timestepSize s=" + str(self._timestepSize))
+        
+        if maxRatesAll>0: maxTimestepSize = 1/maxRatesAll 
+        else: maxTimestepSize = 1
+        if self._timestepSize > maxTimestepSize:
+            self._timestepSize = maxTimestepSize
+        if self._controller != None: self._update_timestepSize_widget(self._timestepSize, maxTimestepSize)
+#         print("timestepSize s=" + str(self._timestepSize))
     
-    def _update_timestepSize_widget(self, timestepSize):
-        if (self._controller._widgetsExtraParams['timestepSize'].value > timestepSize):
+    def _update_timestepSize_widget(self, timestepSize, maxTimestepSize):
+        if not self._controller._widgetsExtraParams['timestepSize'].value == timestepSize:
+            if (self._controller._widgetsExtraParams['timestepSize'].max < timestepSize):
+                self._controller._widgetsExtraParams['timestepSize'].max = maxTimestepSize
+            if (self._controller._widgetsExtraParams['timestepSize'].min > timestepSize):
+                self._controller._widgetsExtraParams['timestepSize'].min = timestepSize
             self._controller._widgetsExtraParams['timestepSize'].value = timestepSize  
-        if (self._controller._widgetsExtraParams['timestepSize'].max > timestepSize):
-            self._controller._widgetsExtraParams['timestepSize'].max = timestepSize
-            self._controller._widgetsExtraParams['timestepSize'].min = timestepSize/100
-            self._controller._widgetsExtraParams['timestepSize'].step = timestepSize/100 
+        if not self._controller._widgetsExtraParams['timestepSize'].max == maxTimestepSize:
+            self._controller._widgetsExtraParams['timestepSize'].max = maxTimestepSize
+            self._controller._widgetsExtraParams['timestepSize'].min = min(maxTimestepSize/100, timestepSize)
+            self._controller._widgetsExtraParams['timestepSize'].step = self._controller._widgetsExtraParams['timestepSize'].min 
     
     def _applyScalingFactor(self):
         # Multiply all rates by the scaling factor timestepSize
@@ -4530,8 +4592,8 @@ class MuMoTmultiagentView(MuMoTview):
         elif (graphType == NetworkType.DYNAMIC):
             self._positions = []
             for _ in range(numNodes):
-                x = np.random.rand()
-                y = np.random.rand()
+                x = np.random.rand() * self._arena_width
+                y = np.random.rand() * self._arena_height
                 o = np.random.rand() * np.pi * 2.0
                 self._positions.append( (x,y,o) )
             return
@@ -4553,6 +4615,7 @@ class MuMoTmultiagentView(MuMoTview):
         if dynamic:
             tmp_positions = copy.deepcopy(self._positions)
             communication_range = self._netParam
+        children = []
         for idx, a in enumerate(self._agents):
             if dynamic:
                 neighNodes = self._getNeighbours(idx, tmp_positions, communication_range)
@@ -4561,10 +4624,54 @@ class MuMoTmultiagentView(MuMoTview):
 #                 print("to position " + str(self._positions[idx]) )
             else:
                 neighNodes = list(nx.all_neighbors(self._graph, idx))
-            neighAgents = [tmp_agents[x] for x in neighNodes]
+            
+            # creating the neigh-list filtering out double self-interactions through highest ID (i.e., A + A -> A + C can happen only once between two As)
+            # without filtering it can be done in one line as:  # neighAgents = [tmp_agents[x] for x in neighNodes]            
+            neighAgents = []
+            for n in neighNodes:
+                if (not a == tmp_agents[n]) or (idx > n):
+                    neighAgents.append(tmp_agents[n])
 #                 print("Neighs of agent " + str(idx) + " are " + str(neighNodes) + " with states " + str(neighAgents) )
-            self._agents[idx] = self._stepOneAgent(a, neighAgents)
-            currentState[ self._agents[idx] ] = currentState.get(self._agents[idx],0) + 1
+            # run one simulation step for agent a
+            oneStepOutput = self._stepOneAgent(a, neighAgents)
+            self._agents[idx] = oneStepOutput[0]
+            if not oneStepOutput[1] == None: # a splitting happened
+                children.append( (oneStepOutput[1], tmp_positions[idx]) )
+            if not self._agents[idx] == EMPTYSET_SYMBOL:
+                currentState[ self._agents[idx] ] = currentState.get(self._agents[idx],0) + 1
+#             else:
+#                 print("Agent " + str(idx) + " died. RIP")
+        # add the new agents coming from splitting
+        for child in children:
+            self._agents.append( child[0] )
+            self._positions.append( child[1] )
+            self._positionHistory.append( [] )
+            idx = len(self._positions)-1
+            self._positionHistory[idx].append( self._positions[idx] )
+            self._positions[idx] = ( self._positions[idx][0], self._positions[idx][1], np.random.rand() * np.pi * 2.0) # set random orientation 
+#             self._positions[idx][2] = np.random.rand() * np.pi * 2.0 # set random orientation 
+            self._positions[idx] = self._updatePosition( self._positions[idx][0], self._positions[idx][1], self._positions[idx][2], self._particleSpeed, self._motionCorrelatedness)
+        # compute self birth
+        for birth in self._probabilities[EMPTYSET_SYMBOL]['void']:
+            birthRate = birth[1]
+            decimal = birthRate % 1
+            birthsNum = int(birthRate - decimal)
+            np.random.rand()
+            if (np.random.rand() < decimal): birthsNum += 1
+            #print ( "Birth rate " + str(birth[1]) + " triggers " + str(birthsNum) + " newborns")
+            for _ in range(birthsNum):
+                self._agents.append( birth[2] )
+                self._positions.append( (np.random.rand() * self._arena_width, np.random.rand() * self._arena_height, np.random.rand() * np.pi * 2.0) )
+                self._positionHistory.append( [] )
+                self._positionHistory[len(self._positions)-1].append( self._positions[len(self._positions)-1] )
+        
+        # Remove from lists (_agents, _positions, and _positionHistory) the 'dead' agents
+        deads = [idx for idx, a in enumerate(self._agents) if a == EMPTYSET_SYMBOL]
+#         print("Dead list is " + str(deads))
+        for dead in reversed(deads):
+            del self._agents[dead]
+            del self._positions[dead]
+            del self._positionHistory[dead]
         
         return currentState
 
@@ -4573,6 +4680,7 @@ class MuMoTmultiagentView(MuMoTview):
         #probSets = copy.deepcopy(self._probabilities[agent])
         rnd = np.random.rand()
         lastVal = 0
+        child = None
         probSets = self._probabilities[agent]
         # counting how many neighbours for each state (to be uses for the interaction probabilities)
         neighCount = {x:neighs.count(x) for x in probSets.keys()}
@@ -4580,7 +4688,7 @@ class MuMoTmultiagentView(MuMoTview):
 #         print("nc:"+str(neighCount))
         for react, probSet in probSets.items():
             for prob in probSet:
-                if react == 'void':
+                if react == 'void' or react == 'splitting':
                     popScaling = 1
                 else:
                     popScaling = neighCount[react]/len(neighs) if len(neighs) > 0 else 0
@@ -4588,11 +4696,16 @@ class MuMoTmultiagentView(MuMoTview):
                 if (rnd < val + lastVal):
                     # A state change happened!
                     #print("Reaction: " + str(prob[0]) + " by agent " + str(agent) + " that becomes " + str(prob[2]) )
-                    return prob[2]
+                    if react == 'splitting':
+                        newState = prob[2][0]
+                        child = prob[2][1]
+                    else:
+                        newState = prob[2]
+                    return (newState,child)
                 else:
                     lastVal += val
         # No state change happened
-        return agent
+        return (agent, child)
     
     def _updatePosition(self, x, y, o, speed, correlatedness):
         # random component
