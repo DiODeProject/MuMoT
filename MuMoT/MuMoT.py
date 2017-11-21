@@ -601,8 +601,9 @@ class MuMoTmodel:
             else:
                 SOL_2ndOrdMomDict = None
             
+            continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
             # construct controller
-            viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
+            viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
             
             # construct view
             modelView = MuMoTstreamView(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, params = params, **kwargs)
@@ -619,8 +620,10 @@ class MuMoTmodel:
     ## construct interactive vector plot        
     def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
+            
+            continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
             # construct controller
-            viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
+            viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
             
             # construct view
             modelView = MuMoTvectorView(self, viewController, stateVariable1, stateVariable2, stateVariable3, params = params, **kwargs)
