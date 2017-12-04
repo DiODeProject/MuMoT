@@ -4183,6 +4183,24 @@ class MuMoTmultiagentView(MuMoTview):
             self._realtimePlot = MAParams.get('realtimePlot', False)
             
             self._mumotModel._getSingleAgentRules()
+            
+            # check if any network is available or only moving particles
+            onlyDynamic = False
+            for rule in self._mumotModel._rules:
+                if EMPTYSET_SYMBOL in rule.lhsReactants or EMPTYSET_SYMBOL in rule.rhsReactants:
+                    onlyDynamic = True
+                    break
+            if onlyDynamic:
+                #if (not self._controller) and (not self._netType == NetworkType.DYNAMIC): # if the user has specified the network type, we notify him/her through error-message
+                #    self._errorMessage.value = "Only Moving-Particle netType is available when rules contain the emptyset."
+                if not self._netType == NetworkType.DYNAMIC: print("Only Moving-Particle netType is available when rules contain the emptyset.")
+                self._netType = NetworkType.DYNAMIC
+                if self._controller: # updating value and disabling widget
+                    self._controller._widgetsExtraParams['netType'].value = NetworkType.DYNAMIC
+                    self._controller._widgetsExtraParams['netType'].disabled = True
+                    self._controller._update_net_params()
+            
+            # init graph
             self._initGraph(graphType=self._netType, numNodes=sum(self._initialState.values()), netParam=self._netParam)
 
             # map colouts to each reactant
