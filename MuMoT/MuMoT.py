@@ -709,7 +709,7 @@ class MuMoTmodel:
             initialState = {}
             for state,pop in initialState_str.items():
                 initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-#         print("Initial State is " + str(initialState) )
+        #print("Initial State is " + str(initialState) )
         MAParams['initialState'] = initialState
         
         # init the max-time
@@ -776,7 +776,7 @@ class MuMoTmodel:
             initialState = {}
             for state,pop in initialState_str.items():
                 initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-#         print("Initial State is " + str(initialState) )
+        #print("Initial State is " + str(initialState) )
         ssaParams['initialState'] = initialState
         
         if (maxTime == "Auto" or maxTime <= 0):
@@ -4153,6 +4153,7 @@ class MuMoTmultiagentView(MuMoTview):
         super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
 
         with io.capture_output() as log:
+#         if True:
                       
             if self._controller == None:
                 # storing the rates for each rule
@@ -4168,8 +4169,10 @@ class MuMoTmultiagentView(MuMoTview):
             # storing the initial state
             self._initialState = {}
             for state,pop in MAParams["initialState"].items():
-                self._initialState[process_sympy(str(state))] = pop # convert string into SymPy symbol
-                #self._initialState[state] = pop
+                if isinstance(state, str):
+                    self._initialState[process_sympy(state)] = pop # convert string into SymPy symbol
+                else:
+                    self._initialState[state] = pop
             self._maxTime = MAParams["maxTime"]
             self._randomSeed = MAParams["randomSeed"]
             self._visualisationType = MAParams["visualisationType"]
@@ -4183,6 +4186,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._realtimePlot = MAParams.get('realtimePlot', False)
             
             self._mumotModel._getSingleAgentRules()
+            #print(self._mumotModel._agentProbabilities)
             
             # check if any network is available or only moving particles
             onlyDynamic = False
@@ -4970,8 +4974,10 @@ class MuMoTSSAView(MuMoTview):
                 
             self._initialState = {}
             for state,pop in ssaParams["initialState"].items():
-                self._initialState[process_sympy(str(state))] = pop # convert string into SymPy symbol
-                #self._initialState[state] = pop
+                if isinstance(state, str):
+                    self._initialState[process_sympy(state)] = pop # convert string into SymPy symbol
+                else:
+                    self._initialState[state] = pop
             self._maxTime = ssaParams["maxTime"]
             self._randomSeed = ssaParams["randomSeed"]
             self._visualisationType = ssaParams["visualisationType"]
