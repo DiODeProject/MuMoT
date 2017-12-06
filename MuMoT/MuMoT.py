@@ -1407,7 +1407,7 @@ class MuMoTSSAController(MuMoTcontroller):
         advancedWidgets.append(widget)
         
         advancedPage = widgets.Box(children=advancedWidgets)
-        advancedOpts = widgets.Accordion(children=[advancedPage])
+        advancedOpts = widgets.Accordion(children=[advancedPage], selected_index=-1)
         advancedOpts.set_title(0, 'Advanced options')
         if not self._silent:
             display(advancedOpts)
@@ -1569,7 +1569,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         self._update_net_params()
         
         advancedPage = widgets.Box(children=advancedWidgets)
-        advancedOpts = widgets.Accordion(children=[advancedPage])
+        advancedOpts = widgets.Accordion(children=[advancedPage], selected_index=-1)
         advancedOpts.set_title(0, 'Advanced options')
         if not self._silent:
             display(advancedOpts)
@@ -2161,7 +2161,7 @@ class MuMoTmultiController(MuMoTcontroller):
                 for widget in self._widgetsPlotOnly.values():
                     advancedWidgets.append(widget)
                 advancedPage = widgets.Box(children=advancedWidgets)
-                advancedOpts = widgets.Accordion(children=[advancedPage])
+                advancedOpts = widgets.Accordion(children=[advancedPage], selected_index=-1)
                 advancedOpts.set_title(0, 'Advanced options')
                 display(advancedOpts)
         if addProgressBar:
