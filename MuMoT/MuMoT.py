@@ -4149,8 +4149,8 @@ class MuMoTmultiagentView(MuMoTview):
     ## latest computed results
     _latestResults = None
 
-    def __init__(self, model, controller, MAParams, figure = None, rates = None, **kwargs):
-        super().__init__(model=model, controller=controller, figure=figure, params=rates, **kwargs)
+    def __init__(self, model, controller, MAParams, figure = None, params = None, **kwargs):
+        super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
 
         with io.capture_output() as log:
                       
@@ -4158,7 +4158,7 @@ class MuMoTmultiagentView(MuMoTview):
                 # storing the rates for each rule
                 ## @todo moving it to general method?
                 self._ratesDict = {}
-                rates_input_dict = dict( rates )
+                rates_input_dict = dict( params )
                 for key in rates_input_dict.keys():
                     rates_input_dict[str(process_sympy(str(key)))] = rates_input_dict.pop(key) # replace the dictionary key with the str of the SymPy symbol
                 # create the self._ratesDict 
@@ -4200,8 +4200,9 @@ class MuMoTmultiagentView(MuMoTview):
                     self._controller._widgetsExtraParams['netType'].disabled = True
                     self._controller._update_net_params()
             
-            # init graph
-            self._initGraph(graphType=self._netType, numNodes=sum(self._initialState.values()), netParam=self._netParam)
+#             # init graph
+#             if self._silent:
+#                 self._initGraph(graphType=self._netType, numNodes=sum(self._initialState.values()), netParam=self._netParam)
 
             # map colouts to each reactant
             #colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
@@ -4235,7 +4236,7 @@ class MuMoTmultiagentView(MuMoTview):
 #         for key,value in sorted(MAParams.items()):
 #             sortedDict += "'" + key + "': " + str(value) + ", "
 #         sortedDict += "}"
-        print( "mmt.MuMoTmultiagentView(model1, None, MAParams = " + str(MAParams) + ", rates = " + str( list(self._ratesDict.items()) ) + " )")
+        print( "mmt.MuMoTmultiagentView(model1, None, MAParams = " + str(MAParams) + ", params = " + str( list(self._ratesDict.items()) ) + " )")
     
     ## reads the new parameters (in case they changed in the controller)
     ## this function should only update local parameters and not compute data
@@ -4243,12 +4244,14 @@ class MuMoTmultiagentView(MuMoTview):
         if self._controller != None:
             # getting the rates
             ## @todo moving it to general method?
-            freeParamDict = {}
-            for name, value in self._controller._widgetsFreeParams.items():
-                freeParamDict[ Symbol(name) ] = value.value
+#             freeParamDict = {}
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 freeParamDict[ Symbol(name) ] = value.value
+            freeParamDict = self._get_argDict()
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
-                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
+                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
+                       
             
             # getting other parameters specific to M-A view
             for state in self._initialState.keys():
@@ -4945,8 +4948,8 @@ class MuMoTSSAView(MuMoTview):
     ## latest computed results
     _latestResults = None
 
-    def __init__(self, model, controller, ssaParams, figure = None, rates = None, **kwargs):
-        super().__init__(model, controller, figure=figure, params=rates, **kwargs)
+    def __init__(self, model, controller, ssaParams, figure = None, params = None, **kwargs):
+        super().__init__(model, controller, figure=figure, params=params, **kwargs)
 
         with io.capture_output() as log:
 #         if True:
@@ -4954,7 +4957,7 @@ class MuMoTSSAView(MuMoTview):
                 # storing the rates for each rule
                 ## @todo moving it to general method?
                 self._ratesDict = {}
-                rates_input_dict = dict( rates )
+                rates_input_dict = dict( params )
 #                 print("DIct is " + str(rates_input_dict) )
                 for key in rates_input_dict.keys():
                     rates_input_dict[str(process_sympy(str(key)))] = rates_input_dict.pop(key) # replace the dictionary key with the str of the SymPy symbol
@@ -4990,9 +4993,10 @@ class MuMoTSSAView(MuMoTview):
         if self._controller != None:
             # getting the rates
             ## @todo moving it to general method?
-            freeParamDict = {}
-            for name, value in self._controller._widgetsFreeParams.items():
-                freeParamDict[ Symbol(name) ] = value.value
+#             freeParamDict = {}
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 freeParamDict[ Symbol(name) ] = value.value
+            freeParamDict = self._get_argDict()
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
@@ -5014,7 +5018,7 @@ class MuMoTSSAView(MuMoTview):
         ssaParams["maxTime"] = self._maxTime 
         ssaParams["randomSeed"] = self._randomSeed
         ssaParams["visualisationType"] = self._visualisationType
-        print( "mmt.MuMoTSSAView(model1, None, ssaParams = " + str(ssaParams) + ", rates = " + str( list(self._ratesDict.items()) ) + " )")
+        print( "mmt.MuMoTSSAView(model1, None, ssaParams = " + str(ssaParams) + ", params = " + str( list(self._ratesDict.items()) ) + " )")
     
     def _redrawOnly(self):
         self._update_params()
