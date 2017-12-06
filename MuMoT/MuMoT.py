@@ -2958,7 +2958,7 @@ class MuMoTfieldView(MuMoTview):
             self._chooseFontSize = kwargs['fontsize']
         else:
             self._chooseFontSize=None
-        self._showFixedPoints = kwargs.get('showFixedPoints', True)
+        self._showFixedPoints = kwargs.get('showFixedPoints', False)
         self._xlab = kwargs.get('xlab', r'$'+latex(Symbol('Phi_'+str(stateVariable1)))+'$')
         self._ylab = kwargs.get('ylab', r'$'+latex(Symbol('Phi_'+str(stateVariable2)))+'$')
         if stateVariable3:
