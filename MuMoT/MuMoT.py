@@ -618,6 +618,7 @@ class MuMoTmodel:
     ## construct interactive vector plot        
     def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
+            
             # construct controller
             viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
             
@@ -632,34 +633,67 @@ class MuMoTmodel:
             return None
         
     ## construct interactive PyDSTool plot
-    def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, params = None, **kwargs):
-        if self._systemSize != None:
-            pass
-        else:
-            print('Cannot construct bifurcation plot until system size is set, using substitute()')
-            return    
-
-        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
-        rateStep = RATE_STEP ## @todo choose rate step sensibly                
-
-
-        # construct controller
-        paramValues = []
-        paramNames = []        
-        for rate in self._rates:
-            if str(rate) != bifurcationParameter:
-                paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-                paramNames.append(str(rate))
-        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False, params = params, **kwargs)
-
-        # construct view
-        modelView = MuMoTbifurcationView(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, params = params, **kwargs)
+    def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, params=None, **kwargs):
+        try:
+            kwargs['showInitSV'] = True
+            
+            if bifurcationParameter[0]=='\\':
+                bifPar = bifurcationParameter[1:]
+            else:
+                bifPar = bifurcationParameter
+            
+            kwargs['chooseBifParam'] = bifPar
+            
+    
+            # construct controller
+            viewController = self._controller(False, params = params, **kwargs)
+           
+            # construct view
+            modelView = MuMoTbifurcationView(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, params = params, **kwargs)
+            
+            viewController.setView(modelView)
+            viewController._setReplotFunction(modelView._plot_bifurcation)
         
-        viewController.setView(modelView)
-        viewController._setReplotFunction(modelView._replot_bifurcation)
-        
-        return viewController
+            return viewController
+        except:
+            return None
+    
+#     
+#     def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, params = None, **kwargs):
+#         if self._systemSize != None:
+#             pass
+#         else:
+#             print('Cannot construct bifurcation plot until system size is set, using substitute()')
+#             return    
+# 
+#         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
+#         rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
+#         rateStep = RATE_STEP ## @todo choose rate step sensibly                
+# 
+# 
+#         # construct controller
+#         paramValues = []
+#         paramNames = []        
+#         for rate in self._rates:
+#             if str(rate) != bifurcationParameter:
+#                 paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+#                 paramNames.append(str(rate))
+#         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False, params = params, **kwargs)
+# 
+#         # construct view
+#         modelView = MuMoTbifurcationView(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, params = params, **kwargs)
+#         
+#         viewController.setView(modelView)
+#         viewController._setReplotFunction(modelView._replot_bifurcation)
+#         
+#         return viewController
+#     
+    
+    
+    
+    
+    
+    
 
     def multiagent(self, netType="full", initialState="Auto", maxTime="Auto", randomSeed="Auto", **kwargs):
         MAParams = {}
@@ -825,7 +859,7 @@ class MuMoTmodel:
 # #            self._pyDSode.set(ics = initconds)
 #             self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  ## @todo: add to __init__()
 #             self._pyDSode.set(pars = {bifurcationParameter: 5} )                       ## @todo remove magic number
-#             self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class (@todo: add to __init__())
+#             self._pyDScont = dst.ContClass(pyDSode)              # Set up continuation class (@todo: add to __init__())
 #             ## @todo: add self._pyDScontArgs to __init__()
 #             self._pyDScontArgs = dst.args(name='EQ1', type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labeled 'EQ1'.
 #             self._pyDScontArgs.freepars     = [bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
@@ -872,10 +906,21 @@ class MuMoTmodel:
 
         # construct controller
         paramValues = []
-        paramNames = []        
+        paramNames = []  
+        bifParam = kwargs.get('chooseBifParam', False)    
+        bifParInitVal = kwargs.get('BifParInit', None) 
+        
         for rate in self._rates:
-            paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-            paramNames.append(str(rate))
+            if str(rate) != bifParam:
+                paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+                paramNames.append(str(rate))
+            else:
+                if bifParInitVal:
+                    paramValues.append((bifParInitVal, rateLimits[0], rateLimits[1], rateStep))
+                else:
+                    paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+                #paramNames.append(str(rate)+'_{init}')
+                paramNames.append(latex(Symbol(str(rate)+'_init')))
         for reactant in self._constantReactants:
             paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
 #            paramNames.append('(' + latex(reactant) + ')')
@@ -1744,6 +1789,22 @@ class MuMoTview:
             argDict[systemSize] = self._getSystemSize()
             
         return argDict
+    
+    def _getInitCondsFromSlider(self):
+        #if self._controller != None:
+        paramNames = []
+        paramValues = []
+        for reactant in self._mumotModel._reactants:
+            if reactant not in self._mumotModel._constantReactants:
+                for name, value in self._controller._widgetsFreeParams.items():
+                    if name == latex(Symbol('Phi^0_'+str(reactant))):
+                        paramNames.append(name)
+                        paramValues.append(value.value)
+                
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+        
+        return argDict
 
 
     def _get_fixedPoints2d(self):
@@ -1765,12 +1826,24 @@ class MuMoTview:
 #         argDict = dict(zip(argNamesSymb, paramValues))
 #         argDict[self._mumotModel._systemSize] = 1
        
-        argDict = self._get_argDict()      
+        argDict = self._get_argDict()   
+        for arg in argDict:
+            if '_{init}' in str(arg):
+                if str(arg)[0] == '\\':
+                    arg1 = str(arg)[1:]
+                    argReplace = Symbol(arg1.replace('_{init}', ''))
+                    argDict[argReplace] = argDict.pop(arg)
+                else:
+                    argReplace = Symbol(str(arg).replace('_{init}', ''))
+                    argDict[argReplace] = argDict.pop(arg)
+            #if arg[0] == '\\':
+            #    argDict[arg[1:]] = argDict.pop(arg)
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+        
         eps=1e-8
         EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
-        
+
         for nn in range(len(EQsol)):
             if len(EQsol[nn]) != 2:
                 self._showErrorMessage('Some or all solutions are NOT unique.')
@@ -1908,6 +1981,7 @@ class MuMoTview:
     def _singleRun(self, randomSeed):
         print("ERROR! The command multirun is not supported for this view.")
         return None
+    
 
 ## multi-view view (tied closely to MuMoTmultiController)
 class MuMoTmultiView(MuMoTview):
@@ -2206,23 +2280,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #         self._tstep = tstep
 #         if not(silent):
 #             self._plot_NumSolODE()
-      
-    
-    def _getInitCondsFromSlider(self):
-        #if self._controller != None:
-        paramNames = []
-        paramValues = []
-        for reactant in self._mumotModel._reactants:
-            if reactant not in self._mumotModel._constantReactants:
-                for name, value in self._controller._widgetsFreeParams.items():
-                    if name == latex(Symbol('Phi^0_'+str(reactant))):
-                        paramNames.append(name)
-                        paramValues.append(value.value)
-                
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
-        
-        return argDict
     
     
 
@@ -2871,7 +2928,7 @@ class MuMoTfieldView(MuMoTview):
             self._chooseFontSize = kwargs['fontsize']
         else:
             self._chooseFontSize=None
-        self._showFixedPoints = kwargs.get('showFixedPoints', True)
+        self._showFixedPoints = kwargs.get('showFixedPoints', False)
         self._xlab = kwargs.get('xlab', r'$'+latex(Symbol('Phi_'+str(stateVariable1)))+'$')
         self._ylab = kwargs.get('ylab', r'$'+latex(Symbol('Phi_'+str(stateVariable2)))+'$')
         if stateVariable3:
@@ -3693,308 +3750,372 @@ class MuMoTvectorView(MuMoTfieldView):
 
 ## bifurcation view on model 
 class MuMoTbifurcationView(MuMoTview):
+    ## model for bifurcation analysis
     _pyDSmodel = None
+    ## critical parameter for bifurcation analysis
     _bifurcationParameter = None
+    ## first state variable of 2D system
     _stateVariable1 = None
+    ## second state variable of 2D system
     _stateVariable2 = None
+    ## state variable of 2D system used for bifurcation analysis, can either be _stateVariable1 or _stateVariable2
+    _stateVarBif1 = None
+    ## state variable of 2D system used for bifurcation analysis, can either be _stateVariable1 or _stateVariable2
+    _stateVarBif2 = None
     
-    ## Plotting method to use
-    _plottingMethod = None
+    ## generates command for bookmark functionality
+    _generatingCommand = None
+    ## fontsize on figure axes
+    _chooseFontSize = None
+    ## label for vertical axis
+    _LabelY = None
+    ## label for horizontal axis
+    _LabelX = None
+    ## displayed range for vertical axis
+    _chooseXrange = None
+    ## displayed range for horizontal axis
+    _chooseYrange = None
+    ## maximum number of points in one continuation calculation 
+    _MaxNumPoints = None
+    ## information about the mathematical expression displayed on vertical axis; can be 'None', '+' or '-'
+    _SVoperation = None
+    ## initial conditions specified on corresponding sliders, will be used when calculation of fixed points fails
+    _pyDSmodel_ics = None
     
-    def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, 
+    
+    #_bifInit = None   
+    # Plotting method to use
+    #_plottingMethod = None
+    
+    def __init__(self, model, controller, bifurcationParameter, stateVarExpr1, stateVarExpr2 = None, 
                  figure = None, params = None, **kwargs):
+        
         super().__init__(model, controller, figure, params, **kwargs)
         self._generatingCommand = "bifurcation"
-        bifurcationParameter = self._pydstoolify(bifurcationParameter)
-        stateVariable1 = self._pydstoolify(stateVariable1)
-        stateVariable2 = self._pydstoolify(stateVariable2)
 
-        paramDict = {}
-        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
-        rateStep = RATE_STEP ## @todo choose rate step sensibly
-        for rate in self._mumotModel._rates:
-            paramDict[self._pydstoolify(rate)] = initialRateValue ## @todo choose initial values sensibly
-        paramDict[self._pydstoolify(self._mumotModel._systemSize)] = 1 ## @todo choose system size sensibly
+        self._chooseFontSize = kwargs.get('fontsize', None)
+        self._LabelY =  kwargs.get('ylab', r'$' + stateVarExpr1 +'$') 
+        self._LabelX = kwargs.get('xlab', r'$' + bifurcationParameter +'$')
+        self._chooseXrange = kwargs.get('choose_xrange', None)
+        self._chooseYrange = kwargs.get('choose_yrange', None)
         
-        if 'fontsize' in kwargs:
-            self._chooseFontSize = kwargs['fontsize']
-        else:
-            self._chooseFontSize=None
-            
-        if 'xlab' in kwargs:
-            self._xlab = kwargs['xlab']
-        else:
-            self._xlab=None
-            
-        if 'ylab' in kwargs:
-            self._ylab = kwargs['ylab']
-        else:
-            self._ylab=None
-            
-        self._bifInit = kwargs.get('BifParInit', 5)
+        self._MaxNumPoints = kwargs.get('ContMaxNumPoints',100)
         
-        tmpInitSV = kwargs.get('initSV', [])
-        self._initSV= []
-        if tmpInitSV != []:
-            assert (len(tmpInitSV) == len(self._mumotModel._reactants)),"Number of state variables and initial conditions must coincide!"
-            for pair in tmpInitSV:
-                self._initSV.append([self._pydstoolify(pair[0]), pair[1]])
-        else:
-            if kwargs.get('initRandom', False) == True:
-                for reactant in self._mumotModel._reactants:
-                    self._initSV.append([self._pydstoolify(reactant), round(np.random.rand(), 2)])
-            else:
-                for reactant in self._mumotModel._reactants:
-                    self._initSV.append([self._pydstoolify(reactant), 0.0])
-                
-        with io.capture_output() as log:      
-            name = 'MuMoT Model' + str(id(self))
-            self._pyDSmodel = dst.args(name = name)
-            self._pyDSmodel.pars = paramDict
-            varspecs = {}
-            for reactant in self._mumotModel._reactants:
-                varspecs[self._pydstoolify(reactant)] = self._pydstoolify(self._mumotModel._equations[reactant])
-            self._pyDSmodel.varspecs = varspecs
-    
-            if model._systemSize != None:
-                ## @todo: shouldn't allow system size to be varied?
-                pass
-    #                self._paramValues.append(1)
-    #                self._paramNames.append(str(self._systemSize))
-    #                widget = widgets.FloatSlider(value = 1, min = _rateLimits[0], max = _rateLimits[1], step = _rateStep, description = str(self._systemSize), continuous_update = False)
-    #                widget.on_trait_change(self._replot_bifurcation2D, 'value')
-    #                display(widget)
-            else:
-                print('Cannot attempt bifurcation plot until system size is set, using substitute()')
-                return
+        self._bifurcationParameter = self._pydstoolify(bifurcationParameter)
+        self._stateVarExpr1 = stateVarExpr1
+        stateVarExpr1 = self._pydstoolify(stateVarExpr1)
+        if stateVarExpr2:
+            stateVarExpr2 = self._pydstoolify(stateVarExpr2)
+        
+        self._SVoperation = None
+        try:
+            stateVarExpr1.index('-')
+            self._stateVarBif1 = stateVarExpr1[:stateVarExpr1.index('-')]
+            self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('-')+1:]
+            self._SVoperation = '-'
             
-            if stateVariable2 != None:
-                ## 3-d bifurcation diagram (@todo: currently unsupported)
-                assert True #was 'false' before. @todo: Specify assertion rule.
-                
-            # Prepare the system to start close to a steady state
-            self._bifurcationParameter = bifurcationParameter
-            self._LabelX = self._bifurcationParameter if self._xlab == None else self._xlab
+        except ValueError:
             try:
-                stateVariable1.index('-')
-                self._stateVariable1 = stateVariable1[:stateVariable1.index('-')]
-                self._stateVariable2 = stateVariable1[stateVariable1.index('-')+1:]
-                self._LabelY = self._stateVariable1+'-'+self._stateVariable2 if self._ylab == None else self._ylab
+                stateVarExpr1.index('+')
+                self._stateVarBif1 = stateVarExpr1[:stateVarExpr1.index('+')]
+                self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('+')+1:] 
+                self._SVoperation = '+'
             except ValueError:
-                self._stateVariable1 = stateVariable1
-                self._stateVariable2 = stateVariable2
-                self._LabelY = self._stateVariable1 if self._ylab == None else self._ylab
-    #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
-    #            self._pyDSode.set(pars = self._pyDSmodel.pars )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
-    #            self._pyDSode.pars = {bifurcationParameter: 0}             ## Lower bound of the bifurcation parameter (@todo: set dynamically?)
-            initconds = {stateVariable1: self._pyDSmodel.pars[self._pydstoolify(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)} ## @todo: guess where steady states are?
-            
-            self._pyDSmodel.ics   = {}
-            for kk in range(len(self._initSV)):
-                self._pyDSmodel.ics[self._initSV[kk][0]] = self._initSV[kk][1]  #{'A': 0.1, 'B': 0.9 }  
-            print('Initial conditions chosen for state variables: ',self._pyDSmodel.ics)   
-    #            self._pyDSode.set(ics = initconds)
-            self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
-            self._pyDSode.set(pars = {bifurcationParameter: self._bifInit})      ## @@todo remove magic number
-            self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class 
-            ## @todo: add self._pyDScontArgs to __init__()
-            self._pyDScontArgs = dst.args(name='EQ1', type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labeled 'EQ1'.
-            self._pyDScontArgs.freepars     = [bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
-            self._pyDScontArgs.MaxNumPoints = kwargs.get('ContMaxNumPoints',450)    ## The following 3 parameters are set after trial-and-error @todo: how to automate this?
-            self._pyDScontArgs.MaxStepSize  = 1e-1
-            self._pyDScontArgs.MinStepSize  = 1e-5
-            self._pyDScontArgs.StepSize     = 2e-3
-            self._pyDScontArgs.LocBifPoints = ['LP', 'BP']        ## @todo WAS 'LP' (detect limit points / saddle-node bifurcations)
-            self._pyDScontArgs.SaveEigen    = True             # to tell unstable from stable branches
-#            self._pyDScontArgs.CalcStab     = True
+                self._stateVarBif1 = stateVarExpr1
+                self._stateVarBif2 = stateVarExpr2
+                
+        #self._bifInit = kwargs.get('BifParInit', None)
+                  
+        self._pyDSmodel = dst.args(name = 'MuMoT Model' + str(id(self)))
+        #self._bifurcationParameter = bifurcationParameter
+        varspecs = {}
+        stateVariableList = []
+        for reactant in self._mumotModel._reactants:
+            if reactant not in self._mumotModel._constantReactants:
+                stateVariableList.append(reactant)
+                varspecs[self._pydstoolify(reactant)] = self._pydstoolify(self._mumotModel._equations[reactant])
+        self._pyDSmodel.varspecs = varspecs
+        if len(stateVariableList) != 2:
+            self._showErrorMessage('Bifurcation diagrams are currently only supported for 2D systems (2 time-dependent variables in the ODE system)!')
+            return None
+        self._stateVariable1 = stateVariableList[0]
+        self._stateVariable2 = stateVariableList[1]
+        if self._stateVarBif2 == None:
+            if self._stateVarBif1 == self._pydstoolify(self._stateVariable1):
+                self._stateVarBif2 = self._pydstoolify(self._stateVariable2)
+            elif self._stateVarBif1 == self._pydstoolify(self._stateVariable2):
+                self._stateVarBif2 = self._pydstoolify(self._stateVariable1)
+        with io.capture_output() as log:
+            print('Bifurcation diagram with state variables: ', self._stateVarBif1, 'and ', self._stateVarBif2, '.')
+            print('The bifurcation parameter chosen is: ', self._bifurcationParameter, '.')
         self._logs.append(log)
         
-#            self._bifurcation2Dfig = plt.figure(1)                    
-
-        #if kwargs != None:
-        #    self._plottingMethod = kwargs.get('plottingMethod', 'pyDS')
-        #else:
-        #    self._plottingMethod = 'pyDS'
-        
-        self._plottingMethod = kwargs.get('plottingMethod', 'mumot')
-        self._plot_bifurcation()
-            
+        #self._plottingMethod = kwargs.get('plottingMethod', 'mumot')
+        self._plot_bifurcation()     
 
     def _plot_bifurcation(self):
-        self._resetErrorMessage()
-        with io.capture_output() as log:
-            self._log("bifurcation analysis")
-            self._pyDScont.newCurve(self._pyDScontArgs)
-            try:
-                try:
-                    self._pyDScont['EQ1'].backward()
-                except:
-                    self._showErrorMessage('Continuation failure (backward)<br>')
-                try:
-                    self._pyDScont['EQ1'].forward()              ## @todo: how to choose direction?
-                except:
-                    self._showErrorMessage('Continuation failure (forward)<br>')
-            except ZeroDivisionError:
-                self._showErrorMessage('Division by zero<br>')                
-    #            self._pyDScont['EQ1'].info()
+        if not(self._silent): ## @todo is this necessary?
+            #plt.close()
+            #plt.clf()
+            #plt.gcf()
+            plt.figure(self._figureNum)
+            plt.clf()
+            self._resetErrorMessage()
+        #self._showErrorMessage(str(self))
+        #self._resetErrorMessage()
+        #plt.figure(self._figureNum)
+        argDict = self._get_argDict()
+        paramDict = {}
+        for arg in argDict:
+            if self._pydstoolify(arg) == self._bifurcationParameter+'init':
+                paramDict[self._bifurcationParameter] = argDict[arg]
+            else:
+                if 'Phi0' not in self._pydstoolify(arg):
+                    paramDict[self._pydstoolify(arg)] = argDict[arg]
+        #print(self._getBifParInitCondFromSlider())
+        #print(self._bifurcationParameter)
+        #print(paramDict)
         
-            if self._plottingMethod.lower() == 'mumot':
-                ## use internal plotting routines: now supported!   
-                #self._stateVariable2 == None:
-                # 2-d bifurcation diagram
-                self._specialPoints=[]  #todo: modify to include several equations not only EQ1
-                k_iter=1
-                self.sPoints_X=[] #bifurcation parameter
-                self.sPoints_Y=[] #state variable 1
-                self.sPoints_Labels=[]
+        with io.capture_output() as log:
+            self._pyDSmodel.pars = paramDict #len(self._mumotModel._reactants)}
+            
+            XDATA = [] # list of arrays containing the bifurcation-parameter data for bifurcation diagram data 
+            YDATA = [] # list of arrays containing the state variable data (either one variable, or the sum or difference of the two SVs) for bifurcation diagram data
+            
+            initDictList = []
+            self._pyDSmodel_ics   = self._getInitCondsFromSlider()
+            for ic in self._pyDSmodel_ics:
+                if 'Phi0' in self._pydstoolify(ic):
+                    self._pyDSmodel_ics[self._pydstoolify(ic)[self._pydstoolify(ic).index('0')+1:]] = self._pyDSmodel_ics.pop(ic)  #{'A': 0.1, 'B': 0.9 }  
                 
-                #while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
-                #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[2])
-                #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[0])
-                #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[1])
-                #    self.sPoints_Labels.append('BP'+str(k_iter))
-                #    k_iter+=1
-                #k_iter=1
-                #while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
-                #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[2])
-                #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[0])
-                #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[1])
-                #    self.sPoints_Labels.append('LP'+str(k_iter))
-                #    k_iter+=1
-    
+            realEQsol, eigList = self._get_fixedPoints2d()
+            if realEQsol != [] and realEQsol != None:
+                for kk in range(len(realEQsol)):
+                    if all(sign(re(lam)) < 0 for lam in eigList[kk]) == True:
+                        initDictList.append(realEQsol[kk])
+                print(len(initDictList), 'stable steady state(s) detected and continuated. Initial conditions for state variables specified on sliders were not used.')
+            else:
+                initDictList.append(self._pyDSmodel_ics)
+                print('Stationary states could not be calculated; used initial conditions specified on sliders instead: ', self._pyDSmodel_ics, '. This means only one branch was continuated and the starting point might not have been a stationary state.')   
+            #print(initDictList)                                   
+            #if self._plottingMethod.lower() == 'mumot':
+            specialPoints=[]  # list of special points: LP and BP
+            sPoints_X=[] #bifurcation parameter
+            sPoints_Y=[] #stateVarBif1
+            sPoints_Labels=[]
+            EIGENVALUES = []
+            sPoints_Z=[] #stateVarBif2
+            k_iter_BPlabel = 0
+            k_iter_LPlabel = 0
+            
+            for nn in range(len(initDictList)):
+# # The following few lines that are commented out prevent continuation of branches where the initial condition
+# # will lead to a copy of a curve that has already been computed.                
+#                 skip_init = False
+#                 if nn > 0:
+#                     for kk in range(nn):
+#                         skip_init_count = 0
+#                         for item1 in initDictList[nn]:
+#                             for item2 in initDictList[kk]:
+#                                 if item1 != item2:
+#                                     if round(initDictList[nn][item1], 8) == round(initDictList[kk][item2], 8):
+#                                         skip_init_count += 1
+#                             if skip_init_count == len(initDictList[nn]):
+#                                 skip_init = True
+#                 print(skip_init)        
+#                         
+#                 if skip_init == False:      
+                 
+                #self._pyDSmodel.ics = initDictList[nn]
+                pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
+                pyDSode.set(ics =  initDictList[nn] ) 
+                pyDSode.set(pars = self._getBifParInitCondFromSlider())      
+                pyDScont = dst.ContClass(pyDSode)
+                EQ_iter = 1+nn
+                k_iter_BP = 1
+                k_iter_LP = 1
+                pyDScontArgs = dst.args(name='EQ'+str(EQ_iter), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
+                pyDScontArgs.freepars     = [self._bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
+                pyDScontArgs.MaxNumPoints = self._MaxNumPoints    # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
+                pyDScontArgs.MaxStepSize  = 1e-1
+                pyDScontArgs.MinStepSize  = 1e-5
+                pyDScontArgs.StepSize     = 2e-3
+                pyDScontArgs.LocBifPoints = ['LP', 'BP']       # 'Limit Points' and 'Branch Points may be detected'
+                pyDScontArgs.SaveEigen    = True            # to tell unstable from stable branches
                 
+                pyDScont.newCurve(pyDScontArgs)   
                 
-                if self._stateVariable2 != None:
+                try:
                     try:
-                        self.sPoints_Z=[] #state variable 2
-                        self._YDATA = (self._pyDScont['EQ1'].sol[self._stateVariable1] -
-                                  self._pyDScont['EQ1'].sol[self._stateVariable2])
-                        while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
-                            self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
-                            self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
-                            self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable2])
-                            self.sPoints_Labels.append('BP'+str(k_iter))
-                            k_iter+=1
-                        k_iter=1
-                        while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
-                            self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
-                            self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
-                            self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable2])
-                            self.sPoints_Labels.append('LP'+str(k_iter))
-                            k_iter+=1
-                        self._specialPoints=[self.sPoints_X, 
-                                             np.asarray(self.sPoints_Y)-np.asarray(self.sPoints_Z), 
-                                             self.sPoints_Labels]
-                    except TypeError:
-                        print('Continuation failed; try with different parameters.')
-                    
-                else:
+                        pyDScont['EQ'+str(EQ_iter)].backward()
+                    except:
+                        self._showErrorMessage('Continuation failure (backward) on initial branch<br>')
                     try:
-                        self._YDATA = self._pyDScont['EQ1'].sol[self._stateVariable1]
-                        while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
-                            self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
-                            self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
-                            self.sPoints_Labels.append('BP'+str(k_iter))
-                            k_iter+=1
-                        k_iter=1
-                        while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
-                            self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
-                            self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
-                            self.sPoints_Labels.append('LP'+str(k_iter))
-                            k_iter+=1
+                        pyDScont['EQ'+str(EQ_iter)].forward()              
+                    except:
+                        self._showErrorMessage('Continuation failure (forward) on initial branch<br>')
+                except ZeroDivisionError:
+                    self._showErrorMessage('Division by zero<br>')  
+                #pyDScont['EQ'+str(EQ_iter)].info()
+                if self._stateVarBif2 != None:
+                    try:
+                        XDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._bifurcationParameter])
+                        if self._SVoperation:
+                            if self._SVoperation == '-':
+                                YDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1] -
+                                             pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif2])
+                            elif self._SVoperation == '+':
+                                YDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1] +
+                                             pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif2])  
+                            else:
+                                self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')  
+                        else:
+                            YDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1])
                         
-                        self._specialPoints=[self.sPoints_X, self.sPoints_Y, self.sPoints_Labels]    
+                        EIGENVALUES.append(np.array([pyDScont['EQ'+str(EQ_iter)].sol[kk].labels['EP']['data'].evals 
+                                                     for kk in range(len(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1]))]))
+                        
+                        while pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP)):
+                            if (round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
+                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):
+                                sPoints_X.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._bifurcationParameter])
+                                sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif1])
+                                sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif2])
+                                k_iter_LPlabel += 1
+                                sPoints_Labels.append('LP'+str(k_iter_LPlabel))
+                            k_iter_LP+=1
+                        
+                        
+                        k_iter_BPlabel_previous = k_iter_BPlabel
+                        while pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP)):
+                            if (round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
+                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):
+                                sPoints_X.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._bifurcationParameter])
+                                sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif1])
+                                sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif2])
+                                k_iter_BPlabel += 1
+                                sPoints_Labels.append('BP'+str(k_iter_BPlabel))
+                            k_iter_BP+=1
+                        for jj in range(1,k_iter_BP):
+                            if 'BP'+str(jj+k_iter_BPlabel_previous) in sPoints_Labels:
+                                EQ_iter_BP = jj
+                                print(EQ_iter_BP)
+                                k_iter_next = 1
+                                pyDScontArgs = dst.args(name='EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
+                                pyDScontArgs.freepars     = [self._bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
+                                pyDScontArgs.MaxNumPoints = self._MaxNumPoints    # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
+                                pyDScontArgs.MaxStepSize  = 1e-1
+                                pyDScontArgs.MinStepSize  = 1e-5
+                                pyDScontArgs.StepSize     = 5e-3
+                                pyDScontArgs.LocBifPoints = ['LP', 'BP']        # 'Limit Points' and 'Branch Points may be detected'
+                                pyDScontArgs.SaveEigen    = True             # to tell unstable from stable branches
+                                pyDScontArgs.initpoint = 'EQ'+str(EQ_iter)+':BP'+str(jj)
+                                pyDScont.newCurve(pyDScontArgs)
+                                
+                                try:
+                                    try:
+                                        pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].backward()
+                                    except:
+                                        self._showErrorMessage('Continuation failure (backward) starting from branch point<br>')
+                                    try:
+                                        pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].forward()              
+                                    except:
+                                        self._showErrorMessage('Continuation failure (forward) starting from branch point<br>')
+                                except ZeroDivisionError:
+                                    self._showErrorMessage('Division by zero<br>')
+                                
+                                XDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._bifurcationParameter])
+                                if self._SVoperation:
+                                    if self._SVoperation == '-':
+                                        YDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1] -
+                                                     pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif2])
+                                    elif self._SVoperation == '+':
+                                        YDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1] +
+                                                     pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif2])
+                                    else:
+                                        self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')
+                                else:
+                                    YDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1])
+                                    
+                                EIGENVALUES.append(np.array([pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[kk].labels['EP']['data'].evals 
+                                                             for kk in range(len(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1]))]))
+                                while pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next)):
+                                    if (round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
+                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):    
+                                        sPoints_X.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._bifurcationParameter])
+                                        sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif1])
+                                        sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif2])
+                                        sPoints_Labels.append('EQ_BP_BP'+str(k_iter_next))
+                                    k_iter_next += 1
+                                k_iter_next = 1
+                                while pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next)):
+                                    if (round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
+                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):
+                                        sPoints_X.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._bifurcationParameter])
+                                        sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif1])
+                                        sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif2])
+                                        sPoints_Labels.append('EQ_BP_LP'+str(k_iter_next))
+                                    k_iter_next += 1
+    
                     except TypeError:
-                        print('Continuation failed; try with different parameters.')
-                
-                #The following was an attempt to include also EQ2 if a BP or LP was found using EQ1    
-                #if self._pyDScont['EQ1'].getSpecialPoint('BP1'):
-                #    self._pyDSode.set(pars = {self._bifurcationParameter: 5} )
-                #    self._pyDScontArgs.freepars     = [self._bifurcationParameter]
-                #    self._pyDScontArgs = dst.args(name='EQ2', type='EP-C')
-                #    self._pyDScontArgs.initpoint    = 'EQ1:BP1'
-                #    
-                #   self._pyDScont.newCurve(self._pyDScontArgs)
-                #   try:
-                #        try:
-                #            self._pyDScont['EQ2'].backward()
-                #        except:
-                #            self._showErrorMessage('Continuation failure (backward)<br>')
-                #        try:
-                #            self._pyDScont['EQ2'].forward()
-                #        except:
-                #            self._showErrorMessage('Continuation failure (forward)<br>')
-                #    except ZeroDivisionError:
-                #        self._showErrorMessage('Division by zero<br>')  
+                        print('Continuation failed; try with different parameters - use sliders. If that does not work, try changing maximum number of continuation points using the keyword ContMaxNumPoints. If not set, default value is ContMaxNumPoints=100.')       
                 
                 
-                #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[2])
-                #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[0])
-                #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[1])
-                #    self.sPoints_Labels.append('BP'+str(k_iter))
+                del(pyDScontArgs)
+                del(pyDScont)
+                del(pyDSode)
+            if self._SVoperation:
+                if self._SVoperation == '-':    
+                    specialPoints=[sPoints_X, np.asarray(sPoints_Y)-np.asarray(sPoints_Z), sPoints_Labels]
+                elif self._SVoperation == '+':    
+                    specialPoints=[sPoints_X, np.asarray(sPoints_Y)+np.asarray(sPoints_Z), sPoints_Labels]
+                else:
+                    self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')
+            else:
+                specialPoints=[sPoints_X, np.asarray(sPoints_Y), sPoints_Labels]
                 
-                #elif self._pyDScont['EQ2'].getSpecialPoint('LP1'):
-                #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[2])
-                #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[0])
-                #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[1])
-                #    self.sPoints_Labels.append('LP'+str(k_iter))
-                #    k_iter+=1
+            #print('Special Points on curve: ', specialPoints)
+            print('Special Points on curve:')
+            for kk in range(len(specialPoints[0])):
+                print(specialPoints[2][kk], ': ', self._bifurcationParameter, '=', str(round(specialPoints[0][kk], 3)), ',',
+                      self._stateVarExpr1, '=', str(round(specialPoints[1][kk], 3)) )
+            
+            if self._chooseYrange == None:
+                if self._mumotModel._systemSize:
+                    self._chooseYrange = [-self._getSystemSize(), self._getSystemSize()]
+                          
+            if XDATA != [] and self._chooseXrange == None:
+                xmaxbif = np.max([np.max(XDATA[kk]) for kk in range(len(XDATA))])
+                self._chooseXrange = [0, xmaxbif]
                 
-                print('Special Points on curve: ', self._specialPoints)
-                
-                plt.clf()
-                _fig_formatting_2D(xdata=[self._pyDScont['EQ1'].sol[self._bifurcationParameter]], 
-                                ydata=[self._YDATA],
+            if XDATA !=[] and YDATA != []:
+                #plt.clf()
+                _fig_formatting_2D(xdata=XDATA, 
+                                ydata=YDATA,
                                 xlab = self._LabelX, 
                                 ylab = self._LabelY,
-                                specialPoints=self._specialPoints, 
-                                eigenvalues=[np.array([self._pyDScont['EQ1'].sol[kk].labels['EP']['data'].evals for kk in range(len(self._pyDScont['EQ1'].sol[self._stateVariable1]))])], 
+                                specialPoints=specialPoints, 
+                                eigenvalues=EIGENVALUES, 
+                                choose_xrange=self._chooseXrange, choose_yrange=self._chooseYrange,
                                 ax_reformat=False, curve_replot=False, fontsize=self._chooseFontSize)
-
-#                self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
-                #else:
-                #    pass
-                #assert false
             else:
-                if self._plottingMethod.lower() != 'pyds':
-                    self._showErrorMessage('Unknown plotType argument: using default pyDS tool plotting<br>')    
-                if self._stateVariable2 == None:
-                    # 2-d bifurcation diagram
-                    if self._silent == True:
-                        #assert false ## @todo: enable when Thomas implements in-housse plotting routines
-                        self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], axes = None, stability = True)
-                    else:
-                        self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figureNum)
-    #                self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
-                else:
-                    pass
+                self._showErrorMessage('Bifurcation diagram could not be computed. Try changing parameter values on the sliders')
+                return None
+
         self._logs.append(log)
 
-    def _replot_bifurcation(self):
-        for name, value in self._controller._widgetsFreeParams.items():
-            self._pyDSmodel.pars[name] = value.value
- 
-        self._pyDScont.plot.clearall()
-        
-#        self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    ## @todo: replace           
-        self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  ## @todo: add to __init__()
-        self._pyDSode.set(pars = {self._bifurcationParameter: self._bifInit} )                       ## @todo remove magic number
-        self._pyDScont = dst.ContClass(self._pyDSode)              ## Set up continuation class (@todo: add to __init__())
-##        self._pyDScont.newCurve(self._pyDScontArgs)
-#        self._pyDScont['EQ1'].reset(self._pyDSmodel.pars)
-#        self._pyDSode.set(pars = self._pyDSmodel.pars)
-#        self._pyDScont['EQ1'].reset()
-#        self._pyDScont.update(self._pyDScontArgs)                         ## @todo: what does this do?
-        self._plot_bifurcation()
-
-    # utility function to mangle variable names in equations so they are accepted by PyDStool
+    ## utility function to mangle variable names in equations so they are accepted by PyDStool
     def _pydstoolify(self, equation):
         equation = str(equation)
         equation = equation.replace('{', '')
         equation = equation.replace('}', '')
         equation = equation.replace('_', '')
         equation = equation.replace('\\', '')
+        equation = equation.replace('^', '')
         
         return equation
     
@@ -4004,19 +4125,377 @@ class MuMoTbifurcationView(MuMoTview):
             logStr = "bookmark = "
         else:
             logStr = ""
-        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._bifurcationParameter) + "', '" + str(self._stateVariable1) +"', "
-        if self._stateVariable2 != None:
-            logStr += "'" + str(self._stateVariable2) + "', "
+        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._bifurcationParameter) + "', '" + str(self._stateVarExpr1) +"', "
+        #if self._stateVarBif2 != None:
+        #    logStr += "'" + str(self._stateVarBif2) + "', "
         if includeParams:
             logStr += self._get_bookmarks_params() + ", "
         if len(self._generatingKwargs) > 0:
             for key in self._generatingKwargs:
-                logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+                if key == 'initCondsSV':
+                    logStr += key + " = " + str(self._pyDSmodel_ics) + ", "
+                else:
+                    if key != 'chooseBifParam':
+                        logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
         logStr += "bookmark = False"
         logStr += ")"
         logStr = logStr.replace('\\', '\\\\')
         
         return logStr    
+
+    ## gets initial value of bifurcation parameter from corresponding slider. This determines the staring points for the numerical continuation.
+    def _getBifParInitCondFromSlider(self):
+        #if self._controller != None:
+        
+        if self._bifurcationParameter[0]=='\\':
+            bifPar = self._bifurcationParameter[1:]
+        elif self._bifurcationParameter[0]=='\\' and self._bifurcationParameter[1]=='\\':
+            bifPar = self._bifurcationParameter[2:]
+        else:
+            bifPar = self._bifurcationParameter
+            
+        paramName = []
+        paramValue = []
+        for name, value in self._controller._widgetsFreeParams.items():
+            if name == latex(Symbol(str(bifPar)+'_init')):
+                #paramName.append(self._pydstoolify(self._bifurcationParameter))
+                paramName.append(self._bifurcationParameter)
+                paramValue.append(value.value)
+                
+        argNameSymb = list(map(Symbol, paramName))
+        argDict = dict(zip(argNameSymb, paramValue))
+        
+        return argDict
+
+# 
+# ## bifurcation view on model 
+# class MuMoTbifurcationView(MuMoTview):
+#     _pyDSmodel = None
+#     _bifurcationParameter = None
+#     _stateVariable1 = None
+#     _stateVariable2 = None
+#     
+#     ## Plotting method to use
+#     _plottingMethod = None
+#     
+#     def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, 
+#                  figure = None, params = None, **kwargs):
+#         super().__init__(model, controller, figure, params, **kwargs)
+#         self._generatingCommand = "bifurcation"
+#         bifurcationParameter = self._pydstoolify(bifurcationParameter)
+#         stateVariable1 = self._pydstoolify(stateVariable1)
+#         stateVariable2 = self._pydstoolify(stateVariable2)
+# 
+#         paramDict = {}
+#         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
+#         rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
+#         rateStep = RATE_STEP ## @todo choose rate step sensibly
+#         for rate in self._mumotModel._rates:
+#             paramDict[self._pydstoolify(rate)] = initialRateValue ## @todo choose initial values sensibly
+#         paramDict[self._pydstoolify(self._mumotModel._systemSize)] = 1 ## @todo choose system size sensibly
+#         
+#         if 'fontsize' in kwargs:
+#             self._chooseFontSize = kwargs['fontsize']
+#         else:
+#             self._chooseFontSize=None
+#             
+#         if 'xlab' in kwargs:
+#             self._xlab = kwargs['xlab']
+#         else:
+#             self._xlab=None
+#             
+#         if 'ylab' in kwargs:
+#             self._ylab = kwargs['ylab']
+#         else:
+#             self._ylab=None
+#             
+#         self._bifInit = kwargs.get('BifParInit', 5)
+#         
+#         tmpInitSV = kwargs.get('initSV', [])
+#         self._initSV= []
+#         if tmpInitSV != []:
+#             assert (len(tmpInitSV) == len(self._mumotModel._reactants)),"Number of state variables and initial conditions must coincide!"
+#             for pair in tmpInitSV:
+#                 self._initSV.append([self._pydstoolify(pair[0]), pair[1]])
+#         else:
+#             if kwargs.get('initRandom', False) == True:
+#                 for reactant in self._mumotModel._reactants:
+#                     self._initSV.append([self._pydstoolify(reactant), round(np.random.rand(), 2)])
+#             else:
+#                 for reactant in self._mumotModel._reactants:
+#                     self._initSV.append([self._pydstoolify(reactant), 0.0])
+#                 
+#         with io.capture_output() as log:      
+#             name = 'MuMoT Model' + str(id(self))
+#             self._pyDSmodel = dst.args(name = name)
+#             self._pyDSmodel.pars = paramDict
+#             varspecs = {}
+#             for reactant in self._mumotModel._reactants:
+#                 varspecs[self._pydstoolify(reactant)] = self._pydstoolify(self._mumotModel._equations[reactant])
+#             self._pyDSmodel.varspecs = varspecs
+#     
+#             if model._systemSize != None:
+#                 ## @todo: shouldn't allow system size to be varied?
+#                 pass
+#     #                self._paramValues.append(1)
+#     #                self._paramNames.append(str(self._systemSize))
+#     #                widget = widgets.FloatSlider(value = 1, min = _rateLimits[0], max = _rateLimits[1], step = _rateStep, description = str(self._systemSize), continuous_update = False)
+#     #                widget.on_trait_change(self._replot_bifurcation2D, 'value')
+#     #                display(widget)
+#             else:
+#                 print('Cannot attempt bifurcation plot until system size is set, using substitute()')
+#                 return
+#             
+#             if stateVariable2 != None:
+#                 ## 3-d bifurcation diagram (@todo: currently unsupported)
+#                 assert True #was 'false' before. @todo: Specify assertion rule.
+#                 
+#             # Prepare the system to start close to a steady state
+#             self._bifurcationParameter = bifurcationParameter
+#             self._LabelX = self._bifurcationParameter if self._xlab == None else self._xlab
+#             try:
+#                 stateVariable1.index('-')
+#                 self._stateVariable1 = stateVariable1[:stateVariable1.index('-')]
+#                 self._stateVariable2 = stateVariable1[stateVariable1.index('-')+1:]
+#                 self._LabelY = self._stateVariable1+'-'+self._stateVariable2 if self._ylab == None else self._ylab
+#             except ValueError:
+#                 self._stateVariable1 = stateVariable1
+#                 self._stateVariable2 = stateVariable2
+#                 self._LabelY = self._stateVariable1 if self._ylab == None else self._ylab
+#     #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
+#     #            self._pyDSode.set(pars = self._pyDSmodel.pars )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
+#     #            self._pyDSode.pars = {bifurcationParameter: 0}             ## Lower bound of the bifurcation parameter (@todo: set dynamically?)
+#             initconds = {stateVariable1: self._pyDSmodel.pars[self._pydstoolify(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)} ## @todo: guess where steady states are?
+#             
+#             self._pyDSmodel.ics   = {}
+#             for kk in range(len(self._initSV)):
+#                 self._pyDSmodel.ics[self._initSV[kk][0]] = self._initSV[kk][1]  #{'A': 0.1, 'B': 0.9 }  
+#             print('Initial conditions chosen for state variables: ',self._pyDSmodel.ics)   
+#     #            self._pyDSode.set(ics = initconds)
+#             self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
+#             self._pyDSode.set(pars = {bifurcationParameter: self._bifInit})      ## @@todo remove magic number
+#             self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class 
+#             ## @todo: add self._pyDScontArgs to __init__()
+#             self._pyDScontArgs = dst.args(name='EQ1', type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labeled 'EQ1'.
+#             self._pyDScontArgs.freepars     = [bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
+#             self._pyDScontArgs.MaxNumPoints = kwargs.get('ContMaxNumPoints',450)    ## The following 3 parameters are set after trial-and-error @todo: how to automate this?
+#             self._pyDScontArgs.MaxStepSize  = 1e-1
+#             self._pyDScontArgs.MinStepSize  = 1e-5
+#             self._pyDScontArgs.StepSize     = 2e-3
+#             self._pyDScontArgs.LocBifPoints = ['LP', 'BP']        ## @todo WAS 'LP' (detect limit points / saddle-node bifurcations)
+#             self._pyDScontArgs.SaveEigen    = True             # to tell unstable from stable branches
+# #            self._pyDScontArgs.CalcStab     = True
+#         self._logs.append(log)
+#         
+# #            self._bifurcation2Dfig = plt.figure(1)                    
+# 
+#         #if kwargs != None:
+#         #    self._plottingMethod = kwargs.get('plottingMethod', 'pyDS')
+#         #else:
+#         #    self._plottingMethod = 'pyDS'
+#         
+#         self._plottingMethod = kwargs.get('plottingMethod', 'mumot')
+#         self._plot_bifurcation()
+#             
+# 
+#     def _plot_bifurcation(self):
+#         self._resetErrorMessage()
+#         with io.capture_output() as log:
+#             self._log("bifurcation analysis")
+#             self._pyDScont.newCurve(self._pyDScontArgs)
+#             try:
+#                 try:
+#                     self._pyDScont['EQ1'].backward()
+#                 except:
+#                     self._showErrorMessage('Continuation failure (backward)<br>')
+#                 try:
+#                     self._pyDScont['EQ1'].forward()              ## @todo: how to choose direction?
+#                 except:
+#                     self._showErrorMessage('Continuation failure (forward)<br>')
+#             except ZeroDivisionError:
+#                 self._showErrorMessage('Division by zero<br>')                
+#     #            self._pyDScont['EQ1'].info()
+#         
+#             if self._plottingMethod.lower() == 'mumot':
+#                 ## use internal plotting routines: now supported!   
+#                 #self._stateVariable2 == None:
+#                 # 2-d bifurcation diagram
+#                 self._specialPoints=[]  #todo: modify to include several equations not only EQ1
+#                 k_iter=1
+#                 self.sPoints_X=[] #bifurcation parameter
+#                 self.sPoints_Y=[] #state variable 1
+#                 self.sPoints_Labels=[]
+#                 
+#                 #while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
+#                 #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[2])
+#                 #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[0])
+#                 #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[1])
+#                 #    self.sPoints_Labels.append('BP'+str(k_iter))
+#                 #    k_iter+=1
+#                 #k_iter=1
+#                 #while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
+#                 #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[2])
+#                 #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[0])
+#                 #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[1])
+#                 #    self.sPoints_Labels.append('LP'+str(k_iter))
+#                 #    k_iter+=1
+#     
+#                 
+#                 
+#                 if self._stateVariable2 != None:
+#                     try:
+#                         self.sPoints_Z=[] #state variable 2
+#                         self._YDATA = (self._pyDScont['EQ1'].sol[self._stateVariable1] -
+#                                   self._pyDScont['EQ1'].sol[self._stateVariable2])
+#                         while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
+#                             self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
+#                             self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
+#                             self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable2])
+#                             self.sPoints_Labels.append('BP'+str(k_iter))
+#                             k_iter+=1
+#                         k_iter=1
+#                         while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
+#                             self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
+#                             self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
+#                             self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable2])
+#                             self.sPoints_Labels.append('LP'+str(k_iter))
+#                             k_iter+=1
+#                         self._specialPoints=[self.sPoints_X, 
+#                                              np.asarray(self.sPoints_Y)-np.asarray(self.sPoints_Z), 
+#                                              self.sPoints_Labels]
+#                     except TypeError:
+#                         print('Continuation failed; try with different parameters.')
+#                     
+#                 else:
+#                     try:
+#                         self._YDATA = self._pyDScont['EQ1'].sol[self._stateVariable1]
+#                         while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
+#                             self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
+#                             self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
+#                             self.sPoints_Labels.append('BP'+str(k_iter))
+#                             k_iter+=1
+#                         k_iter=1
+#                         while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
+#                             self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
+#                             self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
+#                             self.sPoints_Labels.append('LP'+str(k_iter))
+#                             k_iter+=1
+#                         
+#                         self._specialPoints=[self.sPoints_X, self.sPoints_Y, self.sPoints_Labels]    
+#                     except TypeError:
+#                         print('Continuation failed; try with different parameters.')
+#                 
+#                 #The following was an attempt to include also EQ2 if a BP or LP was found using EQ1    
+#                 #if self._pyDScont['EQ1'].getSpecialPoint('BP1'):
+#                 #    self._pyDSode.set(pars = {self._bifurcationParameter: 5} )
+#                 #    self._pyDScontArgs.freepars     = [self._bifurcationParameter]
+#                 #    self._pyDScontArgs = dst.args(name='EQ2', type='EP-C')
+#                 #    self._pyDScontArgs.initpoint    = 'EQ1:BP1'
+#                 #    
+#                 #   self._pyDScont.newCurve(self._pyDScontArgs)
+#                 #   try:
+#                 #        try:
+#                 #            self._pyDScont['EQ2'].backward()
+#                 #        except:
+#                 #            self._showErrorMessage('Continuation failure (backward)<br>')
+#                 #        try:
+#                 #            self._pyDScont['EQ2'].forward()
+#                 #        except:
+#                 #            self._showErrorMessage('Continuation failure (forward)<br>')
+#                 #    except ZeroDivisionError:
+#                 #        self._showErrorMessage('Division by zero<br>')  
+#                 
+#                 
+#                 #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[2])
+#                 #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[0])
+#                 #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[1])
+#                 #    self.sPoints_Labels.append('BP'+str(k_iter))
+#                 
+#                 #elif self._pyDScont['EQ2'].getSpecialPoint('LP1'):
+#                 #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[2])
+#                 #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[0])
+#                 #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[1])
+#                 #    self.sPoints_Labels.append('LP'+str(k_iter))
+#                 #    k_iter+=1
+#                 
+#                 print('Special Points on curve: ', self._specialPoints)
+#                 
+#                 plt.clf()
+#                 _fig_formatting_2D(xdata=[self._pyDScont['EQ1'].sol[self._bifurcationParameter]], 
+#                                 ydata=[self._YDATA],
+#                                 xlab = self._LabelX, 
+#                                 ylab = self._LabelY,
+#                                 specialPoints=self._specialPoints, 
+#                                 eigenvalues=[np.array([self._pyDScont['EQ1'].sol[kk].labels['EP']['data'].evals for kk in range(len(self._pyDScont['EQ1'].sol[self._stateVariable1]))])], 
+#                                 ax_reformat=False, curve_replot=False, fontsize=self._chooseFontSize)
+# 
+# #                self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
+#                 #else:
+#                 #    pass
+#                 #assert false
+#             else:
+#                 if self._plottingMethod.lower() != 'pyds':
+#                     self._showErrorMessage('Unknown plotType argument: using default pyDS tool plotting<br>')    
+#                 if self._stateVariable2 == None:
+#                     # 2-d bifurcation diagram
+#                     if self._silent == True:
+#                         #assert false ## @todo: enable when Thomas implements in-housse plotting routines
+#                         self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], axes = None, stability = True)
+#                     else:
+#                         self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figureNum)
+#     #                self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
+#                 else:
+#                     pass
+#         self._logs.append(log)
+# 
+#     def _replot_bifurcation(self):
+#         for name, value in self._controller._widgetsFreeParams.items():
+#             self._pyDSmodel.pars[name] = value.value
+#  
+#         self._pyDScont.plot.clearall()
+#         
+# #        self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    ## @todo: replace           
+#         self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  ## @todo: add to __init__()
+#         self._pyDSode.set(pars = {self._bifurcationParameter: self._bifInit} )                       ## @todo remove magic number
+#         self._pyDScont = dst.ContClass(self._pyDSode)              ## Set up continuation class (@todo: add to __init__())
+# ##        self._pyDScont.newCurve(self._pyDScontArgs)
+# #        self._pyDScont['EQ1'].reset(self._pyDSmodel.pars)
+# #        self._pyDSode.set(pars = self._pyDSmodel.pars)
+# #        self._pyDScont['EQ1'].reset()
+# #        self._pyDScont.update(self._pyDScontArgs)                         ## @todo: what does this do?
+#         self._plot_bifurcation()
+# 
+#     # utility function to mangle variable names in equations so they are accepted by PyDStool
+#     def _pydstoolify(self, equation):
+#         equation = str(equation)
+#         equation = equation.replace('{', '')
+#         equation = equation.replace('}', '')
+#         equation = equation.replace('_', '')
+#         equation = equation.replace('\\', '')
+#         
+#         return equation
+#     
+#     
+#     def _build_bookmark(self, includeParams = True):
+#         if not self._silent:
+#             logStr = "bookmark = "
+#         else:
+#             logStr = ""
+#         logStr += "<modelName>." + self._generatingCommand + "('" + str(self._bifurcationParameter) + "', '" + str(self._stateVariable1) +"', "
+#         if self._stateVariable2 != None:
+#             logStr += "'" + str(self._stateVariable2) + "', "
+#         if includeParams:
+#             logStr += self._get_bookmarks_params() + ", "
+#         if len(self._generatingKwargs) > 0:
+#             for key in self._generatingKwargs:
+#                 logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+#         logStr += "bookmark = False"
+#         logStr += ")"
+#         logStr = logStr.replace('\\', '\\\\')
+#         
+#         return logStr
+
+
 
 ## agent on networks view on model 
 class MuMoTmultiagentView(MuMoTview):
@@ -6405,27 +6884,42 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
             LineThickness = 4
         
         if eigenvalues:
-            solX_dict={} #bifurcation parameter
-            solY_dict={} #state variable 1
-            solX_dict['solX_unst']=[] 
-            solY_dict['solY_unst']=[]
-            solX_dict['solX_stab']=[]
-            solY_dict['solY_stab']=[]
-            solX_dict['solX_saddle']=[]
-            solY_dict['solY_saddle']=[]
-            
-            nr_sol_unst=0
-            nr_sol_saddle=0
-            nr_sol_stab=0
-            data_x_tmp=[]
-            data_y_tmp=[]
-            #print(specialPoints)
+            round_digit = 10
+#             solX_dict={} #bifurcation parameter
+#             solY_dict={} #state variable 1
+#             solX_dict['solX_unst']=[] 
+#             solY_dict['solY_unst']=[]
+#             solX_dict['solX_stab']=[]
+#             solY_dict['solY_stab']=[]
+#             solX_dict['solX_saddle']=[]
+#             solY_dict['solY_saddle']=[]
+#             
+#             nr_sol_unst=0
+#             nr_sol_saddle=0
+#             nr_sol_stab=0
+#             data_x_tmp=[]
+#             data_y_tmp=[]
+#             #print(specialPoints)
             for nn in range(len(data_x)):
+                solX_dict={} #bifurcation parameter
+                solY_dict={} #state variable 1
+                solX_dict['solX_unst']=[] 
+                solY_dict['solY_unst']=[]
+                solX_dict['solX_stab']=[]
+                solY_dict['solY_stab']=[]
+                solX_dict['solX_saddle']=[]
+                solY_dict['solY_saddle']=[]
+                
+                nr_sol_unst=0
+                nr_sol_saddle=0
+                nr_sol_stab=0
+                data_x_tmp=[]
+                data_y_tmp=[]
                 #sign_change=0
                 for kk in range(len(eigenvalues[nn])):
                     if kk > 0:
-                        if (np.sign(np.real(eigenvalues[nn][kk][0]))*np.sign(np.real(eigenvalues[nn][kk-1][0])) < 0
-                            or np.sign(np.real(eigenvalues[nn][kk][1]))*np.sign(np.real(eigenvalues[nn][kk-1][1])) < 0):
+                        if (np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][0]), round_digit)) <= 0
+                            or np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][1]), round_digit)) <= 0):
                             #print('sign change')
                             #sign_change+=1
                             #print(sign_change)
@@ -6457,16 +6951,23 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                             #if specialPoints !=None and specialPoints[0]!=[]:
                             #    data_x_tmp.append(specialPoints[0][sign_change-1])
                             #    data_y_tmp.append(specialPoints[1][sign_change-1])
-                                    
-                    if np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) < 0:  
+                    if np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:  
                         nr_sol_stab=1
-                    elif np.real(eigenvalues[nn][kk][0]) > 0 and np.real(eigenvalues[nn][kk][1]) < 0:
+                    elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) in [0,1] and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:
                         nr_sol_saddle=1
-                    elif np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) > 0:
+                    elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) in [0,1]:
                         nr_sol_saddle=1
                     else:
-                        nr_sol_unst=1
-                        
+                        nr_sol_unst=1                
+#                     if np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) < 0:  
+#                         nr_sol_stab=1
+#                     elif np.real(eigenvalues[nn][kk][0]) >= 0 and np.real(eigenvalues[nn][kk][1]) < 0:
+#                         nr_sol_saddle=1
+#                     elif np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) >= 0:
+#                         nr_sol_saddle=1
+#                     else:
+#                         nr_sol_unst=1
+                         
                     data_x_tmp.append(data_x[nn][kk])
                     data_y_tmp.append(data_y[nn][kk])
                 
@@ -6483,25 +6984,45 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                         else:
                             print('Something went wrong!')
                         
+                if not solX_dict['solX_unst'] == []:            
+                    for jj in range(len(solX_dict['solX_unst'])):
+                        plt.plot(solX_dict['solX_unst'][jj], 
+                                 solY_dict['solY_unst'][jj], 
+                                 c = line_color_list[2], 
+                                 ls = linestyle_list[3], lw = LineThickness, label = r'unstable')
+                if not solX_dict['solX_stab'] == []:            
+                    for jj in range(len(solX_dict['solX_stab'])):
+                        plt.plot(solX_dict['solX_stab'][jj], 
+                                 solY_dict['solY_stab'][jj], 
+                                 c = line_color_list[1], 
+                                 ls = linestyle_list[0], lw = LineThickness, label = r'stable')
+                if not solX_dict['solX_saddle'] == []:            
+                    for jj in range(len(solX_dict['solX_saddle'])):
+                        plt.plot(solX_dict['solX_saddle'][jj], 
+                                 solY_dict['solY_saddle'][jj], 
+                                 c = line_color_list[0], 
+                                 ls = linestyle_list[1], lw = LineThickness, label = r'saddle')
                 
-            if not solX_dict['solX_unst'] == []:            
-                for jj in range(len(solX_dict['solX_unst'])):
-                    plt.plot(solX_dict['solX_unst'][jj], 
-                             solY_dict['solY_unst'][jj], 
-                             c = line_color_list[2], 
-                             ls = linestyle_list[3], lw = LineThickness, label = r'unstable')
-            if not solX_dict['solX_stab'] == []:            
-                for jj in range(len(solX_dict['solX_stab'])):
-                    plt.plot(solX_dict['solX_stab'][jj], 
-                             solY_dict['solY_stab'][jj], 
-                             c = line_color_list[1], 
-                             ls = linestyle_list[0], lw = LineThickness, label = r'stable')
-            if not solX_dict['solX_saddle'] == []:            
-                for jj in range(len(solX_dict['solX_saddle'])):
-                    plt.plot(solX_dict['solX_saddle'][jj], 
-                             solY_dict['solY_saddle'][jj], 
-                             c = line_color_list[0], 
-                             ls = linestyle_list[1], lw = LineThickness, label = r'saddle')
+                
+                
+#             if not solX_dict['solX_unst'] == []:            
+#                 for jj in range(len(solX_dict['solX_unst'])):
+#                     plt.plot(solX_dict['solX_unst'][jj], 
+#                              solY_dict['solY_unst'][jj], 
+#                              c = line_color_list[2], 
+#                              ls = linestyle_list[3], lw = LineThickness, label = r'unstable')
+#             if not solX_dict['solX_stab'] == []:            
+#                 for jj in range(len(solX_dict['solX_stab'])):
+#                     plt.plot(solX_dict['solX_stab'][jj], 
+#                              solY_dict['solY_stab'][jj], 
+#                              c = line_color_list[1], 
+#                              ls = linestyle_list[0], lw = LineThickness, label = r'stable')
+#             if not solX_dict['solX_saddle'] == []:            
+#                 for jj in range(len(solX_dict['solX_saddle'])):
+#                     plt.plot(solX_dict['solX_saddle'][jj], 
+#                              solY_dict['solY_saddle'][jj], 
+#                              c = line_color_list[0], 
+#                              ls = linestyle_list[1], lw = LineThickness, label = r'saddle')
                                     
                             
         else:
@@ -6537,13 +7058,18 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
             max_xrange = choose_xrange[1]-choose_xrange[0]
         else:
             #xrange = [np.max(data_x[kk]) - np.min(data_x[kk]) for kk in range(len(data_x))]
-            max_xrange = np.max(data_x) - np.min(data_x)  # max(xrange)
+            XaxisMax = np.max([np.max(data_x[kk]) for kk in range(len(data_x))])
+            XaxisMin = np.min([np.min(data_x[kk]) for kk in range(len(data_x))])
+            max_xrange = XaxisMax - XaxisMin  # max(xrange)
         
         if choose_yrange:
             max_yrange = choose_yrange[1]-choose_yrange[0]
         else:
             #yrange = [np.max(data_y[kk]) - np.min(data_y[kk]) for kk in range(len(data_y))]
-            max_yrange = np.max(data_y) - np.min(data_y) #max(yrange) 
+            #max_yrange = np.max(data_y) - np.min(data_y) #max(yrange)
+            YaxisMax = np.max([np.max(data_y[kk]) for kk in range(len(data_y))])
+            YaxisMin = np.min([np.min(data_y[kk]) for kk in range(len(data_y))])
+            max_yrange = YaxisMax - YaxisMin
         
         if max_xrange < 1.0:
             xMLocator_major = round_to_1(max_xrange/5)
@@ -6559,11 +7085,11 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         if choose_xrange:
             plt.xlim(choose_xrange[0]-xMLocator_minor, choose_xrange[1]+xMLocator_minor)
         else:
-            plt.xlim(np.min(data_x)-xMLocator_minor, np.max(data_x)+xMLocator_minor)
+            plt.xlim(XaxisMin-xMLocator_minor, XaxisMax+xMLocator_minor)
         if choose_yrange:
             plt.ylim(choose_yrange[0]-yMLocator_minor, choose_yrange[1]+yMLocator_minor)
         else:
-            plt.ylim(np.min(data_y)-yMLocator_minor, np.max(data_y)+yMLocator_minor)
+            plt.ylim(YaxisMin-yMLocator_minor, YaxisMax+yMLocator_minor)
 
         ax.xaxis.set_major_locator(ticker.MultipleLocator(xMLocator_major))
         ax.xaxis.set_minor_locator(ticker.MultipleLocator(xMLocator_minor))
@@ -6576,20 +7102,21 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         ax.tick_params('both', length=3, width=1, which='minor')
     
     if eigenvalues:
-        if not specialPoints[0] == []:
-            for jj in range(len(specialPoints[0])):
-                plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=15, 
-                         c=line_color_list[-1])    
-            for a,b,c in zip(specialPoints[0], specialPoints[1], specialPoints[2]): 
-                if a > plt.xlim()[0]+(plt.xlim()[1]-plt.xlim()[0])/2:
-                    x_offset = -(plt.xlim()[1]-plt.xlim()[0])*0.02
-                else:
-                    x_offset = (plt.xlim()[1]-plt.xlim()[0])*0.02
-                if b > plt.ylim()[0]+(plt.ylim()[1]-plt.ylim()[0])/2:
-                    y_offset = -(plt.ylim()[1]-plt.ylim()[0])*0.05
-                else:
-                    y_offset = (plt.ylim()[1]-plt.ylim()[0])*0.05
-                plt.text(a+x_offset, b+y_offset, c, fontsize=18)
+        if specialPoints != []:
+            if specialPoints[0] != []:
+                for jj in range(len(specialPoints[0])):
+                    plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=15, 
+                             c=line_color_list[-1])    
+                for a,b,c in zip(specialPoints[0], specialPoints[1], specialPoints[2]): 
+                    if a > plt.xlim()[0]+(plt.xlim()[1]-plt.xlim()[0])/2:
+                        x_offset = -(plt.xlim()[1]-plt.xlim()[0])*0.02
+                    else:
+                        x_offset = (plt.xlim()[1]-plt.xlim()[0])*0.02
+                    if b > plt.ylim()[0]+(plt.ylim()[1]-plt.ylim()[0])/2:
+                        y_offset = -(plt.ylim()[1]-plt.ylim()[0])*0.05
+                    else:
+                        y_offset = (plt.ylim()[1]-plt.ylim()[0])*0.05
+                    plt.text(a+x_offset, b+y_offset, c, fontsize=18)
     
     if showFixedPoints==True:
         if not specialPoints[0] == []:
