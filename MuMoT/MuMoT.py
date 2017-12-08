@@ -730,7 +730,8 @@ class MuMoTmodel:
         if initialState=="Auto":
             first = True
             initialState = {}
-            for reactant in self._reactants|self._constantReactants:
+            (allReactants, allConstantReactants) = self._getAllReactants()
+            for reactant in allReactants | allConstantReactants: #self._reactants|self._constantReactants:
                 if first:
 #                     print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
                     initialState[reactant] = MuMoTdefault._agents
@@ -797,7 +798,8 @@ class MuMoTmodel:
         if initialState=="Auto":
             first = True
             initialState = {}
-            for reactant in self._reactants|self._constantReactants:
+            (allReactants, allConstantReactants) = self._getAllReactants()
+            for reactant in allReactants | allConstantReactants: #self._reactants|self._constantReactants:
                 if first:
 #                     print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
                     initialState[reactant] = MuMoTdefault._agents
@@ -923,6 +925,19 @@ class MuMoTmodel:
 #             # 3-d bifurcation diagram
 #             assert false
 
+    ## get the pair of set (reactants, constantReactants). This method is necessary to have all reactants also after a substitution (to set the system size) has occurred
+    def _getAllReactants(self):
+        allReactants = set()
+        allConstantReactants = set()
+        for reaction in self._stoichiometry.values():
+            for reactant,info in reaction.items():
+                if (not reactant == 'rate') and (reactant not in allReactants) and (reactant not in allConstantReactants):
+                    if info == 'const':
+                        allConstantReactants.add(reactant)
+                    else:
+                        allReactants.add(reactant)
+        return (allReactants, allConstantReactants)
+
     def _get_solutions(self):
         if self._solutions == None:
             self._solutions = solve(iter(self._equations.values()), self._reactants, force = False, positive = False, set = False)
@@ -988,7 +1003,8 @@ class MuMoTmodel:
     def _getSingleAgentRules(self):
         # create the empty structure
         self._agentProbabilities = {}
-        for reactant in self._reactants | self._constantReactants | {EMPTYSET_SYMBOL} :
+        (allReactants, allConstantReactants) = self._getAllReactants()
+        for reactant in allReactants | allConstantReactants | {EMPTYSET_SYMBOL} :
             self._agentProbabilities[reactant] = []
             
         # populate the created structure
@@ -996,14 +1012,14 @@ class MuMoTmodel:
             targetReact = []
             # check if constant reactants are not changing state
             for idx, reactant in enumerate(rule.lhsReactants):
-                if reactant in self._constantReactants:
+                if reactant in allConstantReactants: #self._constantReactants:
                     if not (rule.rhsReactants[idx] == reactant or rule.rhsReactants[idx] == EMPTYSET_SYMBOL):
                         errorMsg = 'In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' constant reactant are not properly used. ' \
                                     'Constant reactants must either match the same constant reactant or the EMPTYSET on the right-handside. \n' \
                                     'NOTE THAT ORDER MATTERS: MuMoT assumes that first reactant on left-handside becomes first reactant on right-handside and so on for sencond and third...'
                         print(errorMsg)
                         raise ValueError(errorMsg)
-                elif rule.rhsReactants[idx] in self._constantReactants:
+                elif rule.rhsReactants[idx] in allConstantReactants:
                     errorMsg = 'In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' constant reactant are not properly used.' \
                                     'Constant reactants appears on the right-handside and not on the left-handside. \n' \
                                     'NOTE THAT ORDER MATTERS: MuMoT assumes that first reactant on left-handside becomes first reactant on right-handside and so on for sencond and third...'
@@ -1028,13 +1044,13 @@ class MuMoTmodel:
             for idx2, react2 in enumerate(rule.lhsReactants):
                 if idx == idx2 or react2 == EMPTYSET_SYMBOL: continue
                 otherReact.append(react2)
-                if react2 in self._constantReactants:
+                if react2 in allConstantReactants:
                     otherTargets.append(react2)
                 else:
                     otherTargets.append(rule.rhsReactants[idx2])
             
             # the target reactant for the first non-empty item is the same index item plus all the reactants coming from empty-sets
-            if reactant in self._constantReactants:
+            if reactant in allConstantReactants:
                 targetReact.append(reactant)
             elif not reactant == EMPTYSET_SYMBOL:
                 targetReact.append(rule.rhsReactants[idx])
@@ -5468,7 +5484,7 @@ class MuMoTmultiagentView(MuMoTview):
             del self._positions[dead]
             del self._positionHistory[dead]
             
-        currentState = {state : self._agents.count(state) for state in self._mumotModel._reactants | self._mumotModel._constantReactants}
+        currentState = {state : self._agents.count(state) for state in self._initialState.keys()} #self._mumotModel._reactants | self._mumotModel._constantReactants}
         return currentState
 
     ## one timestep for one agent
@@ -5477,7 +5493,7 @@ class MuMoTmultiagentView(MuMoTview):
         lastVal = 0
         neighChanges = [None]*len(neighs)
         # counting how many neighbours for each state (to be uses for the interaction probabilities)
-        neighCount = {x:neighs.count(x) for x in self._mumotModel._reactants | self._mumotModel._constantReactants}
+        neighCount = {x:neighs.count(x) for x in self._initialState.keys()} #self._mumotModel._reactants | self._mumotModel._constantReactants}
         for idx, neigh in enumerate(neighs):
             if not activeNeighs[idx]:
                 neighCount[neigh] -= 1
@@ -6154,6 +6170,7 @@ def _deriveODEsFromRules(reactants, rules):
 
 ## produces dictionary with stoichiometry of all reactions with key ReactionNr
 # ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry
+## @todo: shall this become a model method?
 def _getStoichiometry(rules, const_reactants):
     stoich = {}
     ReactionNr = numbered_symbols(prefix='Reaction ', cls=Symbol, start=1)
