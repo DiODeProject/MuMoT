@@ -5178,150 +5178,6 @@ class MuMoTmultiagentView(MuMoTview):
 #         print("State distribution each timestep: " + str(historyState))
 #         print("Temporal evolution per state: " + str(evo))
         return (historyState,evo) 
-    
-    def _convertRatesIntoProbabilities_deprecated(self):
-        self._initProbabilitiesMap_deprecated()
-        self._computeScalingFactor()
-        self._applyScalingFactor_deprecated()
-    
-    ## derive the transition probabilities map from reaction rules
-    def _initProbabilitiesMap_deprecated(self):
-        self._probabilities = {}
-        for reactant in self._mumotModel._reactants | self._mumotModel._constantReactants | {EMPTYSET_SYMBOL} :
-            probSets = {}
-            probSets['void'] = []
-            for rule in self._mumotModel._rules:
-                # replacing the constantReactants in the right-handside with EMPTYSET_SYMBOL
-                #rhsReactants = [x if not x in self._mumotModel._constantReactants else EMPTYSET_SYMBOL for x in rule.rhsReactants]
-                # check on number of reactants
-                if len(rule.lhsReactants) > 2 or len(rule.rhsReactants) > 2:
-                    errorMsg = 'Reactions with more than 2 reactacts are not currently supported in multiagent simulations, please use at max two reagents per reaction rule.'
-                    print(errorMsg)
-                    raise ValueError(errorMsg)
-                # check on double change reaction
-                if len(rule.lhsReactants) == 2 and rule.lhsReactants[0] != rule.rhsReactants[0] and rule.lhsReactants[1] != rule.rhsReactants[1]:
-                    # accepted only if one of source is EMPTYSET or a constantReactant
-                    if not (EMPTYSET_SYMBOL in rule.lhsReactants or rule.lhsReactants[0] in self._mumotModel._constantReactants or rule.lhsReactants[1] in self._mumotModel._constantReactants):
-                        errorMsg = 'In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' both reagents change state. This type of rules are currently not supported. Sorry'
-                        print(errorMsg)
-                        raise ValueError(errorMsg)
-                
-#                 constantReactantsIssue = False
-#                 if len(rule.lhsReactants) == 1 and rule.rhsReactants[0] in self._mumotModel._constantReactants:
-#                     constantReactantsIssue = True
-#                 if len(rule.lhsReactants) == 2:
-#                     if rule.lhsReactants[0] in self._mumotModel._constantReactants and not (rule.lhsReactants[0] == rule.rhsReactants[0] or EMPTYSET_SYMBOL in rule.rhsReactants):
-#                         constantReactantsIssue = True
-#                     if rule.lhsReactants[1] in self._mumotModel._constantReactants and not (rule.lhsReactants[1] == rule.rhsReactants[1] or EMPTYSET_SYMBOL in rule.rhsReactants):
-#                         constantReactantsIssue = True
-#                 if constantReactantsIssue:
-                if rule.rhsReactants[0] in self._mumotModel._constantReactants or (len(rule.rhsReactants) == 2 and rule.rhsReactants[1] in self._mumotModel._constantReactants):
-                    errorMsg = 'In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' constant reactant are not properly used.' \
-                                'Constant reactants cannot appear on the right-handside of a rule. Replace the constant reactant on the right-handside with the EMPTYSET.'
-                    print(errorMsg)
-                    raise ValueError(errorMsg)
-                if len(rule.rhsReactants) == 2 and (rule.rhsReactants[0] in self._mumotModel._constantReactants or rule.rhsReactants[1] in self._mumotModel._constantReactants) and (not EMPTYSET_SYMBOL in rule.rhsReactants):
-                    errorMsg = 'Costant reactants on left-handside should match EMPTYSETs on the right-handside. In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ', this is violated.'
-                    print(errorMsg)
-                    raise ValueError(errorMsg)
-#                 print( "Analysing rule" + str(rule) + " which has lhr: " + str(rule.lhsReactants )+ " and rhr: " + str(rule.rhsReactants) )
-                for idx, react in enumerate(rule.lhsReactants):
-                    if react == reactant:
-                        numReagents = len(rule.lhsReactants)
-                        # if individual transition (i.e. no interaction needed)
-                        if numReagents == 1:
-                            if reactant in self._mumotModel._constantReactants:
-                                if probSets.get('splitting') == None:
-                                    probSets['splitting'] = []
-                                probSets['splitting'].append( [rule.rate, self._ratesDict[str(rule.rate)], [reactant, rule.rhsReactants[0]] ] )
-                            else:
-                                probSets['void'].append( [rule.rate, self._ratesDict[str(rule.rate)], rule.rhsReactants[0]] )
-                        
-                        # if interaction transition
-                        elif numReagents == 2:
-                            # if the reactant is the EMPTYSET_SYMBOL, I throw exception for 'double-births' or I 'continue' next loop
-                            if react == EMPTYSET_SYMBOL:
-                                if rule.lhsReactants[0] == EMPTYSET_SYMBOL and rule.lhsReactants[1] == EMPTYSET_SYMBOL:
-                                    #births.append( [rule.rate, self._ratesDict[str(rule.rate)], [rhsReactants[0], rhsReactants[1]] ] )
-                                    errorMsg = 'Double birth ' + str(rule.rhsReactants) + ' currently not supported. Sorry'
-                                    print(errorMsg)
-                                    raise ValueError(errorMsg)
-                                else:
-                                    continue # this case is handled through splitting by the other reagent
-                                
-                            # determining the otherReactant, which is NOT the considered one
-                            if idx == 0:
-                                otherReact = rule.lhsReactants[1]
-                            else:
-                                otherReact = rule.lhsReactants[0]
-                            
-                            # treating in a special way the splitting (i.e., the other reagent is EMPTY)
-                            if otherReact == EMPTYSET_SYMBOL:
-                                # add the reaction to the probSets dictionary
-                                if probSets.get('splitting') == None:
-                                    probSets['splitting'] = []
-                                probSets['splitting'].append( [rule.rate, self._ratesDict[str(rule.rate)], [rule.rhsReactants[0], rule.rhsReactants[1]] ] )
-                            
-                            # treating in a special way the constant reactantants (if they are not with EMPTY)
-                            elif reactant in self._mumotModel._constantReactants:
-                                continue
-                            # compensating the (possible) mixed order of constant reactant rules 
-                            if otherReact in self._mumotModel._constantReactants:
-                                if rule.rhsReactants[idx] == EMPTYSET_SYMBOL:
-                                    if idx == 0:
-                                        targetReact = rule.rhsReactants[1]
-                                    else:
-                                        targetReact = rule.rhsReactants[0]
-                                else:
-                                    targetReact = rule.rhsReactants[idx]
-                                    
-                                if probSets.get(otherReact) == None:
-                                    probSets[otherReact] = []
-                                probSets[otherReact].append( [rule.rate, self._ratesDict[str(rule.rate)], targetReact] )
-                                                                        
-                            # if the reactant undergoes a state change
-                            elif not rule.rhsReactants[idx] == reactant:                                
-                                # add the reaction to the probSets dictionary
-                                if probSets.get(otherReact) == None:
-                                    probSets[otherReact] = []
-                                probSets[otherReact].append( [rule.rate, self._ratesDict[str(rule.rate)], rule.rhsReactants[idx]] )
-                            
-#                         elif numReagents > 2:
-#                             print('Reactions with more than 2 reactacts are not currently supported in multiagent simulations, please use at max two reagents per reaction rule')
-#                             return 1
-                        
-            self._probabilities[reactant] = probSets
-#            print("React " + str(reactant))
-#            print(probSets)
-
-    def _computeScalingFactor_deprecated(self):
-        # Determining the minimum speed of the process (thus the max-scaling factor)
-        maxRatesAll = 0
-        for reactant, probSets in self._probabilities.items():
-            if reactant == EMPTYSET_SYMBOL: continue # not considering the spontaneous births as limiting component for simulation step
-            voidRates = 0
-            maxRates = 0
-            for react, probSet in probSets.items():
-                tmpRates = 0
-                for prob in probSet:
-                    #print("adding P=" + str(prob[1]))
-                    if react == 'void' or react == 'splitting' :
-                        voidRates += prob[1]
-                    else:
-                        tmpRates += prob[1]
-                if tmpRates > maxRates:
-                    maxRates = tmpRates
-            #print("max Rates=" + str(maxRates) + " void Rates=" + str(voidRates))
-            if (maxRates + voidRates) > maxRatesAll:
-                maxRatesAll = maxRates + voidRates
-        #self._scaling = 1/maxRatesAll
-        
-        if maxRatesAll>0: maxTimestepSize = 1/maxRatesAll 
-        else: maxTimestepSize = 1
-        if self._timestepSize > maxTimestepSize:
-            self._timestepSize = maxTimestepSize
-        if self._controller != None: self._update_timestepSize_widget(self._timestepSize, maxTimestepSize)
-#         print("timestepSize s=" + str(self._timestepSize))
   
     def _computeScalingFactor(self):
         # Determining the minimum speed of the process (thus the max-scaling factor)
@@ -5352,13 +5208,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._controller._widgetsExtraParams['timestepSize'].max = maxTimestepSize
             self._controller._widgetsExtraParams['timestepSize'].min = min(maxTimestepSize/100, timestepSize)
             self._controller._widgetsExtraParams['timestepSize'].step = self._controller._widgetsExtraParams['timestepSize'].min 
-    
-    def _applyScalingFactor_deprecated(self):
-        # Multiply all rates by the scaling factor timestepSize
-        for probSets in self._probabilities.values():
-            for probSet in probSets.values():
-                for prob in probSet:
-                    prob[1] *= self._timestepSize
+
                     
     def _initGraph(self, graphType, numNodes, netParam=None):
         if (graphType == NetworkType.FULLY_CONNECTED):
@@ -5527,38 +5377,6 @@ class MuMoTmultiagentView(MuMoTview):
         # No state change happened
         return ([agent],neighChanges)
     
-    
-    ## one timestep for one agent
-    def _stepOneAgent_deprecated(self, agent, neighs):
-        #probSets = copy.deepcopy(self._probabilities[agent])
-        rnd = np.random.rand()
-        lastVal = 0
-        child = None
-        probSets = self._probabilities[agent]
-        # counting how many neighbours for each state (to be uses for the interaction probabilities)
-        neighCount = {x:neighs.count(x) for x in probSets.keys()}
-#         print("Agent " + str(agent) + " with probSet=" + str(probSets))
-#         print("nc:"+str(neighCount))
-        for react, probSet in probSets.items():
-            for prob in probSet:
-                if react == 'void' or react == 'splitting':
-                    popScaling = 1
-                else:
-                    popScaling = neighCount[react]/len(neighs) if len(neighs) > 0 else 0
-                val = popScaling * prob[1]
-                if (rnd < val + lastVal):
-                    # A state change happened!
-                    #print("Reaction: " + str(prob[0]) + " by agent " + str(agent) + " that becomes " + str(prob[2]) )
-                    if react == 'splitting':
-                        newState = prob[2][0]
-                        child = prob[2][1]
-                    else:
-                        newState = prob[2]
-                    return (newState,child)
-                else:
-                    lastVal += val
-        # No state change happened
-        return (agent, child)
     
     def _updatePosition(self, x, y, o, speed, correlatedness):
         # random component
@@ -5854,25 +5672,6 @@ class MuMoTSSAView(MuMoTview):
         # update the figure
         if not self._silent:
             self._figure.canvas.draw()
-        
-    ## @todo Deprecated method to be removed    
-    def _createSSAmatrix(self):
-        self._reactantsMatrix = [] # list of list: for each rule, there is a (sorted) list containing the rate value multiplied with the number of occurencies for each reactant
-        self._ruleChanges = [] # list of list: for each rule, there is a (sorted) list containing the change (e.g., +1, -1, 0) for each reactant 
-        for rule in self._mumotModel._rules:
-            print("rule: " + str(rule.rate))
-            lineR = []
-            lineC = []
-            for reactant in sorted(self._mumotModel._reactants|self._mumotModel._constantReactants, key=str):
-                before = rule.lhsReactants.count(reactant)
-                after = rule.rhsReactants.count(reactant)
-                lineR.append( before * self._ratesDict[str(rule.rate)] )
-                if reactant in self._mumotModel._constantReactants:
-                    lineC.append( 0 )
-                else:
-                    lineC.append( after - before )
-            self._reactantsMatrix.append(lineR)
-            self._ruleChanges.append(lineC)  
             
     def _stepSSA(self, currentState): 
         # update transition probabilities accounting for the current state
