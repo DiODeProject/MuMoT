@@ -503,16 +503,17 @@ class MuMoTmodel:
 
 
     ## construct interactive time evolution plot for state variables      
-    def numSimStateVar(self, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, params = None, **kwargs):
+    def numSimStateVar(self, showStateVars = None, params = None, **kwargs):
+    #def numSimStateVar(self, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, params = None, **kwargs):
         try:
             kwargs['showInitSV'] = True
             
             # construct controller
             viewController = self._controller(False, params = params, **kwargs)
-            
+ 
             # construct view
-            modelView = MuMoTtimeEvoStateVarView(self, viewController, stateVariable1, stateVariable2, stateVariable3, stateVariable4, params = params, **kwargs)
-                    
+            modelView = MuMoTtimeEvoStateVarView(self, viewController, showStateVars, params = params, **kwargs)
+             
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_NumSolODE)         
             
@@ -522,7 +523,8 @@ class MuMoTmodel:
             return None
     
     ## construct interactive time evolution plot for noise around fixed points         
-    def numSimNoiseCorrelations(self, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, params = None, **kwargs):
+    #def numSimNoiseCorrelations(self, showStateVars = None, params = None, **kwargs):
+    def numSimNoiseCorrelations(self, params = None, **kwargs):
         try:
             kwargs['showInitSV'] = True
             kwargs['showNoise'] = True
@@ -535,8 +537,8 @@ class MuMoTmodel:
             viewController = self._controller(False, params = params, **kwargs)
             
             # construct view
-            modelView = MuMoTtimeEvoNoiseCorrView(self, viewController, EOM_1stOrderMom, EOM_2ndOrderMom, stateVariable1, stateVariable2, stateVariable3, stateVariable4, params = params, **kwargs)
-                    
+            modelView = MuMoTtimeEvoNoiseCorrView(self, viewController, EOM_1stOrderMom, EOM_2ndOrderMom, params = params, **kwargs)
+                  
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_NumSolODE)         
             
@@ -970,8 +972,9 @@ class MuMoTmodel:
                     if initCondsSV != False:
                         # check input of initCondsSV
                         if str(reactant) not in initCondsSV:
-                            print('Warning: symbol for reactant  '+str(reactant)+'  not in initCondsSV. Make sure to use the same symbols for the initial conditions as introduced when creating the model.')
-                        initialInitCondValue = initCondsSV[str(reactant)]
+                            initialInitCondValue = INITIAL_COND_INIT_VAL
+                        else:
+                            initialInitCondValue = initCondsSV[str(reactant)]
                     else:
                         initialInitCondValue = INITIAL_COND_INIT_VAL   
                     paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
@@ -2269,14 +2272,18 @@ class MuMoTmultiController(MuMoTcontroller):
 
 ## time evolution view on model including state variables and noise (specialised by MuMoTtimeEvoStateVarView and ...)
 class MuMoTtimeEvolutionView(MuMoTview):
+    ## list of all state variables
+    _stateVarList = None
+    ## list of all state variables displayed in figure
+    _stateVarListDisplay = None
     ## 1st state variable
     _stateVariable1 = None
     ## 2nd state variable 
     _stateVariable2 = None
     ## 3rd state variable 
     _stateVariable3 = None
-    ## 4th state variable 
-    _stateVariable4 = None
+#     ## 4th state variable 
+#     _stateVariable4 = None
     ## initial conditions of state variables for numerical solution of ODE system
     _initCondsSV = None
     ## end time of numerical simulation of ODE system of the state variables
@@ -2290,11 +2297,13 @@ class MuMoTtimeEvolutionView(MuMoTview):
     ## legend location: combinations like 'upper left', lower right, or 'center center' are allowed (9 options in total)
     _legend_loc = None
 
-    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, figure = None, params = None, **kwargs):
+    #def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, showStateVars = None, figure = None, params = None, **kwargs):
         #if model._systemSize == None and model._constantSystemSize == True:
         #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
         #    return
         silent = kwargs.get('silent', False)
+        
         super().__init__(model, controller, figure, params, **kwargs)
         
         if 'fontsize' in kwargs:
@@ -2307,54 +2316,26 @@ class MuMoTtimeEvolutionView(MuMoTview):
         self._legend_loc = kwargs.get('legend_loc', 'upper left')
         self._legend_fontsize = kwargs.get('legend_fontsize', 18)
         
-        self._stateVariable1 = process_sympy(stateVariable1)
-        self._stateVariable2 = process_sympy(stateVariable2)
-        if stateVariable3 != None:
-            self._stateVariable3 = process_sympy(stateVariable3)
-        if stateVariable4 != None:
-            self._stateVariable4 = process_sympy(stateVariable4)
-            
-        self._tend = kwargs.get('tend', 100)
-        self._tstep = kwargs.get('tstep', 0.01)
+        self._stateVarList = []
+        for reactant in self._mumotModel._reactants:
+            if reactant not in self._mumotModel._constantReactants:
+                self._stateVarList.append(reactant)
+              
+        if showStateVars:
+            if type(showStateVars) == list:
+                self._stateVarListDisplay = showStateVars    
+                for kk in range(len(self._stateVarListDisplay)):
+                    self._stateVarListDisplay[kk] = process_sympy(self._stateVarListDisplay[kk])
+            else:
+                self._showErrorMessage('Check input: should be of type list!')
+        else:
+            self._stateVarListDisplay = copy.deepcopy(self._stateVarList)
         
-        self._initCondsSV = kwargs.get('initCondsSV', False)
+        self._stateVariable1 = self._stateVarList[0]
+        self._stateVariable2 = self._stateVarList[1]
+        if len(self._stateVarList) == 3:
+            self._stateVariable3 = self._stateVarList[2]
         
-        if not(silent):
-            self._plot_NumSolODE()
-
-
-
-
-# class MuMoTtimeEvolutionView(MuMoTview):
-#     ## 1st state variable
-#     _stateVariable1 = None
-#     ## 2nd state variable 
-#     _stateVariable2 = None
-#     ## 3rd state variable 
-#     _stateVariable3 = None
-#     ## 4th state variable 
-#     _stateVariable4 = None
-#     ## end time of numerical simulation
-#     _tend = None
-#     ## time step of numerical simulation
-#     _tstep = None
-#     
-#   
-#     def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, tend = 100, tstep = 0.01, figure = None, params = None, **kwargs):
-#         #if model._systemSize == None and model._constantSystemSize == True:
-#         #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
-#         #    return
-#         silent = kwargs.get('silent', False)
-#         super().__init__(model, controller, figure, params, **kwargs)
-#         
-#         if 'fontsize' in kwargs:
-#             self._chooseFontSize = kwargs['fontsize']
-#         else:
-#             self._chooseFontSize=None
-#         self._xlab = kwargs.get('xlab', r'time t')
-#         self._ylab = kwargs.get('ylab', r'evolution of states')
-#         
-#         self._legend_loc = kwargs.get('legend_loc', 'upper left')
 #         
 #         self._stateVariable1 = process_sympy(stateVariable1)
 #         self._stateVariable2 = process_sympy(stateVariable2)
@@ -2363,22 +2344,49 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #         if stateVariable4 != None:
 #             self._stateVariable4 = process_sympy(stateVariable4)
 #             
-#         self._tend = tend
-#         self._tstep = tstep
-#         if not(silent):
-#             self._plot_NumSolODE()
-    
-    
 
+        self._tend = kwargs.get('tend', 100)
+        self._tstep = kwargs.get('tstep', 0.01)
+        
+        self._initCondsSV = kwargs.get('initCondsSV', False)
+        
+        # check input of initCondsSV
+        if self._initCondsSV != False:
+            for reactIC in self._initCondsSV:
+                if process_sympy(reactIC) not in self._stateVarList:
+                    print('Warning: symbol for reactant  '+str(reactIC)+'  is not a time-dependent model reactant. Check that symbols for the initial conditions are the same as the ones introduced when creating the model, and that it is not a constant reactant.')
+                #elif str(reactIC) in self._mumotModel._constantReactants:
+                #    print('Warning: Reactant  '+str(reactIC)+'  is a constant reactant. Give initial conditions only for time-dependent reactants.')
+
+        if not(silent):
+            self._plot_NumSolODE()
+
+    
     ## calculates right-hand side of ODE system
     def _get_eqsODE(self, y_old, time):
         SVsub = {}
-        SVsub[self._stateVariable1] = y_old[0]
-        SVsub[self._stateVariable2] = y_old[1]
-        if self._stateVariable3:
-            SVsub[self._stateVariable3] = y_old[2]
-        if self._stateVariable4:
-            SVsub[self._stateVariable4] = y_old[3]
+        
+        for kk in range(len(self._stateVarList)):
+            SVsub[self._stateVarList[kk]] = y_old[kk]
+            
+        argDict = self._get_argDict()
+        ode_sys = []
+        for kk in range(len(self._stateVarList)):
+            EQ = self._mumotModel._equations[self._stateVarList[kk]].subs(argDict)
+            EQ = EQ.subs(SVsub)
+            ode_sys.append(EQ)
+            
+        return ode_sys
+#         
+#         SVsub[self._stateVariable1] = y_old[0]
+#         SVsub[self._stateVariable2] = y_old[1]
+#         if self._stateVariable3:
+#             SVsub[self._stateVariable3] = y_old[2]
+#         if self._stateVariable4:
+#             SVsub[self._stateVariable4] = y_old[3]
+#             
+
+
 #         #plotLimits = self._controller._getPlotLimits()
 #         paramNames = []
 #         paramValues = []
@@ -2396,24 +2404,23 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #         argNamesSymb = list(map(Symbol, paramNames))
 #         argDict = dict(zip(argNamesSymb, paramValues))
 # #         argDict[self._mumotModel._systemSize] = 1
-        
-        argDict = self._get_argDict()
-        
-        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
-        EQ1 = EQ1.subs(SVsub)
-        EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
-        EQ2 = EQ2.subs(SVsub)
-        ode_sys = [EQ1, EQ2]
-        if self._stateVariable3:
-            EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
-            EQ3 = EQ3.subs(SVsub)
-            ode_sys.append(EQ3)
-        if self._stateVariable4:
-            EQ4 = self._mumotModel._equations[self._stateVariable4].subs(argDict)
-            EQ4 = EQ4.subs(SVsub)
-            ode_sys.append(EQ4)
-               
-        return ode_sys
+            
+#             
+#         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+#         EQ1 = EQ1.subs(SVsub)
+#         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+#         EQ2 = EQ2.subs(SVsub)
+#         ode_sys = [EQ1, EQ2]
+#         if self._stateVariable3:
+#             EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
+#             EQ3 = EQ3.subs(SVsub)
+#             ode_sys.append(EQ3)
+#         if self._stateVariable4:
+#             EQ4 = self._mumotModel._equations[self._stateVariable4].subs(argDict)
+#             EQ4 = EQ4.subs(SVsub)
+#             ode_sys.append(EQ4)
+#                
+
     
     def _plot_NumSolODE(self):
         if not(self._silent): ## @todo is this necessary?
@@ -2422,79 +2429,102 @@ class MuMoTtimeEvolutionView(MuMoTview):
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
         
-        
-    def _numericSol2ndOrdMoment(self, EOM_2ndOrdMomDict, steadyStateDict, argDict):
-        for sol in EOM_2ndOrdMomDict:
-            EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(steadyStateDict)
-            EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(argDict)
-        
-        eta_SV1 = Symbol('eta_'+str(self._stateVariable1))
-        eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
-        M_1, M_2 = symbols('M_1 M_2')
-        if self._stateVariable3:
-            eta_SV3 = Symbol('eta_'+str(self._stateVariable3))
-            
-        SOL_2ndOrdMomDict = {} 
-        EQsys2ndOrdMom = []
-        if self._stateVariable3:
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)])
-            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
-                                                             M_2(eta_SV2*eta_SV2), 
-                                                             M_2(eta_SV3*eta_SV3), 
-                                                             M_2(eta_SV1*eta_SV2), 
-                                                             M_2(eta_SV1*eta_SV3), 
-                                                             M_2(eta_SV2*eta_SV3)]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
-            
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
-            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
-            SOL_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)] = SOL_2ndOrderMom[2]
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[3]
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)] = SOL_2ndOrderMom[4]
-            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)] = SOL_2ndOrderMom[5]
-        
-        else:
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
-            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
-                                                             M_2(eta_SV2*eta_SV2), 
-                                                             M_2(eta_SV1*eta_SV2)]))[0] #only one set of solutions (if any) in linear system of equations
-            
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
-            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[2]
-            
-        return SOL_2ndOrdMomDict
-    
-    def _build_bookmark(self, includeParams = True):
-        if not self._silent:
-            logStr = "bookmark = "
-        else:
-            logStr = ""
-        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
-        if self._stateVariable3 != None:
-            logStr += "'" + str(self._stateVariable3) + "', "
-        if self._stateVariable4 != None:
-            logStr += "'" + str(self._stateVariable4) + "', "
-        if includeParams:
-            logStr += self._get_bookmarks_params() + ", "
-        if len(self._generatingKwargs) > 0:
-            for key in self._generatingKwargs:
-                if type(self._generatingKwargs[key]) == str:
-                    logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
-                else:
-                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-        logStr += "bookmark = False"
-        logStr += ")"
-        logStr = logStr.replace('\\', '\\\\')
-        
-        return logStr
-    
+#         
+#     def _numericSol2ndOrdMoment(self, EOM_2ndOrdMomDict, steadyStateDict, argDict):
+#         for sol in EOM_2ndOrdMomDict:
+#             EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(steadyStateDict)
+#             EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(argDict)
+# #         
+# #         eta_SV1 = Symbol('eta_'+str(self._stateVarList[0]))
+# #         eta_SV2 = Symbol('eta_'+str(self._stateVarList[1]))
+# #         M_1, M_2 = symbols('M_1 M_2')
+# #         if len(self._stateVarList) == 3:
+# #             eta_SV3 = Symbol('eta_'+str(self._stateVarList[2]))
+# #             
+#              
+#         eta_SV1 = Symbol('eta_'+str(self._stateVariable1))
+#         eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
+#         M_1, M_2 = symbols('M_1 M_2')
+#         if self._stateVariable3:
+#             eta_SV3 = Symbol('eta_'+str(self._stateVariable3))
+#              
+# 
+#         SOL_2ndOrdMomDict = {} 
+#         EQsys2ndOrdMom = []
+#         if self._stateVariable3:
+#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
+#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
+#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)])
+#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
+#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)])
+#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)])
+#             SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
+#                                                              M_2(eta_SV2*eta_SV2), 
+#                                                              M_2(eta_SV3*eta_SV3), 
+#                                                              M_2(eta_SV1*eta_SV2), 
+#                                                              M_2(eta_SV1*eta_SV3), 
+#                                                              M_2(eta_SV2*eta_SV3)]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
+#             
+#             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
+#             SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
+#             SOL_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)] = SOL_2ndOrderMom[2]
+#             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[3]
+#             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)] = SOL_2ndOrderMom[4]
+#             SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)] = SOL_2ndOrderMom[5]
+#         
+#         else:
+#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
+#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
+#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
+#             SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
+#                                                              M_2(eta_SV2*eta_SV2), 
+#                                                              M_2(eta_SV1*eta_SV2)]))[0] #only one set of solutions (if any) in linear system of equations
+#             
+#             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
+#             SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
+#             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[2]
+#             
+#         return SOL_2ndOrdMomDict
+#     
+
+# 
+#     def _build_bookmark(self, includeParams = True):
+#         if not self._silent:
+#             logStr = "bookmark = "
+#         else:
+#             logStr = ""
+#         
+#         logStr += "<modelName>." + self._generatingCommand + "(["
+#         for nn in range(len(self._stateVarListDisplay)):
+#             if nn == len(self._stateVarListDisplay)-1:
+#                 logStr += "'" + str(self._stateVarListDisplay[nn]) + "'], "
+#             else:
+#                 logStr += "'" + str(self._stateVarListDisplay[nn]) + "', "
+#         
+# #         
+# #         logStr += "<modelName>." + self._generatingCommand + "('" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
+# #         if self._stateVariable3 != None:
+# #             logStr += "'" + str(self._stateVariable3) + "', "
+# #         if self._stateVariable4 != None:
+# #             logStr += "'" + str(self._stateVariable4) + "', "
+# #         
+#      
+#         if includeParams:
+#             logStr += self._get_bookmarks_params() + ", "
+#         if len(self._generatingKwargs) > 0:
+#             for key in self._generatingKwargs:
+#                 if type(self._generatingKwargs[key]) == str:
+#                     logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+#                 else:
+#                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+#         logStr += "bookmark = False"
+#         logStr += ")"
+#         logStr = logStr.replace('\\', '\\\\')
+#         
+#         return logStr
+#     
+
+
 # class MuMoTtimeEvolutionView(MuMoTview):
 #     ## 1st state variable
 #     _stateVariable1 = None
@@ -2654,59 +2684,112 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
     _ylab = None
     
     def __init__(self, *args, **kwargs):
+        
         self._ylab = kwargs.get('ylab', r'evolution of states')
         super().__init__(*args, **kwargs)
         self._generatingCommand = "numSimStateVar"
+        
 
     def _plot_NumSolODE(self):
         super()._plot_NumSolODE()
         
         # check input
-        if self._stateVariable1 not in self._mumotModel._reactants:
-            self._showErrorMessage('Warning:  '+str(self._stateVariable1)+'  is no reactant in the current model.')
-        if self._stateVariable2 not in self._mumotModel._reactants:
-            self._showErrorMessage('Warning:  '+str(self._stateVariable2)+'  is no reactant in the current model.')
-        if self._stateVariable3:
-            if self._stateVariable3 not in self._mumotModel._reactants:
-                self._showErrorMessage('Warning:  '+str(self._stateVariable3)+'  is no reactant in the current model.')
-        if self._stateVariable4:
-            if self._stateVariable4 not in self._mumotModel._reactants:
-                self._showErrorMessage('Warning:  '+str(self._stateVariable4)+'  is no reactant in the current model.')
-        
+        for nn in range(len(self._stateVarListDisplay)):
+            if self._stateVarListDisplay[nn] not in self._stateVarList:
+                self._showErrorMessage('Warning:  '+str(self._stateVarListDisplay[nn])+'  is no reactant in the current model.')
+                return None
+      
+#         
+#         if self._stateVariable1 not in self._mumotModel._reactants:
+#             self._showErrorMessage('Warning:  '+str(self._stateVariable1)+'  is no reactant in the current model.')
+#         if self._stateVariable2 not in self._mumotModel._reactants:
+#             self._showErrorMessage('Warning:  '+str(self._stateVariable2)+'  is no reactant in the current model.')
+#         if self._stateVariable3:
+#             if self._stateVariable3 not in self._mumotModel._reactants:
+#                 self._showErrorMessage('Warning:  '+str(self._stateVariable3)+'  is no reactant in the current model.')
+#         if self._stateVariable4:
+#             if self._stateVariable4 not in self._mumotModel._reactants:
+#                 self._showErrorMessage('Warning:  '+str(self._stateVariable4)+'  is no reactant in the current model.')
+#         
         
         NrDP = int(self._tend/self._tstep) + 1
         time = np.linspace(0, self._tend, NrDP)
         
         initDict = self._getInitCondsFromSlider()
-        if len(initDict) < 2 or len(initDict) > 4:
-            self._showErrorMessage("Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!")
+        #if len(initDict) < 2 or len(initDict) > 4:
+        #    self._showErrorMessage("Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!")
 
-        
-        SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
-        SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
-        y0 = [SV1_0, SV2_0]
-        if len(initDict) > 2:
-            SV3_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable3))))]
-            y0.append(SV3_0)
-        if len(initDict) > 3:
-            SV4_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable4))))]
-            y0.append(SV4_0)
-        
-        sol_ODE = odeint(self._get_eqsODE, y0, time)  
+        y0 = []
+        for nn in range(len(self._stateVarList)):
+            SVi0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVarList[nn]))))]
+            y0.append(SVi0)
           
-        x_data = [time for kk in range(len(self._get_eqsODE(y0, time)))]
-        y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
+#             
+#         SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
+#         SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
+#         y0 = [SV1_0, SV2_0]
+#         if len(initDict) > 2:
+#             SV3_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable3))))]
+#             y0.append(SV3_0)
+#         if len(initDict) > 3:
+#             SV4_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable4))))]
+#             y0.append(SV4_0)
+#         
+
+        sol_ODE = odeint(self._get_eqsODE, y0, time)  
         
-        c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
-        if self._stateVariable3:
-            c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable3)))+'$')
-        if self._stateVariable4:
-            c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
+        sol_ODE_dict = {}
+        for nn in range(len(self._stateVarList)):
+            sol_ODE_dict[str(self._stateVarList[nn])] = sol_ODE[:, nn]
+          
+        #x_data = [time for kk in range(len(self._get_eqsODE(y0, time)))]
+        x_data = [time for kk in range(len(self._stateVarListDisplay))]
+        #y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
+        y_data = [sol_ODE_dict[str(self._stateVarListDisplay[kk])] for kk in range(len(self._stateVarListDisplay))]
         
+        c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
+        
+#         
+#         c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
+#         if self._stateVariable3:
+#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable3)))+'$')
+#         if self._stateVariable4:
+#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
+#         
+
         _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
                            fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
                            legend_fontsize=self._legend_fontsize)
 #        plt.set_aspect('equal') ## @todo
+
+
+    def _build_bookmark(self, includeParams = True):
+        if not self._silent:
+            logStr = "bookmark = "
+        else:
+            logStr = ""
+        
+        logStr += "<modelName>." + self._generatingCommand + "(["
+        for nn in range(len(self._stateVarListDisplay)):
+            if nn == len(self._stateVarListDisplay)-1:
+                logStr += "'" + str(self._stateVarListDisplay[nn]) + "'], "
+            else:
+                logStr += "'" + str(self._stateVarListDisplay[nn]) + "', "
+     
+        if includeParams:
+            logStr += self._get_bookmarks_params() + ", "
+        if len(self._generatingKwargs) > 0:
+            for key in self._generatingKwargs:
+                if type(self._generatingKwargs[key]) == str:
+                    logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                else:
+                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+        logStr += "bookmark = False"
+        logStr += ")"
+        logStr = logStr.replace('\\', '\\\\')
+        
+        return logStr
+
 
 
 # class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
@@ -2757,32 +2840,48 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
     _tstepNoise = None
     ## y-label with default specific to this MuMoTtimeEvoNoiseCorrView class (can be set via keyword)
     _ylab = None
+    
 
-    def __init__(self, model, controller, EOM_1stOrdMom, EOM_2ndOrdMom, stateVariable1, stateVariable2, stateVariable3=None, stateVariable4=None, figure = None, params = None, **kwargs):
+#    def __init__(self, model, controller, EOM_1stOrdMom, EOM_2ndOrdMom, stateVariable1, stateVariable2, stateVariable3=None, stateVariable4=None, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, EOM_1stOrdMom, EOM_2ndOrdMom, figure = None, params = None, **kwargs):
         self._EOM_1stOrdMomDict = EOM_1stOrdMom
         self._EOM_2ndOrdMomDict = EOM_2ndOrdMom
         self._tendNoise = kwargs.get('tendNoise', 50)
         self._tstepNoise= kwargs.get('tstepNoise', 0.01)
         self._ylab = kwargs.get('ylab', 'noise-noise correlation')
         silent = kwargs.get('silent', False)
-        super().__init__(model, controller, stateVariable1, stateVariable2, stateVariable3, stateVariable4, figure, params, **kwargs)
+        super().__init__(model, controller, None, figure, params, **kwargs)
         #super().__init__(*args, **kwargs)
+        
+        if len(self._stateVarList) < 2 or len(self._stateVarList) > 3:
+            self._showErrorMessage("Not implemented: This feature is available only for systems with 2 or 3 time-dependent reactants!")
+            return None
+        
         self._generatingCommand = "numSimNoiseCorrelations"
+    
+        
         
     def _plot_NumSolODE(self):
         super()._plot_NumSolODE()
         
         # check input
-        if self._stateVariable1 not in self._mumotModel._reactants:
-            self._showErrorMessage('Warning:  '+str(self._stateVariable1)+'  is no reactant in the current model.')
-        if self._stateVariable2 not in self._mumotModel._reactants:
-            self._showErrorMessage('Warning:  '+str(self._stateVariable2)+'  is no reactant in the current model.')
-        if self._stateVariable3:
-            if self._stateVariable3 not in self._mumotModel._reactants:
-                self._showErrorMessage('Warning:  '+str(self._stateVariable3)+'  is no reactant in the current model.')
-        if self._stateVariable4:
-            if self._stateVariable4 not in self._mumotModel._reactants:
-                self._showErrorMessage('Warning:  '+str(self._stateVariable4)+'  is no reactant in the current model.')
+        for nn in range(len(self._stateVarListDisplay)):
+            if self._stateVarListDisplay[nn] not in self._stateVarList:
+                self._showErrorMessage('Warning:  '+str(self._stateVarListDisplay[nn])+'  is no reactant in the current model.')
+                return None
+
+#         
+#         # check input
+#         if self._stateVariable1 not in self._mumotModel._reactants:
+#             self._showErrorMessage('Warning:  '+str(self._stateVariable1)+'  is no reactant in the current model.')
+#         if self._stateVariable2 not in self._mumotModel._reactants:
+#             self._showErrorMessage('Warning:  '+str(self._stateVariable2)+'  is no reactant in the current model.')
+#         if self._stateVariable3:
+#             if self._stateVariable3 not in self._mumotModel._reactants:
+#                 self._showErrorMessage('Warning:  '+str(self._stateVariable3)+'  is no reactant in the current model.')
+#         if self._stateVariable4:
+#             if self._stateVariable4 not in self._mumotModel._reactants:
+#                 self._showErrorMessage('Warning:  '+str(self._stateVariable4)+'  is no reactant in the current model.')
 
         eps = 5e-3
         systemSize = Symbol('systemSize')
@@ -2791,10 +2890,6 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
         time = np.linspace(0, self._tend, NrDP)
         
         initDict = self._getInitCondsFromSlider()
-        
-        if len(initDict) < 2 or len(initDict) > 3:
-            self._showErrorMessage("Not implemented: This feature is available only for systems with 2 or 3 time-dependent reactants!")
-            return
         
         SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
         SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
@@ -2829,7 +2924,7 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
             
             if steadyStateReached == False:
                 self._showErrorMessage('Stable steady state has not been reached: Try changing the initial conditions or model parameters using the sliders provided, increase simulation time, or decrease timestep tstep.') 
-                return
+                return None
         else:
             steadyStateReached = 'uncertain'
             self._showErrorMessage('Warning: steady state may have not been reached. Substituted values of state variables at t=tend (tend can be set via keyword \'tend = <number>\').')
@@ -2978,6 +3073,87 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
                            legend_fontsize=self._legend_fontsize)
 #        plt.set_aspect('equal') ## @todo
         
+        
+    def _numericSol2ndOrdMoment(self, EOM_2ndOrdMomDict, steadyStateDict, argDict):
+        for sol in EOM_2ndOrdMomDict:
+            EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(steadyStateDict)
+            EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(argDict)
+#         
+#         eta_SV1 = Symbol('eta_'+str(self._stateVarList[0]))
+#         eta_SV2 = Symbol('eta_'+str(self._stateVarList[1]))
+#         M_1, M_2 = symbols('M_1 M_2')
+#         if len(self._stateVarList) == 3:
+#             eta_SV3 = Symbol('eta_'+str(self._stateVarList[2]))
+#             
+             
+        eta_SV1 = Symbol('eta_'+str(self._stateVariable1))
+        eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
+        M_1, M_2 = symbols('M_1 M_2')
+        if self._stateVariable3:
+            eta_SV3 = Symbol('eta_'+str(self._stateVariable3))
+             
+
+        SOL_2ndOrdMomDict = {} 
+        EQsys2ndOrdMom = []
+        if self._stateVariable3:
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)])
+            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
+                                                             M_2(eta_SV2*eta_SV2), 
+                                                             M_2(eta_SV3*eta_SV3), 
+                                                             M_2(eta_SV1*eta_SV2), 
+                                                             M_2(eta_SV1*eta_SV3), 
+                                                             M_2(eta_SV2*eta_SV3)]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
+            
+            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
+            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
+            SOL_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)] = SOL_2ndOrderMom[2]
+            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[3]
+            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)] = SOL_2ndOrderMom[4]
+            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)] = SOL_2ndOrderMom[5]
+        
+        else:
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
+            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
+                                                             M_2(eta_SV2*eta_SV2), 
+                                                             M_2(eta_SV1*eta_SV2)]))[0] #only one set of solutions (if any) in linear system of equations
+            
+            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
+            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
+            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[2]
+            
+        return SOL_2ndOrdMomDict
+
+
+    def _build_bookmark(self, includeParams = True):
+        if not self._silent:
+            logStr = "bookmark = "
+        else:
+            logStr = ""
+        
+        logStr += "<modelName>." + self._generatingCommand + "("
+     
+        if includeParams:
+            logStr += self._get_bookmarks_params() + ", "
+        if len(self._generatingKwargs) > 0:
+            for key in self._generatingKwargs:
+                if type(self._generatingKwargs[key]) == str:
+                    logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                else:
+                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+        logStr += "bookmark = False"
+        logStr += ")"
+        logStr = logStr.replace('\\', '\\\\')
+        
+        return logStr
+
+
 
 ## field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
 class MuMoTfieldView(MuMoTview):
