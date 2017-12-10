@@ -90,9 +90,9 @@ class MuMoTdefault:
         MuMoTdefault._rateLimits = limits
         MuMoTdefault._rateStep = step
     
-    _maxTime = 10
-    _timeLimits = (1, 100)
-    _timeStep = 1
+    _maxTime = 3
+    _timeLimits = (0, 10)
+    _timeStep = 0.1
     @staticmethod
     def setTimeDefaults(initTime=_maxTime, limits=_timeLimits, step=_timeStep):
         MuMoTdefault._maxTime = initTime
@@ -1511,7 +1511,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         
         # Max time slider
         maxTime = MAParams['maxTime']
-        widget = widgets.IntSlider(value = maxTime[0], min = maxTime[1], 
+        widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
                                          max = maxTime[2], step = maxTime[3], 
                                          description = 'Simulation time:',
                                          disabled=False,
@@ -4806,8 +4806,10 @@ class MuMoTmultiagentView(MuMoTview):
     _initialState = None
     ## random seed
     _randomSeed = None
-    ## number of simulation timesteps
+    ## simulation length (in the same time unit of the rates)
     _maxTime = None
+    ## number of simulation timesteps
+    _maxTimeSteps = None
     ## time scaling (i.e. lenght of each timestep)
     _timestepSize = None
     ## dictionary of rates
@@ -5003,7 +5005,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._positionHistory = None
             
         # init progress bar
-        if self._controller != None: self._controller._progressBar.max = self._maxTime
+        if self._controller != None: self._controller._progressBar.max = self._maxTimeSteps
         
         # store the graph layout (only for 'graph' visualisation)
         if (not dynamicNetwork): # and self._visualisationType == "graph":
@@ -5011,10 +5013,10 @@ class MuMoTmultiagentView(MuMoTview):
         else:
             pos_layout = None
         
-        for i in np.arange(1, self._maxTime+1):
+        for i in np.arange(1, self._maxTimeSteps+1):
             #print("Time: " + str(i))
             if self._controller != None: self._controller._progressBar.value = i
-            if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(i/self._maxTime*100)) + "%:"
+            if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(i/self._maxTimeSteps*100)) + "%:"
             if dynamicNetwork: # and self._showTrace:
                 for idx, _ in enumerate(self._agents): # second element _ is the agent (unused)
                     self._positionHistory[idx].append( self._positions[idx] )
@@ -5043,10 +5045,11 @@ class MuMoTmultiagentView(MuMoTview):
             plt.axes().set_aspect('auto')
             # create the frame
             #self._plot.axis([0, self._maxTime, 0, totAgents])
-            plt.xlim((0, self._maxTime))
-            plt.ylim((0, self._systemSize))
+            #plt.xlim((0, self._maxTime))
+            #plt.ylim((0, self._systemSize))
             #self._figure.show()
-            _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent))
+            actualMaxTime = self._maxTimeSteps * self._timestepSize 
+            _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent), choose_xrange=(0, actualMaxTime), choose_yrange=(0, self._systemSize) )
         elif self._visualisationType == "graph": #and self._netType == NetworkType.DYNAMIC:
             plt.axes().set_aspect('equal')
         elif (self._visualisationType == "final"):
@@ -5057,30 +5060,33 @@ class MuMoTmultiagentView(MuMoTview):
     
     def _updateMultiagentFigure(self, i, evo, positionHistory, pos_layout):
         if (self._visualisationType == "evo"):
+            actualMaxTime = self._maxTimeSteps * self._timestepSize
+            actualMaxTime = self._maxTime
+#             print("ACTUAL MAX TIME " + str(actualMaxTime))
             # If realtime-plot mode, draw only the last timestep rather than overlay all
             if (i>1):
                 xdata = []
                 ydata = []
                 for state in sorted(self._initialState.keys(), key=str):
-                    xdata.append( list(np.arange(len(evo[state]))) )
+                    xdata.append( list(np.arange(len(evo[state]))*self._timestepSize) )
                     ydata.append( evo[state] )
                     ## @todo replot only the last part (rather than all the line)
 #                     xdata.append( [i-1,i] )
 #                     pop = evo[state]
 #                     ydata.append( pop[len(pop)-2:len(pop)] )
                     #plt.plot(evo[state], color=self._colors[state])
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False)
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, actualMaxTime), choose_yrange=(0, self._systemSize) )
             else: # otherwise, plot all time-evolution
                 xdata = []
                 ydata = []
                 labels = []
                 for state in sorted(self._initialState.keys(), key=str):
-                    xdata.append( list(np.arange(len(evo[state]))) )
+                    xdata.append( list(np.arange(len(evo[state]))*self._timestepSize) )
                     ydata.append(evo[state])
                     labels.append(state)
                 #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
                     #plt.plot(evo[state], color=self._colors[state])
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False)
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False, choose_xrange=(0, actualMaxTime), choose_yrange=(0, self._systemSize) )
 
         elif (self._visualisationType == "graph"):
             self._initFigure()
@@ -5165,7 +5171,7 @@ class MuMoTmultiagentView(MuMoTview):
             currentState.append(self._initialState[reactant])
         historyState.append( [t] + currentState )
  
-        for t in np.arange(1, self._maxTime+1):
+        for t in np.arange(1, self._maxTimeSteps+1):
             newState = self._stepMultiagent()
             currentState = []
             for reactant in sorted(self._mumotModel._reactants, key=str):
@@ -5196,10 +5202,11 @@ class MuMoTmultiagentView(MuMoTview):
         else: maxTimestepSize = 1
         if self._timestepSize > maxTimestepSize:
             self._timestepSize = maxTimestepSize
-        if self._controller != None: self._update_timestepSize_widget(self._timestepSize, maxTimestepSize)
+        self._maxTimeSteps = math.ceil( self._maxTime / self._timestepSize )
+        if self._controller != None: self._update_timestepSize_widget(self._timestepSize, maxTimestepSize, self._maxTimeSteps)
 #         print("timestepSize s=" + str(self._timestepSize))
     
-    def _update_timestepSize_widget(self, timestepSize, maxTimestepSize):
+    def _update_timestepSize_widget(self, timestepSize, maxTimestepSize, maxTimeSteps):
         if not self._controller._widgetsExtraParams['timestepSize'].value == timestepSize:
             if (self._controller._widgetsExtraParams['timestepSize'].max < timestepSize):
                 self._controller._widgetsExtraParams['timestepSize'].max = maxTimestepSize
@@ -5210,6 +5217,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._controller._widgetsExtraParams['timestepSize'].max = maxTimestepSize
             self._controller._widgetsExtraParams['timestepSize'].min = min(maxTimestepSize/100, timestepSize)
             self._controller._widgetsExtraParams['timestepSize'].step = self._controller._widgetsExtraParams['timestepSize'].min 
+        self._controller._widgetsExtraParams['maxTime'].description = "Simulation time (equivalent to " + str(maxTimeSteps) + " simulation timesteps)"
 
                     
     def _initGraph(self, graphType, numNodes, netParam=None):
