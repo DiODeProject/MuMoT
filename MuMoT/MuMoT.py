@@ -99,9 +99,9 @@ class MuMoTdefault:
         MuMoTdefault._timeLimits = limits
         MuMoTdefault._timeStep = step
         
-    _agents = 100
-    _agentsLimits = (0, 1000)
-    _agentsStep = 1
+    _agents = 1.0
+    _agentsLimits = (0.0, 1.0)
+    _agentsStep = 0.01
     @staticmethod
     def setAgentsDefaults(initAgents=_agents, limits=_agentsLimits, step=_agentsStep):
         MuMoTdefault._agents = initAgents
@@ -1011,6 +1011,7 @@ class MuMoTmodel:
         for rule in self._rules:
             targetReact = []
             # check if constant reactants are not changing state
+            # WARNING! if the checks hereafter are changed, it might be necessary to modify the way in which network-simulations are disabled (atm only on EMPTYSET_SYMBOL presence because (A) -> B are not allowed)
             for idx, reactant in enumerate(rule.lhsReactants):
                 if reactant in allConstantReactants: #self._constantReactants:
                     if not (rule.rhsReactants[idx] == reactant or rule.rhsReactants[idx] == EMPTYSET_SYMBOL):
@@ -1235,7 +1236,7 @@ class MuMoTcontroller:
     ## widget for simple error messages to be displayed to user during interaction
     _errorMessage = None
     ## plot limits slider widget
-    _plotLimitsWidget = None
+    _plotLimitsWidget = None ## @todo: is it correct that this is a variable of the general MuMoTcontroller?? it might be simply added in the _widgetsPlotOnly dictionary
     ## system size slider widget
     _systemSizeWidget = None    
     ## bookmark button widget
@@ -1415,12 +1416,12 @@ class MuMoTcontroller:
 class MuMoTSSAController(MuMoTcontroller):
     
     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, ssaParams, **kwargs):
-        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, **kwargs)
+        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, systemSize=True, **kwargs)
         advancedWidgets = []
         
         initialState = ssaParams['initialState']
         for state,pop in initialState.items():
-            widget = widgets.IntSlider(value = pop,
+            widget = widgets.FloatSlider(value = pop,
                                          min = min(pop, MuMoTdefault._agentsLimits[0]), 
                                          max = max(pop, MuMoTdefault._agentsLimits[1]),
                                          step = MuMoTdefault._agentsStep,
@@ -1494,12 +1495,12 @@ class MuMoTSSAController(MuMoTcontroller):
 class MuMoTmultiagentController(MuMoTcontroller):
 
     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, MAParams, **kwargs):
-        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, **kwargs)
+        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, systemSize=True, **kwargs)
         advancedWidgets = []
         
         initialState = MAParams['initialState']
         for state,pop in initialState.items():
-            widget = widgets.IntSlider(value = pop,
+            widget = widgets.FloatSlider(value = pop,
                                          min = min(pop, MuMoTdefault._agentsLimits[0]), 
                                          max = max(pop, MuMoTdefault._agentsLimits[1]),
                                          step = MuMoTdefault._agentsStep,
@@ -4799,7 +4800,9 @@ class MuMoTmultiagentView(MuMoTview):
     _arena_width = 1
     ## Arena size: height
     _arena_height = 1
-    ## the system state at the start of the simulation (timestep zero)
+    ## total number of agents in the simulation
+    _systemSize = None
+    ## the system state at the start of the simulation (timestep zero) described as proportion of _systemSize
     _initialState = None
     ## random seed
     _randomSeed = None
@@ -4926,7 +4929,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
-                       
+            self._systemSize = self._getSystemSize()
             
             # getting other parameters specific to M-A view
             for state in self._initialState.keys():
@@ -4956,9 +4959,6 @@ class MuMoTmultiagentView(MuMoTview):
             # init the random seed
             np.random.seed(self._randomSeed)
             
-            # init the network
-            self._initGraph(graphType=self._netType, numNodes=sum(self._initialState.values()), netParam=self._netParam)
-            
             #self._convertRatesIntoProbabilities()
             self._computeScalingFactor()
 
@@ -4981,20 +4981,23 @@ class MuMoTmultiagentView(MuMoTview):
         
     def _runMultiagent(self):
         # init the controller variables
-        self._initMultiagent()
+        currentState = self._initMultiagent()
+        
+        # init the network
+        self._initGraph(graphType=self._netType, numNodes=sum(currentState.values()), netParam=self._netParam)
         
         # init logging structs
 #         historyState = []
 #         historyState.append(initialState)
         evo = {}
-        for state,pop in self._initialState.items():
+        for state,pop in currentState.items():
             evo[state] = []
             evo[state].append(pop)
             
         dynamicNetwork = self._netType == NetworkType.DYNAMIC
         if dynamicNetwork:
             self._positionHistory = []
-            for _ in np.arange(sum(self._initialState.values())):
+            for _ in np.arange(sum(currentState.values())):
                 self._positionHistory.append( [] )
         else:
             self._positionHistory = None
@@ -5039,10 +5042,9 @@ class MuMoTmultiagentView(MuMoTview):
         if (self._visualisationType == 'evo'):
             plt.axes().set_aspect('auto')
             # create the frame
-            totAgents = sum(self._initialState.values())
-#                     self._plot.axis([0, self._maxTime, 0, totAgents])
+            #self._plot.axis([0, self._maxTime, 0, totAgents])
             plt.xlim((0, self._maxTime))
-            plt.ylim((0, totAgents))
+            plt.ylim((0, self._systemSize))
             #self._figure.show()
             _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent))
         elif self._visualisationType == "graph": #and self._netType == NetworkType.DYNAMIC:
@@ -5050,7 +5052,7 @@ class MuMoTmultiagentView(MuMoTview):
         elif (self._visualisationType == "final"):
 #             plt.axes().set_aspect('equal') #for piechart
             plt.axes().set_aspect('auto') # for barchart
-            plt.ylim((0, sum(self._initialState.values())))
+            plt.ylim((0, self._systemSize))
     
     
     def _updateMultiagentFigure(self, i, evo, positionHistory, pos_layout):
@@ -5248,12 +5250,14 @@ class MuMoTmultiagentView(MuMoTview):
             return
 
     def _initMultiagent(self):
+        # initialise populations by multiplying proportion with _systemSize
+        currentState = {s:math.floor(p*self._systemSize) for s,p in self._initialState.items()}
         # init the agents list
         self._agents = []
-        for state, pop in self._initialState.items():
+        for state, pop in currentState.items():
             self._agents.extend( [state]*pop )
         self._agents = np.random.permutation(self._agents).tolist() # random shuffling of elements (useful to avoid initial clusters in networks)
-            
+        return currentState
         
     def _stepMultiagent(self):
         tmp_agents = copy.deepcopy(self._agents)
@@ -5426,7 +5430,9 @@ class MuMoTSSAView(MuMoTview):
     _reactantsMatrix = None 
     ## the effect of each rule
     _ruleChanges = None
-    ## the system state at the start of the simulation (timestep zero)
+    ## total number of agents in the simulation
+    _systemSize = None
+    ## the system state at the start of the simulation (timestep zero) described as proportion of _systemSize
     _initialState = None
     ## dictionary of rates
     _ratesDict = None
@@ -5495,6 +5501,7 @@ class MuMoTSSAView(MuMoTview):
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
+            self._systemSize = self._getSystemSize()
 
             # getting other parameters specific to SSA
             for state in self._initialState.keys():
@@ -5546,24 +5553,39 @@ class MuMoTSSAView(MuMoTview):
            
         self._logs.append(log)
         
-    def _runSSA(self): 
-        # Create logging structs
-#         historyState = []
-        evo = {}
-        evo['time'] = [0]
-        for state,pop in self._initialState.items():
-            evo[state] = []
-            evo[state].append(pop)
-         
+    def _runSSA(self):          
         ## @todo move the progress bar in the view
         if self._controller != None: self._controller._progressBar.max = self._maxTime 
          
+        # initialise time
         t = 0
-#         currentState = []
-#         for reactant in sorted(self._mumotModel._reactants|self._mumotModel._constantReactants, key=str):
-#             currentState.append(initialState[reactant])
-#         historyState.append( [t] + currentState )
-        currentState = copy.deepcopy(self._initialState)
+        # initialise populations by multiplying proportion with _systemSize
+        #currentState = copy.deepcopy(self._initialState)
+        #currentState = {s:p*self._systemSize for s,p in self._initialState.items()}
+        currentState = {}
+        leftOvers = {}
+        for state,prop in self._initialState.items():
+            pop = prop*self._systemSize
+            if _almostEqual(pop, math.floor(pop)):
+                leftOvers[state] = pop - math.floor(pop)
+            currentState[state] = math.floor(pop)
+        # if approximations resulted in one agent less, it is added randomly (with probability proportional to the rounding quantities)
+#         if sum(currentState.values()) < self._systemSize:
+#             rnd = np.random.rand() * sum(leftOvers.values())
+#             bottom = 0.0
+#             for state, prob in leftOvers.items():
+#                 if rnd >= bottom and rnd < (bottom + prob):
+#                     currentState[state] += 1
+#                     break
+#                 bottom += prob
+            
+        # Create logging structs
+        evo = {}
+        evo['time'] = [0]
+        for state,pop in currentState.items():
+            evo[state] = []
+            evo[state].append(pop)
+            
  
         while t < self._maxTime:
             # update progress bar
@@ -5604,7 +5626,7 @@ class MuMoTSSAView(MuMoTview):
         if (self._visualisationType == 'evo'):
             plt.axes().set_aspect('auto')
             # create the frame
-            totAgents = sum(self._initialState.values())
+            totAgents = self._systemSize
 #                     self._plot.axis([0, self._maxTime, 0, totAgents])
             plt.xlim((0, self._maxTime))
             plt.ylim((0, totAgents))
@@ -5617,7 +5639,7 @@ class MuMoTSSAView(MuMoTview):
         elif (self._visualisationType == "final"):
 #             plt.axes().set_aspect('equal') #for piechart
             plt.axes().set_aspect('auto') # for barchart
-            plt.ylim((0, sum(self._initialState.values())))
+            plt.ylim((0, self._systemSize))
     
     def _updateSSAFigure(self, evo, fullPlot=True):
         if (self._visualisationType == "evo"):
@@ -5631,7 +5653,7 @@ class MuMoTSSAView(MuMoTview):
                 for state in sorted(self._initialState.keys(), key=str):
                     if (state == 'time'): continue
                     xdata.append( evo['time'] )
-                    ydata.append(evo[state])
+                    ydata.append( evo[state] )
                     labels.append(state)
                 #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
                     #plt.plot(evo['time'], evo[state], color=self._colors[state]) #label=state,
@@ -7486,3 +7508,7 @@ def _make_autopct(values):
         val = int(round(pct*total/100.0))
         return '{p:.2f}%  ({v:d})'.format(p=pct,v=val)
     return my_autopct
+
+def _almostEqual(a,b):
+    epsilon = 0.0000001
+    return abs(a-b) < epsilon 
