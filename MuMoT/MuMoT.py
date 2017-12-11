@@ -1231,6 +1231,8 @@ class MuMoTcontroller:
     _widgetsExtraParams = None
     ## dictionary of controller widgets, with parameter that influence only the plotting and not the computation
     _widgetsPlotOnly = None
+    ## list keeping the order of the extra-widgets (_widgetsExtraParams and _widgetsPlotOnly)
+    _extraWidgetsOrder = None
     ## replot function widgets have been assigned (for use by MuMoTmultiController)
     _replotFunction = None
     ## widget for simple error messages to be displayed to user during interaction
@@ -1253,6 +1255,7 @@ class MuMoTcontroller:
         self._widgetsFreeParams = {}
         self._widgetsExtraParams = {}
         self._widgetsPlotOnly = {}
+        self._extraWidgetsOrder = []
         unsortedPairs = zip(paramNames, paramValues)
         fixedParams = None
  #       fixedParamsDecoded = None
@@ -1339,6 +1342,26 @@ class MuMoTcontroller:
             for widget in self._widgetsPlotOnly.values():
                 widget.observe(redrawFunction, 'value')
 
+    ## create and display the "Advanced options" tab
+    def _displayAdvancedOptionsTab(self):
+        advancedWidgets = []
+        for widgetName in self._extraWidgetsOrder:
+            if self._widgetsExtraParams.get(widgetName):
+                advancedWidgets.append(self._widgetsExtraParams[widgetName])
+            elif self._widgetsPlotOnly.get(widgetName):
+                advancedWidgets.append(self._widgetsPlotOnly[widgetName])
+            else:
+                print("WARNING! In the _extraWidgetsOrder is listed the widget " + widgetName + " which is although not found in _widgetsExtraParams or _widgetsPlotOnly")
+#                 for widget in self._widgetsExtraParams.values():
+#                     advancedWidgets.append(widget)
+#                 for widget in self._widgetsPlotOnly.values():
+#                     advancedWidgets.append(widget)
+        advancedPage = widgets.Box(children=advancedWidgets)
+        advancedOpts = widgets.Accordion(children=[advancedPage], selected_index=-1)
+        advancedOpts.set_title(0, 'Advanced options')
+        display(advancedOpts)
+
+
     def setView(self, view):
         self._view = view
 
@@ -1418,7 +1441,6 @@ class MuMoTSSAController(MuMoTcontroller):
     
     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, ssaParams, **kwargs):
         MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, systemSize=True, **kwargs)
-        advancedWidgets = []
         
         initialState = ssaParams['initialState']
         for state,pop in initialState.items():
@@ -1429,7 +1451,7 @@ class MuMoTSSAController(MuMoTcontroller):
                                          description = "State " + str(state), 
                                          continuous_update = continuousReplot)
             self._widgetsExtraParams['init'+str(state)] = widget
-            advancedWidgets.append(widget)
+            #advancedWidgets.append(widget)
             
         # Max time slider
         maxTime = ssaParams['maxTime']
@@ -1439,7 +1461,7 @@ class MuMoTSSAController(MuMoTcontroller):
                                          disabled=False,
                                          continuous_update = continuousReplot) 
         self._widgetsExtraParams['maxTime'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         
         # Random seed input field
         widget = widgets.IntText(
@@ -1448,7 +1470,7 @@ class MuMoTSSAController(MuMoTcontroller):
             disabled=False
         )
         self._widgetsExtraParams['randomSeed'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         
         ## Toggle buttons for plotting style 
         plotToggle = widgets.ToggleButtons(
@@ -1461,7 +1483,7 @@ class MuMoTSSAController(MuMoTcontroller):
         #     icons=['check'] * 3
         )
         self._widgetsPlotOnly['visualisationType'] = plotToggle
-        advancedWidgets.append(plotToggle)
+        #advancedWidgets.append(plotToggle)
         
         ## Checkbox for realtime plot update
         widget = widgets.Checkbox(
@@ -1470,13 +1492,19 @@ class MuMoTSSAController(MuMoTcontroller):
             disabled = False
         )
         self._widgetsExtraParams['realtimePlot'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         
-        advancedPage = widgets.Box(children=advancedWidgets)
-        advancedOpts = widgets.Accordion(children=[advancedPage], selected_index=-1)
-        advancedOpts.set_title(0, 'Advanced options')
+        # define the widget order
+        for state,pop in initialState.items():
+            self._extraWidgetsOrder.append('init'+str(state))
+        self._extraWidgetsOrder.append('maxTime')
+        self._extraWidgetsOrder.append('randomSeed')
+        self._extraWidgetsOrder.append('visualisationType')
+        self._extraWidgetsOrder.append('realtimePlot')
+        
+        # add widgets to the Advanced options tab
         if not self._silent:
-            display(advancedOpts)
+            self._displayAdvancedOptionsTab()
         
         # Loading bar (useful to give user progress status for long executions)
         self._progressBar = widgets.FloatProgress(
@@ -1497,7 +1525,6 @@ class MuMoTmultiagentController(MuMoTcontroller):
 
     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, MAParams, **kwargs):
         MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, systemSize=True, **kwargs)
-        advancedWidgets = []
         
         initialState = MAParams['initialState']
         for state,pop in initialState.items():
@@ -1508,7 +1535,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                          description = "State " + str(state), 
                                          continuous_update = continuousReplot)
             self._widgetsExtraParams['init'+str(state)] = widget
-            advancedWidgets.append(widget)
+            #advancedWidgets.append(widget)
         
         # Max time slider
         maxTime = MAParams['maxTime']
@@ -1518,7 +1545,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                          disabled=False,
                                          continuous_update = continuousReplot) 
         self._widgetsExtraParams['maxTime'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         
         ## Network type dropdown selector
         netDropdown = widgets.Dropdown( 
@@ -1533,9 +1560,8 @@ class MuMoTmultiagentController(MuMoTcontroller):
             disabled=False
         )
         self._widgetsExtraParams['netType'] = netDropdown
-        #self._widgets.append(netDropdown)
         netDropdown.observe(self._update_net_params, 'value')
-        advancedWidgets.append(netDropdown)
+        #advancedWidgets.append(netDropdown)
         
         # Network connectivity slider
         widget = widgets.FloatSlider(value = 0,
@@ -1546,7 +1572,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             disabled=True
         )
         self._widgetsExtraParams['netParam'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         
         # Agent speed
         particleSpeed = MAParams['particleSpeed']
@@ -1557,7 +1583,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             disabled=True
         )
         self._widgetsExtraParams['particleSpeed'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         
         # Random walk correlatedness
         motionCorrelatedness = MAParams['motionCorrelatedness']
@@ -1570,7 +1596,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             disabled=True
         )
         self._widgetsExtraParams['motionCorrelatedness'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         
         # Random seed input field
         widget = widgets.IntText(
@@ -1579,7 +1605,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             disabled=False
         )
         self._widgetsExtraParams['randomSeed'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         #display(widget)
         
         # Time scaling slider
@@ -1592,7 +1618,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                             continuous_update = continuousReplot
         )
         self._widgetsExtraParams['timestepSize'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         
         ## Toggle buttons for plotting style 
         plotToggle = widgets.ToggleButtons(
@@ -1606,7 +1632,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         #     icons=['check'] * 3
         )
         self._widgetsPlotOnly['visualisationType'] = plotToggle
-        advancedWidgets.append(plotToggle)
+        #advancedWidgets.append(plotToggle)
         
         # Particle display checkboxes
         widget = widgets.Checkbox(
@@ -1615,14 +1641,14 @@ class MuMoTmultiagentController(MuMoTcontroller):
             disabled = not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
         )
         self._widgetsPlotOnly['showTrace'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         widget = widgets.Checkbox(
             value = MAParams['showInteractions'],
             description='Show communication links',
             disabled = not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
         )
         self._widgetsPlotOnly['showInteractions'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         
         widget = widgets.Checkbox(
             value = MAParams.get('realtimePlot',False),
@@ -1630,15 +1656,28 @@ class MuMoTmultiagentController(MuMoTcontroller):
             disabled = False
         )
         self._widgetsExtraParams['realtimePlot'] = widget
-        advancedWidgets.append(widget)
+        #advancedWidgets.append(widget)
         
         self._update_net_params()
         
-        advancedPage = widgets.Box(children=advancedWidgets)
-        advancedOpts = widgets.Accordion(children=[advancedPage], selected_index=-1)
-        advancedOpts.set_title(0, 'Advanced options')
+        # define the widget order
+        for state,pop in initialState.items():
+            self._extraWidgetsOrder.append('init'+str(state))
+        self._extraWidgetsOrder.append('maxTime')
+        self._extraWidgetsOrder.append('timestepSize')
+        self._extraWidgetsOrder.append('netType')
+        self._extraWidgetsOrder.append('netParam')
+        self._extraWidgetsOrder.append('particleSpeed')
+        self._extraWidgetsOrder.append('motionCorrelatedness')
+        self._extraWidgetsOrder.append('randomSeed')
+        self._extraWidgetsOrder.append('visualisationType')
+        self._extraWidgetsOrder.append('showTrace')
+        self._extraWidgetsOrder.append('showInteractions')
+        self._extraWidgetsOrder.append('realtimePlot')
+        
+        # add widgets to the Advanced options tab
         if not self._silent:
-            display(advancedOpts)
+            self._displayAdvancedOptionsTab()
         
         # Loading bar (useful to give user progress status for long executions)
         self._progressBar = widgets.FloatProgress(
@@ -2215,7 +2254,7 @@ class MuMoTmultiController(MuMoTcontroller):
                     views.append(view)         
                                
 #                if view._controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
-                for func, foo, axes3d in controller._replotFunctions:
+                for func, _, axes3d in controller._replotFunctions:
                     self._replotFunctions.append((func, subPlotNum, axes3d))                    
 #                else:
 #                    self._replotFunctions.append((view._controller._replotFunction, subPlotNum, view._axes3d))                    
@@ -2245,12 +2284,16 @@ class MuMoTmultiController(MuMoTcontroller):
         # handle Extra and PlotOnly params
         addProgressBar = False
         for controller in controllers:
+            # retrieve the _widgetsExtraParams from each controller
             for name, widget in controller._widgetsExtraParams.items():
                 widget.unobserve_all()
                 self._widgetsExtraParams[name] = widget
+            # retrieve the _widgetsPlotOnly from each controller
             for name, widget in controller._widgetsPlotOnly.items():
                 widget.unobserve_all()
                 self._widgetsPlotOnly[name] = widget
+            # retrieve the _extraWidgetsOrder from each controller
+            self._extraWidgetsOrder.extend(x for x in controller._extraWidgetsOrder if x not in self._extraWidgetsOrder)
             if controller._progressBar:
                 addProgressBar = True
         if self._widgetsExtraParams or self._widgetsPlotOnly:
@@ -2271,15 +2314,7 @@ class MuMoTmultiController(MuMoTcontroller):
             
             # create the "Advanced options" tab
             if not self._silent:
-                advancedWidgets = []
-                for widget in self._widgetsExtraParams.values():
-                    advancedWidgets.append(widget)
-                for widget in self._widgetsPlotOnly.values():
-                    advancedWidgets.append(widget)
-                advancedPage = widgets.Box(children=advancedWidgets)
-                advancedOpts = widgets.Accordion(children=[advancedPage], selected_index=-1)
-                advancedOpts.set_title(0, 'Advanced options')
-                display(advancedOpts)
+                self._displayAdvancedOptionsTab()
         
         # if necessary adding the progress bar
         if addProgressBar:
@@ -5663,15 +5698,15 @@ class MuMoTSSAView(MuMoTview):
         if (self._visualisationType == 'evo'):
             plt.axes().set_aspect('auto')
             # create the frame
-            totAgents = self._systemSize
+            #totAgents = self._systemSize
 #                     self._plot.axis([0, self._maxTime, 0, totAgents])
-            plt.xlim((0, self._maxTime))
-            plt.ylim((0, totAgents))
+            #plt.xlim((0, self._maxTime))
+            #plt.ylim((0, totAgents))
 #                 # make legend
 #                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='', linestyle='-') for color in self._colors.values()]
 #                 self._plot.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0.)
             #if not self._silent: _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=True)
-            _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent))
+            _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent), choose_xrange=(0, self._maxTime), choose_yrange=(0, self._systemSize))
             #self._figure.show()
         elif (self._visualisationType == "final"):
 #             plt.axes().set_aspect('equal') #for piechart
@@ -5694,7 +5729,7 @@ class MuMoTSSAView(MuMoTview):
                     labels.append(state)
                 #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
                     #plt.plot(evo['time'], evo[state], color=self._colors[state]) #label=state,
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False)
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, self._systemSize))
             else: # If realtime-plot mode, draw only the last timestep rather than overlay all
                 xdata = []
                 ydata = []
@@ -5706,7 +5741,7 @@ class MuMoTSSAView(MuMoTview):
 #                     xdata.append( [i-1,i] )
 #                     pop = evo[state]
 #                     ydata.append( pop[len(pop)-2:len(pop)] )
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False)
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, self._systemSize))
 #                 plt.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
         elif (self._visualisationType == "final"):
             self._initFigure()
