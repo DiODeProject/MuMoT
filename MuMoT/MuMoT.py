@@ -4931,6 +4931,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
+            #print("RATES DICT IS: " + str(self._ratesDict))
             self._systemSize = self._getSystemSize()
             
             # getting other parameters specific to M-A view
@@ -5022,7 +5023,7 @@ class MuMoTmultiagentView(MuMoTview):
                     self._positionHistory[idx].append( self._positions[idx] )
             
             currentState = self._stepMultiagent()
-                    
+            #print("T:" + str(i) + " - " + str(currentState))
 #             historyState.append(currentState)
             for state,pop in currentState.items():
                 evo[state].append(pop)
@@ -5367,14 +5368,16 @@ class MuMoTmultiagentView(MuMoTview):
             if len(neighs) >= len(reaction[0]):
                 j = 0
                 for reagent in reaction[0]:
-                    popScaling *= neighCount[reagent]/(len(neighs)-j) if reaction[0].count(reagent) >= neighCount[reagent] else 0
+                    popScaling *= neighCount[reagent]/(len(neighs)-j) if neighCount[reagent] >= reaction[0].count(reagent) else 0
                     j += 1
             else:
                 popScaling = 0
             val = popScaling * rate
+            #print("For reaction: " + str(agent) + "+" + str(reaction[0]) + " the popScaling is " + str(popScaling))
             if (rnd < val + lastVal):
                 # A state change happened!
                 #print("Reaction: " + str(reaction[1]) + " by agent " + str(agent) + " with agent(s) " + str(reaction[0]) + " becomes " + str(reaction[2]) + " &others: " +str(reaction[3]))
+                #print("Val was: " + str(val) + " lastVal: " + str(lastVal) + " and rand: " + str(rnd))
                 
                 # locking the other reagents involved in the reaction
                 for idx_r, reagent in enumerate(reaction[0]):
