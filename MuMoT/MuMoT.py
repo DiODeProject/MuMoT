@@ -1656,6 +1656,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
     def _update_net_params(self, _=None):
         # oder of assignment is important (first, update the min and max, later, the value)
         ## @todo: the update of value happens two times (changing min-max and value) and therefore the calculatio are done two times
+        self._widgetsExtraParams['netParam'].unobserve_all()
         if (self._widgetsExtraParams['netType'].value == NetworkType.FULLY_CONNECTED):
             self._widgetsExtraParams['netParam'].min = 0
             self._widgetsExtraParams['netParam'].max = 1
@@ -1672,7 +1673,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             self._widgetsExtraParams['netParam'].description = "Network connectivity parameter (link probability)"
         elif (self._widgetsExtraParams['netType'].value == NetworkType.BARABASI_ALBERT):
             self._widgetsExtraParams['netParam'].disabled = False
-            maxVal = sum(self._view._initialState.values())-1
+            maxVal = self._view._systemSize-1
             self._widgetsExtraParams['netParam'].min = 1
             self._widgetsExtraParams['netParam'].max = maxVal
             self._widgetsExtraParams['netParam'].step = 1
@@ -1697,6 +1698,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             self._widgetsExtraParams['motionCorrelatedness'].disabled = True
             self._widgetsPlotOnly['showTrace'].disabled = True
             self._widgetsPlotOnly['showInteractions'].disabled = True
+        self._widgetsExtraParams['netParam'].observe(self._replotFunction, 'value')
     
     def downloadTimeEvolution(self):
         return self._downloadFile(self._view._latestResults[0])
@@ -5231,15 +5233,17 @@ class MuMoTmultiagentView(MuMoTview):
     
     def _update_timestepSize_widget(self, timestepSize, maxTimestepSize, maxTimeSteps):
         if not self._controller._widgetsExtraParams['timestepSize'].value == timestepSize:
+            self._controller._widgetsExtraParams['timestepSize'].unobserve_all()
             if (self._controller._widgetsExtraParams['timestepSize'].max < timestepSize):
                 self._controller._widgetsExtraParams['timestepSize'].max = maxTimestepSize
             if (self._controller._widgetsExtraParams['timestepSize'].min > timestepSize):
                 self._controller._widgetsExtraParams['timestepSize'].min = timestepSize
-            self._controller._widgetsExtraParams['timestepSize'].value = timestepSize  
+            self._controller._widgetsExtraParams['timestepSize'].value = timestepSize
+            self._controller._widgetsExtraParams['timestepSize'].observe(self._controller._replotFunction, 'value')
         if not self._controller._widgetsExtraParams['timestepSize'].max == maxTimestepSize:
             self._controller._widgetsExtraParams['timestepSize'].max = maxTimestepSize
             self._controller._widgetsExtraParams['timestepSize'].min = min(maxTimestepSize/100, timestepSize)
-            self._controller._widgetsExtraParams['timestepSize'].step = self._controller._widgetsExtraParams['timestepSize'].min 
+            self._controller._widgetsExtraParams['timestepSize'].step = self._controller._widgetsExtraParams['timestepSize'].min
         self._controller._widgetsExtraParams['maxTime'].description = "Simulation time (equivalent to " + str(maxTimeSteps) + " simulation timesteps)"
 
                     
