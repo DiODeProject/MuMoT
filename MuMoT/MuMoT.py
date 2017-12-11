@@ -1327,16 +1327,17 @@ class MuMoTcontroller:
     def _setReplotFunction(self, recomputeFunction, redrawFunction=None):
         self._replotFunction = recomputeFunction
         for widget in self._widgetsFreeParams.values():
-            widget.on_trait_change(recomputeFunction, 'value')
+            #widget.on_trait_change(recomputeFunction, 'value')
+            widget.observe(recomputeFunction, 'value')
         for widget in self._widgetsExtraParams.values():
-            widget.on_trait_change(recomputeFunction, 'value')
+            widget.observe(recomputeFunction, 'value')
         if self._plotLimitsWidget != None:
-            self._plotLimitsWidget.on_trait_change(recomputeFunction, 'value')
+            self._plotLimitsWidget.observe(recomputeFunction, 'value')
         if self._systemSizeWidget != None:
-            self._systemSizeWidget.on_trait_change(recomputeFunction, 'value')
+            self._systemSizeWidget.observe(recomputeFunction, 'value')
         if redrawFunction != None:
             for widget in self._widgetsPlotOnly.values():
-                widget.on_trait_change(redrawFunction, 'value')
+                widget.observe(redrawFunction, 'value')
 
     def setView(self, view):
         self._view = view
@@ -1533,7 +1534,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         )
         self._widgetsExtraParams['netType'] = netDropdown
         #self._widgets.append(netDropdown)
-        netDropdown.on_trait_change(self._update_net_params, 'value')
+        netDropdown.observe(self._update_net_params, 'value')
         advancedWidgets.append(netDropdown)
         
         # Network connectivity slider
@@ -1640,7 +1641,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             display(advancedOpts)
         
         # Loading bar (useful to give user progress status for long executions)
-        self._progressBar = widgets.IntProgress(
+        self._progressBar = widgets.FloatProgress(
             value=0,
             min=0,
             max=self._widgetsExtraParams['maxTime'].value,
@@ -1652,7 +1653,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         if not self._silent:
             display(self._progressBar)
     
-    def _update_net_params(self):
+    def _update_net_params(self, _=None):
         # oder of assignment is important (first, update the min and max, later, the value)
         ## @todo: the update of value happens two times (changing min-max and value) and therefore the calculatio are done two times
         if (self._widgetsExtraParams['netType'].value == NetworkType.FULLY_CONNECTED):
@@ -2120,7 +2121,7 @@ class MuMoTmultiView(MuMoTview):
             self._numColumns = MULTIPLOT_COLUMNS
             self._numRows = math.ceil(self._subPlotNum / self._numColumns)
         
-    def _plot(self):
+    def _plot(self, _=None):
         plt.figure(self._figureNum)
         plt.clf()
         self._resetErrorMessage()
@@ -2239,15 +2240,34 @@ class MuMoTmultiController(MuMoTcontroller):
         
         super().__init__(paramValues, paramNames, paramLabelDict, False, plotLimits, systemSize, params = params, **kwargs)
         
+        # handle Extra and PlotOnly params
         addProgressBar = False
         for controller in controllers:
             for name, widget in controller._widgetsExtraParams.items():
+                widget.unobserve_all()
                 self._widgetsExtraParams[name] = widget
             for name, widget in controller._widgetsPlotOnly.items():
+                widget.unobserve_all()
                 self._widgetsPlotOnly[name] = widget
             if controller._progressBar:
                 addProgressBar = True
         if self._widgetsExtraParams or self._widgetsPlotOnly:
+            # set widgets to possible values set as multi-controller arguments
+            for key, value in kwargs.items():
+                if self._widgetsExtraParams.get(key):
+                    if (self._widgetsExtraParams[key].min > value):
+                        self._widgetsExtraParams[key].min = value
+                    if (self._widgetsExtraParams[key].max < value):
+                        self._widgetsExtraParams[key].max = value
+                    self._widgetsExtraParams[key].value = value
+                if self._widgetsPlotOnly.get(key):
+                    if (self._widgetsPlotOnly[key].min > value):
+                        self._widgetsPlotOnly[key].min = value
+                    if (self._widgetsPlotOnly[key].max < value):
+                        self._widgetsPlotOnly[key].max = value
+                    self._widgetsPlotOnly[key].value = value
+            
+            # create the "Advanced options" tab
             if not self._silent:
                 advancedWidgets = []
                 for widget in self._widgetsExtraParams.values():
@@ -2258,9 +2278,11 @@ class MuMoTmultiController(MuMoTcontroller):
                 advancedOpts = widgets.Accordion(children=[advancedPage], selected_index=-1)
                 advancedOpts.set_title(0, 'Advanced options')
                 display(advancedOpts)
+        
+        # if necessary adding the progress bar
         if addProgressBar:
             # Loading bar (useful to give user progress status for long executions)
-            self._progressBar = widgets.IntProgress(
+            self._progressBar = widgets.FloatProgress(
                 value=0,
                 min=0,
                 max=self._widgetsExtraParams['maxTime'].value,
@@ -2707,7 +2729,7 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         self._generatingCommand = "numSimStateVar"
         
 
-    def _plot_NumSolODE(self):
+    def _plot_NumSolODE(self, _=None):
         super()._plot_NumSolODE()
         
         # check input
@@ -3743,7 +3765,7 @@ class MuMoTstreamView(MuMoTfieldView):
         super().__init__(model, controller, stateVariable1, stateVariable2, stateVariable3, figure, params, **kwargs) 
         self._generatingCommand = "stream"
 
-    def _plot_field(self):
+    def _plot_field(self, _=None):
         super()._plot_field()
         
         # check number of time-dependent reactants
@@ -3920,7 +3942,7 @@ class MuMoTvectorView(MuMoTfieldView):
         super().__init__(*args, **kwargs)
         self._generatingCommand = "vector"
 
-    def _plot_field(self):
+    def _plot_field(self, _=None):
         super()._plot_field()
         if self._stateVariable3 == None:
             if self._showFixedPoints==True:
@@ -4133,7 +4155,7 @@ class MuMoTbifurcationView(MuMoTview):
         #self._plottingMethod = kwargs.get('plottingMethod', 'mumot')
         self._plot_bifurcation()     
 
-    def _plot_bifurcation(self):
+    def _plot_bifurcation(self, _=None):
         if not(self._silent): ## @todo is this necessary?
             #plt.close()
             #plt.clf()
@@ -4951,7 +4973,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._realtimePlot = self._controller._widgetsExtraParams['realtimePlot'].value
 
     
-    def _plot_timeEvolution(self):
+    def _plot_timeEvolution(self, _=None):
         with io.capture_output() as log:
 #         if True:
             # update parameters (needed only if there's a controller)
@@ -4977,7 +4999,7 @@ class MuMoTmultiagentView(MuMoTview):
             
         self._logs.append(log)      
     
-    def _redrawOnly(self):
+    def _redrawOnly(self, _=None):
         self._update_params()
         self._initFigure()
         self._updateMultiagentFigure(0, self._latestResults[0], positionHistory=self._latestResults[1], pos_layout=self._latestResults[2])
@@ -5006,7 +5028,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._positionHistory = None
             
         # init progress bar
-        if self._controller != None: self._controller._progressBar.max = self._maxTimeSteps
+        if self._controller != None: self._controller._progressBar.max = self._maxTime
         
         # store the graph layout (only for 'graph' visualisation)
         if (not dynamicNetwork): # and self._visualisationType == "graph":
@@ -5016,7 +5038,7 @@ class MuMoTmultiagentView(MuMoTview):
         
         for i in np.arange(1, self._maxTimeSteps+1):
             #print("Time: " + str(i))
-            if self._controller != None: self._controller._progressBar.value = i
+            if self._controller != None: self._controller._progressBar.value = i*self._timestepSize
             if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(i/self._maxTimeSteps*100)) + "%:"
             if dynamicNetwork: # and self._showTrace:
                 for idx, _ in enumerate(self._agents): # second element _ is the agent (unused)
@@ -5533,12 +5555,12 @@ class MuMoTSSAView(MuMoTview):
         ssaParams["visualisationType"] = self._visualisationType
         print( "mmt.MuMoTSSAView(model1, None, ssaParams = " + str(ssaParams) + ", params = " + str( list(self._ratesDict.items()) ) + " )")
     
-    def _redrawOnly(self):
+    def _redrawOnly(self, _=None):
         self._update_params()
         self._initFigure()
         self._updateSSAFigure(self._latestResults, fullPlot=True)
     
-    def _plot_timeEvolution(self):
+    def _plot_timeEvolution(self, _=None):
         with io.capture_output() as log:
 #         if True:
             self._update_params()
