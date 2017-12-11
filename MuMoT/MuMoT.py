@@ -769,6 +769,7 @@ class MuMoTmodel:
         MAParams['motionCorrelatedness'] = kwargs.get('motionCorrelatedness', (0.5, 0.0, 1.0, 0.05))
         MAParams['particleSpeed'] = kwargs.get('particleSpeed', (0.01, 0.0, 0.1, 0.005))
         MAParams['visualisationType'] = kwargs.get('visualisationType', 'evo') # default view is time-evolution
+        MAParams['plotProportions'] = kwargs.get('plotProportions', False)
         MAParams['timestepSize'] = kwargs.get('timestepSize', (1, 0.01, 1, 0.01) )
         MAParams['showTrace'] = kwargs.get('showTrace', netType == 'dynamic')
         MAParams['showInteractions'] = kwargs.get('showInteractions', False)
@@ -826,6 +827,7 @@ class MuMoTmodel:
 #             print("Automatic Random Seed set to " + str(randomSeed) )
         ssaParams['randomSeed'] = randomSeed
         ssaParams['visualisationType'] = 'evo'
+        ssaParams['plotProportions'] = kwargs.get('plotProportions', False)
         ssaParams['realtimePlot'] = kwargs.get('realtimePlot', False)
             
         # construct controller
@@ -1485,6 +1487,14 @@ class MuMoTSSAController(MuMoTcontroller):
         self._widgetsPlotOnly['visualisationType'] = plotToggle
         #advancedWidgets.append(plotToggle)
         
+        ## Checkbox for proportions or full populations plot 
+        widget = widgets.Checkbox(
+            value = ssaParams.get('plotProportions',False),
+            description='Plot population proportions',
+            disabled = False
+        )
+        self._widgetsPlotOnly['plotProportions'] = widget
+        
         ## Checkbox for realtime plot update
         widget = widgets.Checkbox(
             value = ssaParams.get('realtimePlot',False),
@@ -1500,6 +1510,7 @@ class MuMoTSSAController(MuMoTcontroller):
         self._extraWidgetsOrder.append('maxTime')
         self._extraWidgetsOrder.append('randomSeed')
         self._extraWidgetsOrder.append('visualisationType')
+        self._extraWidgetsOrder.append('plotProportions')
         self._extraWidgetsOrder.append('realtimePlot')
         
         # add widgets to the Advanced options tab
@@ -1650,6 +1661,15 @@ class MuMoTmultiagentController(MuMoTcontroller):
         self._widgetsPlotOnly['showInteractions'] = widget
         #advancedWidgets.append(widget)
         
+        ## Checkbox for proportions or full populations plot 
+        widget = widgets.Checkbox(
+            value = MAParams.get('plotProportions',False),
+            description='Plot population proportions',
+            disabled = False
+        )
+        self._widgetsPlotOnly['plotProportions'] = widget
+        
+        ## Checkbox for realtime plot update
         widget = widgets.Checkbox(
             value = MAParams.get('realtimePlot',False),
             description='Runtime plot update',
@@ -1673,6 +1693,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         self._extraWidgetsOrder.append('visualisationType')
         self._extraWidgetsOrder.append('showTrace')
         self._extraWidgetsOrder.append('showInteractions')
+        self._extraWidgetsOrder.append('plotProportions')
         self._extraWidgetsOrder.append('realtimePlot')
         
         # add widgets to the Advanced options tab
@@ -2291,6 +2312,10 @@ class MuMoTmultiController(MuMoTcontroller):
             # retrieve the _widgetsPlotOnly from each controller
             for name, widget in controller._widgetsPlotOnly.items():
                 widget.unobserve_all()
+                # in multiController, plotProportions=True is forced 
+                if name == "plotProportions":
+                    widget.value = True
+                    widget.disabled = True
                 self._widgetsPlotOnly[name] = widget
             # retrieve the _extraWidgetsOrder from each controller
             self._extraWidgetsOrder.extend(x for x in controller._extraWidgetsOrder if x not in self._extraWidgetsOrder)
@@ -4875,6 +4900,8 @@ class MuMoTmultiagentView(MuMoTview):
     _ratesDict = None
     ## visualisation type
     _visualisationType = None
+    ## flag to plot proportions or full populations
+    _plotProportions = None
     ## visualise the agent trace (on moving particles)
     _showTrace = None
     ## visualise the agent trace (on moving particles)
@@ -4911,6 +4938,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._maxTime = MAParams["maxTime"]
             self._randomSeed = MAParams["randomSeed"]
             self._visualisationType = MAParams["visualisationType"]
+            self._plotProportions = MAParams["plotProportions"]
             self._netType = _decodeNetworkTypeFromString(MAParams['netType'])
             self._netParam = MAParams['netParam']
             self._motionCorrelatedness = MAParams['motionCorrelatedness']
@@ -4964,6 +4992,7 @@ class MuMoTmultiagentView(MuMoTview):
         MAParams["maxTime"] = self._maxTime 
         MAParams["randomSeed"] = self._randomSeed
         MAParams["visualisationType"] = self._visualisationType
+        MAParams["plotProportions"] = self._plotProportions
         MAParams['netType'] = _encodeNetworkTypeToString(self._netType)
         MAParams['netParam'] = self._netParam 
         MAParams['motionCorrelatedness'] = self._motionCorrelatedness
@@ -4999,6 +5028,7 @@ class MuMoTmultiagentView(MuMoTview):
             #numNodes = sum(self._initialState.values())
             self._randomSeed = self._controller._widgetsExtraParams['randomSeed'].value
             self._visualisationType = self._controller._widgetsPlotOnly['visualisationType'].value
+            self._plotProportions = self._controller._widgetsPlotOnly['plotProportions'].value
             self._maxTime = self._controller._widgetsExtraParams['maxTime'].value
             self._netType = self._controller._widgetsExtraParams['netType'].value
             self._netParam = self._controller._widgetsExtraParams['netParam'].value
@@ -5115,7 +5145,10 @@ class MuMoTmultiagentView(MuMoTview):
         elif (self._visualisationType == "final"):
 #             plt.axes().set_aspect('equal') #for piechart
             plt.axes().set_aspect('auto') # for barchart
-            plt.ylim((0, self._systemSize))
+            if self._plotProportions:                
+                plt.ylim((0, 1.0))
+            else:
+                plt.ylim((0, self._systemSize))
     
     
     def _updateMultiagentFigure(self, i, evo, positionHistory, pos_layout):
@@ -5129,24 +5162,36 @@ class MuMoTmultiagentView(MuMoTview):
                 ydata = []
                 for state in sorted(self._initialState.keys(), key=str):
                     xdata.append( list(np.arange(len(evo[state]))*self._timestepSize) )
-                    ydata.append( evo[state] )
+                    if self._plotProportions:
+                        ytmp = [y/self._systemSize for y in evo[state]]
+                        ydata.append(ytmp)
+                        yrange = max(1.0, max(ytmp))
+                    else:
+                        ydata.append( evo[state] )
+                        yrange = max(self._systemSize, max(evo[state]))
                     ## @todo replot only the last part (rather than all the line)
 #                     xdata.append( [i-1,i] )
 #                     pop = evo[state]
 #                     ydata.append( pop[len(pop)-2:len(pop)] )
                     #plt.plot(evo[state], color=self._colors[state])
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, actualMaxTime), choose_yrange=(0, self._systemSize) )
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, actualMaxTime), choose_yrange=(0, yrange) )
             else: # otherwise, plot all time-evolution
                 xdata = []
                 ydata = []
                 labels = []
                 for state in sorted(self._initialState.keys(), key=str):
                     xdata.append( list(np.arange(len(evo[state]))*self._timestepSize) )
-                    ydata.append(evo[state])
+                    if self._plotProportions:
+                        ytmp = [y/self._systemSize for y in evo[state]]
+                        ydata.append(ytmp)
+                        yrange = max(1.0, max(ytmp))
+                    else:
+                        ydata.append( evo[state] )
+                        yrange = max(self._systemSize, max(evo[state]))
                     labels.append(state)
                 #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
                     #plt.plot(evo[state], color=self._colors[state])
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False, choose_xrange=(0, actualMaxTime), choose_yrange=(0, self._systemSize) )
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False, choose_xrange=(0, actualMaxTime), choose_yrange=(0, yrange) )
 
         elif (self._visualisationType == "graph"):
             self._initFigure()
@@ -5195,7 +5240,10 @@ class MuMoTmultiagentView(MuMoTview):
             labels = []
             colors = []
             for state in sorted(self._initialState.keys(), key=str):
-                finaldata.append( evo[state][len(evo[state])-1] )
+                if self._plotProportions:
+                    finaldata.append( evo[state][len(evo[state])-1]/self._systemSize )
+                else:
+                    finaldata.append( evo[state][len(evo[state])-1] )
                 labels.append(state)
                 colors.append(self._colors[state])
              
@@ -5514,6 +5562,8 @@ class MuMoTSSAView(MuMoTview):
     _randomSeed = None
     ## visualisation type
     _visualisationType = None
+    ## flag to plot proportions or full populations
+    _plotProportions = None
     ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
     _realtimePlot = None
     ## latest computed results
@@ -5548,6 +5598,7 @@ class MuMoTSSAView(MuMoTview):
             self._maxTime = ssaParams["maxTime"]
             self._randomSeed = ssaParams["randomSeed"]
             self._visualisationType = ssaParams["visualisationType"]
+            self._plotProportions = ssaParams["plotProportions"]
             self._realtimePlot = ssaParams.get('realtimePlot', False)
             
             # map colouts to each reactant
@@ -5580,6 +5631,7 @@ class MuMoTSSAView(MuMoTview):
                 self._initialState[state] = self._controller._widgetsExtraParams['init'+str(state)].value
             self._randomSeed = self._controller._widgetsExtraParams['randomSeed'].value
             self._visualisationType = self._controller._widgetsPlotOnly['visualisationType'].value
+            self._plotProportions = self._controller._widgetsPlotOnly['plotProportions'].value
             self._maxTime = self._controller._widgetsExtraParams['maxTime'].value
             self._realtimePlot = self._controller._widgetsExtraParams['realtimePlot'].value
     
@@ -5592,6 +5644,7 @@ class MuMoTSSAView(MuMoTview):
         ssaParams["maxTime"] = self._maxTime 
         ssaParams["randomSeed"] = self._randomSeed
         ssaParams["visualisationType"] = self._visualisationType
+        ssaParams["plotProportions"] = self._plotProportions
         print( "mmt.MuMoTSSAView(model1, None, ssaParams = " + str(ssaParams) + ", params = " + str( list(self._ratesDict.items()) ) + " )")
     
     def _redrawOnly(self, _=None):
@@ -5711,7 +5764,10 @@ class MuMoTSSAView(MuMoTview):
         elif (self._visualisationType == "final"):
 #             plt.axes().set_aspect('equal') #for piechart
             plt.axes().set_aspect('auto') # for barchart
-            plt.ylim((0, self._systemSize))
+            if self._plotProportions:                
+                plt.ylim((0, 1.0))
+            else:
+                plt.ylim((0, self._systemSize))
     
     def _updateSSAFigure(self, evo, fullPlot=True):
         if (self._visualisationType == "evo"):
@@ -5725,23 +5781,35 @@ class MuMoTSSAView(MuMoTview):
                 for state in sorted(self._initialState.keys(), key=str):
                     if (state == 'time'): continue
                     xdata.append( evo['time'] )
-                    ydata.append( evo[state] )
+                    if self._plotProportions:
+                        ytmp = [y/self._systemSize for y in evo[state]]
+                        ydata.append(ytmp)
+                        yrange = max(1.0, max(ytmp))
+                    else:
+                        ydata.append( evo[state] )
+                        yrange = max(self._systemSize, max(evo[state]))
                     labels.append(state)
                 #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
                     #plt.plot(evo['time'], evo[state], color=self._colors[state]) #label=state,
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, self._systemSize))
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, yrange))
             else: # If realtime-plot mode, draw only the last timestep rather than overlay all
                 xdata = []
                 ydata = []
                 for state in sorted(self._initialState.keys(), key=str):
                     if (state == 'time'): continue
                     xdata.append( evo['time'] )
-                    ydata.append( evo[state] )
+                    if self._plotProportions:
+                        ytmp = [y/self._systemSize for y in evo[state]]
+                        ydata.append(ytmp)
+                        yrange = max(1.0, max(ytmp))
+                    else:
+                        ydata.append( evo[state] )
+                        yrange = max(self._systemSize, max(evo[state]))
                     ## @todo replot only the last part (rather than all the line)
 #                     xdata.append( [i-1,i] )
 #                     pop = evo[state]
 #                     ydata.append( pop[len(pop)-2:len(pop)] )
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, self._systemSize))
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, yrange))
 #                 plt.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
         elif (self._visualisationType == "final"):
             self._initFigure()
@@ -5751,7 +5819,10 @@ class MuMoTSSAView(MuMoTview):
             colors = []
             for state in sorted(self._initialState.keys(), key=str):
                 if (state == 'time'): continue
-                finaldata.append( evo[state][len(evo[state])-1] )
+                if self._plotProportions:
+                    finaldata.append( evo[state][len(evo[state])-1]/self._systemSize )
+                else:
+                    finaldata.append( evo[state][len(evo[state])-1] )
                 labels.append(state)
                 colors.append(self._colors[state])
 #             
