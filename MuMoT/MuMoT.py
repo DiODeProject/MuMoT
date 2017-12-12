@@ -1454,7 +1454,8 @@ class MuMoTSSAController(MuMoTcontroller):
                                          min = min(pop, MuMoTdefault._agentsLimits[0]), 
                                          max = max(pop, MuMoTdefault._agentsLimits[1]),
                                          step = MuMoTdefault._agentsStep,
-                                         description = "State " + str(state), 
+                                         description = "State " + str(state),
+                                         style = {'description_width': 'initial'},
                                          continuous_update = continuousReplot)
             self._widgetsExtraParams['init'+str(state)] = widget
             #advancedWidgets.append(widget)
@@ -1464,6 +1465,8 @@ class MuMoTSSAController(MuMoTcontroller):
         widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
                                          max = maxTime[2], step = maxTime[3], 
                                          description = 'Simulation time:',
+                                         style = {'description_width': 'initial'},
+                                         #layout=widgets.Layout(width='50%'),
                                          disabled=False,
                                          continuous_update = continuousReplot) 
         self._widgetsExtraParams['maxTime'] = widget
@@ -1473,6 +1476,7 @@ class MuMoTSSAController(MuMoTcontroller):
         widget = widgets.IntText(
             value=ssaParams['randomSeed'],
             description='Random seed:',
+            style = {'description_width': 'initial'},
             disabled=False
         )
         self._widgetsExtraParams['randomSeed'] = widget
@@ -1548,6 +1552,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                          max = max(pop, MuMoTdefault._agentsLimits[1]),
                                          step = MuMoTdefault._agentsStep,
                                          description = "State " + str(state), 
+                                         style = {'description_width': 'initial'},
                                          continuous_update = continuousReplot)
             self._widgetsExtraParams['init'+str(state)] = widget
             #advancedWidgets.append(widget)
@@ -1558,6 +1563,8 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                          max = maxTime[2], step = maxTime[3], 
                                          description = 'Simulation time:',
                                          disabled=False,
+                                         style = {'description_width': 'initial'},
+                                         layout=widgets.Layout(width='70%'),
                                          continuous_update = continuousReplot) 
         self._widgetsExtraParams['maxTime'] = widget
         #advancedWidgets.append(widget)
@@ -1572,6 +1579,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                      ],
             description='Network topology:',
             value = _decodeNetworkTypeFromString(MAParams['netType']), 
+            style = {'description_width': 'initial'},
             disabled=False
         )
         netDropdown.observe(self._update_net_params, 'value')
@@ -1585,6 +1593,8 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                     max = netParam[2],
                                     step = netParam[3],
                             description = 'Network connectivity parameter', 
+                            style = {'description_width': 'initial'},
+                            layout=widgets.Layout(width='50%'),
                             continuous_update = continuousReplot,
                             disabled=False
         )
@@ -1596,6 +1606,8 @@ class MuMoTmultiagentController(MuMoTcontroller):
         widget = widgets.FloatSlider(value = particleSpeed[0],
                                      min = particleSpeed[1], max = particleSpeed[2], step=particleSpeed[3],
                             description = 'Particle speed', 
+                            style = {'description_width': 'initial'},
+                            layout=widgets.Layout(width='50%'),
                             continuous_update = continuousReplot,
                             disabled=False
         )
@@ -1608,7 +1620,9 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                      min = motionCorrelatedness[1],
                                      max = motionCorrelatedness[2],
                                      step=motionCorrelatedness[3],
-                            description = 'Correlatedness of the random walk', 
+                            description = 'Correlatedness of the random walk',
+                            layout=widgets.Layout(width='50%'),
+                            style = {'description_width': 'initial'},
                             continuous_update = continuousReplot,
                             disabled=False
         )
@@ -1619,6 +1633,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         widget = widgets.IntText(
             value=MAParams['randomSeed'],
             description='Random seed:',
+            style = {'description_width': 'initial'},
             disabled=False
         )
         self._widgetsExtraParams['randomSeed'] = widget
@@ -1632,6 +1647,8 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                     max = timestepSize[2],
                                     step = timestepSize[3],
                             description = 'Timestep size', 
+                            style = {'description_width': 'initial'},
+                            layout=widgets.Layout(width='50%'),
                             continuous_update = continuousReplot
         )
         self._widgetsExtraParams['timestepSize'] = widget
