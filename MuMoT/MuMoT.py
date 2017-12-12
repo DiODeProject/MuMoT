@@ -2347,20 +2347,21 @@ class MuMoTmultiController(MuMoTcontroller):
         for controller in controllers:
             # retrieve the _widgetsExtraParams from each controller
             for name, widget in controller._widgetsExtraParams.items():
-                widget.unobserve_all()
-                if name == "netType": # netType widget is special
-                    ## this is necessary due to ipywidget bug #1868 (https://github.com/jupyter-widgets/ipywidgets/issues/1868)
-                    widget = widgets.Dropdown( 
-                        options=[('Full graph', NetworkType.FULLY_CONNECTED), 
-                                 ('Erdos-Renyi', NetworkType.ERSOS_RENYI),
-                                 ('Barabasi-Albert', NetworkType.BARABASI_ALBERT),
-                                 ('Moving particles', NetworkType.DYNAMIC)
-                                 ],
-                        description='Network topology:',
-                        value = widget.value, 
-                        disabled=False
-                    )
-                    widget.observe(controller._update_net_params, names='value')
+                widget.unobserve(controller._replotFunction, 'value')
+#                 widget.unobserve_all()
+#                 if name == "netType": # netType widget is special
+#                     ## this is necessary due to ipywidget bug #1868 (https://github.com/jupyter-widgets/ipywidgets/issues/1868)
+#                     widget = widgets.Dropdown( 
+#                         options=[('Full graph', NetworkType.FULLY_CONNECTED), 
+#                                  ('Erdos-Renyi', NetworkType.ERSOS_RENYI),
+#                                  ('Barabasi-Albert', NetworkType.BARABASI_ALBERT),
+#                                  ('Moving particles', NetworkType.DYNAMIC)
+#                                  ],
+#                         description='Network topology:',
+#                         value = widget.value, 
+#                         disabled=False
+#                     )
+#                     widget.observe(controller._update_net_params, names='value')
                 self._widgetsExtraParams[name] = widget
             # retrieve the _widgetsPlotOnly from each controller
             for name, widget in controller._widgetsPlotOnly.items():
