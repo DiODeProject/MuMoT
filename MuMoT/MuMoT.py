@@ -766,6 +766,7 @@ class MuMoTmodel:
 
         # Setting some default values 
         ## @todo add possibility to customise these values from input line
+        MAParams['netParam'] = kwargs.get('netParam', (0, 1.0, 1.0, 1.0)) # these value will be overwritten by _update_net_params()
         MAParams['motionCorrelatedness'] = kwargs.get('motionCorrelatedness', (0.5, 0.0, 1.0, 0.05))
         MAParams['particleSpeed'] = kwargs.get('particleSpeed', (0.01, 0.0, 0.1, 0.005))
         MAParams['visualisationType'] = kwargs.get('visualisationType', 'evo') # default view is time-evolution
@@ -785,12 +786,13 @@ class MuMoTmodel:
 
         viewController = MuMoTmultiagentController(paramValues, paramNames, self._ratesLaTeX, False, MAParams, **kwargs)
         # Get the default network values assigned from the controller
-        MAParams['netParam'] = viewController._widgetsExtraParams['netParam'].value ## @todo use defaults without relying on the controller 
+        #MAParams['netParam'] = viewController._widgetsExtraParams['netParam'].value ## @todo use defaults without relying on the controller
         
         modelView = MuMoTmultiagentView(self, viewController, MAParams, **kwargs)
         viewController.setView(modelView)
 #         viewController._setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
         viewController._setReplotFunction(modelView._plot_timeEvolution, modelView._redrawOnly)
+        #viewController._widgetsExtraParams['netType'].value.observe(modelView._update_net_params, 'value') #netType is special
 
         return viewController
 
@@ -1359,8 +1361,10 @@ class MuMoTcontroller:
 #                 for widget in self._widgetsPlotOnly.values():
 #                     advancedWidgets.append(widget)
         advancedPage = widgets.Box(children=advancedWidgets)
-        advancedOpts = widgets.Accordion(children=[advancedPage], selected_index=-1)
+        advancedPage.layout.flex_flow = 'column'
+        advancedOpts = widgets.Accordion(children=[advancedPage]) #, selected_index=-1)
         advancedOpts.set_title(0, 'Advanced options')
+        advancedOpts.selected_index = None
         display(advancedOpts)
 
 
@@ -1570,17 +1574,19 @@ class MuMoTmultiagentController(MuMoTcontroller):
             value = _decodeNetworkTypeFromString(MAParams['netType']), 
             disabled=False
         )
-        self._widgetsExtraParams['netType'] = netDropdown
         netDropdown.observe(self._update_net_params, 'value')
+        self._widgetsExtraParams['netType'] = netDropdown
         #advancedWidgets.append(netDropdown)
         
         # Network connectivity slider
-        widget = widgets.FloatSlider(value = 0,
-                                    min = 0, 
-                                    max = 1,
+        netParam = MAParams['netParam']
+        widget = widgets.FloatSlider(value = netParam[0],
+                                    min = netParam[1], 
+                                    max = netParam[2],
+                                    step = netParam[3],
                             description = 'Network connectivity parameter', 
                             continuous_update = continuousReplot,
-                            disabled=True
+                            disabled=False
         )
         self._widgetsExtraParams['netParam'] = widget
         #advancedWidgets.append(widget)
@@ -1591,7 +1597,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                      min = particleSpeed[1], max = particleSpeed[2], step=particleSpeed[3],
                             description = 'Particle speed', 
                             continuous_update = continuousReplot,
-                            disabled=True
+                            disabled=False
         )
         self._widgetsExtraParams['particleSpeed'] = widget
         #advancedWidgets.append(widget)
@@ -1604,7 +1610,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                      step=motionCorrelatedness[3],
                             description = 'Correlatedness of the random walk', 
                             continuous_update = continuousReplot,
-                            disabled=True
+                            disabled=False
         )
         self._widgetsExtraParams['motionCorrelatedness'] = widget
         #advancedWidgets.append(widget)
@@ -1649,14 +1655,14 @@ class MuMoTmultiagentController(MuMoTcontroller):
         widget = widgets.Checkbox(
             value = MAParams['showTrace'],
             description='Show particle trace',
-            disabled = not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
+            disabled = False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
         )
         self._widgetsPlotOnly['showTrace'] = widget
         #advancedWidgets.append(widget)
         widget = widgets.Checkbox(
             value = MAParams['showInteractions'],
             description='Show communication links',
-            disabled = not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
+            disabled = False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
         )
         self._widgetsPlotOnly['showInteractions'] = widget
         #advancedWidgets.append(widget)
@@ -1678,7 +1684,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         self._widgetsExtraParams['realtimePlot'] = widget
         #advancedWidgets.append(widget)
         
-        self._update_net_params()
+        #self._update_net_params()
         
         # define the widget order
         for state,pop in initialState.items():
@@ -1712,53 +1718,70 @@ class MuMoTmultiagentController(MuMoTcontroller):
         )
         if not self._silent:
             display(self._progressBar)
-    
+
+    ## updates the widgets related to the netType (it is linked --through observe()-- before the _view is created) 
     def _update_net_params(self, _=None):
-        # oder of assignment is important (first, update the min and max, later, the value)
-        ## @todo: the update of value happens two times (changing min-max and value) and therefore the calculatio are done two times
-        self._widgetsExtraParams['netParam'].unobserve_all()
-        if (self._widgetsExtraParams['netType'].value == NetworkType.FULLY_CONNECTED):
-            self._widgetsExtraParams['netParam'].min = 0
-            self._widgetsExtraParams['netParam'].max = 1
-            self._widgetsExtraParams['netParam'].step = 1
-            self._widgetsExtraParams['netParam'].value = 0
-            self._widgetsExtraParams['netParam'].disabled = True
-            self._widgetsExtraParams['netParam'].description = "None"
-        elif (self._widgetsExtraParams['netType'].value == NetworkType.ERSOS_RENYI):
-            self._widgetsExtraParams['netParam'].disabled = False
-            self._widgetsExtraParams['netParam'].min = 0.1
-            self._widgetsExtraParams['netParam'].max = 1
-            self._widgetsExtraParams['netParam'].step = 0.1
-            self._widgetsExtraParams['netParam'].value = 0.5
-            self._widgetsExtraParams['netParam'].description = "Network connectivity parameter (link probability)"
-        elif (self._widgetsExtraParams['netType'].value == NetworkType.BARABASI_ALBERT):
-            self._widgetsExtraParams['netParam'].disabled = False
-            maxVal = self._view._systemSize-1
-            self._widgetsExtraParams['netParam'].min = 1
-            self._widgetsExtraParams['netParam'].max = maxVal
-            self._widgetsExtraParams['netParam'].step = 1
-            self._widgetsExtraParams['netParam'].value = min(maxVal, 3)
-            self._widgetsExtraParams['netParam'].description = "Network connectivity parameter (new edges)"            
-        elif (self._widgetsExtraParams['netType'].value == NetworkType.SPACE):
-            self._widgetsExtraParams['netParam'].value = -1
-        
-        if (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC):
-            self._widgetsExtraParams['netParam'].disabled = False
-            self._widgetsExtraParams['netParam'].min = 0.0
-            self._widgetsExtraParams['netParam'].max = 1
-            self._widgetsExtraParams['netParam'].step = 0.05
-            self._widgetsExtraParams['netParam'].value = 0.1
-            self._widgetsExtraParams['netParam'].description = "Interaction range"
-            self._widgetsExtraParams['particleSpeed'].disabled = False
-            self._widgetsExtraParams['motionCorrelatedness'].disabled = False
-            self._widgetsPlotOnly['showTrace'].disabled = False
-            self._widgetsPlotOnly['showInteractions'].disabled = False
-        else:
-            self._widgetsExtraParams['particleSpeed'].disabled = True
-            self._widgetsExtraParams['motionCorrelatedness'].disabled = True
-            self._widgetsPlotOnly['showTrace'].disabled = True
-            self._widgetsPlotOnly['showInteractions'].disabled = True
-        self._widgetsExtraParams['netParam'].observe(self._replotFunction, 'value')
+        self._view._update_net_params()
+
+    ## updates the widgets related to the netType
+#     def _update_net_params(self, _=None):
+#         print("RUNNIG UP_NET_PAR")
+#         # oder of assignment is important (first, update the min and max, later, the value)
+#         self._widgetsExtraParams['netParam'].unobserve_all()
+#         if (self._widgetsExtraParams['netType'].value == NetworkType.FULLY_CONNECTED):
+# #             self._widgetsExtraParams['netParam'].min = 0
+# #             self._widgetsExtraParams['netParam'].max = 1
+# #             self._widgetsExtraParams['netParam'].step = 1
+# #             self._widgetsExtraParams['netParam'].value = 0
+# #             self._widgetsExtraParams['netParam'].disabled = True
+# #             self._widgetsExtraParams['netParam'].description = "None"
+#             self._widgetsExtraParams['netParam'].layout.display = 'none'
+#         elif (self._widgetsExtraParams['netType'].value == NetworkType.ERSOS_RENYI):
+# #             self._widgetsExtraParams['netParam'].disabled = False
+#             self._widgetsExtraParams['netParam'].layout.display = 'flex'
+#             self._widgetsExtraParams['netParam'].min = 0.1
+#             self._widgetsExtraParams['netParam'].max = 1
+#             self._widgetsExtraParams['netParam'].step = 0.1
+#             self._widgetsExtraParams['netParam'].value = 0.5
+#             self._widgetsExtraParams['netParam'].description = "Network connectivity parameter (link probability)"
+#         elif (self._widgetsExtraParams['netType'].value == NetworkType.BARABASI_ALBERT):
+# #             self._widgetsExtraParams['netParam'].disabled = False
+#             self._widgetsExtraParams['netParam'].layout.display = 'flex'
+#             maxVal = self._view._systemSize-1
+#             self._widgetsExtraParams['netParam'].min = 1
+#             self._widgetsExtraParams['netParam'].max = maxVal
+#             self._widgetsExtraParams['netParam'].step = 1
+#             self._widgetsExtraParams['netParam'].value = min(maxVal, 3)
+#             self._widgetsExtraParams['netParam'].description = "Network connectivity parameter (new edges)"            
+#         elif (self._widgetsExtraParams['netType'].value == NetworkType.SPACE):
+#             self._widgetsExtraParams['netParam'].value = -1
+#         
+#         if (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC):
+# #             self._widgetsExtraParams['netParam'].disabled = False
+#             self._widgetsExtraParams['netParam'].layout.display = 'flex'
+#             self._widgetsExtraParams['netParam'].min = 0.0
+#             self._widgetsExtraParams['netParam'].max = 1
+#             self._widgetsExtraParams['netParam'].step = 0.05
+#             self._widgetsExtraParams['netParam'].value = 0.1
+#             self._widgetsExtraParams['netParam'].description = "Interaction range"
+# #             self._widgetsExtraParams['particleSpeed'].disabled = False
+# #             self._widgetsExtraParams['motionCorrelatedness'].disabled = False
+# #             self._widgetsPlotOnly['showTrace'].disabled = False
+# #             self._widgetsPlotOnly['showInteractions'].disabled = False
+#             self._widgetsExtraParams['particleSpeed'].layout.display = 'flex'
+#             self._widgetsExtraParams['motionCorrelatedness'].layout.display = 'flex'
+#             self._widgetsPlotOnly['showTrace'].layout.display = 'flex'
+#             self._widgetsPlotOnly['showInteractions'].layout.display = 'flex'
+#         else:
+#             #self._widgetsExtraParams['particleSpeed'].disabled = True
+# #             self._widgetsExtraParams['motionCorrelatedness'].disabled = True
+# #             self._widgetsPlotOnly['showTrace'].disabled = True
+# #             self._widgetsPlotOnly['showInteractions'].disabled = True
+#             self._widgetsExtraParams['particleSpeed'].layout.display = 'none'
+#             self._widgetsExtraParams['motionCorrelatedness'].layout.display = 'none'
+#             self._widgetsPlotOnly['showTrace'].layout.display = 'none'
+#             self._widgetsPlotOnly['showInteractions'].layout.display = 'none'
+#         self._widgetsExtraParams['netParam'].observe(self._replotFunction, 'value')
     
     def downloadTimeEvolution(self):
         return self._downloadFile(self._view._latestResults[0])
@@ -2308,6 +2331,19 @@ class MuMoTmultiController(MuMoTcontroller):
             # retrieve the _widgetsExtraParams from each controller
             for name, widget in controller._widgetsExtraParams.items():
                 widget.unobserve_all()
+                if name == "netType": # netType widget is special
+                    ## this is necessary due to ipywidget bug #1868 (https://github.com/jupyter-widgets/ipywidgets/issues/1868)
+                    widget = widgets.Dropdown( 
+                        options=[('Full graph', NetworkType.FULLY_CONNECTED), 
+                                 ('Erdos-Renyi', NetworkType.ERSOS_RENYI),
+                                 ('Barabasi-Albert', NetworkType.BARABASI_ALBERT),
+                                 ('Moving particles', NetworkType.DYNAMIC)
+                                 ],
+                        description='Network topology:',
+                        value = widget.value, 
+                        disabled=False
+                    )
+                    widget.observe(controller._update_net_params, names='value')
                 self._widgetsExtraParams[name] = widget
             # retrieve the _widgetsPlotOnly from each controller
             for name, widget in controller._widgetsPlotOnly.items():
@@ -2316,6 +2352,17 @@ class MuMoTmultiController(MuMoTcontroller):
                 if name == "plotProportions":
                     widget.value = True
                     widget.disabled = True
+                ## this is necessary due to ipywidget bug #1868 (https://github.com/jupyter-widgets/ipywidgets/issues/1868)
+                if name == "visualisationType": 
+                    ## Toggle buttons for plotting style 
+                    widget = widgets.ToggleButtons(
+                        options=[('Temporal evolution', 'evo'), ('Final distribution', 'final')],
+                        value = widget.value,
+                        description='Plot:',
+                        disabled=False,
+                        button_style='', # 'success', 'info', 'warning', 'danger' or ''
+                        tooltips=['Population change over time', 'Population distribution in each state at final timestep'],
+                    )
                 self._widgetsPlotOnly[name] = widget
             # retrieve the _extraWidgetsOrder from each controller
             self._extraWidgetsOrder.extend(x for x in controller._extraWidgetsOrder if x not in self._extraWidgetsOrder)
@@ -2366,10 +2413,13 @@ class MuMoTmultiController(MuMoTcontroller):
         
         ## @todo handle correctly the re-draw only widgets and function
         self._setReplotFunction( self._view._plot, self._view._plot)
-
+        
         #silent = kwargs.get('silent', False)
         if not self._silent:
             self._view._plot()
+            
+    def helloWorld(self, _=None):
+        print("HELLO WORLD")
 
 ## time evolution view on model including state variables and noise (specialised by MuMoTtimeEvoStateVarView and ...)
 class MuMoTtimeEvolutionView(MuMoTview):
@@ -4948,6 +4998,8 @@ class MuMoTmultiagentView(MuMoTview):
             self._showInteractions = MAParams.get('showInteractions',False)
             self._realtimePlot = MAParams.get('realtimePlot', False)
             
+            self._update_net_params()
+            
             self._mumotModel._getSingleAgentRules()
             #print(self._mumotModel._agentProbabilities)
             
@@ -5542,6 +5594,64 @@ class MuMoTmultiagentView(MuMoTview):
         return np.sqrt(min(abs(x_1 - x_2), self._arena_width - abs(x_1 - x_2))**2 + 
                     min(abs(y_1 - y_2), self._arena_height - abs(y_1 - y_2))**2)
     
+    ## updates the widgets related to the netType (it cannot be a MuMoTcontroller method because with multi-controller it needs to point to the right _controller)
+    def _update_net_params(self, _=None):
+        # oder of assignment is important (first, update the min and max, later, the value)
+        self._controller._widgetsExtraParams['netParam'].unobserve_all()
+        if (self._controller._widgetsExtraParams['netType'].value == NetworkType.FULLY_CONNECTED):
+#             self._controller._widgetsExtraParams['netParam'].min = 0
+#             self._controller._widgetsExtraParams['netParam'].max = 1
+#             self._controller._widgetsExtraParams['netParam'].step = 1
+#             self._controller._widgetsExtraParams['netParam'].value = 0
+#             self._controller._widgetsExtraParams['netParam'].disabled = True
+#             self._controller._widgetsExtraParams['netParam'].description = "None"
+            self._controller._widgetsExtraParams['netParam'].layout.display = 'none'
+        elif (self._controller._widgetsExtraParams['netType'].value == NetworkType.ERSOS_RENYI):
+#             self._controller._widgetsExtraParams['netParam'].disabled = False
+            self._controller._widgetsExtraParams['netParam'].layout.display = 'flex'
+            self._controller._widgetsExtraParams['netParam'].min = 0.1
+            self._controller._widgetsExtraParams['netParam'].max = 1
+            self._controller._widgetsExtraParams['netParam'].step = 0.1
+            self._controller._widgetsExtraParams['netParam'].value = 0.5
+            self._controller._widgetsExtraParams['netParam'].description = "Network connectivity parameter (link probability)"
+        elif (self._controller._widgetsExtraParams['netType'].value == NetworkType.BARABASI_ALBERT):
+#             self._controller._widgetsExtraParams['netParam'].disabled = False
+            self._controller._widgetsExtraParams['netParam'].layout.display = 'flex'
+            maxVal = self._systemSize-1
+            self._controller._widgetsExtraParams['netParam'].min = 1
+            self._controller._widgetsExtraParams['netParam'].max = maxVal
+            self._controller._widgetsExtraParams['netParam'].step = 1
+            self._controller._widgetsExtraParams['netParam'].value = min(maxVal, 3)
+            self._controller._widgetsExtraParams['netParam'].description = "Network connectivity parameter (new edges)"            
+        elif (self._controller._widgetsExtraParams['netType'].value == NetworkType.SPACE):
+            self._controller._widgetsExtraParams['netParam'].value = -1
+         
+        if (self._controller._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC):
+#             self._controller._widgetsExtraParams['netParam'].disabled = False
+            self._controller._widgetsExtraParams['netParam'].layout.display = 'flex'
+            self._controller._widgetsExtraParams['netParam'].min = 0.0
+            self._controller._widgetsExtraParams['netParam'].max = 1
+            self._controller._widgetsExtraParams['netParam'].step = 0.05
+            self._controller._widgetsExtraParams['netParam'].value = 0.1
+            self._controller._widgetsExtraParams['netParam'].description = "Interaction range"
+#             self._controller._widgetsExtraParams['particleSpeed'].disabled = False
+#             self._controller._widgetsExtraParams['motionCorrelatedness'].disabled = False
+#             self._controller._widgetsPlotOnly['showTrace'].disabled = False
+#             self._controller._widgetsPlotOnly['showInteractions'].disabled = False
+            self._controller._widgetsExtraParams['particleSpeed'].layout.display = 'flex'
+            self._controller._widgetsExtraParams['motionCorrelatedness'].layout.display = 'flex'
+            self._controller._widgetsPlotOnly['showTrace'].layout.display = 'flex'
+            self._controller._widgetsPlotOnly['showInteractions'].layout.display = 'flex'
+        else:
+            #self._controller._widgetsExtraParams['particleSpeed'].disabled = True
+#             self._controller._widgetsExtraParams['motionCorrelatedness'].disabled = True
+#             self._controller._widgetsPlotOnly['showTrace'].disabled = True
+#             self._controller._widgetsPlotOnly['showInteractions'].disabled = True
+            self._controller._widgetsExtraParams['particleSpeed'].layout.display = 'none'
+            self._controller._widgetsExtraParams['motionCorrelatedness'].layout.display = 'none'
+            self._controller._widgetsPlotOnly['showTrace'].layout.display = 'none'
+            self._controller._widgetsPlotOnly['showInteractions'].layout.display = 'none'
+        self._controller._widgetsExtraParams['netParam'].observe(self._controller._replotFunction, 'value')
 
 ## agent on networks view on model 
 class MuMoTSSAView(MuMoTview): 
