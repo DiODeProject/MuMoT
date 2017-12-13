@@ -5300,14 +5300,59 @@ class MuMoTmultiagentView(MuMoTview):
                     ys[self._agents[a]].append( self._positions[a][1] )
                     
                     if self._showInteractions:
-                        for n in self._getNeighbours(a, self._positions, self._netParam): 
-                            plt.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
+                        agent_p = [self._positions[a][0] , self._positions[a][1] ]
+                        for n in self._getNeighbours(a, self._positions, self._netParam):
+                            neigh_p = [self._positions[n][0], self._positions[n][1] ]
+                            jump_boudaries = False
+                            if abs(agent_p[0] - neigh_p[0]) > self._netParam:
+                                jump_boudaries = True
+                                if agent_p[0] > neigh_p[0]:
+                                    neigh_p[0] += self._arena_width
+                                else:
+                                    neigh_p[0] -= self._arena_width
+                            if abs(agent_p[1] - neigh_p[1]) > self._netParam:
+                                jump_boudaries = True
+                                if agent_p[1] > neigh_p[1]:
+                                    neigh_p[1] += self._arena_height
+                                else:
+                                    neigh_p[1] -= self._arena_height
+                            plt.plot((agent_p[0], neigh_p[0]),(agent_p[1], neigh_p[1]), '-', c='orange' if jump_boudaries else 'y')
+                            #plt.plot((self._positions[a][0], self._positions[n][0]),(self._positions[a][1], self._positions[n][1]), '-', c='y')
                     
                     if self._showTrace:
-                        trace_xs = [p[0] for p in positionHistory[a] ]
-                        trace_ys = [p[1] for p in positionHistory[a] ]
+                        trace_xs = []
+                        trace_ys = []
                         trace_xs.append( self._positions[a][0] )
                         trace_ys.append( self._positions[a][1] )
+                        for p in reversed(positionHistory[a]):
+                            # check if the trace is making a jump from one side to the other of the screen
+                            if abs(trace_xs[-1] - p[0]) > self._particleSpeed or abs(trace_ys[-1] - p[1]) > self._particleSpeed:
+                                tmp_start = [trace_xs[-1], trace_ys[-1]]
+                                if abs(trace_xs[-1] - p[0]) > self._particleSpeed:
+                                    if trace_xs[-1] > p[0]:
+                                        trace_xs.append( self._arena_width )
+                                        tmp_start[0] = 0
+                                    else:
+                                        trace_xs.append( 0 )
+                                        tmp_start[0] = self._arena_width
+                                else:
+                                    trace_xs.append( p[0] )
+                                if abs(trace_ys[-1] - p[1]) > self._particleSpeed:
+                                    if trace_ys[-1] > p[1]:
+                                        trace_ys.append( self._arena_height )
+                                        tmp_start[1] = 0
+                                    else:
+                                        trace_ys.append( 0 )
+                                        tmp_start[1] = self._arena_height
+                                else:
+                                    trace_ys.append( p[1] )
+                                plt.plot( trace_xs, trace_ys, '-', c='0.6')
+                                trace_xs = []
+                                trace_ys = []
+                                trace_xs.append(tmp_start[0])
+                                trace_ys.append(tmp_start[1])
+                            trace_xs.append(p[0])
+                            trace_ys.append(p[1])
                         plt.plot( trace_xs, trace_ys, '-', c='0.6') 
                 for state in self._initialState.keys():
                     plt.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
