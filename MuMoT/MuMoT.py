@@ -1239,6 +1239,8 @@ class MuMoTcontroller:
     _extraWidgetsOrder = None
     ## replot function widgets have been assigned (for use by MuMoTmultiController)
     _replotFunction = None
+    ## redraw function widgets have been assigned (for use by MuMoTmultiController)
+    _redrawFunction = None
     ## widget for simple error messages to be displayed to user during interaction
     _errorMessage = None
     ## plot limits slider widget
@@ -1333,6 +1335,7 @@ class MuMoTcontroller:
     ## @param[in]    redrawFunction    The function to be called when only redrawing (relying on previous computation) is sufficient 
     def _setReplotFunction(self, recomputeFunction, redrawFunction=None):
         self._replotFunction = recomputeFunction
+        self._redrawFunction = redrawFunction
         for widget in self._widgetsFreeParams.values():
             #widget.on_trait_change(recomputeFunction, 'value')
             widget.observe(recomputeFunction, 'value')
@@ -2365,7 +2368,7 @@ class MuMoTmultiController(MuMoTcontroller):
                 self._widgetsExtraParams[name] = widget
             # retrieve the _widgetsPlotOnly from each controller
             for name, widget in controller._widgetsPlotOnly.items():
-                widget.unobserve_all()
+                widget.unobserve(controller._redrawFunction, 'value')
                 # in multiController, plotProportions=True is forced 
                 if name == "plotProportions":
                     widget.value = True
@@ -5190,6 +5193,11 @@ class MuMoTmultiagentView(MuMoTview):
             ## Plotting
             if self._realtimePlot:
                 self._updateMultiagentFigure(i, evo, positionHistory=self._positionHistory, pos_layout=pos_layout)
+#                 if i < self._maxTimeSteps:
+#                     self._updateMultiagentFigure(i, evo, positionHistory=self._positionHistory, pos_layout=pos_layout)
+#                 else:
+#                     self._initFigure()
+#                     self._updateMultiagentFigure(0, evo, positionHistory=self._positionHistory, pos_layout=pos_layout)
 
                 
         if self._controller != None: self._controller._progressBar.description = "Completed 100%:"
@@ -5231,19 +5239,13 @@ class MuMoTmultiagentView(MuMoTview):
                 xdata = []
                 ydata = []
                 for state in sorted(self._initialState.keys(), key=str):
-                    xdata.append( list(np.arange(len(evo[state]))*self._timestepSize) )
-                    if self._plotProportions:
-                        ytmp = [y/self._systemSize for y in evo[state]]
-                        ydata.append(ytmp)
-                        yrange = max(1.0, max(ytmp))
-                    else:
-                        ydata.append( evo[state] )
-                        yrange = max(self._systemSize, max(evo[state]))
-                    ## @todo replot only the last part (rather than all the line)
-#                     xdata.append( [i-1,i] )
-#                     pop = evo[state]
-#                     ydata.append( pop[len(pop)-2:len(pop)] )
-                    #plt.plot(evo[state], color=self._colors[state])
+                    xdata.append( [(i-1)*self._timestepSize, i*self._timestepSize] )
+                    # modify if plotProportions
+                    ytmp = [y / self._systemSize for y in evo[state][-2:] ] if self._plotProportions else evo[state][-2:]
+                    y_max = 1.0 if self._plotProportions else self._systemSize
+                    
+                    yrange = max(y_max, max(ytmp))
+                    ydata.append(ytmp)
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, actualMaxTime), choose_yrange=(0, yrange) )
             else: # otherwise, plot all time-evolution
                 xdata = []
@@ -5386,13 +5388,15 @@ class MuMoTmultiagentView(MuMoTview):
     
     def _update_timestepSize_widget(self, timestepSize, maxTimestepSize, maxTimeSteps):
         if not self._controller._widgetsExtraParams['timestepSize'].value == timestepSize:
-            self._controller._widgetsExtraParams['timestepSize'].unobserve_all()
+            if self._controller._replotFunction:
+                self._controller._widgetsExtraParams['timestepSize'].unobserve(self._controller._replotFunction, 'value')
             if (self._controller._widgetsExtraParams['timestepSize'].max < timestepSize):
                 self._controller._widgetsExtraParams['timestepSize'].max = maxTimestepSize
             if (self._controller._widgetsExtraParams['timestepSize'].min > timestepSize):
                 self._controller._widgetsExtraParams['timestepSize'].min = timestepSize
             self._controller._widgetsExtraParams['timestepSize'].value = timestepSize
-            self._controller._widgetsExtraParams['timestepSize'].observe(self._controller._replotFunction, 'value')
+            if self._controller._replotFunction:
+                self._controller._widgetsExtraParams['timestepSize'].observe(self._controller._replotFunction, 'value')
         if not self._controller._widgetsExtraParams['timestepSize'].max == maxTimestepSize:
             self._controller._widgetsExtraParams['timestepSize'].max = maxTimestepSize
             self._controller._widgetsExtraParams['timestepSize'].min = min(maxTimestepSize/100, timestepSize)
@@ -5615,7 +5619,8 @@ class MuMoTmultiagentView(MuMoTview):
     ## updates the widgets related to the netType (it cannot be a MuMoTcontroller method because with multi-controller it needs to point to the right _controller)
     def _update_net_params(self, _=None):
         # oder of assignment is important (first, update the min and max, later, the value)
-        self._controller._widgetsExtraParams['netParam'].unobserve_all()
+        if self._controller._replotFunction:
+            self._controller._widgetsExtraParams['netParam'].unobserve(self._controller._replotFunction, 'value')
         if (self._controller._widgetsExtraParams['netType'].value == NetworkType.FULLY_CONNECTED):
 #             self._controller._widgetsExtraParams['netParam'].min = 0
 #             self._controller._widgetsExtraParams['netParam'].max = 1
@@ -5669,7 +5674,8 @@ class MuMoTmultiagentView(MuMoTview):
             self._controller._widgetsExtraParams['motionCorrelatedness'].layout.display = 'none'
             self._controller._widgetsPlotOnly['showTrace'].layout.display = 'none'
             self._controller._widgetsPlotOnly['showInteractions'].layout.display = 'none'
-        self._controller._widgetsExtraParams['netParam'].observe(self._controller._replotFunction, 'value')
+        if self._controller._replotFunction:
+            self._controller._widgetsExtraParams['netParam'].observe(self._controller._replotFunction, 'value')
 
 ## agent on networks view on model 
 class MuMoTSSAView(MuMoTview): 
@@ -5925,18 +5931,12 @@ class MuMoTSSAView(MuMoTview):
                 ydata = []
                 for state in sorted(self._initialState.keys(), key=str):
                     if (state == 'time'): continue
-                    xdata.append( evo['time'] )
-                    if self._plotProportions:
-                        ytmp = [y/self._systemSize for y in evo[state]]
-                        ydata.append(ytmp)
-                        yrange = max(1.0, max(ytmp))
-                    else:
-                        ydata.append( evo[state] )
-                        yrange = max(self._systemSize, max(evo[state]))
-                    ## @todo replot only the last part (rather than all the line)
-#                     xdata.append( [i-1,i] )
-#                     pop = evo[state]
-#                     ydata.append( pop[len(pop)-2:len(pop)] )
+                    xdata.append( evo['time'][-2:] )
+                    # modify if plotProportions
+                    ytmp = [y / self._systemSize for y in evo[state][-2:] ] if self._plotProportions else evo[state][-2:]
+                    y_max = 1.0 if self._plotProportions else self._systemSize
+                    yrange = max(y_max, max(ytmp))
+                    ydata.append(ytmp)
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, yrange))
 #                 plt.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
         elif (self._visualisationType == "final"):
