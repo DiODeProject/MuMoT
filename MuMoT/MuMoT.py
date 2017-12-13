@@ -1287,7 +1287,8 @@ class MuMoTcontroller:
         for pair in sorted(unsortedPairs):
             if fixedParams is None or pair[0] not in fixedParamsDecoded: 
                 widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
-                                             max = pair[1][2], step = pair[1][3], 
+                                             max = pair[1][2], step = pair[1][3],
+                                             readout_format='.' + str(_count_sig_decimals(str(pair[1][3]))) + 'f',
                                              description = r'\(' + self._paramLabelDict.get(pair[0],pair[0]) + r'\)', 
                                              continuous_update = continuousReplot)
                 self._widgetsFreeParams[pair[0]] = widget
@@ -1297,7 +1298,8 @@ class MuMoTcontroller:
             if fixedParams is None or 'plotLimits' not in fixedParams:             
                 ## @todo: remove hard coded values and limits
                 self._plotLimitsWidget = widgets.FloatSlider(value = 1.0, min = 1.0, 
-                                             max = 10.0, step = 0.5, 
+                                             max = 10.0, step = 0.5,
+                                             readout_format='.1f',
                                              description = "Plot limits", 
                                              continuous_update = False)
                 if not silent:
@@ -1386,6 +1388,7 @@ class MuMoTcontroller:
             step=1,
             description='Loading:',
             bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
+            style = {'description_width': 'initial'},
             orientation='horizontal'
         )
         display(self._progressBar_multi)
@@ -1457,6 +1460,7 @@ class MuMoTSSAController(MuMoTcontroller):
                                          min = min(pop, MuMoTdefault._agentsLimits[0]), 
                                          max = max(pop, MuMoTdefault._agentsLimits[1]),
                                          step = MuMoTdefault._agentsStep,
+                                         readout_format='.' + str(_count_sig_decimals(str(MuMoTdefault._agentsStep))) + 'f',
                                          description = "State " + str(state),
                                          style = {'description_width': 'initial'},
                                          continuous_update = continuousReplot)
@@ -1466,7 +1470,8 @@ class MuMoTSSAController(MuMoTcontroller):
         # Max time slider
         maxTime = ssaParams['maxTime']
         widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
-                                         max = maxTime[2], step = maxTime[3], 
+                                         max = maxTime[2], step = maxTime[3],
+                                         readout_format='.' + str(_count_sig_decimals(str(maxTime[3]))) + 'f',
                                          description = 'Simulation time:',
                                          style = {'description_width': 'initial'},
                                          #layout=widgets.Layout(width='50%'),
@@ -1536,6 +1541,7 @@ class MuMoTSSAController(MuMoTcontroller):
             #step=1,
             description='Loading:',
             bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
+            style = {'description_width': 'initial'},
             orientation='horizontal'
         )
         if not self._silent:
@@ -1554,6 +1560,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                          min = min(pop, MuMoTdefault._agentsLimits[0]), 
                                          max = max(pop, MuMoTdefault._agentsLimits[1]),
                                          step = MuMoTdefault._agentsStep,
+                                         readout_format='.' + str(_count_sig_decimals(str(MuMoTdefault._agentsStep))) + 'f',
                                          description = "State " + str(state), 
                                          style = {'description_width': 'initial'},
                                          continuous_update = continuousReplot)
@@ -1563,7 +1570,8 @@ class MuMoTmultiagentController(MuMoTcontroller):
         # Max time slider
         maxTime = MAParams['maxTime']
         widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
-                                         max = maxTime[2], step = maxTime[3], 
+                                         max = maxTime[2], step = maxTime[3],
+                                         readout_format='.' + str(_count_sig_decimals(str(maxTime[3]))) + 'f',
                                          description = 'Simulation time:',
                                          disabled=False,
                                          style = {'description_width': 'initial'},
@@ -1595,6 +1603,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                     min = netParam[1], 
                                     max = netParam[2],
                                     step = netParam[3],
+                            readout_format='.' + str(_count_sig_decimals(str(netParam[3]))) + 'f',
                             description = 'Network connectivity parameter', 
                             style = {'description_width': 'initial'},
                             layout=widgets.Layout(width='50%'),
@@ -1608,6 +1617,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         particleSpeed = MAParams['particleSpeed']
         widget = widgets.FloatSlider(value = particleSpeed[0],
                                      min = particleSpeed[1], max = particleSpeed[2], step=particleSpeed[3],
+                            readout_format='.' + str(_count_sig_decimals(str(particleSpeed[3]))) + 'f',
                             description = 'Particle speed', 
                             style = {'description_width': 'initial'},
                             layout=widgets.Layout(width='50%'),
@@ -1623,6 +1633,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                      min = motionCorrelatedness[1],
                                      max = motionCorrelatedness[2],
                                      step=motionCorrelatedness[3],
+                            readout_format='.' + str(_count_sig_decimals(str(motionCorrelatedness[3]))) + 'f',
                             description = 'Correlatedness of the random walk',
                             layout=widgets.Layout(width='50%'),
                             style = {'description_width': 'initial'},
@@ -1649,6 +1660,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
                                     min = timestepSize[1], 
                                     max = timestepSize[2],
                                     step = timestepSize[3],
+                            readout_format='.' + str(_count_sig_decimals(str(timestepSize[3]))) + 'f',
                             description = 'Timestep size', 
                             style = {'description_width': 'initial'},
                             layout=widgets.Layout(width='50%'),
@@ -1734,6 +1746,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
             step=1,
             description='Loading:',
             bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
+            style = {'description_width': 'initial'},
             orientation='horizontal'
         )
         if not self._silent:
@@ -2419,6 +2432,7 @@ class MuMoTmultiController(MuMoTcontroller):
                 #step=1,
                 description='Loading:',
                 bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
+                style = {'description_width': 'initial'},
                 orientation='horizontal'
             )
             if not self._silent:
@@ -5401,6 +5415,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._controller._widgetsExtraParams['timestepSize'].max = maxTimestepSize
             self._controller._widgetsExtraParams['timestepSize'].min = min(maxTimestepSize/100, timestepSize)
             self._controller._widgetsExtraParams['timestepSize'].step = self._controller._widgetsExtraParams['timestepSize'].min
+            self._controller._widgetsExtraParams['timestepSize'].readout_format ='.' + str(_count_sig_decimals(str(self._controller._widgetsExtraParams['timestepSize'].step))) + 'f'
         self._controller._widgetsExtraParams['maxTime'].description = "Simulation time (equivalent to " + str(maxTimeSteps) + " simulation timesteps)"
 
                     
@@ -5674,6 +5689,8 @@ class MuMoTmultiagentView(MuMoTview):
             self._controller._widgetsExtraParams['motionCorrelatedness'].layout.display = 'none'
             self._controller._widgetsPlotOnly['showTrace'].layout.display = 'none'
             self._controller._widgetsPlotOnly['showInteractions'].layout.display = 'none'
+            
+        self._controller._widgetsExtraParams['netParam'].readout_format ='.' + str(_count_sig_decimals(str(self._controller._widgetsExtraParams['netParam'].step))) + 'f'
         if self._controller._replotFunction:
             self._controller._widgetsExtraParams['netParam'].observe(self._controller._replotFunction, 'value')
 
@@ -7783,3 +7800,13 @@ def _make_autopct(values):
 def _almostEqual(a,b):
     epsilon = 0.0000001
     return abs(a-b) < epsilon 
+
+## Return the number of significant decimals of the input digit string (up to a maximum of 7)
+def _count_sig_decimals(digits, maximum=7):
+    _, _, fractional = digits.partition(".")
+
+    if fractional:
+        return min(len(fractional),maximum)
+    else:
+        return 0
+
