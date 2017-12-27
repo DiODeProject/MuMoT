@@ -40,6 +40,7 @@ import networkx as nx #@UnresolvedImport
 from enum import Enum
 import json
 import sys
+import numbers
 
 import matplotlib.ticker as ticker
 from math import log10, floor
@@ -107,6 +108,15 @@ class MuMoTdefault:
         MuMoTdefault._agents = initAgents
         MuMoTdefault._agentsLimits = limits
         MuMoTdefault._agentsStep = step
+        
+    _systemSize = 10
+    _systemSizeLimits = (5, 100)
+    _systemSizeStep = 1
+    @staticmethod
+    def setSystemSizeDefaults(initSysSize=_systemSize, limits=_systemSizeLimits, step=_systemSizeStep):
+        MuMoTdefault._systemSize = initSysSize
+        MuMoTdefault._systemSizeLimits = limits
+        MuMoTdefault._systemSizeStep = step
     
 
 ## class describing a model
@@ -479,7 +489,7 @@ class MuMoTmodel:
         for rule in self._rules:
             out = ""
             for reactant in rule.lhsReactants:
-                if type(reactant) is numbers.One:
+                if reactant == EMPTYSET_SYMBOL:
                     reactant = Symbol('\emptyset')
                 if reactant in self._constantReactants:
                     out += "(" 
@@ -490,7 +500,7 @@ class MuMoTmodel:
             out = out[0:len(out) - 2] # delete the last ' + '
             out += " \\xrightarrow{" + latex(rule.rate) + "}"
             for reactant in rule.rhsReactants:
-                if type(reactant) is numbers.One:
+                if reactant == EMPTYSET_SYMBOL:
                     reactant = Symbol('\emptyset')
                 if reactant in self._constantReactants:
                     out += "(" 
@@ -721,73 +731,70 @@ class MuMoTmodel:
     
     
     
-    
-    
-    
-
-    def multiagent(self, netType="full", initialState="Auto", maxTime="Auto", randomSeed="Auto", **kwargs):
-        MAParams = {}
-        if initialState=="Auto":
-            first = True
-            initialState = {}
-            (allReactants, allConstantReactants) = self._getAllReactants()
-            for reactant in allReactants | allConstantReactants: #self._reactants|self._constantReactants:
-                if first:
-#                     print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
-                    initialState[reactant] = MuMoTdefault._agents
-                    first = False
-                else:
-                    initialState[reactant] = 0
-        else:
-            ## @todo check if the Initial State has valid length and positive values
-#             print("TODO: check if the Initial State has valid length and positive values")
-#             initialState_str = ast.literal_eval(initialState) # translate string into dict
-            initialState_str = initialState
-            initialState = {}
-            for state,pop in initialState_str.items():
-                initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-        #print("Initial State is " + str(initialState) )
-        MAParams['initialState'] = initialState
-        
-        # init the max-time
-        if (maxTime == "Auto" or maxTime <= 0):
-            maxTime = MuMoTdefault._maxTime
-        timeLimitMax = max(maxTime, MuMoTdefault._timeLimits[1])
-        MAParams["maxTime"] = (maxTime, MuMoTdefault._timeLimits[0], timeLimitMax, MuMoTdefault._timeStep)
-        # init the random seed 
-        if (randomSeed == "Auto" or randomSeed <= 0 or randomSeed > MAX_RANDOM_SEED):
-            randomSeed = np.random.randint(MAX_RANDOM_SEED)
-#             print("Automatic Random Seed set to " + str(randomSeed) )
-        MAParams['randomSeed'] = randomSeed
-        # check validity of the network type
-        if _decodeNetworkTypeFromString(netType) == None: return # terminating the process if the input argument is wrong
-        MAParams['netType'] = netType
-#         print("Network type set to " + str(MAParams['netType']) ) 
-
-        # Setting some default values 
-        ## @todo add possibility to customise these values from input line
-        MAParams['netParam'] = kwargs.get('netParam', (0, 1.0, 1.0, 1.0)) # these value will be overwritten by _update_net_params()
-        MAParams['motionCorrelatedness'] = kwargs.get('motionCorrelatedness', (0.5, 0.0, 1.0, 0.05))
-        MAParams['particleSpeed'] = kwargs.get('particleSpeed', (0.01, 0.0, 0.1, 0.005))
-        MAParams['visualisationType'] = kwargs.get('visualisationType', 'evo') # default view is time-evolution
-        MAParams['plotProportions'] = kwargs.get('plotProportions', False)
-        MAParams['timestepSize'] = kwargs.get('timestepSize', (1, 0.01, 1, 0.01) )
-        MAParams['showTrace'] = kwargs.get('showTrace', netType == 'dynamic')
-        MAParams['showInteractions'] = kwargs.get('showInteractions', False)
-        ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
-        MAParams['realtimePlot'] = kwargs.get('realtimePlot', False)
-        
-        # construct controller
+    ## construct interactive multiagent plot (simulation of agents locally interacting with each other)
+    ## @param[in] initialState initial proportions of the reactants (type: float in range [0,1])
+    ## @param[in] maxTime simulation time (type: float larger than 0)
+    ## @param[in] randomSeed random seed (type: int in range [0, MAX_RANDOM_SEED])
+    ## @param[in] plotProportions flag to plot proportions or full populations (type: boolean)
+    ## @param[in] realtimePlot flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation) (type: boolean)
+    ## @param[in] visualisationType type of visualisation (type: string in {'evo','graph','final'})
+    ## @param[in] netType type of network (type: string in {'full','erdos-renyi','barabasi-albert','dynamic'})
+    ## @param[in] netParam property of the network ralated to connectivity. It varies depending on the netType (type: float)
+    ## @param[in] motionCorrelatedness (active only for netType='dynamic') level of inertia in the random walk (type: float in [0,1]) with 0 completely uncorrelated random walk and 1 straight trajectories
+    ## @param[in] particleSpeed (active only for netType='dynamic') speed of the moving particle, i.e. displacement in one timestep (type: float in [0,1])
+    ## @param[in] timestepSize length of one timestep, the maximum size is determined by the rates (type: float > 0)
+    ## @param[in] showTrace (active only for netType='dynamic') flag to plot the part trajectory of each particle (type: boolean)
+    ## @param[in] showInteractions (active only for netType='dynamic') flag to plot the interaction range between particles (type: boolean)
+    ## @param[in] initWidgets dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]  
+    def multiagent(self, initWidgets = {}, **kwargs):
+        # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27) 
         paramValues = []
         paramNames = [] 
-        for rate in self._rates:
-            paramValues.append((MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep))
-            paramNames.append(str(rate))
-
+        for freeParam in self._rates:
+            ## @todo: having (input) params as a list is inefficient, a dictionary would be convenient 
+            rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
+                                    defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
+                                    initValueRangeStep=initWidgets.get(str(freeParam)), 
+                                    validRange = (0,float("inf")))
+            paramValues.append(rateVals)
+            paramNames.append(str(freeParam))
+        paramNames.append('systemSize')
+        paramValues.append(_parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), 'systemSize'),
+                                    defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
+                                    initValueRangeStep=initWidgets.get('systemSize'), 
+                                    validRange = (0,float("inf"))) )
+        
+        MAParams = {} 
+        # read input parameters
+        MAParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
+        MAParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
+        MAParams['randomSeed'] = _format_advanced_option(optionName='randomSeed', inputValue=kwargs.get('randomSeed'), initValues=initWidgets.get('randomSeed'))
+        MAParams['motionCorrelatedness'] = _format_advanced_option(optionName='motionCorrelatedness', inputValue=kwargs.get('motionCorrelatedness'), initValues=initWidgets.get('motionCorrelatedness'))
+        MAParams['particleSpeed'] = _format_advanced_option(optionName='particleSpeed', inputValue=kwargs.get('particleSpeed'), initValues=initWidgets.get('particleSpeed'))
+        MAParams['timestepSize'] = _format_advanced_option(optionName='timestepSize', inputValue=kwargs.get('timestepSize'), initValues=initWidgets.get('timestepSize'))
+        MAParams['netType'] = _format_advanced_option(optionName='netType', inputValue=kwargs.get('netType'), initValues=initWidgets.get('netType'))
+        systemSize = dict(zip(paramNames, paramValues))["systemSize"][0] ## @todo: a dictionary would be better (issue #27)
+        MAParams['netParam'] = _format_advanced_option(optionName='netParam', inputValue=kwargs.get('netParam'), initValues=initWidgets.get('netParam'), extraParam=MAParams['netType'], extraParam2=systemSize)
+        MAParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
+        MAParams['realtimePlot'] = _format_advanced_option(optionName='realtimePlot', inputValue=kwargs.get('realtimePlot'), initValues=initWidgets.get('realtimePlot'))
+        MAParams['showTrace'] = _format_advanced_option(optionName='showTrace', inputValue=kwargs.get('showTrace'), initValues=initWidgets.get('showTrace',MAParams['netType']==NetworkType.DYNAMIC))
+        MAParams['showInteractions'] = _format_advanced_option(optionName='showInteractions', inputValue=kwargs.get('showInteractions'), initValues=initWidgets.get('showInteractions'))
+        MAParams['visualisationType'] = _format_advanced_option(optionName='visualisationType', inputValue=kwargs.get('visualisationType'), initValues=initWidgets.get('visualisationType'), extraParam="multiagent")
+        
+        # if the netType is a fixed-param and its value is not 'DYNAMIC', all useless parameter become fixed (and widgets are never displayed)
+        if MAParams['netType'][-1]:
+            decodedNetType = _decodeNetworkTypeFromString(MAParams['netType'][0])
+            if decodedNetType != NetworkType.DYNAMIC:
+                MAParams['motionCorrelatedness'][-1] = True
+                MAParams['particleSpeed'][-1] = True
+                MAParams['showTrace'][-1] = True
+                MAParams['showInteractions'][-1] = True
+                if decodedNetType == NetworkType.FULLY_CONNECTED:
+                    MAParams['netParam'][-1] = True
+        
+        # construct controller
         viewController = MuMoTmultiagentController(paramValues, paramNames, self._ratesLaTeX, False, MAParams, **kwargs)
         # Get the default network values assigned from the controller
-        #MAParams['netParam'] = viewController._widgetsExtraParams['netParam'].value ## @todo use defaults without relying on the controller
-        
         modelView = MuMoTmultiagentView(self, viewController, MAParams, **kwargs)
         viewController.setView(modelView)
 #         viewController._setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
@@ -796,58 +803,47 @@ class MuMoTmodel:
 
         return viewController
 
-    def SSA(self, initialState="Auto", maxTime="Auto", randomSeed="Auto", **kwargs):
-        ssaParams = {}
-        if initialState=="Auto":
-            first = True
-            initialState = {}
-            (allReactants, allConstantReactants) = self._getAllReactants()
-            for reactant in allReactants | allConstantReactants: #self._reactants|self._constantReactants:
-                if first:
-#                     print("Automatic Initial State sets " + str(MuMoTdefault._agents) + " agents in state " + str(reactant) )
-                    initialState[reactant] = MuMoTdefault._agents
-                    first = False
-                else:
-                    initialState[reactant] = 0
-        else:
-            ## @todo check if the Initial State has valid length and positive values
-#             print("TODO: check if the Initial State has valid length and positive values")
-#             initialState_str = ast.literal_eval(initialState) # translate string into dict
-            initialState_str = initialState
-            initialState = {}
-            for state,pop in initialState_str.items():
-                initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-        #print("Initial State is " + str(initialState) )
-        ssaParams['initialState'] = initialState
-        
-        if (maxTime == "Auto" or maxTime <= 0):
-            maxTime = MuMoTdefault._maxTime
-        timeLimitMax = max(maxTime, MuMoTdefault._timeLimits[1])
-        ssaParams["maxTime"] = (maxTime, MuMoTdefault._timeLimits[0], timeLimitMax, MuMoTdefault._timeStep)
-        if (randomSeed == "Auto" or randomSeed <= 0 or randomSeed > MAX_RANDOM_SEED):
-            randomSeed = np.random.randint(MAX_RANDOM_SEED)
-#             print("Automatic Random Seed set to " + str(randomSeed) )
-        ssaParams['randomSeed'] = randomSeed
-        ssaParams['visualisationType'] = 'evo'
-        ssaParams['plotProportions'] = kwargs.get('plotProportions', False)
-        ssaParams['realtimePlot'] = kwargs.get('realtimePlot', False)
-            
-        # construct controller
+    ## construct interactive SSA plot (simulation run of the Gillespie algorithm)
+    ## @param[in] initialState initial proportions of the reactants (type: float in range [0,1])
+    ## @param[in] maxTime simulation time (type: float larger than 0)
+    ## @param[in] randomSeed random seed (type: int in range [0, MAX_RANDOM_SEED])
+    ## @param[in] plotProportions flag to plot proportions or full populations (type: boolean)
+    ## @param[in] realtimePlot flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation) (type: boolean)
+    ## @param[in] visualisationType type of visualisation (type: string in {'evo','final'})
+    ## @param[in] initWidgets dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+    def SSA(self, initWidgets = {}, **kwargs):
+        # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
         paramValues = []
         paramNames = [] 
-        #paramValues.extend( [initialState, netType, maxTime] )
-        for rate in self._rates:
-            paramValues.append((MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep))
-            paramNames.append(str(rate))
-
+        for freeParam in self._rates:
+            ## @todo: having params as a list is inefficient, a dictionary would be more convenient (see issue #27)
+            rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
+                                    defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
+                                    initValueRangeStep=initWidgets.get(str(freeParam)), 
+                                    validRange = (0,float("inf")))
+            paramValues.append(rateVals)
+            paramNames.append(str(freeParam))
+        paramNames.append('systemSize')
+        paramValues.append(_parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), 'systemSize'),
+                                    defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
+                                    initValueRangeStep=initWidgets.get('systemSize'), 
+                                    validRange = (0,float("inf"))) )
+        
+        ssaParams = {}
+        # read input parameters
+        ssaParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
+        ssaParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
+        ssaParams['randomSeed'] = _format_advanced_option(optionName='randomSeed', inputValue=kwargs.get('randomSeed'), initValues=initWidgets.get('randomSeed'))
+        ssaParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
+        ssaParams['realtimePlot'] = _format_advanced_option(optionName='realtimePlot', inputValue=kwargs.get('realtimePlot'), initValues=initWidgets.get('realtimePlot'))
+        ssaParams['visualisationType'] = _format_advanced_option(optionName='visualisationType', inputValue=kwargs.get('visualisationType'), initValues=initWidgets.get('visualisationType'), extraParam="SSA")
+        
+        # construct controller
         viewController = MuMoTSSAController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, ssaParams=ssaParams, **kwargs)
-        #paramDict = {}
-        #paramDict['initialState'] = initialState
+
         modelView = MuMoTSSAView(self, viewController, ssaParams, **kwargs)
         viewController.setView(modelView)
-        #modelView._plot_timeEvolution()
         
-#         viewController._setReplotFunction(modelView._plot_timeEvolution(self._reactants, self._rules))
         viewController._setReplotFunction(modelView._plot_timeEvolution, modelView._redrawOnly)
         
         return viewController
@@ -1264,9 +1260,9 @@ class MuMoTcontroller:
         self._extraWidgetsOrder = []
         unsortedPairs = zip(paramNames, paramValues)
         fixedParams = None
- #       fixedParamsDecoded = None
+#       fixedParamsDecoded = None
         if params is not None:
-            fixedParams, foo = zip(*params)
+            fixedParams, _ = zip(*params)
             fixedParamsDecoded = []
             for fixedParam in fixedParams:
                 if fixedParam == 'plotLimits' or fixedParam == 'systemSize':
@@ -1285,6 +1281,7 @@ class MuMoTcontroller:
 #        if params is not None:
 #            (fixedParamsDecoded, foo) = _process_params(params)
         for pair in sorted(unsortedPairs):
+            if pair[0] == 'plotLimits' or pair[0] == 'systemSize': continue
             if fixedParams is None or pair[0] not in fixedParamsDecoded: 
                 widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
                                              max = pair[1][2], step = pair[1][3],
@@ -1306,10 +1303,15 @@ class MuMoTcontroller:
                     display(self._plotLimitsWidget)
                 
         if systemSize:
-            if fixedParams is None or 'systemSize' not in fixedParams:
-                ## @todo: remove hard coded values and limits
-                self._systemSizeWidget = widgets.IntSlider(value = 5, min = 5, 
-                                             max = 100, step = 1, 
+            if fixedParams is None or 'systemSize' not in fixedParams: ## @todo: following the implementation of _parse_input_keyword_for_numeric_widgets(), the check (param is Fixed) could be done as paramDict['systemSize'][-1]==True 
+                paramDict= dict(zip(paramNames, paramValues)) ## @todo a dictionary would be much better (as indicated in issue #27)
+                sysSize = paramDict.get('systemSize')  
+                ## @todo: all methods using systemSize should provide this information (although at the moment I provide a check to allow compatibility with methods that do not implement it yet)
+                if sysSize is None:
+                    ## @todo: remove hard coded values and limits
+                    sysSize = [5,5,100,1]
+                self._systemSizeWidget = widgets.IntSlider(value = sysSize[0], min = sysSize[1], 
+                                             max = sysSize[2], step = sysSize[3], 
                                              description = "System size", 
                                              continuous_update = False)
                 if not silent:  
@@ -1327,7 +1329,7 @@ class MuMoTcontroller:
         if not silent and bookmark:
             display(self._errorMessage)
 
-    def _print_standalone_view_cmd(self, foo):
+    def _print_standalone_view_cmd(self, _):
         self._errorMessage.value = "Pasted bookmark to log - view with showLogs(tail = True)"
         self._view._print_standalone_view_cmd()
 
@@ -1351,7 +1353,7 @@ class MuMoTcontroller:
             for widget in self._widgetsPlotOnly.values():
                 widget.observe(redrawFunction, 'value')
 
-    ## create and display the "Advanced options" tab
+    ## create and display the "Advanced options" tab (if not empty)
     def _displayAdvancedOptionsTab(self):
         advancedWidgets = []
         for widgetName in self._extraWidgetsOrder:
@@ -1359,18 +1361,15 @@ class MuMoTcontroller:
                 advancedWidgets.append(self._widgetsExtraParams[widgetName])
             elif self._widgetsPlotOnly.get(widgetName):
                 advancedWidgets.append(self._widgetsPlotOnly[widgetName])
-            else:
-                print("WARNING! In the _extraWidgetsOrder is listed the widget " + widgetName + " which is although not found in _widgetsExtraParams or _widgetsPlotOnly")
-#                 for widget in self._widgetsExtraParams.values():
-#                     advancedWidgets.append(widget)
-#                 for widget in self._widgetsPlotOnly.values():
-#                     advancedWidgets.append(widget)
-        advancedPage = widgets.Box(children=advancedWidgets)
-        advancedPage.layout.flex_flow = 'column'
-        advancedOpts = widgets.Accordion(children=[advancedPage]) #, selected_index=-1)
-        advancedOpts.set_title(0, 'Advanced options')
-        advancedOpts.selected_index = None
-        display(advancedOpts)
+            #else:
+                #print("WARNING! In the _extraWidgetsOrder is listed the widget " + widgetName + " which is although not found in _widgetsExtraParams or _widgetsPlotOnly")
+        if advancedWidgets: # if not empty
+            advancedPage = widgets.Box(children=advancedWidgets)
+            advancedPage.layout.flex_flow = 'column'
+            advancedOpts = widgets.Accordion(children=[advancedPage]) #, selected_index=-1)
+            advancedOpts.set_title(0, 'Advanced options')
+            advancedOpts.selected_index = None
+            display(advancedOpts)
 
 
     def setView(self, view):
@@ -1454,71 +1453,77 @@ class MuMoTSSAController(MuMoTcontroller):
     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, ssaParams, **kwargs):
         MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, systemSize=True, **kwargs)
         
-        initialState = ssaParams['initialState']
-        for state,pop in initialState.items():
-            widget = widgets.FloatSlider(value = pop,
-                                         min = min(pop, MuMoTdefault._agentsLimits[0]), 
-                                         max = max(pop, MuMoTdefault._agentsLimits[1]),
-                                         step = MuMoTdefault._agentsStep,
-                                         readout_format='.' + str(_count_sig_decimals(str(MuMoTdefault._agentsStep))) + 'f',
-                                         description = "State " + str(state),
-                                         style = {'description_width': 'initial'},
-                                         continuous_update = continuousReplot)
-            self._widgetsExtraParams['init'+str(state)] = widget
-            #advancedWidgets.append(widget)
+        initialState = ssaParams['initialState'][0]
+        if not ssaParams['initialState'][-1]:
+            for state,pop in initialState.items():
+                widget = widgets.FloatSlider(value = pop[0],
+                                             min = pop[1], 
+                                             max = pop[2],
+                                             step = pop[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
+                                             description = "State " + str(state),
+                                             style = {'description_width': 'initial'},
+                                             continuous_update = continuousReplot)
+                self._widgetsExtraParams['init'+str(state)] = widget
+                #advancedWidgets.append(widget)
             
         # Max time slider
-        maxTime = ssaParams['maxTime']
-        widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
-                                         max = maxTime[2], step = maxTime[3],
-                                         readout_format='.' + str(_count_sig_decimals(str(maxTime[3]))) + 'f',
-                                         description = 'Simulation time:',
-                                         style = {'description_width': 'initial'},
-                                         #layout=widgets.Layout(width='50%'),
-                                         disabled=False,
-                                         continuous_update = continuousReplot) 
-        self._widgetsExtraParams['maxTime'] = widget
-        #advancedWidgets.append(widget)
+        if not ssaParams['maxTime'][-1]:
+            maxTime = ssaParams['maxTime']
+            widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
+                                             max = maxTime[2], step = maxTime[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(maxTime[3]))) + 'f',
+                                             description = 'Simulation time:',
+                                             style = {'description_width': 'initial'},
+                                             #layout=widgets.Layout(width='50%'),
+                                             disabled=False,
+                                             continuous_update = continuousReplot) 
+            self._widgetsExtraParams['maxTime'] = widget
+            #advancedWidgets.append(widget)
         
         # Random seed input field
-        widget = widgets.IntText(
-            value=ssaParams['randomSeed'],
-            description='Random seed:',
-            style = {'description_width': 'initial'},
-            disabled=False
-        )
-        self._widgetsExtraParams['randomSeed'] = widget
-        #advancedWidgets.append(widget)
+        if not ssaParams['randomSeed'][-1]:
+            widget = widgets.IntText(
+                value=ssaParams['randomSeed'][0],
+                description='Random seed:',
+                style = {'description_width': 'initial'},
+                disabled=False
+            )
+            self._widgetsExtraParams['randomSeed'] = widget
+            #advancedWidgets.append(widget)
         
         ## Toggle buttons for plotting style 
-        plotToggle = widgets.ToggleButtons(
-            options=[('Temporal evolution', 'evo'), ('Final distribution', 'final')],
-            value = ssaParams['visualisationType'],
-            description='Plot:',
-            disabled=False,
-            button_style='', # 'success', 'info', 'warning', 'danger' or ''
-            tooltips=['Population change over time', 'Population distribution in each state at final timestep'],
-        #     icons=['check'] * 3
-        )
-        self._widgetsPlotOnly['visualisationType'] = plotToggle
-        #advancedWidgets.append(plotToggle)
+        if not ssaParams['visualisationType'][-1]:
+            plotToggle = widgets.ToggleButtons(
+                options=[('Temporal evolution', 'evo'), ('Final distribution', 'final')],
+                value = ssaParams['visualisationType'][0],
+                description='Plot:',
+                disabled=False,
+                button_style='', # 'success', 'info', 'warning', 'danger' or ''
+                tooltips=['Population change over time', 'Population distribution in each state at final timestep'],
+            #     icons=['check'] * 3
+            )
+            self._widgetsPlotOnly['visualisationType'] = plotToggle
+            #advancedWidgets.append(plotToggle)
         
-        ## Checkbox for proportions or full populations plot 
-        widget = widgets.Checkbox(
-            value = ssaParams.get('plotProportions',False),
-            description='Plot population proportions',
-            disabled = False
-        )
-        self._widgetsPlotOnly['plotProportions'] = widget
+        ## Checkbox for proportions or full populations plot
+        if not ssaParams['plotProportions'][-1]:
+            widget = widgets.Checkbox(
+                value = ssaParams['plotProportions'][0],
+                description='Plot population proportions',
+                disabled = False
+            )
+            self._widgetsPlotOnly['plotProportions'] = widget
         
         ## Checkbox for realtime plot update
-        widget = widgets.Checkbox(
-            value = ssaParams.get('realtimePlot',False),
-            description='Runtime plot update',
-            disabled = False
-        )
-        self._widgetsExtraParams['realtimePlot'] = widget
-        #advancedWidgets.append(widget)
+        if not ssaParams['realtimePlot'][-1]:
+            widget = widgets.Checkbox(
+                value = ssaParams['realtimePlot'][0],
+                description='Runtime plot update',
+                disabled = False
+            )
+            self._widgetsExtraParams['realtimePlot'] = widget
+            #advancedWidgets.append(widget)
         
         # define the widget order
         for state,pop in initialState.items():
@@ -1537,7 +1542,7 @@ class MuMoTSSAController(MuMoTcontroller):
         self._progressBar = widgets.FloatProgress(
             value=0,
             min=0,
-            max=self._widgetsExtraParams['maxTime'].value,
+            max=ssaParams['maxTime'][0],
             #step=1,
             description='Loading:',
             bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
@@ -1554,167 +1559,179 @@ class MuMoTmultiagentController(MuMoTcontroller):
     def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, MAParams, **kwargs):
         MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, systemSize=True, **kwargs)
         
-        initialState = MAParams['initialState']
-        for state,pop in initialState.items():
-            widget = widgets.FloatSlider(value = pop,
-                                         min = min(pop, MuMoTdefault._agentsLimits[0]), 
-                                         max = max(pop, MuMoTdefault._agentsLimits[1]),
-                                         step = MuMoTdefault._agentsStep,
-                                         readout_format='.' + str(_count_sig_decimals(str(MuMoTdefault._agentsStep))) + 'f',
-                                         description = "State " + str(state), 
-                                         style = {'description_width': 'initial'},
-                                         continuous_update = continuousReplot)
-            self._widgetsExtraParams['init'+str(state)] = widget
-            #advancedWidgets.append(widget)
+        initialState = MAParams['initialState'][0]
+        if not MAParams['initialState'][-1]:
+            for state,pop in initialState.items():
+                widget = widgets.FloatSlider(value = pop[0],
+                                             min = pop[1], 
+                                             max = pop[2],
+                                             step = pop[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
+                                             description = "State " + str(state), 
+                                             style = {'description_width': 'initial'},
+                                             continuous_update = continuousReplot)
+                self._widgetsExtraParams['init'+str(state)] = widget
+                #advancedWidgets.append(widget)
         
         # Max time slider
-        maxTime = MAParams['maxTime']
-        widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
-                                         max = maxTime[2], step = maxTime[3],
-                                         readout_format='.' + str(_count_sig_decimals(str(maxTime[3]))) + 'f',
-                                         description = 'Simulation time:',
-                                         disabled=False,
-                                         style = {'description_width': 'initial'},
-                                         layout=widgets.Layout(width='70%'),
-                                         continuous_update = continuousReplot) 
-        self._widgetsExtraParams['maxTime'] = widget
-        #advancedWidgets.append(widget)
+        if not MAParams['maxTime'][-1]:
+            maxTime = MAParams['maxTime']
+            widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
+                                             max = maxTime[2], step = maxTime[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(maxTime[3]))) + 'f',
+                                             description = 'Simulation time:',
+                                             disabled=False,
+                                             style = {'description_width': 'initial'},
+                                             layout=widgets.Layout(width='70%'),
+                                             continuous_update = continuousReplot) 
+            self._widgetsExtraParams['maxTime'] = widget
+            #advancedWidgets.append(widget)
         
         ## Network type dropdown selector
-        netDropdown = widgets.Dropdown( 
-            options=[('Full graph', NetworkType.FULLY_CONNECTED), 
-                     ('Erdos-Renyi', NetworkType.ERSOS_RENYI),
-                     ('Barabasi-Albert', NetworkType.BARABASI_ALBERT),
-                     ## @todo: add network topology generated by random points in space
-                     ('Moving particles', NetworkType.DYNAMIC)
-                     ],
-            description='Network topology:',
-            value = _decodeNetworkTypeFromString(MAParams['netType']), 
-            style = {'description_width': 'initial'},
-            disabled=False
-        )
-        netDropdown.observe(self._update_net_params, 'value')
-        self._widgetsExtraParams['netType'] = netDropdown
-        #advancedWidgets.append(netDropdown)
+        if not MAParams['netType'][-1]:
+            netDropdown = widgets.Dropdown( 
+                options=[('Full graph', NetworkType.FULLY_CONNECTED), 
+                         ('Erdos-Renyi', NetworkType.ERSOS_RENYI),
+                         ('Barabasi-Albert', NetworkType.BARABASI_ALBERT),
+                         ## @todo: add network topology generated by random points in space
+                         ('Moving particles', NetworkType.DYNAMIC)
+                         ],
+                description='Network topology:',
+                value = _decodeNetworkTypeFromString(MAParams['netType'][0]), 
+                style = {'description_width': 'initial'},
+                disabled=False
+            )
+            netDropdown.observe(self._update_net_params, 'value')
+            self._widgetsExtraParams['netType'] = netDropdown
+            #advancedWidgets.append(netDropdown)
         
         # Network connectivity slider
-        netParam = MAParams['netParam']
-        widget = widgets.FloatSlider(value = netParam[0],
-                                    min = netParam[1], 
-                                    max = netParam[2],
-                                    step = netParam[3],
-                            readout_format='.' + str(_count_sig_decimals(str(netParam[3]))) + 'f',
-                            description = 'Network connectivity parameter', 
-                            style = {'description_width': 'initial'},
-                            layout=widgets.Layout(width='50%'),
-                            continuous_update = continuousReplot,
-                            disabled=False
-        )
-        self._widgetsExtraParams['netParam'] = widget
-        #advancedWidgets.append(widget)
+        if not MAParams['netParam'][-1]:
+            netParam = MAParams['netParam']
+            widget = widgets.FloatSlider(value = netParam[0],
+                                        min = netParam[1], 
+                                        max = netParam[2],
+                                        step = netParam[3],
+                                readout_format='.' + str(_count_sig_decimals(str(netParam[3]))) + 'f',
+                                description = 'Network connectivity parameter', 
+                                style = {'description_width': 'initial'},
+                                layout=widgets.Layout(width='50%'),
+                                continuous_update = continuousReplot,
+                                disabled=False
+            )
+            self._widgetsExtraParams['netParam'] = widget
+            #advancedWidgets.append(widget)
         
         # Agent speed
-        particleSpeed = MAParams['particleSpeed']
-        widget = widgets.FloatSlider(value = particleSpeed[0],
-                                     min = particleSpeed[1], max = particleSpeed[2], step=particleSpeed[3],
-                            readout_format='.' + str(_count_sig_decimals(str(particleSpeed[3]))) + 'f',
-                            description = 'Particle speed', 
-                            style = {'description_width': 'initial'},
-                            layout=widgets.Layout(width='50%'),
-                            continuous_update = continuousReplot,
-                            disabled=False
-        )
-        self._widgetsExtraParams['particleSpeed'] = widget
-        #advancedWidgets.append(widget)
-        
+        if not MAParams['particleSpeed'][-1]:
+            particleSpeed = MAParams['particleSpeed']
+            widget = widgets.FloatSlider(value = particleSpeed[0],
+                                         min = particleSpeed[1], max = particleSpeed[2], step=particleSpeed[3],
+                                readout_format='.' + str(_count_sig_decimals(str(particleSpeed[3]))) + 'f',
+                                description = 'Particle speed', 
+                                style = {'description_width': 'initial'},
+                                layout=widgets.Layout(width='50%'),
+                                continuous_update = continuousReplot,
+                                disabled=False
+            )
+            self._widgetsExtraParams['particleSpeed'] = widget
+            #advancedWidgets.append(widget)
+            
         # Random walk correlatedness
-        motionCorrelatedness = MAParams['motionCorrelatedness']
-        widget = widgets.FloatSlider(value = motionCorrelatedness[0],
-                                     min = motionCorrelatedness[1],
-                                     max = motionCorrelatedness[2],
-                                     step=motionCorrelatedness[3],
-                            readout_format='.' + str(_count_sig_decimals(str(motionCorrelatedness[3]))) + 'f',
-                            description = 'Correlatedness of the random walk',
-                            layout=widgets.Layout(width='50%'),
-                            style = {'description_width': 'initial'},
-                            continuous_update = continuousReplot,
-                            disabled=False
-        )
-        self._widgetsExtraParams['motionCorrelatedness'] = widget
-        #advancedWidgets.append(widget)
+        if not MAParams['motionCorrelatedness'][-1]:
+            motionCorrelatedness = MAParams['motionCorrelatedness']
+            widget = widgets.FloatSlider(value = motionCorrelatedness[0],
+                                         min = motionCorrelatedness[1],
+                                         max = motionCorrelatedness[2],
+                                         step=motionCorrelatedness[3],
+                                readout_format='.' + str(_count_sig_decimals(str(motionCorrelatedness[3]))) + 'f',
+                                description = 'Correlatedness of the random walk',
+                                layout=widgets.Layout(width='50%'),
+                                style = {'description_width': 'initial'},
+                                continuous_update = continuousReplot,
+                                disabled=False
+            )
+            self._widgetsExtraParams['motionCorrelatedness'] = widget
+            #advancedWidgets.append(widget)
         
         # Random seed input field
-        widget = widgets.IntText(
-            value=MAParams['randomSeed'],
-            description='Random seed:',
-            style = {'description_width': 'initial'},
-            disabled=False
-        )
-        self._widgetsExtraParams['randomSeed'] = widget
-        #advancedWidgets.append(widget)
-        #display(widget)
+        if not MAParams['randomSeed'][-1]:
+            widget = widgets.IntText(
+                value=MAParams['randomSeed'][0],
+                description='Random seed:',
+                style = {'description_width': 'initial'},
+                disabled=False
+            )
+            self._widgetsExtraParams['randomSeed'] = widget
+            #advancedWidgets.append(widget)
         
         # Time scaling slider
-        timestepSize = MAParams['timestepSize']
-        widget =  widgets.FloatSlider(value = timestepSize[0],
-                                    min = timestepSize[1], 
-                                    max = timestepSize[2],
-                                    step = timestepSize[3],
-                            readout_format='.' + str(_count_sig_decimals(str(timestepSize[3]))) + 'f',
-                            description = 'Timestep size', 
-                            style = {'description_width': 'initial'},
-                            layout=widgets.Layout(width='50%'),
-                            continuous_update = continuousReplot
-        )
-        self._widgetsExtraParams['timestepSize'] = widget
-        #advancedWidgets.append(widget)
+        if not MAParams['timestepSize'][-1]:
+            timestepSize = MAParams['timestepSize']
+            widget =  widgets.FloatSlider(value = timestepSize[0],
+                                        min = timestepSize[1], 
+                                        max = timestepSize[2],
+                                        step = timestepSize[3],
+                                readout_format='.' + str(_count_sig_decimals(str(timestepSize[3]))) + 'f',
+                                description = 'Timestep size', 
+                                style = {'description_width': 'initial'},
+                                layout=widgets.Layout(width='50%'),
+                                continuous_update = continuousReplot
+            )
+            self._widgetsExtraParams['timestepSize'] = widget
+            #advancedWidgets.append(widget)
         
-        ## Toggle buttons for plotting style 
-        plotToggle = widgets.ToggleButtons(
-            #options={'Temporal evolution' : 'evo', 'Network' : 'graph', 'Final distribution' : 'final'},
-            options=[('Temporal evolution','evo'), ('Network','graph'), ('Final distribution', 'final')],
-            value = MAParams['visualisationType'],
-            description='Plot:',
-            disabled=False,
-            button_style='', # 'success', 'info', 'warning', 'danger' or ''
-            tooltips=['Population change over time', 'Network topology', 'Number of agents in each state at final timestep'],
-        #     icons=['check'] * 3
-        )
-        self._widgetsPlotOnly['visualisationType'] = plotToggle
-        #advancedWidgets.append(plotToggle)
+        ## Toggle buttons for plotting style
+        if not MAParams['visualisationType'][-1]:
+            plotToggle = widgets.ToggleButtons(
+                #options={'Temporal evolution' : 'evo', 'Network' : 'graph', 'Final distribution' : 'final'},
+                options=[('Temporal evolution','evo'), ('Network','graph'), ('Final distribution', 'final')],
+                value = MAParams['visualisationType'][0],
+                description='Plot:',
+                disabled=False,
+                button_style='', # 'success', 'info', 'warning', 'danger' or ''
+                tooltips=['Population change over time', 'Network topology', 'Number of agents in each state at final timestep'],
+            #     icons=['check'] * 3
+            )
+            self._widgetsPlotOnly['visualisationType'] = plotToggle
+            #advancedWidgets.append(plotToggle)
         
         # Particle display checkboxes
-        widget = widgets.Checkbox(
-            value = MAParams['showTrace'],
-            description='Show particle trace',
-            disabled = False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
-        )
-        self._widgetsPlotOnly['showTrace'] = widget
-        #advancedWidgets.append(widget)
-        widget = widgets.Checkbox(
-            value = MAParams['showInteractions'],
-            description='Show communication links',
-            disabled = False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
-        )
-        self._widgetsPlotOnly['showInteractions'] = widget
-        #advancedWidgets.append(widget)
+        if not MAParams['showTrace'][-1]:
+            widget = widgets.Checkbox(
+                value = MAParams['showTrace'][0],
+                description='Show particle trace',
+                disabled = False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
+            )
+            self._widgetsPlotOnly['showTrace'] = widget
+            #advancedWidgets.append(widget)
+        if not MAParams['showInteractions'][-1]:
+            widget = widgets.Checkbox(
+                value = MAParams['showInteractions'][0],
+                description='Show communication links',
+                disabled = False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
+            )
+            self._widgetsPlotOnly['showInteractions'] = widget
+            #advancedWidgets.append(widget)
         
-        ## Checkbox for proportions or full populations plot 
-        widget = widgets.Checkbox(
-            value = MAParams.get('plotProportions',False),
-            description='Plot population proportions',
-            disabled = False
-        )
-        self._widgetsPlotOnly['plotProportions'] = widget
+        if not MAParams['plotProportions'][-1]:
+            ## Checkbox for proportions or full populations plot 
+            widget = widgets.Checkbox(
+                value = MAParams['plotProportions'][0],
+                description='Plot population proportions',
+                disabled = False
+            )
+            self._widgetsPlotOnly['plotProportions'] = widget
         
-        ## Checkbox for realtime plot update
-        widget = widgets.Checkbox(
-            value = MAParams.get('realtimePlot',False),
-            description='Runtime plot update',
-            disabled = False
-        )
-        self._widgetsExtraParams['realtimePlot'] = widget
-        #advancedWidgets.append(widget)
+        if not MAParams['realtimePlot'][-1]:
+            ## Checkbox for realtime plot update
+            widget = widgets.Checkbox(
+                value = MAParams['realtimePlot'][0],
+                description='Runtime plot update',
+                disabled = False
+            )
+            self._widgetsExtraParams['realtimePlot'] = widget
+            #advancedWidgets.append(widget)
         
         #self._update_net_params()
         
@@ -1742,7 +1759,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         self._progressBar = widgets.FloatProgress(
             value=0,
             min=0,
-            max=self._widgetsExtraParams['maxTime'].value,
+            max=MAParams['maxTime'][0],
             step=1,
             description='Loading:',
             bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
@@ -1754,7 +1771,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
 
     ## updates the widgets related to the netType (it is linked --through observe()-- before the _view is created) 
     def _update_net_params(self, _=None):
-        self._view._update_net_params()
+        if self._view: self._view._update_net_params(True)
 
     ## updates the widgets related to the netType
 #     def _update_net_params(self, _=None):
@@ -1840,6 +1857,8 @@ class MuMoTview:
     _paramNames = None
     ## parameter values when used without controller
     _paramValues = None
+    ## parameter values when used without controller
+    _fixedParams = None
     ## silent flag (TRUE = do not try to acquire figure handle from pyplot)
     _silent = None
     ## plot limits (for non-constant system size) @todo: not used?
@@ -1855,7 +1874,7 @@ class MuMoTview:
         self._controller = controller
         self._logs = []
         self._axes3d = False
-
+        self._fixedParams = {}
         self._plotLimits = 1
         #self._plotLimits = 6 ## @todo: why this magic number?
         self._generatingKwargs = kwargs
@@ -1924,23 +1943,25 @@ class MuMoTview:
             if reactant not in model._constantReactants:
                 paramInitCheck.append(latex(Symbol('Phi^0_'+str(reactant))))
                  
-        for name, value in self._controller._widgetsFreeParams.items():
-#                name = name.replace('\\', '\\\\')
-            if name in model._ratesLaTeX:
-                name = model._ratesLaTeX[name]
-            name = name.replace('(', '')
-            name = name.replace(')', '')
-            if name not in paramInitCheck:
-                logStr += "('" + latex(name) + "', " + str(value.value) + "), "
+        if self._controller:
+            for name, value in self._controller._widgetsFreeParams.items():
+#                 name = name.replace('\\', '\\\\')
+                if name in model._ratesLaTeX:
+                    name = model._ratesLaTeX[name]
+                name = name.replace('(', '')
+                name = name.replace(')', '')
+                if name not in paramInitCheck:
+                    logStr += "('" + latex(name) + "', " + str(value.value) + "), "
         if self._paramNames != None:
             for name, value in zip(self._paramNames, self._paramValues):
+                if name == 'systemSize' or name == 'plotLimits': continue
                 name= repr(name)
                 if name in model._ratesLaTeX:
                     name = model._ratesLaTeX[name]
                 name = name.replace('(', '')
                 name = name.replace(')', '')
                 logStr += "('" + latex(name) + "', " + str(value) + "), "
-        logStr += "('plotLimits', " + str(self._getPlotLimits()) + "), "
+        logStr += "('plotLimits', " + str(self._getPlotLimits()) + "), " ## @todo is it necessary for every view? I think no.
         logStr += "('systemSize', " + str(self._getSystemSize()) + "), "
 #                if len(self._controller._widgetsFreeParams.items()) > 0:
         logStr = logStr[:-2] # throw away last ", "
@@ -1949,12 +1970,10 @@ class MuMoTview:
         return logStr        
 
 
-    def _build_bookmark(self):
+    def _build_bookmark(self, _=None):
         self._resetErrorMessage()
-        self._showErrorMessage("Bookmark functionality not implemented for class " + self._generatingCommand)
-
+        self._showErrorMessage("Bookmark functionality not implemented for class " + str(self._generatingCommand))
         return
-
 
 
     def _getPlotLimits(self, defaultLimits = 1):
@@ -2265,9 +2284,9 @@ class MuMoTmultiView(MuMoTview):
 
 
     def _print_standalone_view_cmd(self):
-        for view in self._views:
+        for view in self._views: ## @todo is this necessary?
             pass
-        model = view._mumotModel
+        model = view._mumotModel ## @todo does this suppose that all models are the same for all views?
         with io.capture_output() as log:
             logStr = "bookmark = " + self._generatingCommand + "(["
             for view in self._views:
@@ -2386,7 +2405,7 @@ class MuMoTmultiController(MuMoTcontroller):
                 if name == "plotProportions":
                     widget.value = True
                     widget.disabled = True
-                ## this is necessary due to ipywidget bug #1868 (https://github.com/jupyter-widgets/ipywidgets/issues/1868)
+                # this is necessary due to limit visualisation-type to only 'evo' and 'final'
                 if name == "visualisationType": 
                     ## Toggle buttons for plotting style 
                     widget = widgets.ToggleButtons(
@@ -2403,20 +2422,67 @@ class MuMoTmultiController(MuMoTcontroller):
             if controller._progressBar:
                 addProgressBar = True
         if self._widgetsExtraParams or self._widgetsPlotOnly:
-            # set widgets to possible values set as multi-controller arguments
-            for key, value in kwargs.items():
-                if self._widgetsExtraParams.get(key):
-                    if (self._widgetsExtraParams[key].min > value):
-                        self._widgetsExtraParams[key].min = value
-                    if (self._widgetsExtraParams[key].max < value):
-                        self._widgetsExtraParams[key].max = value
-                    self._widgetsExtraParams[key].value = value
-                if self._widgetsPlotOnly.get(key):
-                    if (self._widgetsPlotOnly[key].min > value):
-                        self._widgetsPlotOnly[key].min = value
-                    if (self._widgetsPlotOnly[key].max < value):
-                        self._widgetsPlotOnly[key].max = value
-                    self._widgetsPlotOnly[key].value = value
+            # set widgets to possible initial/fixed values if specified in the multi-controller
+            initWidgets = kwargs.get("initWidgets") if kwargs.get("initWidgets") is not None else {}
+            #for key, value in kwargs.items():
+            for key in kwargs.keys() | initWidgets.keys():
+                inputValue = kwargs.get(key) 
+                ep1 = None
+                ep2 = None
+                if key=='initialState': ep1 = views[0]._mumotModel._getAllReactants() ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
+                if key=='visualisationType': ep1="multicontroller"
+                if key=='netParam': 
+                    ep1= [kwargs.get('netType', self._widgetsExtraParams.get('netType') ), kwargs.get('netType') is not None] 
+                    maxSysSize = 1
+                    for view in views:
+                        maxSysSize = max(maxSysSize,view._getSystemSize())
+                    ep2= maxSysSize
+                optionValues = _format_advanced_option(optionName=key, inputValue=inputValue, initValues=initWidgets.get(key), extraParam=ep1, extraParam2=ep2)
+                # if option is fixed
+                if optionValues[-1]==True:
+                    if key =='initialState': # initialState is special
+                        for state,pop in optionValues[0].items():
+                            optionValues[0][state] = pop[0]
+                            stateKey = "init" + str(state)
+                            # delete the widgets
+                            if stateKey in self._widgetsExtraParams:
+                                del self._widgetsExtraParams[stateKey]
+                    if key =='netType': # netType is special
+                        optionValues[0] = _decodeNetworkTypeFromString(optionValues[0]) ## @todo: if only netType (and not netParam) is specified, then multicotroller won't work...
+                    # set the value in all the views
+                    for view in views:                            
+                        view._fixedParams[key] = optionValues[0]
+                    # delete the widgets
+                    if key in self._widgetsExtraParams:
+                        del self._widgetsExtraParams[key]
+                    if key in self._widgetsPlotOnly:
+                        del self._widgetsPlotOnly[key]
+                else:
+                    #update the values with the init values
+                    if key in self._widgetsExtraParams:
+                        if len(optionValues) == 5:
+                            self._widgetsExtraParams[key].max = float('inf') #temp to avoid exception min>max
+                            self._widgetsExtraParams[key].min = optionValues[1]
+                            self._widgetsExtraParams[key].max = optionValues[2]
+                            self._widgetsExtraParams[key].step = optionValues[3]
+                            self._widgetsExtraParams[key].readout_format='.' + str(_count_sig_decimals(str(optionValues[3]))) + 'f'
+                        self._widgetsExtraParams[key].value = optionValues[0]
+                    if key in self._widgetsPlotOnly:
+                        if len(optionValues) == 5:
+                            self._widgetsPlotOnly[key].max = float('inf') #temp to avoid exception min>max
+                            self._widgetsPlotOnly[key].min = optionValues[1]
+                            self._widgetsPlotOnly[key].max = optionValues[2]
+                            self._widgetsPlotOnly[key].step = optionValues[3]
+                            self._widgetsPlotOnly[key].readout_format='.' + str(_count_sig_decimals(str(optionValues[3]))) + 'f'
+                        self._widgetsPlotOnly[key].value = optionValues[0]
+                    if key == 'initialState':
+                        for state, pop in optionValues[0].items():
+                            self._widgetsExtraParams['init'+str(state)].max = float('inf') #temp to avoid exception min>max
+                            self._widgetsExtraParams['init'+str(state)].min = pop[1]
+                            self._widgetsExtraParams['init'+str(state)].max = pop[2]
+                            self._widgetsExtraParams['init'+str(state)].step = pop[3]
+                            self._widgetsExtraParams['init'+str(state)].readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f'
+                            self._widgetsExtraParams['init'+str(state)].value = pop[0] 
             
             # create the "Advanced options" tab
             if not self._silent:
@@ -2428,7 +2494,7 @@ class MuMoTmultiController(MuMoTcontroller):
             self._progressBar = widgets.FloatProgress(
                 value=0,
                 min=0,
-                max=self._widgetsExtraParams['maxTime'].value,
+                max=self._widgetsExtraParams['maxTime'].value if self._widgetsExtraParams.get('maxTime') is not None else views[0]._fixedParams.get('maxTime'),
                 #step=1,
                 description='Loading:',
                 bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
@@ -2453,8 +2519,6 @@ class MuMoTmultiController(MuMoTcontroller):
         if not self._silent:
             self._view._plot()
             
-    def helloWorld(self, _=None):
-        print("HELLO WORLD")
 
 ## time evolution view on model including state variables and noise (specialised by MuMoTtimeEvoStateVarView and ...)
 class MuMoTtimeEvolutionView(MuMoTview):
@@ -5001,39 +5065,61 @@ class MuMoTmultiagentView(MuMoTview):
 
         with io.capture_output() as log:
 #         if True:
-                      
+                   
+            self._systemSize = self._getSystemSize()
             if self._controller == None:
                 # storing the rates for each rule
-                ## @todo moving it to general method?
+                ## @todo moving _ratesDict to general method?
+                freeParamDict = self._get_argDict()
                 self._ratesDict = {}
-                rates_input_dict = dict( params )
-                for key in rates_input_dict.keys():
-                    rates_input_dict[str(process_sympy(str(key)))] = rates_input_dict.pop(key) # replace the dictionary key with the str of the SymPy symbol
-                # create the self._ratesDict 
                 for rule in self._mumotModel._rules:
-                    self._ratesDict[str(rule.rate)] = rates_input_dict[str(rule.rate)] 
+                    self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
             
-            # storing the initial state
-            self._initialState = {}
-            for state,pop in MAParams["initialState"].items():
-                if isinstance(state, str):
-                    self._initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-                else:
-                    self._initialState[state] = pop
-            self._maxTime = MAParams["maxTime"]
-            self._randomSeed = MAParams["randomSeed"]
-            self._visualisationType = MAParams["visualisationType"]
-            self._plotProportions = MAParams["plotProportions"]
-            self._netType = _decodeNetworkTypeFromString(MAParams['netType'])
-            self._netParam = MAParams['netParam']
-            self._motionCorrelatedness = MAParams['motionCorrelatedness']
-            self._particleSpeed = MAParams['particleSpeed']
-            self._timestepSize = MAParams.get('timestepSize',1)
-            self._showTrace = MAParams.get('showTrace',False)
-            self._showInteractions = MAParams.get('showInteractions',False)
-            self._realtimePlot = MAParams.get('realtimePlot', False)
+                # storing the initial state
+                self._initialState = {}
+                for state,pop in MAParams["initialState"].items():
+                    if isinstance(state, str):
+                        self._initialState[process_sympy(state)] = pop # convert string into SymPy symbol
+                    else:
+                        self._initialState[state] = pop
+                # storing all values of MA-specific parameters
+                self._maxTime = MAParams["maxTime"]
+                self._timestepSize = MAParams.get('timestepSize',1)
+                self._randomSeed = MAParams["randomSeed"]
+                self._netType = _decodeNetworkTypeFromString(MAParams['netType'])
+                if self._netType != NetworkType.FULLY_CONNECTED: 
+                    self._netParam = MAParams['netParam']
+                    if self._netType == NetworkType.DYNAMIC: 
+                        self._motionCorrelatedness = MAParams['motionCorrelatedness']
+                        self._particleSpeed = MAParams['particleSpeed']
+                        self._showTrace = MAParams.get('showTrace',False)
+                        self._showInteractions = MAParams.get('showInteractions',False)
+                self._visualisationType = MAParams["visualisationType"]
+                self._plotProportions = MAParams["plotProportions"]
+                self._realtimePlot = MAParams.get('realtimePlot', False)
             
-            self._update_net_params()
+            else:
+                # needed for bookmarking
+                self._generatingCommand = "multiagent"
+                # storing the initial state
+                self._initialState = {}
+                for state,pop in MAParams["initialState"][0].items():
+                    if isinstance(state, str):
+                        self._initialState[process_sympy(state)] = pop[0] # convert string into SymPy symbol
+                    else:
+                        self._initialState[state] = pop[0]
+                # storing fixed params
+                for key,value in MAParams.items():
+                    if value[-1]:
+                        if key == 'initialState':
+                            self._fixedParams[key] = self._initialState
+                        elif key == 'netType':
+                            self._fixedParams[key] = _decodeNetworkTypeFromString(value[0])
+                        else:
+                            self._fixedParams[key] = value[0]
+                
+                self._netType = _decodeNetworkTypeFromString(MAParams['netType'][0])
+                self._update_net_params(False)
             
             self._mumotModel._getSingleAgentRules()
             #print(self._mumotModel._agentProbabilities)
@@ -5053,6 +5139,13 @@ class MuMoTmultiagentView(MuMoTview):
                     self._controller._widgetsExtraParams['netType'].value = NetworkType.DYNAMIC
                     self._controller._widgetsExtraParams['netType'].disabled = True
                     self._controller._update_net_params()
+                else: # this is a standalone view
+                    # if the assigned value of net-param is not consistent with the input, raise a WARNING and set the default value to 0.1
+                    if self._netType < 0 or self._netType > 1:
+                        wrnMsg = "WARNING! net-type value " + str(self._netType) + " is invalid for Moving-Particles. Valid range is [0,1] indicating the particles' communication range. \n"
+                        self._netType = 0.1
+                        wrnMsg += "New default values is 'netType'="  + str(self._netType)
+                        print(wrnMsg)
             
 #             # init graph
 #             if self._silent:
@@ -5069,29 +5162,59 @@ class MuMoTmultiagentView(MuMoTview):
         self._logs.append(log)
         if not self._silent:
             self._plot_timeEvolution()
-        
-    def _print_standalone_view_cmd(self):
+    
+    def _build_bookmark(self, includeParams=True):
+        logStr = "bookmark = " if not self._silent else ""
+        logStr += "<modelName>." + self._generatingCommand + "("
+#         logStr += _find_obj_names(self._mumotModel)[0] + "." + self._generatingCommand + "("
+        if includeParams:
+            logStr += self._get_bookmarks_params()
+#         if len(self._generatingKwargs) > 0:
+#             for key in self._generatingKwargs:
+#                 logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+        initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+        logStr += ", initialState = " + str(initState_str)
+        logStr += ", maxTime = " + str(self._maxTime)
+        logStr += ", timestepSize = " + str(self._timestepSize)
+        logStr += ", randomSeed = " + str(self._randomSeed)
+        logStr += ", netType = '" + _encodeNetworkTypeToString(self._netType) +"'"
+        if not self._netType == NetworkType.FULLY_CONNECTED:
+            logStr += ", netParam = " + str(self._netParam)
+        if self._netType == NetworkType.DYNAMIC:
+            logStr += ", motionCorrelatedness = " + str(self._motionCorrelatedness)
+            logStr += ", particleSpeed = " + str(self._particleSpeed)
+            logStr += ", showTrace = " + str(self._showTrace)
+            logStr += ", showInteractions = " + str(self._showInteractions)
+        logStr += ", visualisationType = '" + str(self._visualisationType) + "'"
+        logStr += ", plotProportions = " + str(self._plotProportions)
+        logStr += ", realtimePlot = " + str(self._realtimePlot)
+        logStr += ", bookmark = False"
+        logStr += ")"
+        #logStr = logStr.replace('\\', '\\\\')
+        return logStr
+    
+    def _printStandaloneViewCmd(self):
         MAParams = {}
-        initState_str = {}
-        for state,pop in self._initialState.items():
-            initState_str[str(state)] = pop
-        MAParams["initialState"] = initState_str 
+        MAParams["initialState"] = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
         MAParams["maxTime"] = self._maxTime 
+        MAParams['timestepSize'] = self._timestepSize
         MAParams["randomSeed"] = self._randomSeed
+        MAParams['netType'] = _encodeNetworkTypeToString(self._netType)
+        if not self._netType == NetworkType.FULLY_CONNECTED:
+            MAParams['netParam'] = self._netParam 
+        if self._netType == NetworkType.DYNAMIC:
+            MAParams['motionCorrelatedness'] = self._motionCorrelatedness
+            MAParams['particleSpeed'] = self._particleSpeed
+            MAParams['showTrace'] = self._showTrace
+            MAParams['showInteractions'] = self._showInteractions
         MAParams["visualisationType"] = self._visualisationType
         MAParams["plotProportions"] = self._plotProportions
-        MAParams['netType'] = _encodeNetworkTypeToString(self._netType)
-        MAParams['netParam'] = self._netParam 
-        MAParams['motionCorrelatedness'] = self._motionCorrelatedness
-        MAParams['particleSpeed'] = self._particleSpeed
-        MAParams['timestepSize'] = self._timestepSize
-        MAParams['showTrace'] = self._showTrace
-        MAParams['showInteractions'] = self._showInteractions
+        MAParams["realtimePlot"] = self._realtimePlot
 #         sortedDict = "{"
 #         for key,value in sorted(MAParams.items()):
 #             sortedDict += "'" + key + "': " + str(value) + ", "
 #         sortedDict += "}"
-        print( "mmt.MuMoTmultiagentView(model1, None, MAParams = " + str(MAParams) + ", params = " + str( list(self._ratesDict.items()) ) + " )")
+        print( "mmt.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params() + ", MAParams = " + str(MAParams) + " )")
     
     ## reads the new parameters (in case they changed in the controller)
     ## this function should only update local parameters and not compute data
@@ -5106,25 +5229,35 @@ class MuMoTmultiagentView(MuMoTview):
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
+                if self._ratesDict[str(rule.rate)] == float('inf'):
+                    self._ratesDict[str(rule.rate)] = sys.maxsize
+            #print("freeParamDict DICT IS: " + str(freeParamDict))
             #print("RATES DICT IS: " + str(self._ratesDict))
             self._systemSize = self._getSystemSize()
             
             # getting other parameters specific to M-A view
-            for state in self._initialState.keys():
-                self._initialState[state] = self._controller._widgetsExtraParams['init'+str(state)].value
-            #numNodes = sum(self._initialState.values())
-            self._randomSeed = self._controller._widgetsExtraParams['randomSeed'].value
-            self._visualisationType = self._controller._widgetsPlotOnly['visualisationType'].value
-            self._plotProportions = self._controller._widgetsPlotOnly['plotProportions'].value
-            self._maxTime = self._controller._widgetsExtraParams['maxTime'].value
-            self._netType = self._controller._widgetsExtraParams['netType'].value
-            self._netParam = self._controller._widgetsExtraParams['netParam'].value
-            self._motionCorrelatedness = self._controller._widgetsExtraParams['motionCorrelatedness'].value
-            self._particleSpeed = self._controller._widgetsExtraParams['particleSpeed'].value
-            self._timestepSize = self._controller._widgetsExtraParams['timestepSize'].value
-            self._showTrace = self._controller._widgetsPlotOnly['showTrace'].value
-            self._showInteractions = self._controller._widgetsPlotOnly['showInteractions'].value
-            self._realtimePlot = self._controller._widgetsExtraParams['realtimePlot'].value
+            if self._fixedParams.get('initialState') is not None:
+                self._initialState = self._fixedParams['initialState']
+            else:
+                for state in self._initialState.keys():
+                    self._initialState[state] = self._controller._widgetsExtraParams['init'+str(state)].value
+            self._randomSeed = self._fixedParams['randomSeed'] if self._fixedParams.get('randomSeed') is not None else self._controller._widgetsExtraParams['randomSeed'].value
+            self._visualisationType = self._fixedParams['visualisationType'] if self._fixedParams.get('visualisationType') is not None else self._controller._widgetsPlotOnly['visualisationType'].value
+            self._plotProportions = self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
+            self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
+            if self._fixedParams.get('netType') is not None:
+                self._netType = self._fixedParams['netType']
+            else:
+                self._netType = self._controller._widgetsExtraParams['netType'].value
+            if self._fixedParams.get('netType') != NetworkType.FULLY_CONNECTED:
+                self._netParam = self._fixedParams['netParam'] if self._fixedParams.get('netParam') is not None else self._controller._widgetsExtraParams['netParam'].value
+                if self._fixedParams.get('netType') is None or self._fixedParams.get('netType') == NetworkType.DYNAMIC:
+                    self._motionCorrelatedness = self._fixedParams['motionCorrelatedness'] if self._fixedParams.get('motionCorrelatedness') is not None else self._controller._widgetsExtraParams['motionCorrelatedness'].value
+                    self._particleSpeed = self._fixedParams['particleSpeed'] if self._fixedParams.get('particleSpeed') is not None else self._controller._widgetsExtraParams['particleSpeed'].value
+                    self._showTrace = self._fixedParams['showTrace'] if self._fixedParams.get('showTrace') is not None else self._controller._widgetsPlotOnly['showTrace'].value
+                    self._showInteractions = self._fixedParams['showInteractions'] if self._fixedParams.get('showInteractions') is not None else self._controller._widgetsPlotOnly['showInteractions'].value
+            self._timestepSize = self._fixedParams['timestepSize'] if self._fixedParams.get('timestepSize') is not None else self._controller._widgetsExtraParams['timestepSize'].value
+            self._realtimePlot = self._fixedParams['realtimePlot'] if self._fixedParams.get('realtimePlot') is not None else self._controller._widgetsExtraParams['realtimePlot'].value
 
     
     def _plot_timeEvolution(self, _=None):
@@ -5133,7 +5266,7 @@ class MuMoTmultiagentView(MuMoTview):
             # update parameters (needed only if there's a controller)
             self._update_params()
             self._log("Multiagent simulation")
-            self._print_standalone_view_cmd()
+            self._printStandaloneViewCmd()
 
             # init the random seed
             np.random.seed(self._randomSeed)
@@ -5190,7 +5323,7 @@ class MuMoTmultiagentView(MuMoTview):
         else:
             pos_layout = None
         
-        for i in np.arange(1, self._maxTimeSteps+1):
+        for i in range(1, self._maxTimeSteps+1): #np.arange(1, self._maxTimeSteps+1):
             #print("Time: " + str(i))
             if self._controller != None: self._controller._progressBar.value = i*self._timestepSize
             if self._controller != None: self._controller._progressBar.description = "Loading " + str(round(i/self._maxTimeSteps*100)) + "%:"
@@ -5433,16 +5566,28 @@ class MuMoTmultiagentView(MuMoTview):
             if reactant == EMPTYSET_SYMBOL: continue # not considering the spontaneous births as limiting component for simulation step
             sumRates = 0
             for reaction in reactions:
-                sumRates += self._ratesDict[str(reaction[1])]  
+                sumRates += self._ratesDict[str(reaction[1])]
+#             print("reactant " + str(reactant) + " has sum rates: " + str(sumRates))
             if sumRates > maxRatesAll:
                 maxRatesAll = sumRates
         
         if maxRatesAll>0: maxTimestepSize = 1/maxRatesAll 
-        else: maxTimestepSize = 1
+        else: maxTimestepSize = 1        
+        # if the timestep size is too small (and generated a too large number of timesteps, it returns an error!)
+        if math.ceil( self._maxTime / maxTimestepSize ) > 10000000:
+            errorMsg = "ERROR! Invalid rate values. The current rates limit the agent timestep to be too small and would correspond to more than 10 milions simulation timesteps.\n"\
+                        "Please modify the free parameters value to allow quicker simulations."
+            self._showErrorMessage(errorMsg)
+            raise ValueError(errorMsg)
         if self._timestepSize > maxTimestepSize:
             self._timestepSize = maxTimestepSize
         self._maxTimeSteps = math.ceil( self._maxTime / self._timestepSize )
-        if self._controller != None: self._update_timestepSize_widget(self._timestepSize, maxTimestepSize, self._maxTimeSteps)
+        if self._controller is not None and self._controller._widgetsExtraParams.get('timestepSize'):
+            self._update_timestepSize_widget(self._timestepSize, maxTimestepSize, self._maxTimeSteps)
+        else:
+            if self._fixedParams.get('timestepSize') != self._timestepSize:
+                self._showErrorMessage("Time step size was fixed to " + str(self._fixedParams.get('timestepSize')) + " but needs to be updated to " + str(self._timestepSize))
+                self._fixedParams['timestepSize'] = self._timestepSize 
 #         print("timestepSize s=" + str(self._timestepSize))
     
     def _update_timestepSize_widget(self, timestepSize, maxTimestepSize, maxTimeSteps):
@@ -5461,8 +5606,12 @@ class MuMoTmultiagentView(MuMoTview):
             self._controller._widgetsExtraParams['timestepSize'].min = min(maxTimestepSize/100, timestepSize)
             self._controller._widgetsExtraParams['timestepSize'].step = self._controller._widgetsExtraParams['timestepSize'].min
             self._controller._widgetsExtraParams['timestepSize'].readout_format ='.' + str(_count_sig_decimals(str(self._controller._widgetsExtraParams['timestepSize'].step))) + 'f'
-        self._controller._widgetsExtraParams['maxTime'].description = "Simulation time (equivalent to " + str(maxTimeSteps) + " simulation timesteps)"
-
+        if self._controller._widgetsExtraParams.get('maxTime'):
+            self._controller._widgetsExtraParams['maxTime'].description = "Simulation time (equivalent to " + str(maxTimeSteps) + " simulation timesteps)"
+            self._controller._widgetsExtraParams['maxTime'].layout = widgets.Layout(width='70%')
+        else:
+            self._controller._widgetsExtraParams['timestepSize'].description = "Timestep size (total time is " + str(self._fixedParams['maxTime']) + " = " + str(maxTimeSteps) + " timesteps)"
+            self._controller._widgetsExtraParams['timestepSize'].layout = widgets.Layout(width='70%')
                     
     def _initGraph(self, graphType, numNodes, netParam=None):
         if (graphType == NetworkType.FULLY_CONNECTED):
@@ -5474,24 +5623,32 @@ class MuMoTmultiagentView(MuMoTview):
                 self._graph = nx.erdos_renyi_graph(numNodes, netParam, np.random.randint(MAX_RANDOM_SEED))
                 i = 0
                 while ( not nx.is_connected( self._graph ) ):
+                    if i > 100000:
+                        errorMsg = "ERROR! Invalid network parameter (link probability="+str(netParam)+") for E-R networks. After "+str(i)+" attempts of network initialisation, the network is never connected.\n"\
+                               "Please increase the network parameter value."
+                        print(errorMsg)
+                        raise ValueError(errorMsg)
                     print("Graph was not connected; Resampling!")
                     i = i+1
-                    self._graph = nx.erdos_renyi_graph(numNodes, netParam, np.random.randint(MAX_RANDOM_SEED)*i*2211)
+                    self._graph = nx.erdos_renyi_graph(numNodes, netParam, np.random.randint(MAX_RANDOM_SEED))
             else:
-                print ("ERROR! Invalid network parameter (link probability) for E-R networks. It must be between 0 and 1; input is " + str(netParam) )
-                return
+                errorMsg = "ERROR! Invalid network parameter (link probability) for E-R networks. It must be between 0 and 1; input is " + str(netParam) 
+                print(errorMsg)
+                raise ValueError(errorMsg)
         elif (graphType == NetworkType.BARABASI_ALBERT):
             print("Generating Barabasi-Albert graph")
             netParam = int(netParam)
             if netParam is not None and netParam > 0 and netParam <= numNodes: 
                 self._graph = nx.barabasi_albert_graph(numNodes, netParam, np.random.randint(MAX_RANDOM_SEED))
             else:
-                print ("ERROR! Invalid network parameter (number of edges per new node) for B-A networks. It must be an integer between 1 and " + str(numNodes) + "; input is " + str(netParam))
-                return
+                errorMsg = "ERROR! Invalid network parameter (number of edges per new node) for B-A networks. It must be an integer between 1 and " + str(numNodes) + "; input is " + str(netParam)
+                print(errorMsg)
+                raise ValueError(errorMsg)
         elif (graphType == NetworkType.SPACE):
             ## @todo: implement network generate by placing points (with local communication range) randomly in 2D space
-            print("ERROR: Graphs of type SPACE are not implemented yet.")
-            return
+            errorMsg = "ERROR: Graphs of type SPACE are not implemented yet."
+            print(errorMsg)
+            raise ValueError(errorMsg)
         elif (graphType == NetworkType.DYNAMIC):
             self._positions = []
             for _ in range(numNodes):
@@ -5677,11 +5834,22 @@ class MuMoTmultiagentView(MuMoTview):
                     min(abs(y_1 - y_2), self._arena_height - abs(y_1 - y_2))**2)
     
     ## updates the widgets related to the netType (it cannot be a MuMoTcontroller method because with multi-controller it needs to point to the right _controller)
-    def _update_net_params(self, _=None):
+    def _update_net_params(self, resetValueAndRange):
+        # if netType is fixed, no update is necessary
+        if self._fixedParams.get('netParam') is not None: return
+        self._netType = self._fixedParams['netType'] if self._fixedParams.get('netType') is not None else self._controller._widgetsExtraParams['netType'].value
+        
         # oder of assignment is important (first, update the min and max, later, the value)
+        toLinkPlotFunction = False
         if self._controller._replotFunction:
-            self._controller._widgetsExtraParams['netParam'].unobserve(self._controller._replotFunction, 'value')
-        if (self._controller._widgetsExtraParams['netType'].value == NetworkType.FULLY_CONNECTED):
+            try:
+                self._controller._widgetsExtraParams['netParam'].unobserve(self._controller._replotFunction, 'value')
+                toLinkPlotFunction = True
+            except ValueError:
+                pass
+        if resetValueAndRange:
+            self._controller._widgetsExtraParams['netParam'].max = float("inf") # temp to avoid min > max exception
+        if (self._netType == NetworkType.FULLY_CONNECTED):
 #             self._controller._widgetsExtraParams['netParam'].min = 0
 #             self._controller._widgetsExtraParams['netParam'].max = 1
 #             self._controller._widgetsExtraParams['netParam'].step = 1
@@ -5689,54 +5857,65 @@ class MuMoTmultiagentView(MuMoTview):
 #             self._controller._widgetsExtraParams['netParam'].disabled = True
 #             self._controller._widgetsExtraParams['netParam'].description = "None"
             self._controller._widgetsExtraParams['netParam'].layout.display = 'none'
-        elif (self._controller._widgetsExtraParams['netType'].value == NetworkType.ERSOS_RENYI):
+        elif (self._netType == NetworkType.ERSOS_RENYI):
 #             self._controller._widgetsExtraParams['netParam'].disabled = False
             self._controller._widgetsExtraParams['netParam'].layout.display = 'flex'
-            self._controller._widgetsExtraParams['netParam'].min = 0.1
-            self._controller._widgetsExtraParams['netParam'].max = 1
-            self._controller._widgetsExtraParams['netParam'].step = 0.1
-            self._controller._widgetsExtraParams['netParam'].value = 0.5
+            if resetValueAndRange:
+                self._controller._widgetsExtraParams['netParam'].min = 0.1
+                self._controller._widgetsExtraParams['netParam'].max = 1
+                self._controller._widgetsExtraParams['netParam'].step = 0.1
+                self._controller._widgetsExtraParams['netParam'].value = 0.5
             self._controller._widgetsExtraParams['netParam'].description = "Network connectivity parameter (link probability)"
-        elif (self._controller._widgetsExtraParams['netType'].value == NetworkType.BARABASI_ALBERT):
+        elif (self._netType == NetworkType.BARABASI_ALBERT):
 #             self._controller._widgetsExtraParams['netParam'].disabled = False
             self._controller._widgetsExtraParams['netParam'].layout.display = 'flex'
             maxVal = self._systemSize-1
-            self._controller._widgetsExtraParams['netParam'].min = 1
-            self._controller._widgetsExtraParams['netParam'].max = maxVal
-            self._controller._widgetsExtraParams['netParam'].step = 1
-            self._controller._widgetsExtraParams['netParam'].value = min(maxVal, 3)
+            if resetValueAndRange:
+                self._controller._widgetsExtraParams['netParam'].min = 1
+                self._controller._widgetsExtraParams['netParam'].max = maxVal
+                self._controller._widgetsExtraParams['netParam'].step = 1
+                self._controller._widgetsExtraParams['netParam'].value = min(maxVal, 3)
             self._controller._widgetsExtraParams['netParam'].description = "Network connectivity parameter (new edges)"            
-        elif (self._controller._widgetsExtraParams['netType'].value == NetworkType.SPACE):
+        elif (self._netType == NetworkType.SPACE):
             self._controller._widgetsExtraParams['netParam'].value = -1
          
-        if (self._controller._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC):
+        if (self._netType == NetworkType.DYNAMIC):
 #             self._controller._widgetsExtraParams['netParam'].disabled = False
             self._controller._widgetsExtraParams['netParam'].layout.display = 'flex'
-            self._controller._widgetsExtraParams['netParam'].min = 0.0
-            self._controller._widgetsExtraParams['netParam'].max = 1
-            self._controller._widgetsExtraParams['netParam'].step = 0.05
-            self._controller._widgetsExtraParams['netParam'].value = 0.1
+            if resetValueAndRange:
+                self._controller._widgetsExtraParams['netParam'].min = 0.0
+                self._controller._widgetsExtraParams['netParam'].max = 1
+                self._controller._widgetsExtraParams['netParam'].step = 0.05
+                self._controller._widgetsExtraParams['netParam'].value = 0.1
             self._controller._widgetsExtraParams['netParam'].description = "Interaction range"
 #             self._controller._widgetsExtraParams['particleSpeed'].disabled = False
 #             self._controller._widgetsExtraParams['motionCorrelatedness'].disabled = False
 #             self._controller._widgetsPlotOnly['showTrace'].disabled = False
 #             self._controller._widgetsPlotOnly['showInteractions'].disabled = False
-            self._controller._widgetsExtraParams['particleSpeed'].layout.display = 'flex'
-            self._controller._widgetsExtraParams['motionCorrelatedness'].layout.display = 'flex'
-            self._controller._widgetsPlotOnly['showTrace'].layout.display = 'flex'
-            self._controller._widgetsPlotOnly['showInteractions'].layout.display = 'flex'
+            if self._controller._widgetsExtraParams.get('particleSpeed') is not None:
+                self._controller._widgetsExtraParams['particleSpeed'].layout.display = 'flex'
+            if self._controller._widgetsExtraParams.get('motionCorrelatedness') is not None:
+                self._controller._widgetsExtraParams['motionCorrelatedness'].layout.display = 'flex'
+            if self._controller._widgetsPlotOnly.get('showTrace') is not None:
+                self._controller._widgetsPlotOnly['showTrace'].layout.display = 'flex'
+            if self._controller._widgetsPlotOnly.get('showInteractions') is not None:
+                self._controller._widgetsPlotOnly['showInteractions'].layout.display = 'flex'
         else:
             #self._controller._widgetsExtraParams['particleSpeed'].disabled = True
 #             self._controller._widgetsExtraParams['motionCorrelatedness'].disabled = True
 #             self._controller._widgetsPlotOnly['showTrace'].disabled = True
 #             self._controller._widgetsPlotOnly['showInteractions'].disabled = True
-            self._controller._widgetsExtraParams['particleSpeed'].layout.display = 'none'
-            self._controller._widgetsExtraParams['motionCorrelatedness'].layout.display = 'none'
-            self._controller._widgetsPlotOnly['showTrace'].layout.display = 'none'
-            self._controller._widgetsPlotOnly['showInteractions'].layout.display = 'none'
+            if self._controller._widgetsExtraParams.get('particleSpeed') is not None:
+                self._controller._widgetsExtraParams['particleSpeed'].layout.display = 'none'
+            if self._controller._widgetsExtraParams.get('motionCorrelatedness') is not None:
+                self._controller._widgetsExtraParams['motionCorrelatedness'].layout.display = 'none'
+            if self._controller._widgetsPlotOnly.get('showTrace') is not None:
+                self._controller._widgetsPlotOnly['showTrace'].layout.display = 'none'
+            if self._controller._widgetsPlotOnly.get('showInteractions') is not None:
+                self._controller._widgetsPlotOnly['showInteractions'].layout.display = 'none'
             
         self._controller._widgetsExtraParams['netParam'].readout_format ='.' + str(_count_sig_decimals(str(self._controller._widgetsExtraParams['netParam'].step))) + 'f'
-        if self._controller._replotFunction:
+        if toLinkPlotFunction:
             self._controller._widgetsExtraParams['netParam'].observe(self._controller._replotFunction, 'value')
 
 ## agent on networks view on model 
@@ -5771,31 +5950,45 @@ class MuMoTSSAView(MuMoTview):
         with io.capture_output() as log:
 #         if True:
             if self._controller == None:
-                # storing the rates for each rule
-                ## @todo moving it to general method?
-                self._ratesDict = {}
-                rates_input_dict = dict( params )
-#                 print("DIct is " + str(rates_input_dict) )
-                for key in rates_input_dict.keys():
-                    rates_input_dict[str(process_sympy(str(key)))] = rates_input_dict.pop(key) # replace the dictionary key with the str of the SymPy symbol
-                #print("DIct is " + str(rates_input_dict) )
-                #print("_mumotModel._rules is " + str(self._mumotModel._rules) )
                 # create the self._ratesDict
+                ## @todo moving _ratesDict to general method?
+                freeParamDict = self._get_argDict()
+                self._ratesDict = {}
                 for rule in self._mumotModel._rules:
-                    self._ratesDict[str(rule.rate)] = rates_input_dict[str(rule.rate)] 
-                     
+                    self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
+                self._systemSize = self._getSystemSize()
+            
+                # storing the initial state
+                self._initialState = {}
+                for state,pop in ssaParams["initialState"].items():
+                    if isinstance(state, str):
+                        self._initialState[process_sympy(state)] = pop # convert string into SymPy symbol
+                    else:
+                        self._initialState[state] = pop
+                # storing all values of SSA-specific parameters
+                self._maxTime = ssaParams["maxTime"]
+                self._randomSeed = ssaParams["randomSeed"]
+                self._visualisationType = ssaParams["visualisationType"]
+                self._plotProportions = ssaParams["plotProportions"]
+                self._realtimePlot = ssaParams.get('realtimePlot', False)
+            else:
+                # needed for bookmarking
+                self._generatingCommand = "SSA"  
                 
-            self._initialState = {}
-            for state,pop in ssaParams["initialState"].items():
-                if isinstance(state, str):
-                    self._initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-                else:
-                    self._initialState[state] = pop
-            self._maxTime = ssaParams["maxTime"]
-            self._randomSeed = ssaParams["randomSeed"]
-            self._visualisationType = ssaParams["visualisationType"]
-            self._plotProportions = ssaParams["plotProportions"]
-            self._realtimePlot = ssaParams.get('realtimePlot', False)
+                # storing the initial state
+                self._initialState = {}
+                for state,pop in ssaParams["initialState"][0].items():
+                    if isinstance(state, str):
+                        self._initialState[process_sympy(state)] = pop[0] # convert string into SymPy symbol
+                    else:
+                        self._initialState[state] = pop[0]
+                # storing fixed params
+                for key,value in ssaParams.items():
+                    if value[-1]:
+                        if key == 'initialState':
+                            self._fixedParams[key] = self._initialState
+                        else:
+                            self._fixedParams[key] = value[0]
             
             # map colouts to each reactant
             #colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
@@ -5819,29 +6012,59 @@ class MuMoTSSAView(MuMoTview):
             freeParamDict = self._get_argDict()
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
-                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
+                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
+                if self._ratesDict[str(rule.rate)] == float('inf'):
+                    self._ratesDict[str(rule.rate)] = sys.maxsize
+            #print("_ratesDict=" + str(self._ratesDict))
             self._systemSize = self._getSystemSize()
 
             # getting other parameters specific to SSA
-            for state in self._initialState.keys():
-                self._initialState[state] = self._controller._widgetsExtraParams['init'+str(state)].value
-            self._randomSeed = self._controller._widgetsExtraParams['randomSeed'].value
-            self._visualisationType = self._controller._widgetsPlotOnly['visualisationType'].value
-            self._plotProportions = self._controller._widgetsPlotOnly['plotProportions'].value
-            self._maxTime = self._controller._widgetsExtraParams['maxTime'].value
-            self._realtimePlot = self._controller._widgetsExtraParams['realtimePlot'].value
+            if self._fixedParams.get('initialState') is not None:
+                self._initialState = self._fixedParams['initialState']
+            else:
+                for state in self._initialState.keys():
+                    self._initialState[state] = self._controller._widgetsExtraParams['init'+str(state)].value
+            self._randomSeed = self._fixedParams['randomSeed'] if self._fixedParams.get('randomSeed') is not None else self._controller._widgetsExtraParams['randomSeed'].value
+            self._visualisationType = self._fixedParams['visualisationType'] if self._fixedParams.get('visualisationType') is not None else self._controller._widgetsPlotOnly['visualisationType'].value
+            self._plotProportions = self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
+            self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
+            self._realtimePlot = self._fixedParams['realtimePlot'] if self._fixedParams.get('realtimePlot') is not None else self._controller._widgetsExtraParams['realtimePlot'].value
+
     
-    def _print_standalone_view_cmd(self):
+    def _build_bookmark(self, includeParams=True):
+        logStr = "bookmark = " if not self._silent else ""
+        logStr += "<modelName>." + self._generatingCommand + "("
+        if includeParams:
+            logStr += self._get_bookmarks_params()
+#         if len(self._generatingKwargs) > 0:
+#             for key in self._generatingKwargs:
+#                 logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+        #initState_str = { self._mumotModel._reactantsLaTeX.get(str(state), str(state)): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+        initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+        logStr += ", initialState = " + str(initState_str)
+        logStr += ", maxTime = " + str(self._maxTime)
+        logStr += ", randomSeed = " + str(self._randomSeed)
+        logStr += ", visualisationType = '" + str(self._visualisationType) + "'"
+        logStr += ", plotProportions = " + str(self._plotProportions)
+        logStr += ", realtimePlot = " + str(self._realtimePlot)
+        logStr += ", bookmark = False"
+        logStr += ")"
+        #logStr = logStr.replace('\\', '\\\\')
+        return logStr
+    
+    def _printStandaloneViewCmd(self):
         ssaParams = {}
-        initState_str = {}
-        for state,pop in self._initialState.items():
-            initState_str[str(state)] = pop
-        ssaParams["initialState"] = initState_str 
+#         initState_str = {}
+#         for state,pop in self._initialState.items():
+#             initState_str[str(state)] = pop
+        ssaParams["initialState"] = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
         ssaParams["maxTime"] = self._maxTime 
         ssaParams["randomSeed"] = self._randomSeed
         ssaParams["visualisationType"] = self._visualisationType
         ssaParams["plotProportions"] = self._plotProportions
-        print( "mmt.MuMoTSSAView(model1, None, ssaParams = " + str(ssaParams) + ", params = " + str( list(self._ratesDict.items()) ) + " )")
+        ssaParams['realtimePlot']  = self._realtimePlot
+        #str( list(self._ratesDict.items()) )
+        print( "mmt.MuMoTSSAView(<modelName>, None, " + str( self._get_bookmarks_params() ) + ", ssaParams = " + str(ssaParams) + " )")
     
     def _redrawOnly(self, _=None):
         self._update_params()
@@ -5853,7 +6076,7 @@ class MuMoTSSAView(MuMoTview):
 #         if True:
             self._update_params()
             self._log("Stochastic Simulation Algorithm (SSA)")
-            self._print_standalone_view_cmd()
+            self._printStandaloneViewCmd()
 
             # inti the random seed
             np.random.seed(self._randomSeed)
@@ -7855,3 +8078,259 @@ def _count_sig_decimals(digits, maximum=7):
     else:
         return 0
 
+## standard function to parse an input keyword and set initial range and default values (when the input is a slider-widget)
+## check if the fixed value is not None, otherwise it returns the default value (samewise for initRange and defaultRange)
+## the optional parameter validRange is use to check if the fixedValue has a usable value
+## if the defaultValue is out of the initRange, the default value is move to the closest of the initRange extremes
+## \param[in] inputValue if not None it indicated the fixed value to use
+## \param[in] defaultValueRangeStep dafault set of values in the format [val,min,max,step]
+## \param[in] initValueRangeStep user-specified set of values in the format [val,min,max,step]
+## \param[in] validRange (optional) idicated the min and max accepted values [min,max]
+## \param[in] onlyValue (optional) if True defaultValueRangeStep and initValueRangeStep are only a single value
+## \param[out] values contains a list of five items (start-value, min-value, max-value, step-size, fixed). if onlyValue, it's only two items (start-value, fixed). The item 'fixed' is a boolean. If True the value is fixed (partial controller active), if False the widget will be created. 
+def _parse_input_keyword_for_numeric_widgets(inputValue, defaultValueRangeStep, initValueRangeStep, validRange=None, onlyValue=False):
+    outputValues = defaultValueRangeStep if not onlyValue else [defaultValueRangeStep]
+    if onlyValue==False:
+        if initValueRangeStep is not None and getattr(initValueRangeStep, "__getitem__", None) is None:
+            errorMsg = "initValueRangeStep value '" + str(initValueRangeStep) + "' must be specified in the format [val,min,max,step].\n" \
+                    "Please, correct the value and retry."
+            print(errorMsg)
+            raise ValueError(errorMsg)   
+    if not inputValue == None:
+        if not isinstance(inputValue, numbers.Number):
+            errorMsg = "Input value '" + str(inputValue) + "' is not a numeric vaule and must be a number.\n" \
+                    "Please, correct the value and retry."
+            print(errorMsg)
+            raise ValueError(errorMsg)
+        elif validRange and (inputValue < validRange[0] or inputValue > validRange[1]):
+            errorMsg = "Input value '" + str(inputValue) + "' has raised out-of-range exception. Valid range is " + str(validRange) + "\n" \
+                    "Please, correct the value and retry."
+            print(errorMsg)
+            raise ValueError(errorMsg)
+        else:
+            if onlyValue:
+                return [inputValue,True]
+            else:
+                outputValues[0] = inputValue
+                outputValues.append(True)
+                # it is not necessary to modify the values [min,max,step] because when last value is True, they should be ignored
+                return  outputValues
+    
+    if not initValueRangeStep == None:
+        if onlyValue:
+            if validRange and (initValueRangeStep < validRange[0] or initValueRangeStep > validRange[1]):
+                errorMsg = "Invalid init value=" + str(initValueRangeStep) + ". has raised out-of-range exception. Valid range is " + str(validRange) + "\n" \
+                            "Please, correct the value and retry."
+                print(errorMsg)
+                raise ValueError(errorMsg)
+            else:
+                outputValues = [initValueRangeStep]
+        else:
+            if initValueRangeStep[1] > initValueRangeStep[2] or initValueRangeStep[0] < initValueRangeStep[1] or initValueRangeStep[0] > initValueRangeStep[2]:
+                errorMsg = "Invalid init range [val,min,max,step]=" + str(initValueRangeStep) + ". Value must be within min and max values.\n"\
+                            "Please, correct the value and retry."
+                print(errorMsg)
+                raise ValueError(errorMsg)
+            elif validRange and (initValueRangeStep[1] < validRange[0] or initValueRangeStep[2] > validRange[1]):
+                errorMsg = "Invalid init range [val,min,max,step]=" + str(initValueRangeStep) + ". has raised out-of-range exception. Valid range is " + str(validRange) + "\n" \
+                            "Please, correct the value and retry."
+                print(errorMsg)
+                raise ValueError(errorMsg)
+            else:
+                outputValues = initValueRangeStep
+    
+    outputValues.append(False)
+    return outputValues
+
+## standard function to parse an input keyword and set initial range and default values (when the input is a boolean checkbox)
+## check if the fixed value is not None, otherwise it returns the default value
+## \param[in] inputValue if not None it indicated the fixed value to use
+## \param[in] defaultValue dafault boolean value 
+## \param[out] [value,fixed] The item value contains the keyword value; 'fixed' is a boolean. If True the value is fixed (partial controller active), if False the widget will be created. 
+def _parse_input_keyword_for_boolean_widgets(inputValue, defaultValue, initValue=None, paramNameForErrorMsg=None):
+    if inputValue is not None:
+        if not isinstance(inputValue, bool): # terminating the process if the input argument is wrong
+            paramNameForErrorMsg = "for " + str(paramNameForErrorMsg) + " = " if paramNameForErrorMsg else ""
+            errorMsg = "The specified value " + paramNameForErrorMsg + "'" + str(inputValue) + "' is not valid. \n" \
+                        "The value must be a boolean True/False."
+            print(errorMsg)
+            raise ValueError(errorMsg)
+        return [inputValue,True]
+    else:
+        if isinstance(initValue, bool):
+            return [initValue,False]
+        else:  
+            return [defaultValue,False]
+
+## params is a list (rather than a dictionary) and this method is necessary to fecth the value by name 
+def _get_item_from_params_list(params, targetName):
+    for param in params:
+        if param[0] == targetName or param[0].replace('\\', '') == targetName:
+            return param[1]
+    return None
+
+def _format_advanced_option(optionName, inputValue, initValues, extraParam=None, extraParam2=None):
+    if (optionName == 'initialState'):
+        # handle initialState dictionary (either convert or generate a default one)
+        if inputValue is not None:
+            ## @todo check if the Initial State has valid length and positive values
+#             initialState_str = ast.literal_eval(initialState) # translate string into dict
+            initialState = {}
+            for state,pop in inputValue.items():
+                initPop = initValues.get(state) if initValues is not None else None
+                pop = _parse_input_keyword_for_numeric_widgets(inputValue=pop,
+                                    defaultValueRangeStep=[MuMoTdefault._agents, MuMoTdefault._agentsLimits[0],MuMoTdefault._agentsLimits[1],MuMoTdefault._agentsStep], 
+                                    initValueRangeStep=initPop, 
+                                    validRange = (0.0, 1.0) )
+                initialState[process_sympy(state)] = pop # convert string into SymPy symbol
+            return [initialState, True]
+        else:
+            initialState = {}
+            (allReactants, allConstantReactants) = extraParam
+            first = True
+            initValuesSympy = {process_sympy(state): pop for state, pop in initValues.items()} if initValues is not None else {}
+            for reactant in allReactants | allConstantReactants: #self._reactants|self._constantReactants:
+                defaultV = MuMoTdefault._agents if first else 0
+                first = False
+                initialState[reactant] = _parse_input_keyword_for_numeric_widgets(inputValue=None,
+                                            defaultValueRangeStep=[defaultV, MuMoTdefault._agentsLimits[0],MuMoTdefault._agentsLimits[1],MuMoTdefault._agentsStep], 
+                                            initValueRangeStep=initValuesSympy.get(reactant), 
+                                            validRange = (0.0, 1.0) )
+            return [initialState, False]
+        #print("Initial State is " + str(initialState) )
+    if (optionName == 'maxTime'):
+        return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
+                                    defaultValueRangeStep=[MuMoTdefault._maxTime,MuMoTdefault._timeLimits[0], MuMoTdefault._timeLimits[1], MuMoTdefault._timeStep], 
+                                    initValueRangeStep=initValues, 
+                                    validRange = (0,float("inf")) )
+    if (optionName == 'randomSeed'):
+        return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
+                                    defaultValueRangeStep=np.random.randint(MAX_RANDOM_SEED), 
+                                    initValueRangeStep=initValues,
+                                    validRange = (1,MAX_RANDOM_SEED), onlyValue=True )
+    if (optionName == 'motionCorrelatedness'):
+        return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
+                                defaultValueRangeStep=[0.5, 0.0, 1.0, 0.05], 
+                                initValueRangeStep=initValues, 
+                                validRange = (0,1) ) 
+    if (optionName == 'particleSpeed'):
+        return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
+                                defaultValueRangeStep=[0.01, 0.0, 0.1, 0.005], 
+                                initValueRangeStep=initValues, 
+                                validRange = (0, 1) ) 
+    
+    if (optionName == 'timestepSize'):
+        return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
+                                defaultValueRangeStep=[1, 0.01, 1, 0.01], 
+                                initValueRangeStep=initValues, 
+                                validRange = (0,float("inf"))) 
+
+    if (optionName == 'netType'):
+        # check validity of the network type or init to default
+        if inputValue is not None:
+            decodedNetType = _decodeNetworkTypeFromString(inputValue)
+            if decodedNetType == None: # terminating the process if the input argument is wrong
+                errorMsg = "The specified value for netType =" + str(inputValue) + " is not valid. \n" \
+                            "Accepted values are: 'full',  'erdos-renyi', 'barabasi-albert', and 'dynamic'."
+                print(errorMsg)
+                raise ValueError(errorMsg)
+                    
+            return [inputValue,True]
+        else:
+            decodedNetType = _decodeNetworkTypeFromString(initValues) if initValues is not None else None
+            if decodedNetType is not None: # assigning the init value only if it's a valid value
+                return [initValues,False] 
+            else:
+                return ['full',False] # as default netType is set to 'full'  
+    # @todo: avoid that these value will be overwritten by _update_net_params()
+    if (optionName == 'netParam'):
+        netType = extraParam
+        systemSize = extraParam2
+        # if netType is not fixed, netParam cannot be fixed
+        if (not netType[-1]) and inputValue is not None:
+            errorMsg = "If netType is not fixed, netParam cannot be fixed. Either leave free to widget the 'netParam' or fix the 'netType'."
+            print(errorMsg)
+            raise ValueError(errorMsg)
+        # check if netParam range is valid or set the correct default range (systemSize is necessary) 
+        if _decodeNetworkTypeFromString(netType[0]) == NetworkType.FULLY_CONNECTED:
+            return [0,0,0,False]
+        elif _decodeNetworkTypeFromString(netType[0]) == NetworkType.ERSOS_RENYI:
+            return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
+                                        defaultValueRangeStep=[0.1, 0.1, 1, 0.1], 
+                                        initValueRangeStep=initValues, 
+                                         validRange = (0.1, 1.0) )          
+        elif _decodeNetworkTypeFromString(netType[0]) == NetworkType.BARABASI_ALBERT:
+            maxEdges = systemSize - 1 
+            return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
+                                        defaultValueRangeStep=[min(maxEdges,3),1,maxEdges,1], 
+                                        initValueRangeStep=initValues, 
+                                         validRange = (1,maxEdges) )  
+        elif _decodeNetworkTypeFromString(netType[0]) == NetworkType.SPACE:
+            pass #method is not implemented
+        elif _decodeNetworkTypeFromString(netType[0]) == NetworkType.DYNAMIC:
+            return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
+                                        defaultValueRangeStep=[0.1, 0.0, 1.0, 0.05], 
+                                        initValueRangeStep=initValues, 
+                                         validRange = (0,1.0) ) 
+        
+        return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
+                                defaultValueRangeStep=[0.5,0,1,0.1], 
+                                initValueRangeStep=initValues, 
+                                validRange = (0,float("inf")) ) 
+    if (optionName == 'plotProportions'):
+        return _parse_input_keyword_for_boolean_widgets(inputValue=inputValue,
+                                                                           defaultValue=False,
+                                                                           initValue=initValues,
+                                                                           paramNameForErrorMsg=optionName) 
+    if (optionName == 'realtimePlot'):
+        return  _parse_input_keyword_for_boolean_widgets(inputValue=inputValue,
+                                                                           defaultValue=False, 
+                                                                           initValue=initValues,
+                                                                           paramNameForErrorMsg=optionName)  
+    if (optionName == 'showTrace'):
+        return _parse_input_keyword_for_boolean_widgets(inputValue=inputValue,
+                                                                           defaultValue=False,
+                                                                           initValue=initValues, 
+                                                                           paramNameForErrorMsg=optionName) 
+    if (optionName == 'showInteractions'):
+        return _parse_input_keyword_for_boolean_widgets(inputValue=inputValue,
+                                                                           defaultValue=False, 
+                                                                           initValue=initValues,
+                                                                           paramNameForErrorMsg=optionName)  
+    if (optionName == 'visualisationType'):
+        if extraParam is not None:
+            if extraParam == 'multiagent':
+                validVisualisationTypes = ['evo','graph','final']
+            elif extraParam == "SSA":
+                validVisualisationTypes = ['evo','final']
+            elif extraParam == "multicontroller":
+                validVisualisationTypes = ['evo','final']
+        else:
+            validVisualisationTypes = ['evo','graph','final']
+        if inputValue is not None:
+            if inputValue not in validVisualisationTypes: # terminating the process if the input argument is wrong
+                errorMsg = "The specified value for visualisationType = " + str(inputValue) + " is not valid. \n" \
+                            "Valid values are: " + str(validVisualisationTypes) + ". Please correct it and retry."
+                print(errorMsg)
+                raise ValueError(errorMsg)
+            return [inputValue,True]
+        else:
+            if initValues in validVisualisationTypes:
+                return [initValues,False]
+            else: 
+                return ['evo',False] # as default visualisationType is set to 'evo'
+    
+    return [None,False] # default output for unknown optionName
+
+# import gc, inspect
+# def _find_obj_names(obj):
+#     frame = inspect.currentframe()
+#     for frame in iter(lambda: frame.f_back, None):
+#         frame.f_locals
+#     obj_names = []
+#     for referrer in gc.get_referrers(obj):
+#         if isinstance(referrer, dict):
+#             for k, v in referrer.items():
+#                 if v is obj:
+#                     obj_names.append(k)
+#     return obj_names
