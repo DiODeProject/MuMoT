@@ -2297,11 +2297,15 @@ class MuMoTmultiView(MuMoTview):
             if len(self._generatingKwargs) > 0:
                 logStr += ", "
                 for key in self._generatingKwargs:
-                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+                    if type(self._generatingKwargs[key]) == str:
+                        logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                    else:
+                        logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+                    
                 logStr = logStr[:-2]  # throw away last ", "
             logStr += ", bookmark = False"
             logStr += ")"
-            logStr = logStr.replace('\\', '\\\\')
+            #logStr = logStr.replace('\\', '\\\\') ## @todo is this necessary?
 
             print(logStr)
         self._logs.append(log)
@@ -5169,11 +5173,9 @@ class MuMoTmultiagentView(MuMoTview):
 #         logStr += _find_obj_names(self._mumotModel)[0] + "." + self._generatingCommand + "("
         if includeParams:
             logStr += self._get_bookmarks_params()
-#         if len(self._generatingKwargs) > 0:
-#             for key in self._generatingKwargs:
-#                 logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+            logStr += ", "
         initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
-        logStr += ", initialState = " + str(initState_str)
+        logStr += "initialState = " + str(initState_str)
         logStr += ", maxTime = " + str(self._maxTime)
         logStr += ", timestepSize = " + str(self._timestepSize)
         logStr += ", randomSeed = " + str(self._randomSeed)
@@ -5188,7 +5190,15 @@ class MuMoTmultiagentView(MuMoTview):
         logStr += ", visualisationType = '" + str(self._visualisationType) + "'"
         logStr += ", plotProportions = " + str(self._plotProportions)
         logStr += ", realtimePlot = " + str(self._realtimePlot)
+        logStr += ", silent = " + str(self._silent)
         logStr += ", bookmark = False"
+#         if len(self._generatingKwargs) > 0:
+#             for key in self._generatingKwargs:
+#                 if type(self._generatingKwargs[key]) == str:
+#                     logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+#                 else:
+#                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+            
         logStr += ")"
         #logStr = logStr.replace('\\', '\\\\')
         return logStr
@@ -6036,18 +6046,23 @@ class MuMoTSSAView(MuMoTview):
         logStr += "<modelName>." + self._generatingCommand + "("
         if includeParams:
             logStr += self._get_bookmarks_params()
-#         if len(self._generatingKwargs) > 0:
-#             for key in self._generatingKwargs:
-#                 logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+            logStr += ", "
         #initState_str = { self._mumotModel._reactantsLaTeX.get(str(state), str(state)): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
         initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
-        logStr += ", initialState = " + str(initState_str)
+        logStr += "initialState = " + str(initState_str)
         logStr += ", maxTime = " + str(self._maxTime)
         logStr += ", randomSeed = " + str(self._randomSeed)
         logStr += ", visualisationType = '" + str(self._visualisationType) + "'"
         logStr += ", plotProportions = " + str(self._plotProportions)
         logStr += ", realtimePlot = " + str(self._realtimePlot)
+        logStr += ", silent = " + str(self._silent)
         logStr += ", bookmark = False"
+#         if len(self._generatingKwargs) > 0:
+#             for key in self._generatingKwargs:
+#                 if type(self._generatingKwargs[key]) == str:
+#                     logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+#                 else:
+#                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
         logStr += ")"
         #logStr = logStr.replace('\\', '\\\\')
         return logStr
