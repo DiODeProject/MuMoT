@@ -925,7 +925,7 @@ class MuMoTmodel:
 #             # 3-d bifurcation diagram
 #             assert false
 
-    ## get the pair of set (reactants, constantReactants). This method is necessary to have all reactants also after a substitution (to set the system size) has occurred
+    ## get the pair of set (reactants, constantReactants). This method is necessary to have all reactants (to set the system size) also after a substitution has occurred
     def _getAllReactants(self):
         allReactants = set()
         allConstantReactants = set()
@@ -1012,24 +1012,38 @@ class MuMoTmodel:
             targetReact = []
             # check if constant reactants are not changing state
             # WARNING! if the checks hereafter are changed, it might be necessary to modify the way in which network-simulations are disabled (atm only on EMPTYSET_SYMBOL presence because (A) -> B are not allowed)
-            for idx, reactant in enumerate(rule.lhsReactants):
-                if reactant in allConstantReactants: #self._constantReactants:
-                    if not (rule.rhsReactants[idx] == reactant or rule.rhsReactants[idx] == EMPTYSET_SYMBOL):
-                        errorMsg = 'In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' constant reactant are not properly used. ' \
-                                    'Constant reactants must either match the same constant reactant or the EMPTYSET on the right-handside. \n' \
-                                    'NOTE THAT ORDER MATTERS: MuMoT assumes that first reactant on left-handside becomes first reactant on right-handside and so on for sencond and third...'
-                        print(errorMsg)
-                        raise ValueError(errorMsg)
-                elif rule.rhsReactants[idx] in allConstantReactants:
-                    errorMsg = 'In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' constant reactant are not properly used.' \
-                                    'Constant reactants appears on the right-handside and not on the left-handside. \n' \
-                                    'NOTE THAT ORDER MATTERS: MuMoT assumes that first reactant on left-handside becomes first reactant on right-handside and so on for sencond and third...'
-                    print(errorMsg)
-                    raise ValueError(errorMsg)
-                
-                if reactant == EMPTYSET_SYMBOL:
-                    targetReact.append(rule.rhsReactants[idx])
+#             for idx, reactant in enumerate(rule.lhsReactants):
+#                 if reactant in allConstantReactants: #self._constantReactants:
+#                     if not (rule.rhsReactants[idx] == reactant or rule.rhsReactants[idx] == EMPTYSET_SYMBOL):
+#                         errorMsg = 'In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' constant reactant are not properly used. ' \
+#                                     'Constant reactants must either match the same constant reactant or the EMPTYSET on the right-handside. \n' \
+#                                     'NOTE THAT ORDER MATTERS: MuMoT assumes that first reactant on left-handside becomes first reactant on right-handside and so on for sencond and third...'
+#                         print(errorMsg)
+#                         raise ValueError(errorMsg)
+#                 elif rule.rhsReactants[idx] in allConstantReactants:
+#                     errorMsg = 'In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' constant reactant are not properly used.' \
+#                                     'Constant reactants appears on the right-handside and not on the left-handside. \n' \
+#                                     'NOTE THAT ORDER MATTERS: MuMoT assumes that first reactant on left-handside becomes first reactant on right-handside and so on for sencond and third...'
+#                     print(errorMsg)
+#                     raise ValueError(errorMsg)
+#                 
+#                 if reactant == EMPTYSET_SYMBOL:
+#                     targetReact.append(rule.rhsReactants[idx])
             
+            for reactant in rule.rhsReactants:
+                if reactant in allConstantReactants:
+                    warningMsg = 'WARNING! Constant reactants appearing on the right-handside are ignored. Every constant reactant on the left-handside (implicitly) corresponds to the same constant reactant on the right-handside.\n'\
+                                'E.g., in rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' constant reactants should not appear on the right-handside.'
+                    print(warningMsg)
+                    break # print maximum one warning
+            
+            # add to the target of the first non-empty item the new born coming from empty-set or constant reactants 
+            for idx, reactant in enumerate(rule.lhsReactants):
+                if reactant == EMPTYSET_SYMBOL or reactant in allConstantReactants:
+                    # constant reactants on the right-handside are ignored
+                    if rule.rhsReactants[idx] not in allConstantReactants:
+                        targetReact.append(rule.rhsReactants[idx])
+
             # creating a rule for the first non-empty element (on the lhs) of the rule (if all empty, it uses an empty)
             idx = 0
             while idx < len(rule.lhsReactants)-1:
@@ -1044,16 +1058,18 @@ class MuMoTmodel:
             otherTargets = []
             for idx2, react2 in enumerate(rule.lhsReactants):
                 if idx == idx2 or react2 == EMPTYSET_SYMBOL: continue
+                # extend the other-reactants list
                 otherReact.append(react2)
+                # create list of targets for the other reactants (if the reactant is constant the target is itself)
                 if react2 in allConstantReactants:
                     otherTargets.append(react2)
                 else:
                     otherTargets.append(rule.rhsReactants[idx2])
             
-            # the target reactant for the first non-empty item is the same index item plus all the reactants coming from empty-sets
+            # the target reactant for the first non-empty reactant is the reactant with the same index (on the rhs) plus all the reactants coming from empty-sets (filled through initial loop)
             if reactant in allConstantReactants:
                 targetReact.append(reactant)
-            elif not reactant == EMPTYSET_SYMBOL:
+            elif not reactant == EMPTYSET_SYMBOL: # if empty it's not added because it has been already added in the initial loop
                 targetReact.append(rule.rhsReactants[idx])
             
             # create a new entry
@@ -5130,14 +5146,20 @@ class MuMoTmultiagentView(MuMoTview):
             
             # check if any network is available or only moving particles
             onlyDynamic = False
+            (_, allConstantReactants) = self._mumotModel._getAllReactants()
             for rule in self._mumotModel._rules:
                 if EMPTYSET_SYMBOL in rule.lhsReactants or EMPTYSET_SYMBOL in rule.rhsReactants:
                     onlyDynamic = True
                     break
+                for react in rule.lhsReactants | rule.rhsReactants:
+                    if react in allConstantReactants:
+                        onlyDynamic = True
+                if onlyDynamic: break
+                
             if onlyDynamic:
                 #if (not self._controller) and (not self._netType == NetworkType.DYNAMIC): # if the user has specified the network type, we notify him/her through error-message
                 #    self._errorMessage.value = "Only Moving-Particle netType is available when rules contain the emptyset."
-                if not self._netType == NetworkType.DYNAMIC: print("Only Moving-Particle netType is available when rules contain the emptyset.")
+                if not self._netType == NetworkType.DYNAMIC: print("Only Moving-Particle netType is available when rules contain the emptyset or constant reactants.")
                 self._netType = NetworkType.DYNAMIC
                 if self._controller: # updating value and disabling widget
                     self._controller._widgetsExtraParams['netType'].value = NetworkType.DYNAMIC
@@ -5342,7 +5364,7 @@ class MuMoTmultiagentView(MuMoTview):
                     self._positionHistory[idx].append( self._positions[idx] )
             
             currentState = self._stepMultiagent()
-            #print("T:" + str(i) + " - " + str(currentState))
+#             print("T:" + str(i) + "/" + str(self._maxTimeSteps) + " - " + str(currentState))
 #             historyState.append(currentState)
             for state,pop in currentState.items():
                 evo[state].append(pop)
@@ -5716,7 +5738,7 @@ class MuMoTmultiagentView(MuMoTview):
             self._agents[idx] = oneStepOutput[0][0]
             # check for new particles generated in the step
             if len(oneStepOutput[0]) >  1: # new particles must be created
-                for particle in oneStepOutput[0]:
+                for particle in oneStepOutput[0][1:]:
                     children.append( (particle, tmp_positions[idx]) )
             for idx_c, neighChange in enumerate(oneStepOutput[1]):
                 if neighChange:
