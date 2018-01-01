@@ -5086,14 +5086,14 @@ class MuMoTmultiagentView(MuMoTview):
         with io.capture_output() as log:
 #         if True:
                    
+            # storing the rates for each rule
+            ## @todo moving _ratesDict to general method?
+            freeParamDict = self._get_argDict()
+            self._ratesDict = {}
+            for rule in self._mumotModel._rules:
+                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
             self._systemSize = self._getSystemSize()
             if self._controller == None:
-                # storing the rates for each rule
-                ## @todo moving _ratesDict to general method?
-                freeParamDict = self._get_argDict()
-                self._ratesDict = {}
-                for rule in self._mumotModel._rules:
-                    self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
             
                 # storing the initial state
                 self._initialState = {}
@@ -5102,6 +5102,9 @@ class MuMoTmultiagentView(MuMoTview):
                         self._initialState[process_sympy(state)] = pop # convert string into SymPy symbol
                     else:
                         self._initialState[state] = pop
+                # add to the _initialState the constant reactants
+                for constantReactant in self._mumotModel._getAllReactants()[1]:
+                    self._initialState[constantReactant] = freeParamDict[constantReactant]
                 # storing all values of MA-specific parameters
                 self._maxTime = MAParams["maxTime"]
                 self._timestepSize = MAParams.get('timestepSize',1)
@@ -5128,6 +5131,9 @@ class MuMoTmultiagentView(MuMoTview):
                         self._initialState[process_sympy(state)] = pop[0] # convert string into SymPy symbol
                     else:
                         self._initialState[state] = pop[0]
+                # add to the _initialState the constant reactants
+                for constantReactant in self._mumotModel._getAllReactants()[1]:
+                    self._initialState[constantReactant] = freeParamDict[constantReactant]
                 # storing fixed params
                 for key,value in MAParams.items():
                     if value[-1]:
@@ -5162,15 +5168,18 @@ class MuMoTmultiagentView(MuMoTview):
                 if not self._netType == NetworkType.DYNAMIC: print("Only Moving-Particle netType is available when rules contain the emptyset or constant reactants.")
                 self._netType = NetworkType.DYNAMIC
                 if self._controller: # updating value and disabling widget
-                    self._controller._widgetsExtraParams['netType'].value = NetworkType.DYNAMIC
-                    self._controller._widgetsExtraParams['netType'].disabled = True
+                    if self._controller._widgetsExtraParams.get('netType') is not None:
+                        self._controller._widgetsExtraParams['netType'].value = NetworkType.DYNAMIC
+                        self._controller._widgetsExtraParams['netType'].disabled = True
+                    else:
+                        self._fixedParams['netType'] = NetworkType.DYNAMIC
                     self._controller._update_net_params()
                 else: # this is a standalone view
                     # if the assigned value of net-param is not consistent with the input, raise a WARNING and set the default value to 0.1
-                    if self._netType < 0 or self._netType > 1:
-                        wrnMsg = "WARNING! net-type value " + str(self._netType) + " is invalid for Moving-Particles. Valid range is [0,1] indicating the particles' communication range. \n"
-                        self._netType = 0.1
-                        wrnMsg += "New default values is 'netType'="  + str(self._netType)
+                    if self._netParam < 0 or self._netParam > 1:
+                        wrnMsg = "WARNING! net-param value " + str(self._netParam) + " is invalid for Moving-Particles. Valid range is [0,1] indicating the particles' communication range. \n"
+                        self._netParam = 0.1
+                        wrnMsg += "New default values is '_netParam'="  + str(self._netParam)
                         print(wrnMsg)
             
 #             # init graph
@@ -5196,6 +5205,8 @@ class MuMoTmultiagentView(MuMoTview):
         if includeParams:
             logStr += self._get_bookmarks_params()
             logStr += ", "
+        logStr = logStr.replace('\\', '\\\\')
+        
         initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
         logStr += "initialState = " + str(initState_str)
         logStr += ", maxTime = " + str(self._maxTime)
@@ -5222,7 +5233,6 @@ class MuMoTmultiagentView(MuMoTview):
 #                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
             
         logStr += ")"
-        #logStr = logStr.replace('\\', '\\\\')
         return logStr
     
     def _printStandaloneViewCmd(self):
@@ -5246,7 +5256,7 @@ class MuMoTmultiagentView(MuMoTview):
 #         for key,value in sorted(MAParams.items()):
 #             sortedDict += "'" + key + "': " + str(value) + ", "
 #         sortedDict += "}"
-        print( "mmt.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params() + ", MAParams = " + str(MAParams) + " )")
+        print( "mmt.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params().replace('\\','\\\\') + ", MAParams = " + str(MAParams) + " )")
     
     ## reads the new parameters (in case they changed in the controller)
     ## this function should only update local parameters and not compute data
@@ -5272,7 +5282,8 @@ class MuMoTmultiagentView(MuMoTview):
                 self._initialState = self._fixedParams['initialState']
             else:
                 for state in self._initialState.keys():
-                    self._initialState[state] = self._controller._widgetsExtraParams['init'+str(state)].value
+                    # add normal and constant reactants to the _initialState 
+                    self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
             self._randomSeed = self._fixedParams['randomSeed'] if self._fixedParams.get('randomSeed') is not None else self._controller._widgetsExtraParams['randomSeed'].value
             self._visualisationType = self._fixedParams['visualisationType'] if self._fixedParams.get('visualisationType') is not None else self._controller._widgetsPlotOnly['visualisationType'].value
             self._plotProportions = self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
@@ -5981,15 +5992,15 @@ class MuMoTSSAView(MuMoTview):
 
         with io.capture_output() as log:
 #         if True:
+            # create the self._ratesDict
+            ## @todo moving _ratesDict to general method?
+            freeParamDict = self._get_argDict()
+            self._ratesDict = {}
+            for rule in self._mumotModel._rules:
+                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
+            self._systemSize = self._getSystemSize()
+
             if self._controller == None:
-                # create the self._ratesDict
-                ## @todo moving _ratesDict to general method?
-                freeParamDict = self._get_argDict()
-                self._ratesDict = {}
-                for rule in self._mumotModel._rules:
-                    self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
-                self._systemSize = self._getSystemSize()
-            
                 # storing the initial state
                 self._initialState = {}
                 for state,pop in ssaParams["initialState"].items():
@@ -5997,6 +6008,9 @@ class MuMoTSSAView(MuMoTview):
                         self._initialState[process_sympy(state)] = pop # convert string into SymPy symbol
                     else:
                         self._initialState[state] = pop
+                # add to the _initialState the constant reactants
+                for constantReactant in self._mumotModel._getAllReactants()[1]:
+                    self._initialState[constantReactant] = freeParamDict[constantReactant]
                 # storing all values of SSA-specific parameters
                 self._maxTime = ssaParams["maxTime"]
                 self._randomSeed = ssaParams["randomSeed"]
@@ -6014,6 +6028,9 @@ class MuMoTSSAView(MuMoTview):
                         self._initialState[process_sympy(state)] = pop[0] # convert string into SymPy symbol
                     else:
                         self._initialState[state] = pop[0]
+                # add to the _initialState the constant reactants
+                for constantReactant in self._mumotModel._getAllReactants()[1]:
+                    self._initialState[constantReactant] = freeParamDict[constantReactant]
                 # storing fixed params
                 for key,value in ssaParams.items():
                     if value[-1]:
@@ -6055,7 +6072,8 @@ class MuMoTSSAView(MuMoTview):
                 self._initialState = self._fixedParams['initialState']
             else:
                 for state in self._initialState.keys():
-                    self._initialState[state] = self._controller._widgetsExtraParams['init'+str(state)].value
+                    # add normal and constant reactants to the _initialState 
+                    self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
             self._randomSeed = self._fixedParams['randomSeed'] if self._fixedParams.get('randomSeed') is not None else self._controller._widgetsExtraParams['randomSeed'].value
             self._visualisationType = self._fixedParams['visualisationType'] if self._fixedParams.get('visualisationType') is not None else self._controller._widgetsPlotOnly['visualisationType'].value
             self._plotProportions = self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
@@ -6069,6 +6087,7 @@ class MuMoTSSAView(MuMoTview):
         if includeParams:
             logStr += self._get_bookmarks_params()
             logStr += ", "
+        logStr = logStr.replace('\\', '\\\\')
         #initState_str = { self._mumotModel._reactantsLaTeX.get(str(state), str(state)): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
         initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
         logStr += "initialState = " + str(initState_str)
@@ -6086,7 +6105,6 @@ class MuMoTSSAView(MuMoTview):
 #                 else:
 #                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
         logStr += ")"
-        #logStr = logStr.replace('\\', '\\\\')
         return logStr
     
     def _printStandaloneViewCmd(self):
@@ -6101,7 +6119,7 @@ class MuMoTSSAView(MuMoTview):
         ssaParams["plotProportions"] = self._plotProportions
         ssaParams['realtimePlot']  = self._realtimePlot
         #str( list(self._ratesDict.items()) )
-        print( "mmt.MuMoTSSAView(<modelName>, None, " + str( self._get_bookmarks_params() ) + ", ssaParams = " + str(ssaParams) + " )")
+        print( "mmt.MuMoTSSAView(<modelName>, None, " + str( self._get_bookmarks_params().replace('\\','\\\\') ) + ", ssaParams = " + str(ssaParams) + " )")
     
     def _redrawOnly(self, _=None):
         self._update_params()
@@ -8223,10 +8241,10 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
             return [initialState, True]
         else:
             initialState = {}
-            (allReactants, allConstantReactants) = extraParam
+            (allReactants, _) = extraParam
             first = True
             initValuesSympy = {process_sympy(state): pop for state, pop in initValues.items()} if initValues is not None else {}
-            for reactant in allReactants | allConstantReactants: #self._reactants|self._constantReactants:
+            for reactant in allReactants:
                 defaultV = MuMoTdefault._agents if first else 0
                 first = False
                 initialState[reactant] = _parse_input_keyword_for_numeric_widgets(inputValue=None,
