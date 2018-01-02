@@ -779,6 +779,8 @@ class MuMoTmodel:
         MAParams['showTrace'] = _format_advanced_option(optionName='showTrace', inputValue=kwargs.get('showTrace'), initValues=initWidgets.get('showTrace',MAParams['netType']==NetworkType.DYNAMIC))
         MAParams['showInteractions'] = _format_advanced_option(optionName='showInteractions', inputValue=kwargs.get('showInteractions'), initValues=initWidgets.get('showInteractions'))
         MAParams['visualisationType'] = _format_advanced_option(optionName='visualisationType', inputValue=kwargs.get('visualisationType'), initValues=initWidgets.get('visualisationType'), extraParam="multiagent")
+        MAParams['final_x'] = _format_advanced_option(optionName='final_x', inputValue=kwargs.get('final_x'), initValues=initWidgets.get('final_x'), extraParam=self._getAllReactants()[0])
+        MAParams['final_y'] = _format_advanced_option(optionName='final_y', inputValue=kwargs.get('final_y'), initValues=initWidgets.get('final_y'), extraParam=self._getAllReactants()[0])
         
         # if the netType is a fixed-param and its value is not 'DYNAMIC', all useless parameter become fixed (and widgets are never displayed)
         if MAParams['netType'][-1]:
@@ -836,6 +838,8 @@ class MuMoTmodel:
         ssaParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
         ssaParams['realtimePlot'] = _format_advanced_option(optionName='realtimePlot', inputValue=kwargs.get('realtimePlot'), initValues=initWidgets.get('realtimePlot'))
         ssaParams['visualisationType'] = _format_advanced_option(optionName='visualisationType', inputValue=kwargs.get('visualisationType'), initValues=initWidgets.get('visualisationType'), extraParam="SSA")
+        ssaParams['final_x'] = _format_advanced_option(optionName='final_x', inputValue=kwargs.get('final_x'), initValues=initWidgets.get('final_x'), extraParam=self._getAllReactants()[0])
+        ssaParams['final_y'] = _format_advanced_option(optionName='final_y', inputValue=kwargs.get('final_y'), initValues=initWidgets.get('final_y'), extraParam=self._getAllReactants()[0])
         
         # construct controller
         viewController = MuMoTSSAController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, ssaParams=ssaParams, **kwargs)
@@ -1394,12 +1398,13 @@ class MuMoTcontroller:
         self._view.showLogs(tail)
         
     def _updateInitialStateWidgets(self, _=None):
-        if len(self._view._mumotModel._reactants) == 1: return
+        (allReactants,_) = self._view._mumotModel._getAllReactants()
+        if len(allReactants) == 1: return
         sumNonConstReactants = 0
-        for state in self._view._mumotModel._reactants:
+        for state in allReactants:
             sumNonConstReactants += self._widgetsExtraParams['init'+str(state)].value
             
-        for i,state in enumerate(sorted(self._view._mumotModel._reactants, key=str)):
+        for i,state in enumerate(sorted(allReactants, key=str)):
             # oder of assignment is important (first, update the min and max, later, the value)
             toLinkPlotFunction = False
             # the self._view._controller pointer is necessary to work properly with multiControllers
@@ -1424,7 +1429,14 @@ class MuMoTcontroller:
             
             if toLinkPlotFunction:
                 self._widgetsExtraParams['init'+str(state)].observe(self._view._controller._replotFunction, 'value')
-                    
+    
+    def _updateFinalViewWidgets(self, change=None):
+        if change['new'] != 'final':
+            if self._widgetsPlotOnly.get('final_x'): self._widgetsPlotOnly['final_x'].layout.display = 'none'
+            if self._widgetsPlotOnly.get('final_y'): self._widgetsPlotOnly['final_y'].layout.display = 'none'
+        else:
+            if self._widgetsPlotOnly.get('final_x'): self._widgetsPlotOnly['final_x'].layout.display = 'flex'
+            if self._widgetsPlotOnly.get('final_y'): self._widgetsPlotOnly['final_y'].layout.display = 'flex'
         
     def multirun(self, iterations, randomSeeds="Auto", visualisationType="evo", downloadData=False):
         # Creating the progress bar (useful to give user progress status for long executions)
@@ -1551,16 +1563,45 @@ class MuMoTSSAController(MuMoTcontroller):
         ## Toggle buttons for plotting style 
         if not ssaParams['visualisationType'][-1]:
             plotToggle = widgets.ToggleButtons(
-                options=[('Temporal evolution', 'evo'), ('Final distribution', 'final')],
+                options=[('Temporal evolution', 'evo'), ('Final distribution', 'final'), ('Barplot', 'barplot')],
                 value = ssaParams['visualisationType'][0],
                 description='Plot:',
                 disabled=False,
                 button_style='', # 'success', 'info', 'warning', 'danger' or ''
-                tooltips=['Population change over time', 'Population distribution in each state at final timestep'],
+                tooltips=['Population change over time', 'Population distribution in each state at final timestep','Barplot of states at final timestep'],
             #     icons=['check'] * 3
             )
+            plotToggle.observe(self._updateFinalViewWidgets, 'value')
             self._widgetsPlotOnly['visualisationType'] = plotToggle
             #advancedWidgets.append(plotToggle)
+        
+        if not ssaParams['final_x'][-1] and (ssaParams['visualisationType'][-1]==False or ssaParams['visualisationType'][0]=='final'):
+            opts = []
+            for reactant in sorted(initialState.keys(), key=str):
+                opts.append( (str(reactant), str(reactant) ) )
+            dropdown = widgets.Dropdown( 
+                options=opts,
+                description='Final distribution (x axis):',
+                value = ssaParams['final_x'][0], 
+                style = {'description_width': 'initial'}
+            )
+            if ssaParams['visualisationType'][0] != 'final':
+                dropdown.layout.display = 'none'
+            self._widgetsPlotOnly['final_x'] = dropdown
+        if not ssaParams['final_y'][-1] and (ssaParams['visualisationType'][-1]==False or ssaParams['visualisationType'][0]=='final'):
+            opts = []
+            for reactant in sorted(initialState.keys(), key=str):
+                opts.append( (str(reactant), str(reactant)) )
+            dropdown = widgets.Dropdown( 
+                options=opts,
+                description='Final distribution (y axis):',
+                value = ssaParams['final_y'][0], 
+                style = {'description_width': 'initial'}
+            )
+            if ssaParams['visualisationType'][0] != 'final':
+                dropdown.layout.display = 'none'
+            self._widgetsPlotOnly['final_y'] = dropdown
+            
         
         ## Checkbox for proportions or full populations plot
         if not ssaParams['plotProportions'][-1]:
@@ -1587,6 +1628,8 @@ class MuMoTSSAController(MuMoTcontroller):
         self._extraWidgetsOrder.append('maxTime')
         self._extraWidgetsOrder.append('randomSeed')
         self._extraWidgetsOrder.append('visualisationType')
+        self._extraWidgetsOrder.append('final_x')
+        self._extraWidgetsOrder.append('final_y')
         self._extraWidgetsOrder.append('plotProportions')
         self._extraWidgetsOrder.append('realtimePlot')
         
@@ -1747,17 +1790,44 @@ class MuMoTmultiagentController(MuMoTcontroller):
         ## Toggle buttons for plotting style
         if not MAParams['visualisationType'][-1]:
             plotToggle = widgets.ToggleButtons(
-                #options={'Temporal evolution' : 'evo', 'Network' : 'graph', 'Final distribution' : 'final'},
-                options=[('Temporal evolution','evo'), ('Network','graph'), ('Final distribution', 'final')],
+                options=[('Temporal evolution','evo'), ('Network','graph'), ('Final distribution', 'final'), ('Barplot', 'barplot')],
                 value = MAParams['visualisationType'][0],
                 description='Plot:',
                 disabled=False,
                 button_style='', # 'success', 'info', 'warning', 'danger' or ''
-                tooltips=['Population change over time', 'Network topology', 'Number of agents in each state at final timestep'],
-            #     icons=['check'] * 3
+                tooltips=['Population change over time', 'Population distribution in each state at final timestep', 'Barplot of states at final timestep'],
             )
+            plotToggle.observe(self._updateFinalViewWidgets, 'value')
             self._widgetsPlotOnly['visualisationType'] = plotToggle
             #advancedWidgets.append(plotToggle)
+            
+        if not MAParams['final_x'][-1] and (MAParams['visualisationType'][-1]==False or MAParams['visualisationType'][0]=='final'):
+            opts = []
+            for reactant in sorted(initialState.keys(), key=str):
+                opts.append( (str(reactant), str(reactant) ) )
+            dropdown = widgets.Dropdown( 
+                options=opts,
+                description='Final distribution (x axis):',
+                value = MAParams['final_x'][0], 
+                style = {'description_width': 'initial'}
+            )
+            if MAParams['visualisationType'][0] != 'final':
+                dropdown.layout.display = 'none'
+            self._widgetsPlotOnly['final_x'] = dropdown
+        if not MAParams['final_y'][-1] and (MAParams['visualisationType'][-1]==False or MAParams['visualisationType'][0]=='final'):
+            opts = []
+            for reactant in sorted(initialState.keys(), key=str):
+                opts.append( (str(reactant), str(reactant)) )
+            dropdown = widgets.Dropdown( 
+                options=opts,
+                description='Final distribution (y axis):',
+                value = MAParams['final_y'][0], 
+                style = {'description_width': 'initial'}
+            )
+            if MAParams['visualisationType'][0] != 'final':
+                dropdown.layout.display = 'none'
+            self._widgetsPlotOnly['final_y'] = dropdown
+            
         
         # Particle display checkboxes
         if not MAParams['showTrace'][-1]:
@@ -1809,6 +1879,8 @@ class MuMoTmultiagentController(MuMoTcontroller):
         self._extraWidgetsOrder.append('motionCorrelatedness')
         self._extraWidgetsOrder.append('randomSeed')
         self._extraWidgetsOrder.append('visualisationType')
+        self._extraWidgetsOrder.append('final_x')
+        self._extraWidgetsOrder.append('final_y')
         self._extraWidgetsOrder.append('showTrace')
         self._extraWidgetsOrder.append('showInteractions')
         self._extraWidgetsOrder.append('plotProportions')
@@ -2487,6 +2559,7 @@ class MuMoTmultiController(MuMoTcontroller):
                         button_style='', # 'success', 'info', 'warning', 'danger' or ''
                         tooltips=['Population change over time', 'Population distribution in each state at final timestep'],
                     )
+                    widget.observe(self._updateFinalViewWidgets, 'value')
                 self._widgetsPlotOnly[name] = widget
             # retrieve the _extraWidgetsOrder from each controller
             self._extraWidgetsOrder.extend(x for x in controller._extraWidgetsOrder if x not in self._extraWidgetsOrder)
@@ -2520,6 +2593,11 @@ class MuMoTmultiController(MuMoTcontroller):
                                 del self._widgetsExtraParams[stateKey]
                     if key =='netType': # netType is special
                         optionValues[0] = _decodeNetworkTypeFromString(optionValues[0]) ## @todo: if only netType (and not netParam) is specified, then multicotroller won't work...
+                    if key =='visualisationType' and optionValues[0]=='final': # visualisationType == 'final' is special
+                        if self._widgetsPlotOnly.get('final_x') is not None:
+                            self._widgetsPlotOnly['final_x'].layout.display = 'flex'
+                        if self._widgetsPlotOnly.get('final_y') is not None:
+                            self._widgetsPlotOnly['final_y'].layout.display = 'flex'
                     # set the value in all the views
                     for view in views:                            
                         view._fixedParams[key] = optionValues[0]
@@ -5122,6 +5200,8 @@ class MuMoTmultiagentView(MuMoTview):
     _ratesDict = None
     ## visualisation type
     _visualisationType = None
+    ## reactants to display on the two axes
+    _finalViewAxes = None
     ## flag to plot proportions or full populations
     _plotProportions = None
     ## visualise the agent trace (on moving particles)
@@ -5171,6 +5251,7 @@ class MuMoTmultiagentView(MuMoTview):
                         self._showTrace = MAParams.get('showTrace',False)
                         self._showInteractions = MAParams.get('showInteractions',False)
                 self._visualisationType = MAParams["visualisationType"]
+                self._finalViewAxes = (MAParams.get("final_x",sorted(self._mumotModel._getAllReactants()[0],key=str)[0]), MAParams.get("final_y",sorted(self._mumotModel._getAllReactants()[0],key=str)[0]))
                 self._plotProportions = MAParams["plotProportions"]
                 self._realtimePlot = MAParams.get('realtimePlot', False)
             
@@ -5274,6 +5355,9 @@ class MuMoTmultiagentView(MuMoTview):
             logStr += ", showTrace = " + str(self._showTrace)
             logStr += ", showInteractions = " + str(self._showInteractions)
         logStr += ", visualisationType = '" + str(self._visualisationType) + "'"
+        if self._visualisationType == 'final':
+            logStr += ", final_x = '" + str(self._finalViewAxes[0]) + "'"
+            logStr += ", final_y = '" + str(self._finalViewAxes[1]) + "'"
         logStr += ", plotProportions = " + str(self._plotProportions)
         logStr += ", realtimePlot = " + str(self._realtimePlot)
         logStr += ", silent = " + str(self._silent)
@@ -5303,6 +5387,9 @@ class MuMoTmultiagentView(MuMoTview):
             MAParams['showTrace'] = self._showTrace
             MAParams['showInteractions'] = self._showInteractions
         MAParams["visualisationType"] = self._visualisationType
+        if self._visualisationType == 'final':
+            MAParams['final_x'] = self._finalViewAxes[0]
+            MAParams['final_y'] = self._finalViewAxes[1]
         MAParams["plotProportions"] = self._plotProportions
         MAParams["realtimePlot"] = self._realtimePlot
 #         sortedDict = "{"
@@ -5339,6 +5426,8 @@ class MuMoTmultiagentView(MuMoTview):
                     self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
             self._randomSeed = self._fixedParams['randomSeed'] if self._fixedParams.get('randomSeed') is not None else self._controller._widgetsExtraParams['randomSeed'].value
             self._visualisationType = self._fixedParams['visualisationType'] if self._fixedParams.get('visualisationType') is not None else self._controller._widgetsPlotOnly['visualisationType'].value
+            if self._visualisationType == 'final':
+                self._finalViewAxes = ( self._fixedParams['final_x'] if self._fixedParams.get('final_x') is not None else self._controller._widgetsPlotOnly['final_x'].value, self._fixedParams['final_y'] if self._fixedParams.get('final_y') is not None else self._controller._widgetsPlotOnly['final_y'].value )
             self._plotProportions = self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
             self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
             if self._fixedParams.get('netType') is not None:
@@ -5464,6 +5553,16 @@ class MuMoTmultiagentView(MuMoTview):
         elif self._visualisationType == "graph": #and self._netType == NetworkType.DYNAMIC:
             plt.axes().set_aspect('equal')
         elif (self._visualisationType == "final"):
+            plt.axes().set_aspect('equal')
+            if self._plotProportions:           
+                plt.xlim((0, 1.0))
+                plt.ylim((0, 1.0))
+            else:
+                plt.xlim((0, self._systemSize))
+                plt.ylim((0, self._systemSize))
+            plt.axes().set_xlabel(self._finalViewAxes[0])
+            plt.axes().set_ylabel(self._finalViewAxes[1])
+        elif (self._visualisationType == "barplot"):
 #             plt.axes().set_aspect('equal') #for piechart
             plt.axes().set_aspect('auto') # for barchart
             if self._plotProportions:                
@@ -5595,15 +5694,25 @@ class MuMoTmultiagentView(MuMoTview):
                 plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0., numpoints=1)
         elif (self._visualisationType == "final"):
             self._initFigure()
+            for state in self._mumotModel._getAllReactants()[0]:
+                if str(state) == self._finalViewAxes[0]:
+                    xdata = evo[state][-1]/self._systemSize if self._plotProportions else evo[state][-1]
+                if str(state) == self._finalViewAxes[1]:
+                    ydata = evo[state][-1]/self._systemSize if self._plotProportions else evo[state][-1]
+
+            #_fig_formatting_2D(xdata=[xdata], ydata=[ydata], curve_replot=False, xlab=self._finalViewAxes[0], ylab=self._finalViewAxes[1])
+            plt.plot(xdata, ydata, 'ro')
+        elif (self._visualisationType == "barplot"):
+            self._initFigure()
             
             finaldata = []
             labels = []
             colors = []
             for state in sorted(self._initialState.keys(), key=str):
                 if self._plotProportions:
-                    finaldata.append( evo[state][len(evo[state])-1]/self._systemSize )
+                    finaldata.append( evo[state][-1]/self._systemSize )
                 else:
-                    finaldata.append( evo[state][len(evo[state])-1] )
+                    finaldata.append( evo[state][-1] )
                 labels.append(state)
                 colors.append(self._colors[state])
              
@@ -6052,6 +6161,8 @@ class MuMoTSSAView(MuMoTview):
     _randomSeed = None
     ## visualisation type
     _visualisationType = None
+    ## reactants to display on the two axes
+    _finalViewAxes = None
     ## flag to plot proportions or full populations
     _plotProportions = None
     ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
@@ -6087,6 +6198,7 @@ class MuMoTSSAView(MuMoTview):
                 self._maxTime = ssaParams["maxTime"]
                 self._randomSeed = ssaParams["randomSeed"]
                 self._visualisationType = ssaParams["visualisationType"]
+                self._finalViewAxes = (ssaParams.get("final_x",sorted(self._mumotModel._getAllReactants()[0],key=str)[0]), ssaParams.get("final_y",sorted(self._mumotModel._getAllReactants()[0],key=str)[0]))
                 self._plotProportions = ssaParams["plotProportions"]
                 self._realtimePlot = ssaParams.get('realtimePlot', False)
             else:
@@ -6148,6 +6260,8 @@ class MuMoTSSAView(MuMoTview):
                     self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
             self._randomSeed = self._fixedParams['randomSeed'] if self._fixedParams.get('randomSeed') is not None else self._controller._widgetsExtraParams['randomSeed'].value
             self._visualisationType = self._fixedParams['visualisationType'] if self._fixedParams.get('visualisationType') is not None else self._controller._widgetsPlotOnly['visualisationType'].value
+            if self._visualisationType == 'final':
+                self._finalViewAxes = ( self._fixedParams['final_x'] if self._fixedParams.get('final_x') is not None else self._controller._widgetsPlotOnly['final_x'].value, self._fixedParams['final_y'] if self._fixedParams.get('final_y') is not None else self._controller._widgetsPlotOnly['final_y'].value )
             self._plotProportions = self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
             self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
             self._realtimePlot = self._fixedParams['realtimePlot'] if self._fixedParams.get('realtimePlot') is not None else self._controller._widgetsExtraParams['realtimePlot'].value
@@ -6166,6 +6280,9 @@ class MuMoTSSAView(MuMoTview):
         logStr += ", maxTime = " + str(self._maxTime)
         logStr += ", randomSeed = " + str(self._randomSeed)
         logStr += ", visualisationType = '" + str(self._visualisationType) + "'"
+        if self._visualisationType == 'final':
+            logStr += ", final_x = '" + str(self._finalViewAxes[0]) + "'"
+            logStr += ", final_y = '" + str(self._finalViewAxes[1]) + "'"
         logStr += ", plotProportions = " + str(self._plotProportions)
         logStr += ", realtimePlot = " + str(self._realtimePlot)
         logStr += ", silent = " + str(self._silent)
@@ -6188,6 +6305,9 @@ class MuMoTSSAView(MuMoTview):
         ssaParams["maxTime"] = self._maxTime 
         ssaParams["randomSeed"] = self._randomSeed
         ssaParams["visualisationType"] = self._visualisationType
+        if self._visualisationType == 'final':
+            ssaParams['final_x'] = self._finalViewAxes[0]
+            ssaParams['final_y'] = self._finalViewAxes[1]
         ssaParams["plotProportions"] = self._plotProportions
         ssaParams['realtimePlot']  = self._realtimePlot
         #str( list(self._ratesDict.items()) )
@@ -6309,6 +6429,16 @@ class MuMoTSSAView(MuMoTview):
             _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent), choose_xrange=(0, self._maxTime), choose_yrange=(0, self._systemSize))
             #self._figure.show()
         elif (self._visualisationType == "final"):
+            plt.axes().set_aspect('equal')
+            if self._plotProportions:           
+                plt.xlim((0, 1.0))
+                plt.ylim((0, 1.0))
+            else:
+                plt.xlim((0, self._systemSize))
+                plt.ylim((0, self._systemSize))
+            plt.axes().set_xlabel(self._finalViewAxes[0])
+            plt.axes().set_ylabel(self._finalViewAxes[1])
+        elif (self._visualisationType == "barplot"):
 #             plt.axes().set_aspect('equal') #for piechart
             plt.axes().set_aspect('auto') # for barchart
             if self._plotProportions:                
@@ -6354,6 +6484,16 @@ class MuMoTSSAView(MuMoTview):
 #                 plt.plot(evo['time'][len(pop)-2:len(pop)], pop[len(pop)-2:len(pop)], color=self._colors[state]) #label=state,
         elif (self._visualisationType == "final"):
             self._initFigure()
+            for state in self._mumotModel._getAllReactants()[0]:
+                if str(state) == self._finalViewAxes[0]:
+                    xdata = evo[state][-1]/self._systemSize if self._plotProportions else evo[state][-1]
+                if str(state) == self._finalViewAxes[1]:
+                    ydata = evo[state][-1]/self._systemSize if self._plotProportions else evo[state][-1]
+
+            #_fig_formatting_2D(xdata=[xdata], ydata=[ydata], curve_replot=False, xlab=self._finalViewAxes[0], ylab=self._finalViewAxes[1])
+            plt.plot(xdata, ydata, 'ro')
+        elif (self._visualisationType == "barplot"):
+            self._initFigure()
 
             finaldata = []
             labels = []
@@ -6361,9 +6501,9 @@ class MuMoTSSAView(MuMoTview):
             for state in sorted(self._initialState.keys(), key=str):
                 if (state == 'time'): continue
                 if self._plotProportions:
-                    finaldata.append( evo[state][len(evo[state])-1]/self._systemSize )
+                    finaldata.append( evo[state][-1]/self._systemSize )
                 else:
-                    finaldata.append( evo[state][len(evo[state])-1] )
+                    finaldata.append( evo[state][-1] )
                 labels.append(state)
                 colors.append(self._colors[state])
 #             
@@ -8473,9 +8613,9 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
     if (optionName == 'visualisationType'):
         if extraParam is not None:
             if extraParam == 'multiagent':
-                validVisualisationTypes = ['evo','graph','final']
+                validVisualisationTypes = ['evo','graph','final','barplot']
             elif extraParam == "SSA":
-                validVisualisationTypes = ['evo','final']
+                validVisualisationTypes = ['evo','final','barplot']
             elif extraParam == "multicontroller":
                 validVisualisationTypes = ['evo','final']
         else:
@@ -8492,6 +8632,27 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                 return [initValues,False]
             else: 
                 return ['evo',False] # as default visualisationType is set to 'evo'
+    
+    if (optionName == 'final_x') or (optionName == 'final_y'):
+        reactants_str = [str(reactant) for reactant in sorted(extraParam, key=str)]
+        if inputValue is not None:
+            inputValue = inputValue.replace('\\','')
+            if inputValue not in reactants_str:
+                errorMsg = "The specified value for " + optionName + " = " + str(inputValue) + " is not valid. \n" \
+                            "Valid values are the reactants: " + str(reactants_str) + ". Please correct it and retry."
+                print(errorMsg)
+                raise ValueError(errorMsg)
+            else:
+                return [inputValue,True]
+        else:
+            if initValues is not None: initValues = initValues.replace('\\','')
+            if initValues in reactants_str:
+                return [initValues,False]
+            else: 
+                if optionName == 'final_x' or len(reactants_str) == 1:
+                    return [reactants_str[0],False] # as default final_x is set to the first (sorted) reactant
+                else: 
+                    return [reactants_str[1],False] # as default final_y is set to the second (sorted) reactant
     
     return [None,False] # default output for unknown optionName
 
