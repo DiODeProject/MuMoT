@@ -5689,9 +5689,9 @@ class MuMoTmultiagentView(MuMoTview):
                 for n in self._graph.nodes():
                     stateColors.append( self._colors.get( self._agents[n], 'w') ) 
                 nx.draw(self._graph, pos_layout, node_color=stateColors, with_labels=True)
-                # plot legend
-                markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='', markersize=15) for color in self._colors.values()]
-                plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.85, 0.95), loc=2, borderaxespad=0., numpoints=1)
+            # plot legend
+            markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='', markersize=15) for color in self._colors.values()]
+            plt.legend(markers, self._colors.keys(), bbox_to_anchor=(1, 1), loc=2, borderaxespad=0., numpoints=1)
         elif (self._visualisationType == "final"):
             self._initFigure()
             for state in self._mumotModel._getAllReactants()[0]:
