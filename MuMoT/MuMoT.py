@@ -44,7 +44,6 @@ import numbers
 
 import matplotlib.ticker as ticker
 from math import log10, floor
-import ast
 from matplotlib.pyplot import plot
 
 #from matplotlib.offsetbox import kwargs
@@ -1394,6 +1393,39 @@ class MuMoTcontroller:
     def showLogs(self, tail = False):
         self._view.showLogs(tail)
         
+    def _updateInitialStateWidgets(self, _=None):
+        if len(self._view._mumotModel._reactants) == 1: return
+        sumNonConstReactants = 0
+        for state in self._view._mumotModel._reactants:
+            sumNonConstReactants += self._widgetsExtraParams['init'+str(state)].value
+            
+        for i,state in enumerate(sorted(self._view._mumotModel._reactants, key=str)):
+            # oder of assignment is important (first, update the min and max, later, the value)
+            toLinkPlotFunction = False
+            # the self._view._controller pointer is necessary to work properly with multiControllers
+            if self._view._controller._replotFunction is not None:
+#             if self._replotFunction is not None:
+                try:
+                    self._widgetsExtraParams['init'+str(state)].unobserve(self._view._controller._replotFunction, 'value')
+#                     self._widgetsExtraParams['init'+str(state)].unobserve(self._replotFunction, 'value')
+                    toLinkPlotFunction = True
+                except ValueError:
+                    pass
+                
+
+            if i == 0:
+                disabledValue = 1-(sumNonConstReactants-self._widgetsExtraParams['init'+str(state)].value)
+                #print(str(state) + ": sum is " + str(sumNonConstReactants) + " - val " + str(disabledValue))
+                self._widgetsExtraParams['init'+str(state)].value = disabledValue  
+            else:
+                #maxVal = 1-disabledValue if 1-disabledValue > self._widgetsExtraParams['init'+str(state)].min else self._widgetsExtraParams['init'+str(state)].min
+                maxVal = disabledValue + self._widgetsExtraParams['init'+str(state)].value
+                self._widgetsExtraParams['init'+str(state)].max = maxVal
+            
+            if toLinkPlotFunction:
+                self._widgetsExtraParams['init'+str(state)].observe(self._view._controller._replotFunction, 'value')
+                    
+        
     def multirun(self, iterations, randomSeeds="Auto", visualisationType="evo", downloadData=False):
         # Creating the progress bar (useful to give user progress status for long executions)
         self._progressBar_multi = widgets.FloatProgress(
@@ -1471,7 +1503,9 @@ class MuMoTSSAController(MuMoTcontroller):
         
         initialState = ssaParams['initialState'][0]
         if not ssaParams['initialState'][-1]:
-            for state,pop in initialState.items():
+            #for state,pop in initialState.items():
+            for i,state in enumerate(sorted(initialState.keys(), key=str)):
+                pop = initialState[state]
                 widget = widgets.FloatSlider(value = pop[0],
                                              min = pop[1], 
                                              max = pop[2],
@@ -1480,6 +1514,12 @@ class MuMoTSSAController(MuMoTcontroller):
                                              description = "State " + str(state),
                                              style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
+                # disable last population widget (if there are more than 1)
+                if len(initialState) > 1 and i == 0:
+                    widget.disabled = True
+                else:
+                    widget.observe(self._updateInitialStateWidgets, 'value')
+                        
                 self._widgetsExtraParams['init'+str(state)] = widget
                 #advancedWidgets.append(widget)
             
@@ -1542,7 +1582,7 @@ class MuMoTSSAController(MuMoTcontroller):
             #advancedWidgets.append(widget)
         
         # define the widget order
-        for state,pop in initialState.items():
+        for state in sorted(initialState.keys(), key=str):
             self._extraWidgetsOrder.append('init'+str(state))
         self._extraWidgetsOrder.append('maxTime')
         self._extraWidgetsOrder.append('randomSeed')
@@ -1577,17 +1617,24 @@ class MuMoTmultiagentController(MuMoTcontroller):
         
         initialState = MAParams['initialState'][0]
         if not MAParams['initialState'][-1]:
-            for state,pop in initialState.items():
+            for i,state in enumerate(sorted(initialState.keys(), key=str)):
+                pop = initialState[state]
                 widget = widgets.FloatSlider(value = pop[0],
                                              min = pop[1], 
                                              max = pop[2],
                                              step = pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
-                                             description = "State " + str(state), 
+                                             description = "State " + str(state),
                                              style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
+                # disable last population widget (if there are more than 1)
+                if len(initialState) > 1 and i == 0:
+                    widget.disabled = True
+                else:
+                    widget.observe(self._updateInitialStateWidgets, 'value')
+                
                 self._widgetsExtraParams['init'+str(state)] = widget
-                #advancedWidgets.append(widget)
+            
         
         # Max time slider
         if not MAParams['maxTime'][-1]:
@@ -1752,7 +1799,7 @@ class MuMoTmultiagentController(MuMoTcontroller):
         #self._update_net_params()
         
         # define the widget order
-        for state,pop in initialState.items():
+        for state in sorted(initialState.keys(), key=str):
             self._extraWidgetsOrder.append('init'+str(state))
         self._extraWidgetsOrder.append('maxTime')
         self._extraWidgetsOrder.append('timestepSize')
@@ -2403,6 +2450,10 @@ class MuMoTmultiController(MuMoTcontroller):
             # retrieve the _widgetsExtraParams from each controller
             for name, widget in controller._widgetsExtraParams.items():
                 widget.unobserve(controller._replotFunction, 'value')
+#                 if name[0:4] == 'init':
+#                     try: widget.unobserve(controller._updateInitialStateWidgets, 'value')
+#                     except ValueError: pass
+#                     widget.observe(self._updateInitialStateWidgets, 'value')
 #                 widget.unobserve_all()
 #                 if name == "netType": # netType widget is special
 #                     ## this is necessary due to ipywidget bug #1868 (https://github.com/jupyter-widgets/ipywidgets/issues/1868)
@@ -2497,12 +2548,14 @@ class MuMoTmultiController(MuMoTcontroller):
                         self._widgetsPlotOnly[key].value = optionValues[0]
                     if key == 'initialState':
                         for state, pop in optionValues[0].items():
+#                             self._widgetsExtraParams['init'+str(state)].unobserve(self._updateInitialStateWidgets, 'value')
                             self._widgetsExtraParams['init'+str(state)].max = float('inf') #temp to avoid exception min>max
                             self._widgetsExtraParams['init'+str(state)].min = pop[1]
                             self._widgetsExtraParams['init'+str(state)].max = pop[2]
                             self._widgetsExtraParams['init'+str(state)].step = pop[3]
                             self._widgetsExtraParams['init'+str(state)].readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f'
                             self._widgetsExtraParams['init'+str(state)].value = pop[0] 
+#                             self._widgetsExtraParams['init'+str(state)].observe(self._updateInitialStateWidgets, 'value')
             
             # create the "Advanced options" tab
             if not self._silent:
@@ -5154,10 +5207,10 @@ class MuMoTmultiagentView(MuMoTview):
             onlyDynamic = False
             (_, allConstantReactants) = self._mumotModel._getAllReactants()
             for rule in self._mumotModel._rules:
-                if EMPTYSET_SYMBOL in rule.lhsReactants or EMPTYSET_SYMBOL in rule.rhsReactants:
+                if EMPTYSET_SYMBOL in rule.lhsReactants + rule.rhsReactants:
                     onlyDynamic = True
                     break
-                for react in rule.lhsReactants | rule.rhsReactants:
+                for react in rule.lhsReactants + rule.rhsReactants:
                     if react in allConstantReactants:
                         onlyDynamic = True
                 if onlyDynamic: break
@@ -5703,14 +5756,33 @@ class MuMoTmultiagentView(MuMoTview):
 
     def _initMultiagent(self):
         # initialise populations by multiplying proportion with _systemSize
-        currentState = {s:math.floor(p*self._systemSize) for s,p in self._initialState.items()}
+        # currentState = {s:math.floor(p*self._systemSize) for s,p in self._initialState.items()}
+        currentState = {}
+        leftOvers = {}
+        for state,prop in self._initialState.items():
+            pop = prop*self._systemSize
+            if (not _almostEqual(pop, math.floor(pop))) and (state not in self._mumotModel._constantReactants):
+                leftOvers[state] = pop - math.floor(pop)
+            currentState[state] = math.floor(pop)
+        # if approximations resulted in one agent less, it is added randomly (with probability proportional to the rounding quantities)
+        sumReactants = sum( [currentState[state] for state in currentState.keys() if state not in self._mumotModel._constantReactants])
+        if sumReactants < self._systemSize:
+            rnd = np.random.rand() * sum(leftOvers.values())
+            bottom = 0.0
+            for state, prob in leftOvers.items():
+                if rnd >= bottom and rnd < (bottom + prob):
+                    currentState[state] += 1
+                    break
+                bottom += prob
+        
         # init the agents list
         self._agents = []
         for state, pop in currentState.items():
             self._agents.extend( [state]*pop )
         self._agents = np.random.permutation(self._agents).tolist() # random shuffling of elements (useful to avoid initial clusters in networks)
         return currentState
-        
+
+
     def _stepMultiagent(self):
         tmp_agents = copy.deepcopy(self._agents)
         dynamic = self._netType == NetworkType.DYNAMIC
@@ -6165,18 +6237,19 @@ class MuMoTSSAView(MuMoTview):
         leftOvers = {}
         for state,prop in self._initialState.items():
             pop = prop*self._systemSize
-            if _almostEqual(pop, math.floor(pop)):
+            if (not _almostEqual(pop, math.floor(pop))) and (state not in self._mumotModel._constantReactants):
                 leftOvers[state] = pop - math.floor(pop)
             currentState[state] = math.floor(pop)
         # if approximations resulted in one agent less, it is added randomly (with probability proportional to the rounding quantities)
-#         if sum(currentState.values()) < self._systemSize:
-#             rnd = np.random.rand() * sum(leftOvers.values())
-#             bottom = 0.0
-#             for state, prob in leftOvers.items():
-#                 if rnd >= bottom and rnd < (bottom + prob):
-#                     currentState[state] += 1
-#                     break
-#                 bottom += prob
+        sumReactants = sum( [currentState[state] for state in currentState.keys() if state not in self._mumotModel._constantReactants])
+        if sumReactants < self._systemSize:
+            rnd = np.random.rand() * sum(leftOvers.values())
+            bottom = 0.0
+            for state, prob in leftOvers.items():
+                if rnd >= bottom and rnd < (bottom + prob):
+                    currentState[state] += 1
+                    break
+                bottom += prob
             
         # Create logging structs
         evo = {}
@@ -8150,7 +8223,7 @@ def _parse_input_keyword_for_numeric_widgets(inputValue, defaultValueRangeStep, 
             errorMsg = "initValueRangeStep value '" + str(initValueRangeStep) + "' must be specified in the format [val,min,max,step].\n" \
                     "Please, correct the value and retry."
             print(errorMsg)
-            raise ValueError(errorMsg)   
+            raise ValueError(errorMsg)
     if not inputValue == None:
         if not isinstance(inputValue, numbers.Number):
             errorMsg = "Input value '" + str(inputValue) + "' is not a numeric vaule and must be a number.\n" \
@@ -8226,32 +8299,77 @@ def _get_item_from_params_list(params, targetName):
 
 def _format_advanced_option(optionName, inputValue, initValues, extraParam=None, extraParam2=None):
     if (optionName == 'initialState'):
+        (allReactants, _) = extraParam
+        initialState = {}
         # handle initialState dictionary (either convert or generate a default one)
         if inputValue is not None:
-            ## @todo check if the Initial State has valid length and positive values
-#             initialState_str = ast.literal_eval(initialState) # translate string into dict
-            initialState = {}
-            for state,pop in inputValue.items():
-                initPop = initValues.get(state) if initValues is not None else None
-                pop = _parse_input_keyword_for_numeric_widgets(inputValue=pop,
+            for i, reactant in enumerate(sorted(inputValue.keys(), key=str)):
+                pop = inputValue[reactant]
+                initPop = initValues.get(reactant) if initValues is not None else None
+                
+                # convert string into SymPy symbol
+                initialState[process_sympy(reactant)] = _parse_input_keyword_for_numeric_widgets(inputValue=pop,
                                     defaultValueRangeStep=[MuMoTdefault._agents, MuMoTdefault._agentsLimits[0],MuMoTdefault._agentsLimits[1],MuMoTdefault._agentsStep], 
                                     initValueRangeStep=initPop, 
                                     validRange = (0.0, 1.0) )
-                initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-            return [initialState, True]
+                fixedBool = True
         else:
-            initialState = {}
-            (allReactants, _) = extraParam
             first = True
-            initValuesSympy = {process_sympy(state): pop for state, pop in initValues.items()} if initValues is not None else {}
-            for reactant in allReactants:
+            initValuesSympy = {process_sympy(reactant): pop for reactant, pop in initValues.items()} if initValues is not None else {}
+            for i,reactant in enumerate(sorted(allReactants, key=str)):
                 defaultV = MuMoTdefault._agents if first else 0
                 first = False
                 initialState[reactant] = _parse_input_keyword_for_numeric_widgets(inputValue=None,
                                             defaultValueRangeStep=[defaultV, MuMoTdefault._agentsLimits[0],MuMoTdefault._agentsLimits[1],MuMoTdefault._agentsStep], 
                                             initValueRangeStep=initValuesSympy.get(reactant), 
                                             validRange = (0.0, 1.0) )
-            return [initialState, False]
+                fixedBool = False
+        
+        ## check if the initialState values are valid
+        sumValues = sum([initialState[reactant][0] for reactant in allReactants])
+        minStep = min([initialState[reactant][3] for reactant in allReactants])     
+        for i, reactant in enumerate(sorted(allReactants, key=str)):
+            if reactant not in allReactants:
+                errorMsg = "Reactant '" + str(reactant) + "' does not exist in this model.\n" \
+                    "Valid reactants are " + str(allReactants) + ". Please, correct the value and retry."
+                print(errorMsg)
+                raise ValueError(errorMsg) 
+            
+            pop = initialState[reactant]
+            # check if the proportions sum to 1 
+            if i == 0:
+                idleReactant = reactant
+                idleValue = pop[0]
+                # the idleValue have range min-max reset to [0,1]
+                initialState[reactant][1] = 0 
+                initialState[reactant][2] = 1
+                initialState[reactant][3] = minStep
+            else:
+                # modify (if necessary) the initial value
+                if sumValues > 1:
+                    newVal = max(0, pop[0]+(1-sumValues))
+                    if not _almostEqual(pop[0], newVal):
+                        wrnMsg = "WARNING! the initial value of reactant " + str(reactant) + " has been changed to " + str(newVal) + "\n"
+                        print(wrnMsg)
+                        sumValues -= pop[0]
+                        sumValues += newVal
+                        initialState[reactant][0] = newVal
+                # modify (if necessary) min-max
+                pop = initialState[reactant]
+                sumNorm = sumValues if sumValues <= 1 else 1
+                if pop[2] > (1-sumNorm+pop[0]+idleValue): # max
+                    if pop[1] > (1-sumNorm+pop[0]+idleValue): # min
+                        initialState[reactant][1] = (1-sumNorm+pop[0]+idleValue)
+                    initialState[reactant][2] = (1-sumNorm+pop[0]+idleValue)
+                if pop[1] > (1-sumNorm+pop[0]): # min
+                    initialState[reactant][1] = (1-sumNorm+pop[0])
+                #initialState[reactant][3] = minStep
+        if not _almostEqual(sumValues, 1):
+            newVal = 1-sum([initialState[reactant][0] for reactant in allReactants if reactant != idleReactant])
+            wrnMsg = "WARNING! the initial value of reactant " + str(idleReactant) + " has been changed to " + str(newVal) + "\n"
+            print(wrnMsg)
+            initialState[idleReactant][0] = newVal      
+        return [initialState, fixedBool]
         #print("Initial State is " + str(initialState) )
     if (optionName == 'maxTime'):
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
