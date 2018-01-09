@@ -42,6 +42,7 @@ from enum import Enum
 import json
 import sys
 import numbers
+from bisect import bisect_left
 
 import matplotlib.ticker as ticker
 from math import log10, floor
@@ -783,6 +784,7 @@ class MuMoTmodel:
         MAParams['final_x'] = _format_advanced_option(optionName='final_x', inputValue=kwargs.get('final_x'), initValues=initWidgets.get('final_x'), extraParam=self._getAllReactants()[0])
         MAParams['final_y'] = _format_advanced_option(optionName='final_y', inputValue=kwargs.get('final_y'), initValues=initWidgets.get('final_y'), extraParam=self._getAllReactants()[0])
         MAParams['runs'] = _format_advanced_option(optionName='runs', inputValue=kwargs.get('runs'), initValues=initWidgets.get('runs'))
+        MAParams['aggregateResults'] = _format_advanced_option(optionName='aggregateResults', inputValue=kwargs.get('aggregateResults'), initValues=initWidgets.get('aggregateResults'))
         
         # if the netType is a fixed-param and its value is not 'DYNAMIC', all useless parameter become fixed (and widgets are never displayed)
         if MAParams['netType'][-1]:
@@ -843,6 +845,7 @@ class MuMoTmodel:
         ssaParams['final_x'] = _format_advanced_option(optionName='final_x', inputValue=kwargs.get('final_x'), initValues=initWidgets.get('final_x'), extraParam=self._getAllReactants()[0])
         ssaParams['final_y'] = _format_advanced_option(optionName='final_y', inputValue=kwargs.get('final_y'), initValues=initWidgets.get('final_y'), extraParam=self._getAllReactants()[0])
         ssaParams['runs'] = _format_advanced_option(optionName='runs', inputValue=kwargs.get('runs'), initValues=initWidgets.get('runs'))
+        ssaParams['aggregateResults'] = _format_advanced_option(optionName='aggregateResults', inputValue=kwargs.get('aggregateResults'), initValues=initWidgets.get('aggregateResults'))
         
         # construct controller
         viewController = MuMoTstochasticSimulationController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, SSParams=ssaParams, **kwargs)
@@ -1598,7 +1601,15 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                                              disabled=False,
                                              continuous_update = continuousReplot) 
             self._widgetsExtraParams['runs'] = widget
-            #advancedWidgets.append(widget)
+            
+        ## Checkbox for realtime plot update
+        if not SSParams['aggregateResults'][-1]:
+            widget = widgets.Checkbox(
+                value = SSParams['aggregateResults'][0],
+                description='Aggregate results',
+                disabled = False
+            )
+            self._widgetsPlotOnly['aggregateResults'] = widget
         
         self._addSpecificWidgets(SSParams, continuousReplot)
         self._orderWidgets(initialState)
@@ -1622,6 +1633,7 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
         self._extraWidgetsOrder.append('plotProportions')
         self._extraWidgetsOrder.append('realtimePlot')
         self._extraWidgetsOrder.append('runs')
+        self._extraWidgetsOrder.append('aggregateResults')
         
 
 ## class describing a controller for multiagent views
@@ -1763,6 +1775,7 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
         self._extraWidgetsOrder.append('plotProportions')
         self._extraWidgetsOrder.append('realtimePlot')
         self._extraWidgetsOrder.append('runs')
+        self._extraWidgetsOrder.append('aggregateResults')
         
 
     ## updates the widgets related to the netType (it is linked --through observe()-- before the _view is created) 
@@ -4922,6 +4935,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
     _latestResults = None
     ## number of runs to execute
     _runs = None
+    ## flag to set if the results from multimple runs must be aggregated or not  
+    _aggregateResults = None
     ## variable to store simulation time during simulation
     _t = 0
     ## variable to store the current simulation state
@@ -4978,6 +4993,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 self._plotProportions = SSParams["plotProportions"]
                 self._realtimePlot = SSParams.get('realtimePlot', False)
                 self._runs = SSParams.get('runs', 1)
+                self._runs = SSParams.get('aggregateResults', True)
             
             else:
                 # storing the initial state
@@ -5030,9 +5046,10 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 self._latestResults.append( self._runSingleSimulation(self._randomSeed+r) )
             
             ## Final Plot
-            if not self._realtimePlot:
-                for results in self._latestResults:
-                    self._updateSimultationFigure(results, fullPlot=True)
+            if not self._realtimePlot or self._aggregateResults:
+#                 for results in self._latestResults:
+#                     self._updateSimultationFigure(results, fullPlot=True)
+                self._updateSimultationFigure(self._latestResults, fullPlot=True)
            
         self._logs.append(log)
         
@@ -5067,6 +5084,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
             self._realtimePlot = self._fixedParams['realtimePlot'] if self._fixedParams.get('realtimePlot') is not None else self._controller._widgetsExtraParams['realtimePlot'].value
             self._runs = self._fixedParams['runs'] if self._fixedParams.get('runs') is not None else self._controller._widgetsExtraParams['runs'].value
+            self._aggregateResults = self._fixedParams['aggregateResults'] if self._fixedParams.get('aggregateResults') is not None else self._controller._widgetsPlotOnly['aggregateResults'].value
     
     def _initSingleSimulation(self):
         self._progressBar.max = self._maxTime 
@@ -5125,46 +5143,102 @@ class MuMoTstochasticSimulationView(MuMoTview):
 #             print (self._evo)
             # Plotting each timestep
             if self._realtimePlot:
-                self._updateSimultationFigure(self._evo, fullPlot=False)
+                self._updateSimultationFigure(allResults=self._latestResults, fullPlot=False, currentEvo=self._evo)
          
         self._progressBar.value = self._progressBar.max
         self._progressBar.description = "Completed 100%:"
 #         print("Temporal evolution per state: " + str(self._evo))
         return self._evo
     
-    #def _updateSimultationFigure(self, allResults, fullPlot=True, currentEvo):
-    def _updateSimultationFigure(self, evo, fullPlot=True):
+    def _updateSimultationFigure(self, allResults, fullPlot=True, currentEvo=None):
         if (self._visualisationType == "evo"):
-            if not fullPlot and len(evo['time']) <= 2: # if incremental plot is requested, but it's the first item, we operate as fullPlot (to allow legend)
-                fullPlot = True
+#             if not fullPlot and len(currentEvo['time']) <= 2: # if incremental plot is requested, but it's the first item, we operate as fullPlot (to allow legend)
+#                 fullPlot = True
     
-            # (if fullPlot) plot all time-evolution
-            if fullPlot:
-                xdata = []
-                ydata = []
+            # if fullPlot, plot all time-evolution
+            if fullPlot or len(currentEvo['time']) <= 2:
+                y_max = 1.0 if self._plotProportions else self._systemSize
+                if self._aggregateResults and len(allResults) > 1: # plot in aggregate mode only if there's enough data
+                    self._initFigure()
+                    steps = 10
+                    timesteps=list(np.arange(0,self._maxTime, step=self._maxTime/steps))
+    #                 if timesteps[-1] - self._maxTime > self._maxTime/(steps*2):
+    #                     timesteps.append(self._maxTime)
+    #                 else:
+    #                     timesteps[-1] = self._maxTime
+                    if not _almostEqual(timesteps[-1], self._maxTime):
+                        timesteps.append(self._maxTime)
+                    
+                    for state in sorted(self._initialState.keys(), key=str):
+                        if (state == 'time'): continue
+                        boxesData = []
+                        avgs=[]
+                        for timestep in timesteps:
+                            boxData = []
+                            for results in allResults:
+                                idx = max(0, bisect_left(results['time'], timestep)-1)
+                                if self._plotProportions:
+                                    boxData.append( results[state][idx]/self._systemSize )
+                                else:
+                                    boxData.append( results[state][idx] )
+                            y_max = max(y_max, max(boxData))
+                            boxesData.append(boxData)
+                            avgs.append(np.mean(boxData))
+                            #bplot = plt.boxplot(boxData, patch_artist=True, positions=[timestep], manage_xticks=False, widths=self._maxTime/(steps*3) )
+    #                         print("Plotting bxplt at positions " + str(timestep) + " generated from idx = " + str(idx))
+                        plt.plot(timesteps, avgs, color=self._colors[state])
+                        bplots = plt.boxplot(boxesData, patch_artist=True, positions=timesteps, manage_xticks=False, widths=self._maxTime/(steps*3) )
+    #                     for patch, color in zip(bplots['boxes'], [self._colors[state]]*len(timesteps)):
+    #                         patch.set_facecolor(color)
+    #                     bplot['boxes'].set_facecolor(self._colors[state])
+                        plt.setp(bplots['boxes'], color=self._colors[state])
+                        plt.setp(bplots['whiskers'], color=self._colors[state])
+                        plt.setp(bplots['caps'], color=self._colors[state])
+                        plt.setp(bplots['medians'], color='black')
+                        plt.setp(bplots['fliers'], color=self._colors[state], marker='x')
+                
+                    padding_x = self._maxTime/20
+                    padding_y = y_max/20
+                    
+                else:
+                    for state in sorted(self._initialState.keys(), key=str):
+                        if (state == 'time'): continue
+                        #xdata = []
+                        #xdata.append( results['time'] )
+                        for results in allResults:
+                            #ydata = []
+                            if self._plotProportions:
+                                ydata = [y/self._systemSize for y in results[state]]
+                                #ydata.append(ytmp)
+                                y_max = max(1.0, max(ydata))
+                            else:
+                                ydata = results[state]
+                                y_max = max(self._systemSize, max(results[state]))
+                            #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
+                            plt.plot(results['time'], ydata, color=self._colors[state], lw=2)
+                    #_fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max) )
+                    padding_x = 0
+                    padding_y = 0
+
                 labels = []
                 for state in sorted(self._initialState.keys(), key=str):
-                    if (state == 'time'): continue
-                    xdata.append( evo['time'] )
-                    if self._plotProportions:
-                        ytmp = [y/self._systemSize for y in evo[state]]
-                        ydata.append(ytmp)
-                        yrange = max(1.0, max(ytmp))
-                    else:
-                        ydata.append( evo[state] )
-                        yrange = max(self._systemSize, max(evo[state]))
                     labels.append(state)
-                #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
-                #plt.plot(evo[state], color=self._colors[state])
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, yrange) )
-            else: # If realtime-plot mode, draw only the last timestep rather than overlay all
+                # plot legend
+                markers = [plt.Line2D([0,0],[0,0],color=color, marker='s', linestyle='', markersize=15) for color in self._colors.values()]
+                plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0., numpoints=1)
+                
+                _fig_formatting_2D(figure=self._figure, xlab="Time", ylab="Reactants", choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y) )
+                plt.ylim((0-padding_y, y_max+padding_y))
+                plt.xlim((0-padding_x, self._maxTime+padding_x))
+                 
+            if not fullPlot: # If realtime-plot mode, draw only the last timestep rather than overlay all
                 xdata = []
                 ydata = []
                 for state in sorted(self._initialState.keys(), key=str):
                     if (state == 'time'): continue
-                    xdata.append( evo['time'][-2:] )
+                    xdata.append( currentEvo['time'][-2:] )
                     # modify if plotProportions
-                    ytmp = [y / self._systemSize for y in evo[state][-2:] ] if self._plotProportions else evo[state][-2:]
+                    ytmp = [y / self._systemSize for y in currentEvo[state][-2:] ] if self._plotProportions else currentEvo[state][-2:]
                     y_max = 1.0 if self._plotProportions else self._systemSize
                     
                     yrange = max(y_max, max(ytmp))
@@ -5172,37 +5246,83 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, yrange) )
 
         elif (self._visualisationType == "final"):
-            if not fullPlot: self._initFigure()
+            points_x = []
+            points_y = []
+            
+            if not fullPlot: # if it's a runtime plot 
+                self._initFigure() # the figure must be cleared each timestep
+                for state in self._mumotModel._getAllReactants()[0]: # the current point added to the list of points
+                    if str(state) == self._finalViewAxes[0]:
+                        points_x.append( currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1] )
+                    if str(state) == self._finalViewAxes[1]:
+                        points_y.append( currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1] )
+            
+            if self._aggregateResults and len(allResults) > 2: # plot in aggregate mode only if there's enough data
+                self._initFigure()
+                samples_x = []
+                samples_y = []
+                for state in self._mumotModel._getAllReactants()[0]:
+                    if str(state) == self._finalViewAxes[0]:
+                        for results in allResults:
+                            samples_x.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
+                    if str(state) == self._finalViewAxes[1]:
+                        for results in allResults:
+                            samples_y.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
+                samples = np.column_stack((samples_x, samples_y))
+                _plot_point_cov(samples, nstd=1, alpha=0.5, color='green')
+            #else:
             for state in self._mumotModel._getAllReactants()[0]:
                 if str(state) == self._finalViewAxes[0]:
-                    xdata = evo[state][-1]/self._systemSize if self._plotProportions else evo[state][-1]
+                    for results in allResults:
+                        points_x.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
                 if str(state) == self._finalViewAxes[1]:
-                    ydata = evo[state][-1]/self._systemSize if self._plotProportions else evo[state][-1]
+                    for results in allResults:
+                        points_y.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
 
             #_fig_formatting_2D(xdata=[xdata], ydata=[ydata], curve_replot=False, xlab=self._finalViewAxes[0], ylab=self._finalViewAxes[1])
-            plt.plot(xdata, ydata, 'ro')
+            plt.plot(points_x, points_y, 'ro')
+            _fig_formatting_2D(figure=self._figure)
         elif (self._visualisationType == "barplot"):
             self._initFigure()
             
             finaldata = []
             labels = []
             colors = []
-            for state in sorted(self._initialState.keys(), key=str):
-                if (state == 'time'): continue
-                if self._plotProportions:
-                    finaldata.append( evo[state][-1]/self._systemSize )
-                else:
-                    finaldata.append( evo[state][-1] )
-                labels.append(state)
-                colors.append(self._colors[state])
+            stdev = []
+
+            if fullPlot:
+                for state in sorted(self._initialState.keys(), key=str):
+                    if (state == 'time'): continue
+                    if self._aggregateResults and len(allResults) > 0:
+                        points = []
+                        for results in allResults:
+                            points.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
+                        avg = np.mean(points)
+                        stdev.append(np.std(points))
+                    else:
+                        if allResults:
+                            avg = allResults[-1][state][-1]/self._systemSize if self._plotProportions else allResults[-1][state][-1]
+                        else:
+                            avg = 0
+                        stdev.append(0)
+                    finaldata.append( avg )
+                    labels.append(state)
+                    colors.append(self._colors[state])
+            else:
+                for state in sorted(self._initialState.keys(), key=str):
+                    if (state == 'time'): continue
+                    finaldata.append( currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1])
+                    stdev.append(0)
+                    labels.append(state)
+                    colors.append(self._colors[state])
              
 #             plt.pie(finaldata, labels=labels, autopct=_make_autopct(piedata), colors=colors) #shadow=True, startangle=90,
             xpos = np.arange(len( self._initialState.keys() ))  # the x locations for the bars
             width = 1       # the width of the bars
-            plt.bar(xpos, finaldata, width, color=colors) #, yerr=stdev)
+            plt.bar(xpos, finaldata, width, color=colors, yerr=stdev, ecolor='black')
             plt.axes().set_xticks(xpos + width / 2)
             plt.axes().set_xticklabels(sorted(self._initialState.keys(), key=str))
-
+            _fig_formatting_2D(figure=self._figure, xlab="Reactants", ylab="Population proportion" if self._plotProportions else "Population size")
         # update the figure
         if not self._silent:
             self._figure.canvas.draw()
@@ -5210,8 +5330,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
     def _redrawOnly(self, _=None):
         self._update_params()
         self._initFigure()
-        for results in self._latestResults:
-            self._updateSimultationFigure(results, fullPlot=True)
+        self._updateSimultationFigure(self._latestResults, fullPlot=True)
+#         for results in self._latestResults:
+#             self._updateSimultationFigure(results, fullPlot=True)
         
     def _initFigure(self):
         if not self._silent:
@@ -5224,8 +5345,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
             #self._plot.axis([0, self._maxTime, 0, totAgents])
             #plt.xlim((0, self._maxTime))
             #plt.ylim((0, self._systemSize))
-            #self._figure.show() 
-            _fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent), choose_xrange=(0, self._maxTime), choose_yrange=(0, self._systemSize) )
+            #self._figure.show()
+            #y_max = 1.0 if self._plotProportions else self._systemSize
+            #_fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent), choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max) )
         elif (self._visualisationType == "final"):
             plt.axes().set_aspect('equal')
             if self._plotProportions:           
@@ -5359,6 +5481,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         logStr += ", plotProportions = " + str(self._plotProportions)
         logStr += ", realtimePlot = " + str(self._realtimePlot)
         logStr += ", runs = " + str(self._runs)
+        logStr += ", aggregateResults = " + str(self._aggregateResults)
         logStr += ", silent = " + str(self._silent)
         logStr += ", bookmark = False"
 #         if len(self._generatingKwargs) > 0:
@@ -5392,6 +5515,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         MAParams["plotProportions"] = self._plotProportions
         MAParams["realtimePlot"] = self._realtimePlot
         MAParams["runs"] = self._runs
+        MAParams["aggregateResults"] = self._aggregateResults
 #         sortedDict = "{"
 #         for key,value in sorted(MAParams.items()):
 #             sortedDict += "'" + key + "': " + str(value) + ", "
@@ -5430,7 +5554,8 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         if self._visualisationType == "graph": 
             plt.axes().set_aspect('equal')
     
-    def _updateSimultationFigure(self, evo, fullPlot=True):
+    #def _updateSimultationFigure(self, evo, fullPlot=True):
+    def _updateSimultationFigure(self, allResults, fullPlot=True, currentEvo=None):
         if (self._visualisationType == "graph"):
             self._initFigure()
             #plt.clf()
@@ -5517,7 +5642,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='', markersize=15) for color in self._colors.values()]
             plt.legend(markers, self._colors.keys(), bbox_to_anchor=(1, 1), loc=2, borderaxespad=0., numpoints=1)
 
-        super()._updateSimultationFigure(evo, fullPlot) 
+        super()._updateSimultationFigure(allResults, fullPlot, currentEvo) 
   
     def _computeScalingFactor(self):
         # Determining the minimum speed of the process (thus the max-scaling factor)
@@ -5918,6 +6043,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
         logStr += ", plotProportions = " + str(self._plotProportions)
         logStr += ", realtimePlot = " + str(self._realtimePlot)
         logStr += ", runs = " + str(self._runs)
+        logStr += ", aggregateResults = " + str(self._aggregateResults)
         logStr += ", silent = " + str(self._silent)
         logStr += ", bookmark = False"
 #         if len(self._generatingKwargs) > 0:
@@ -5944,6 +6070,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
         ssaParams["plotProportions"] = self._plotProportions
         ssaParams['realtimePlot']  = self._realtimePlot
         ssaParams['runs']  = self._runs
+        ssaParams['aggregateResults']  = self._aggregateResults
         #str( list(self._ratesDict.items()) )
         print( "mmt.MuMoTSSAView(<modelName>, None, " + str( self._get_bookmarks_params().replace('\\','\\\\') ) + ", ssaParams = " + str(ssaParams) + " )")
             
@@ -7731,7 +7858,70 @@ def _make_autopct(values):
 
 def _almostEqual(a,b):
     epsilon = 0.0000001
-    return abs(a-b) < epsilon 
+    return abs(a-b) < epsilon
+
+# function copied from https://github.com/joferkington/oost_paper_code/blob/master/error_ellipse.py
+def _plot_point_cov(points, nstd=2, ax=None, **kwargs):
+    """
+    Plots an `nstd` sigma ellipse based on the mean and covariance of a point
+    "cloud" (points, an Nx2 array).
+
+    Parameters
+    ----------
+        points : An Nx2 array of the data points.
+        nstd : The radius of the ellipse in numbers of standard deviations.
+            Defaults to 2 standard deviations.
+        ax : The axis that the ellipse will be plotted on. Defaults to the 
+            current axis.
+        Additional keyword arguments are pass on to the ellipse patch.
+
+    Returns
+    -------
+        A matplotlib ellipse artist
+    """
+    pos = points.mean(axis=0)
+    cov = np.cov(points, rowvar=False)
+    return _plot_cov_ellipse(cov, pos, nstd, ax, **kwargs)
+
+# function copied from https://github.com/joferkington/oost_paper_code/blob/master/error_ellipse.py
+def _plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
+    """
+    Plots an `nstd` sigma error ellipse based on the specified covariance
+    matrix (`cov`). Additional keyword arguments are passed on to the 
+    ellipse patch artist.
+
+    Parameters
+    ----------
+        cov : The 2x2 covariance matrix to base the ellipse on
+        pos : The location of the center of the ellipse. Expects a 2-element
+            sequence of [x0, y0].
+        nstd : The radius of the ellipse in numbers of standard deviations.
+            Defaults to 2 standard deviations.
+        ax : The axis that the ellipse will be plotted on. Defaults to the 
+            current axis.
+        Additional keyword arguments are pass on to the ellipse patch.
+
+    Returns
+    -------
+        A matplotlib ellipse artist
+    """
+    def _eigsorted(cov):
+        vals, vecs = np.linalg.eigh(cov)
+        order = vals.argsort()[::-1]
+        return vals[order], vecs[:,order]
+
+    if ax is None:
+        ax = plt.gca()
+
+    vals, vecs = _eigsorted(cov)
+    theta = np.degrees(np.arctan2(*vecs[:,0][::-1]))
+
+    # Width and height are "full" widths, not radius
+    width, height = 2 * nstd * np.sqrt(vals)
+    ellip = mpatch.Ellipse(xy=pos, width=width, height=height, angle=theta, **kwargs)
+
+    ax.add_artist(ellip)
+    return ellip 
 
 ## Return the number of significant decimals of the input digit string (up to a maximum of 7)
 def _count_sig_decimals(digits, maximum=7):
@@ -8055,6 +8245,12 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                                 defaultValueRangeStep=[1, 1, 20, 1], 
                                 initValueRangeStep=initValues,
                                 validRange = (1,float("inf"))) 
+    
+    if (optionName == 'aggregateResults'):
+        return _parse_input_keyword_for_boolean_widgets(inputValue=inputValue,
+                                                           defaultValue=True, 
+                                                           initValue=initValues,
+                                                           paramNameForErrorMsg=optionName)  
     
     return [None,False] # default output for unknown optionName
 
