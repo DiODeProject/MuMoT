@@ -1487,7 +1487,8 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                                              max = pop[2],
                                              step = pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
-                                             description = "State " + str(state),
+#                                              description = "State " + str(state),
+                                             description = "Reactant " + r'\(' + self._paramLabelDict.get(state,str(state)) + r'\)',
                                              style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
                 # disable last population widget (if there are more than 1)
