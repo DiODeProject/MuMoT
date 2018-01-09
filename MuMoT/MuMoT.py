@@ -5191,11 +5191,23 @@ class MuMoTstochasticSimulationView(MuMoTview):
     #                     for patch, color in zip(bplots['boxes'], [self._colors[state]]*len(timesteps)):
     #                         patch.set_facecolor(color)
     #                     bplot['boxes'].set_facecolor(self._colors[state])
-                        plt.setp(bplots['boxes'], color=self._colors[state])
-                        plt.setp(bplots['whiskers'], color=self._colors[state])
-                        plt.setp(bplots['caps'], color=self._colors[state])
-                        plt.setp(bplots['medians'], color='black')
-                        plt.setp(bplots['fliers'], color=self._colors[state], marker='x')
+                        #plt.setp(bplots['boxes'], color=self._colors[state])
+                        wdt = 2
+                        for box in bplots['boxes']:
+                            # change outline color
+                            box.set( color=self._colors[state], linewidth=wdt)
+                            #box.set( color='black', linewidth=2)
+                            # change fill color
+                            box.set( facecolor = 'None' )
+                            #box.set( facecolor = self._colors[state] )
+                        plt.setp(bplots['whiskers'], color=self._colors[state], linewidth=wdt)
+                        plt.setp(bplots['caps'], color=self._colors[state], linewidth=wdt)
+                        plt.setp(bplots['medians'], color=self._colors[state], linewidth=wdt)
+                        #plt.setp(bplots['fliers'], color=self._colors[state], marker='o', alpha=0.5)
+                        for flier in bplots['fliers']:
+                            flier.set_markerfacecolor(self._colors[state])
+                            flier.set_markeredgecolor("None")
+                            flier.set(marker='o', alpha=0.5)
                 
                     padding_x = self._maxTime/20
                     padding_y = y_max/20
