@@ -4090,10 +4090,10 @@ class MuMoTstreamView(MuMoTfieldView):
             plt.ylim(0,self._Y.max())
         
         if self._showSSANoise:
-            print(FixedPoints)
-            print(self._stateVariable1)
-            print(self._stateVariable2)
-            print(realEQsol)
+#             print(FixedPoints)
+#             print(self._stateVariable1)
+#             print(self._stateVariable2)
+#             print(realEQsol)
             for kk in range(len(realEQsol)):
                 # correcting issue when systemSize > 1
                 for react, val in realEQsol[kk].items():
@@ -4108,7 +4108,7 @@ class MuMoTstreamView(MuMoTfieldView):
                         #print("Skipping for out range")
                         break
                     for eigenV in EV[kk]:
-                        if eigenV > 0:
+                        if re(eigenV) > 0:
                             skip = True
                             #print("Skipping for positive eigenvalue")
                             break
@@ -4124,7 +4124,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 SSAView = MuMoTSSAView(self._mumotModel, None,
                                  params = self._get_params(),
                                  SSParams = {'maxTime': 2, 'runs': 20, 'realtimePlot': False, 'plotProportions': True, 'aggregateResults': True, 'visualisationType': 'final',
-                                             'final_x':'\\alpha', 'final_y':'B', 
+                                             'final_x':latex(self._stateVariable1), 'final_y':latex(self._stateVariable2), 
                                              'initialState': initState, 'randomSeed': np.random.randint(MAX_RANDOM_SEED)}, silent=True )
                 SSAView._figure = self._figure
                 SSAView._computeAndPlotSimulation()
@@ -5083,9 +5083,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 self._maxTime = SSParams["maxTime"]
                 self._randomSeed = SSParams["randomSeed"]
                 self._visualisationType = SSParams["visualisationType"]
-                final_x = str( process_sympy( SSParams.get("final_x",sorted(self._mumotModel._getAllReactants()[0],key=str)[0]) ) )
+                final_x = str( process_sympy( SSParams.get("final_x",latex(sorted(self._mumotModel._getAllReactants()[0],key=str)[0])) ) )
                 #if isinstance(final_x, str): final_x = process_sympy(final_x)
-                final_y = str( process_sympy( SSParams.get("final_y",sorted(self._mumotModel._getAllReactants()[0],key=str)[0]) ) )
+                final_y = str( process_sympy( SSParams.get("final_y",latex(sorted(self._mumotModel._getAllReactants()[0],key=str)[0])) ) )
                 #if isinstance(final_y, str): final_y = process_sympy(final_y)
                 self._finalViewAxes = (final_x,final_y)
                 self._plotProportions = SSParams["plotProportions"]
@@ -5586,8 +5586,15 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             logStr += ", showInteractions = " + str(self._showInteractions)
         logStr += ", visualisationType = '" + str(self._visualisationType) + "'"
         if self._visualisationType == 'final':
-            logStr += ", final_x = '" + str(self._finalViewAxes[0]) + "'"
-            logStr += ", final_y = '" + str(self._finalViewAxes[1]) + "'"
+            # these loops are necessary to return the latex() format of the reactant 
+            for reactant in self._mumotModel._getAllReactants()[0]:
+                if str(reactant) == self._finalViewAxes[0]:
+                    logStr += ", final_x = '" + latex(reactant).replace('\\', '\\\\') + "'"
+                    break
+            for reactant in self._mumotModel._getAllReactants()[0]:
+                if str(reactant) == self._finalViewAxes[1]:
+                    logStr += ", final_y = '" + latex(reactant).replace('\\', '\\\\') + "'"
+                    break
         logStr += ", plotProportions = " + str(self._plotProportions)
         logStr += ", realtimePlot = " + str(self._realtimePlot)
         logStr += ", runs = " + str(self._runs)
@@ -5620,8 +5627,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             MAParams['showInteractions'] = self._showInteractions
         MAParams["visualisationType"] = self._visualisationType
         if self._visualisationType == 'final':
-            MAParams['final_x'] = self._finalViewAxes[0]
-            MAParams['final_y'] = self._finalViewAxes[1]
+            # this loop is necessary to return the latex() format of the reactant 
+            for reactant in self._mumotModel._getAllReactants()[0]:
+                if str(reactant) == self._finalViewAxes[0]: MAParams['final_x'] = latex(reactant)
+                if str(reactant) == self._finalViewAxes[1]: MAParams['final_y'] = latex(reactant)
         MAParams["plotProportions"] = self._plotProportions
         MAParams["realtimePlot"] = self._realtimePlot
         MAParams["runs"] = self._runs
@@ -5811,10 +5820,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
     def _initGraph(self):
         numNodes=sum(self._currentState.values())
         if (self._netType == NetworkType.FULLY_CONNECTED):
-            print("Generating full graph")
+            #print("Generating full graph")
             self._graph = nx.complete_graph(numNodes) #np.repeat(0, self.numNodes)
         elif (self._netType == NetworkType.ERSOS_RENYI):
-            print("Generating Erdos-Renyi graph (connected)")
+            #print("Generating Erdos-Renyi graph (connected)")
             if self._netParam is not None and self._netParam > 0 and self._netParam <= 1: 
                 self._graph = nx.erdos_renyi_graph(numNodes, self._netParam, np.random.randint(MAX_RANDOM_SEED))
                 i = 0
@@ -5824,7 +5833,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                                "Please increase the network parameter value."
                         print(errorMsg)
                         raise ValueError(errorMsg)
-                    print("Graph was not connected; Resampling!")
+                    #print("Graph was not connected; Resampling!")
                     i = i+1
                     self._graph = nx.erdos_renyi_graph(numNodes, self._netParam, np.random.randint(MAX_RANDOM_SEED))
             else:
@@ -5832,7 +5841,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                 print(errorMsg)
                 raise ValueError(errorMsg)
         elif (self._netType == NetworkType.BARABASI_ALBERT):
-            print("Generating Barabasi-Albert graph")
+            #print("Generating Barabasi-Albert graph")
             netParam = int(self._netParam)
             if netParam is not None and netParam > 0 and netParam <= numNodes: 
                 self._graph = nx.barabasi_albert_graph(numNodes, netParam, np.random.randint(MAX_RANDOM_SEED))
@@ -6148,8 +6157,15 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
         logStr += ", randomSeed = " + str(self._randomSeed)
         logStr += ", visualisationType = '" + str(self._visualisationType) + "'"
         if self._visualisationType == 'final':
-            logStr += ", final_x = '" + str(self._finalViewAxes[0]) + "'"
-            logStr += ", final_y = '" + str(self._finalViewAxes[1]) + "'"
+            # these loops are necessary to return the latex() format of the reactant 
+            for reactant in self._mumotModel._getAllReactants()[0]:
+                if str(reactant) == self._finalViewAxes[0]:
+                    logStr += ", final_x = '" + latex(reactant).replace('\\', '\\\\') + "'"
+                    break
+            for reactant in self._mumotModel._getAllReactants()[0]:
+                if str(reactant) == self._finalViewAxes[1]:
+                    logStr += ", final_y = '" + latex(reactant).replace('\\', '\\\\') + "'"
+                    break
         logStr += ", plotProportions = " + str(self._plotProportions)
         logStr += ", realtimePlot = " + str(self._realtimePlot)
         logStr += ", runs = " + str(self._runs)
@@ -6175,8 +6191,10 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
         ssaParams["randomSeed"] = self._randomSeed
         ssaParams["visualisationType"] = self._visualisationType
         if self._visualisationType == 'final':
-            ssaParams['final_x'] = self._finalViewAxes[0]
-            ssaParams['final_y'] = self._finalViewAxes[1]
+            # this loop is necessary to return the latex() format of the reactant 
+            for reactant in self._mumotModel._getAllReactants()[0]:
+                if str(reactant) == self._finalViewAxes[0]: ssaParams['final_x'] = latex(reactant)
+                if str(reactant) == self._finalViewAxes[1]: ssaParams['final_y'] = latex(reactant)
         ssaParams["plotProportions"] = self._plotProportions
         ssaParams['realtimePlot']  = self._realtimePlot
         ssaParams['runs']  = self._runs
@@ -8133,6 +8151,10 @@ def _get_item_from_params_list(params, targetName):
             return param[1]
     return None
 
+## function to check if the user-specified values are within valid range (appropriate subfunctions are called depending on the parameter)
+## parameters for slider widgets return list of length 5 as [value, min, max, step, fixed]
+## parameters for boolean, dropbox, or input fields return list of lenght two as [value, fixed]
+## values is the initial value, (min,max,step) are for sliders, and fixed is a boolean that indciates if the parameter is fixed or the widget should be displayed
 def _format_advanced_option(optionName, inputValue, initValues, extraParam=None, extraParam2=None):
     if (optionName == 'initialState'):
         (allReactants, _) = extraParam
