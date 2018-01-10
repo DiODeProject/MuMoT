@@ -630,11 +630,11 @@ class MuMoTmodel:
                 else:
                     SOL_2ndOrdMomDict = None
                 
-                if SOL_2ndOrdMomDict == None:
-                    if substitutions == True:
-                        print('Noise in stream plots is only available for systems with exactly two time dependent reactants. Stream plot only works WITHOUT noise in case of reducing number of state variables from 3 to 2 via substitute() - method.')
-                    print('Warning: Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
-                    kwargs['showNoise'] = False
+#                 if SOL_2ndOrdMomDict == None:
+#                     if substitutions == True:
+#                         print('Noise in stream plots is only available for systems with exactly two time dependent reactants. Stream plot only works WITHOUT noise in case of reducing number of state variables from 3 to 2 via substitute() - method.')
+#                     print('Warning: Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
+#                     kwargs['showNoise'] = False
             else:
                 SOL_2ndOrdMomDict = None
             
@@ -738,7 +738,11 @@ class MuMoTmodel:
     ## @param[in] randomSeed random seed (type: int in range [0, MAX_RANDOM_SEED])
     ## @param[in] plotProportions flag to plot proportions or full populations (type: boolean)
     ## @param[in] realtimePlot flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation) (type: boolean)
-    ## @param[in] visualisationType type of visualisation (type: string in {'evo','graph','final'})
+    ## @param[in] visualisationType type of visualisation (type: string in {'evo','graph','final','barplot'})
+    ## @param[in] final_x which reactant is shown on x-axis when visualisation type is final
+    ## @param[in] final_y which reactant is shown on x-axis when visualisation type is final
+    ## @param[in] runs number of simulation runs to be executed
+    ## @param[in] aggregateResults flag to aggregate or not the results from several runs
     ## @param[in] netType type of network (type: string in {'full','erdos-renyi','barabasi-albert','dynamic'})
     ## @param[in] netParam property of the network ralated to connectivity. It varies depending on the netType (type: float)
     ## @param[in] motionCorrelatedness (active only for netType='dynamic') level of inertia in the random walk (type: float in [0,1]) with 0 completely uncorrelated random walk and 1 straight trajectories
@@ -814,7 +818,11 @@ class MuMoTmodel:
     ## @param[in] randomSeed random seed (type: int in range [0, MAX_RANDOM_SEED])
     ## @param[in] plotProportions flag to plot proportions or full populations (type: boolean)
     ## @param[in] realtimePlot flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation) (type: boolean)
-    ## @param[in] visualisationType type of visualisation (type: string in {'evo','final'})
+    ## @param[in] visualisationType type of visualisation (type: string in {'evo','final','barplot'})
+    ## @param[in] final_x which reactant is shown on x-axis when visualisation type is final
+    ## @param[in] final_y which reactant is shown on x-axis when visualisation type is final
+    ## @param[in] runs number of simulation runs to be executed
+    ## @param[in] aggregateResults flag to aggregate or not the results from several runs
     ## @param[in] initWidgets dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
     def SSA(self, initWidgets = {}, **kwargs):
         # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
@@ -1881,6 +1889,44 @@ class MuMoTview:
             return logStr
 
 
+    def _get_params(self, refModel = None):
+        if refModel is not None:
+            model = refModel
+        else:
+            model = self._mumotModel
+         
+        params = []
+         
+        paramInitCheck = []
+        for reactant in model._reactants:
+            if reactant not in model._constantReactants:
+                paramInitCheck.append(latex(Symbol('Phi^0_'+str(reactant))))
+                  
+        if self._controller:
+            for name, value in self._controller._widgetsFreeParams.items():
+#                 name = name.replace('\\', '\\\\')
+                if name in model._ratesLaTeX:
+                    name = model._ratesLaTeX[name]
+                name = name.replace('(', '')
+                name = name.replace(')', '')
+                if name not in paramInitCheck:
+                    #logStr += "('" + latex(name) + "', " + str(value.value) + "), "
+                    params.append( ( latex(name) , value.value ) )
+        if self._paramNames != None:
+            for name, value in zip(self._paramNames, self._paramValues):
+                if name == 'systemSize' or name == 'plotLimits': continue
+                name= repr(name)
+                if name in model._ratesLaTeX:
+                    name = model._ratesLaTeX[name]
+                name = name.replace('(', '')
+                name = name.replace(')', '')
+                #logStr += "('" + latex(name) + "', " + str(value) + "), "
+                params.append( ( latex(name) , value ) )
+        params.append( ( 'plotLimits' , self._getPlotLimits() ) )
+        params.append( ( 'systemSize' , self._getSystemSize() ) )
+                 
+        return params
+
     def _get_bookmarks_params(self, refModel = None):
         if refModel is not None:
             model = refModel
@@ -2326,6 +2372,7 @@ class MuMoTmultiController(MuMoTcontroller):
                 ep2 = None
                 if key=='initialState': ep1 = views[0]._mumotModel._getAllReactants() ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
                 if key=='visualisationType': ep1="multicontroller"
+                if key=='final_x' or key=='final_y': ep1=views[0]._mumotModel._getAllReactants()[0] ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
                 if key=='netParam': 
                     ep1= [kwargs.get('netType', self._widgetsExtraParams.get('netType') ), kwargs.get('netType') is not None] 
                     maxSysSize = 1
@@ -2361,7 +2408,7 @@ class MuMoTmultiController(MuMoTcontroller):
                     #update the values with the init values
                     if key in self._widgetsExtraParams:
                         if len(optionValues) == 5:
-                            self._widgetsExtraParams[key].max = float('inf') #temp to avoid exception min>max
+                            self._widgetsExtraParams[key].max = 10**7 #temp to avoid exception min>max
                             self._widgetsExtraParams[key].min = optionValues[1]
                             self._widgetsExtraParams[key].max = optionValues[2]
                             self._widgetsExtraParams[key].step = optionValues[3]
@@ -2369,7 +2416,7 @@ class MuMoTmultiController(MuMoTcontroller):
                         self._widgetsExtraParams[key].value = optionValues[0]
                     if key in self._widgetsPlotOnly:
                         if len(optionValues) == 5:
-                            self._widgetsPlotOnly[key].max = float('inf') #temp to avoid exception min>max
+                            self._widgetsPlotOnly[key].max = 10**7 #temp to avoid exception min>max
                             self._widgetsPlotOnly[key].min = optionValues[1]
                             self._widgetsPlotOnly[key].max = optionValues[2]
                             self._widgetsPlotOnly[key].step = optionValues[3]
@@ -3858,6 +3905,8 @@ class MuMoTstreamView(MuMoTfieldView):
     _SOL_2ndOrdMomDict = None
     ## set of all reactants
     _checkReactants = None
+    ## flag to run SSA simulations to compute noise ellipse
+    _showSSANoise = None
     ## set of all constant reactants to get intersection with _checkReactants
     _checkConstReactants = None
     
@@ -3866,6 +3915,10 @@ class MuMoTstreamView(MuMoTfieldView):
         #    self._showErrorMessage("Cannot construct field-based plot until system size is set, using substitute()")
         #    return
         self._SOL_2ndOrdMomDict = SOL_2ndOrd
+        if kwargs.get('showNoise',False) == True and self._SOL_2ndOrdMomDict is None:
+            self._showSSANoise = True
+        else:
+            self._showSSANoise = False
         #if self._SOL_2ndOrdMomDict == None:
         #    self._showErrorMessage('Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
 
@@ -3891,7 +3944,7 @@ class MuMoTstreamView(MuMoTfieldView):
         if len(checkReactants) != 2:
             self._showErrorMessage("Not implemented: This feature is available only for systems with exactly 2 time-dependent reactants!")
                         
-        if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None:
+        if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None or self._showSSANoise:
             Phi_stateVar1 = Symbol('Phi_'+str(self._stateVariable1)) 
             Phi_stateVar2 = Symbol('Phi_'+str(self._stateVariable2))
             eta_stateVar1 = Symbol('eta_'+str(self._stateVariable1)) 
@@ -3975,7 +4028,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 angle_ell_list.append(round(angle_ell_deg,5))
             projection_angle_list = [abs(projection_angle_list[kk]) if abs(projection_angle_list[kk]) <= N(pi/2) else N(pi)-abs(projection_angle_list[kk]) for kk in range(len(projection_angle_list))]
         
-        if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None:
+        if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None or self._showSSANoise:
             if self._mumotModel._constantSystemSize == True:
                 FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)], 
                              [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)]]
@@ -3999,7 +4052,7 @@ class MuMoTstreamView(MuMoTfieldView):
         
         else:
             FixedPoints=None   
-        
+            
         self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
         
         if self._speed is not None:
@@ -4035,6 +4088,46 @@ class MuMoTstreamView(MuMoTfieldView):
         else:
             plt.xlim(0,self._X.max())
             plt.ylim(0,self._Y.max())
+        
+        if self._showSSANoise:
+            print(FixedPoints)
+            print(self._stateVariable1)
+            print(self._stateVariable2)
+            print(realEQsol)
+            for kk in range(len(realEQsol)):
+                # correcting issue when systemSize > 1
+                for react, val in realEQsol[kk].items():
+                    realEQsol[kk][react] = val/self._getSystemSize()
+
+                #print("printing ellipse for point " + str(realEQsol[kk]) )
+                # skip values out of range [0,1]
+                skip = False
+                for p in realEQsol[kk].values():
+                    if p < 0 or p > 1:
+                        skip = True
+                        #print("Skipping for out range")
+                        break
+                    for eigenV in EV[kk]:
+                        if eigenV > 0:
+                            skip = True
+                            #print("Skipping for positive eigenvalue")
+                            break
+                    if skip: break
+                if skip: continue
+                # generate proper init reactant list
+                initState = copy.deepcopy(realEQsol[kk])
+                for reactant in self._mumotModel._getAllReactants()[0]:
+                    if reactant not in initState.keys():
+                        initState[reactant] = 1 - sum(initState.values())
+                #print(initState)
+                #print("Using params: " + str(self._get_params()))
+                SSAView = MuMoTSSAView(self._mumotModel, None,
+                                 params = self._get_params(),
+                                 SSParams = {'maxTime': 2, 'runs': 20, 'realtimePlot': False, 'plotProportions': True, 'aggregateResults': True, 'visualisationType': 'final',
+                                             'final_x':'\\alpha', 'final_y':'B', 
+                                             'initialState': initState, 'randomSeed': np.random.randint(MAX_RANDOM_SEED)}, silent=True )
+                SSAView._figure = self._figure
+                SSAView._computeAndPlotSimulation()
         
         _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, 
                            ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize)
@@ -4990,11 +5083,15 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 self._maxTime = SSParams["maxTime"]
                 self._randomSeed = SSParams["randomSeed"]
                 self._visualisationType = SSParams["visualisationType"]
-                self._finalViewAxes = (SSParams.get("final_x",sorted(self._mumotModel._getAllReactants()[0],key=str)[0]), SSParams.get("final_y",sorted(self._mumotModel._getAllReactants()[0],key=str)[0]))
+                final_x = str( process_sympy( SSParams.get("final_x",sorted(self._mumotModel._getAllReactants()[0],key=str)[0]) ) )
+                #if isinstance(final_x, str): final_x = process_sympy(final_x)
+                final_y = str( process_sympy( SSParams.get("final_y",sorted(self._mumotModel._getAllReactants()[0],key=str)[0]) ) )
+                #if isinstance(final_y, str): final_y = process_sympy(final_y)
+                self._finalViewAxes = (final_x,final_y)
                 self._plotProportions = SSParams["plotProportions"]
                 self._realtimePlot = SSParams.get('realtimePlot', False)
                 self._runs = SSParams.get('runs', 1)
-                self._runs = SSParams.get('aggregateResults', True)
+                self._aggregateResults = SSParams.get('aggregateResults', True)
             
             else:
                 # storing the initial state
@@ -5283,14 +5380,14 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             samples_y.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
                 samples = np.column_stack((samples_x, samples_y))
                 _plot_point_cov(samples, nstd=1, alpha=0.5, color='green')
-            #else:
-            for state in self._mumotModel._getAllReactants()[0]:
-                if str(state) == self._finalViewAxes[0]:
-                    for results in allResults:
-                        points_x.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
-                if str(state) == self._finalViewAxes[1]:
-                    for results in allResults:
-                        points_y.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
+            else:
+                for state in self._mumotModel._getAllReactants()[0]:
+                    if str(state) == self._finalViewAxes[0]:
+                        for results in allResults:
+                            points_x.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
+                    if str(state) == self._finalViewAxes[1]:
+                        for results in allResults:
+                            points_y.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
 
             #_fig_formatting_2D(xdata=[xdata], ydata=[ydata], curve_replot=False, xlab=self._finalViewAxes[0], ylab=self._finalViewAxes[1])
             plt.plot(points_x, points_y, 'ro')
@@ -5533,7 +5630,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
 #         for key,value in sorted(MAParams.items()):
 #             sortedDict += "'" + key + "': " + str(value) + ", "
 #         sortedDict += "}"
-        print( "mmt.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params().replace('\\','\\\\') + ", MAParams = " + str(MAParams) + " )")
+        print( "mmt.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params().replace('\\','\\\\') + ", SSParams = " + str(MAParams) + " )")
     
     ## reads the new parameters (in case they changed in the controller)
     ## this function should only update local parameters and not compute data
@@ -6085,7 +6182,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
         ssaParams['runs']  = self._runs
         ssaParams['aggregateResults']  = self._aggregateResults
         #str( list(self._ratesDict.items()) )
-        print( "mmt.MuMoTSSAView(<modelName>, None, " + str( self._get_bookmarks_params().replace('\\','\\\\') ) + ", ssaParams = " + str(ssaParams) + " )")
+        print( "mmt.MuMoTSSAView(<modelName>, None, " + str( self._get_bookmarks_params().replace('\\','\\\\') ) + ", SSParams = " + str(ssaParams) + " )")
             
     def _simulationStep(self): 
         # update transition probabilities accounting for the current state
