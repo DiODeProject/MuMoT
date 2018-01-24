@@ -4176,7 +4176,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 SSAView._computeAndPlotSimulation()
         
         _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, 
-                           ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize)
+                           ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatio='equal')
 #        plt.set_aspect('equal') ## @todo
 
         if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None:
@@ -4247,7 +4247,7 @@ class MuMoTvectorView(MuMoTfieldView):
                 plt.xlim(0,self._X.max())
                 plt.ylim(0,self._Y.max())
             _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
-                   ylab = self._ylab, fontsize=self._chooseFontSize)
+                   ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatio='equal')
     #        plt.set_aspect('equal') ## @todo
             if self._showFixedPoints==True:
                 with io.capture_output() as log:
@@ -7647,7 +7647,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
 def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None, 
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
-                       xlab=None, ylab=None, curvelab=None, **kwargs):
+                       xlab=None, ylab=None, curvelab=None, aspectRatio=None, **kwargs):
     #print(kwargs)
     
     linestyle_list = ['solid','dashed', 'dashdot', 'dotted', 'solid','dashed', 'dashdot', 'dotted', 'solid']
@@ -7999,6 +7999,11 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                     tick.label.set_fontsize(18) 
     for tick in ax.yaxis.get_major_ticks():
                     tick.label.set_fontsize(18)
+    
+    if aspectRatio:
+        if aspectRatio=='equal':
+            plt.axes().set_aspect('equal')                
+    
     plt.tight_layout() 
     
 def _decodeNetworkTypeFromString(netTypeStr):
