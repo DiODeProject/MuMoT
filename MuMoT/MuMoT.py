@@ -519,6 +519,11 @@ class MuMoTmodel:
         try:
             kwargs['showInitSV'] = True
             
+            if params:
+                for param in params:
+                    if param[0] == 'systemSize':
+                        kwargs['plotProportion'] = False
+            
             # construct controller
             viewController = self._controller(False, params = params, **kwargs)
  
@@ -1010,8 +1015,11 @@ class MuMoTmodel:
                     else:
                         initialInitCondValue = INITIAL_COND_INIT_VAL   
                     paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
-                        
-        systemSizeSlider = kwargs.get('showNoise', False)
+        
+        if kwargs.get('showNoise', False) == True or kwargs.get('plotProportion', True) == False:                 
+            systemSizeSlider = True #kwargs.get('showNoise', False)
+        else:
+            systemSizeSlider = False
         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, plotLimitsSlider, systemSizeSlider, params, **kwargs)
 
         return viewController
@@ -2022,14 +2030,25 @@ class MuMoTview:
         #for key in argDict:
         #    if key in self._mumotModel._constantReactants:
         #        argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
-                
+#          
+#         if self._mumotModel._systemSize:
+#             argDict[self._mumotModel._systemSize] = self._getSystemSize()
+#         else:
+#             systemSize = Symbol('systemSize')
+#             argDict[systemSize] = self._getSystemSize()
+
+
+
         if self._mumotModel._systemSize:
-            argDict[self._mumotModel._systemSize] = self._getSystemSize()
-        else:
-            systemSize = Symbol('systemSize')
-            argDict[systemSize] = self._getSystemSize()
+#             argDict[self._mumotModel._systemSize] = self._getSystemSize()
+# The following line of code should be used if it is compatible with ssa and multiagent  
+            argDict[self._mumotModel._systemSize] = 1
+
+        systemSize = Symbol('systemSize')
+        argDict[systemSize] = self._getSystemSize()
             
         return argDict
+    
     
     def _getInitCondsFromSlider(self):
         #if self._controller != None:
@@ -2881,13 +2900,14 @@ class MuMoTtimeEvolutionView(MuMoTview):
 class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
     ## y-label with default specific to this MuMoTtimeEvoStateVarView class (can be set via keyword)
     _ylab = None
+    ## if True: plots proportion; if False plots absolute numbers
+    _plotProportion = None
     
     def __init__(self, *args, **kwargs):
-        
+        self._plotProportion = kwargs.get('plotProportion', True)
         self._ylab = kwargs.get('ylab', r'evolution of states')
         super().__init__(*args, **kwargs)
         self._generatingCommand = "numSimStateVar"
-        
 
     def _plot_NumSolODE(self, _=None):
         super()._plot_NumSolODE()
@@ -2922,7 +2942,6 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         for nn in range(len(self._stateVarList)):
             SVi0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVarList[nn]))))]
             y0.append(SVi0)
-          
 #             
 #         SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
 #         SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
@@ -2946,7 +2965,22 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         #y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
         y_data = [sol_ODE_dict[str(self._stateVarListDisplay[kk])] for kk in range(len(self._stateVarListDisplay))]
         
-        c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
+        if self._plotProportion == False:
+            syst_Size = Symbol('systemSize')
+            sysS = syst_Size.subs(self._get_argDict())
+            #sysS = syst_Size.subs(self._getSystemSize())
+            sysS = N(sysS)
+            y_scaling = np.sum(np.asarray(y0))
+            if y_scaling > 0:
+                sysS = sysS/y_scaling
+            for nn in range(len(y_data)):
+                y_temp=np.copy(y_data[nn])
+                for kk in range(len(y_temp)):
+                    y_temp[kk] = y_temp[kk]*sysS
+                y_data[nn] = y_temp
+            c_labels = [r'$'+str(self._stateVarListDisplay[nn])+'$' for nn in range(len(self._stateVarListDisplay))]
+        else:
+            c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
         
 #         
 #         c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
@@ -2955,10 +2989,22 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
 #         if self._stateVariable4:
 #             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
 #         
-
         _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
                            fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
                            legend_fontsize=self._legend_fontsize)
+        
+        with io.capture_output() as log:
+            print('Last point on curve:')  
+            if self._plotProportion == False:
+                for nn in range(len(self._stateVarListDisplay)):
+                    out = latex(str(self._stateVarListDisplay[nn])) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
+                    display(Math(out))
+            else:
+                for nn in range(len(self._stateVarListDisplay)):
+                    out = latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
+                    display(Math(out))
+        self._logs.append(log)
+        
 #        plt.set_aspect('equal') ## @todo
 
 
@@ -3060,7 +3106,7 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
     
         
         
-    def _plot_NumSolODE(self):
+    def _plot_NumSolODE(self, _=None):
         super()._plot_NumSolODE()
         
         # check input
