@@ -517,12 +517,12 @@ class MuMoTmodel:
     def numSimStateVar(self, showStateVars = None, params = None, **kwargs):
     #def numSimStateVar(self, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, params = None, **kwargs):
         try:
-            kwargs['showInitSV'] = True
+            kwargs['showInitSV'] = kwargs.get('showInitSV', True)
             
-            if params:
-                for param in params:
-                    if param[0] == 'systemSize':
-                        kwargs['plotProportion'] = False
+            #if params:
+            #    for param in params:
+            #        if param[0] == 'systemSize':
+            #            kwargs['plotProportion'] = False
             
             # construct controller
             viewController = self._controller(False, params = params, **kwargs)
@@ -542,7 +542,7 @@ class MuMoTmodel:
     #def numSimNoiseCorrelations(self, showStateVars = None, params = None, **kwargs):
     def numSimNoiseCorrelations(self, params = None, **kwargs):
         try:
-            kwargs['showInitSV'] = True
+            kwargs['showInitSV'] = kwargs.get('showInitSV', True)
             kwargs['showNoise'] = True
             
             EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
@@ -681,14 +681,14 @@ class MuMoTmodel:
     ## construct interactive PyDSTool plot
     def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, params=None, **kwargs):
         try:
-            kwargs['showInitSV'] = True
+            kwargs['showInitSV'] = kwargs.get('showInitSV', True)
             
             if bifurcationParameter[0]=='\\':
                 bifPar = bifurcationParameter[1:]
             else:
                 bifPar = bifurcationParameter
             
-            kwargs['chooseBifParam'] = bifPar
+            kwargs['chooseBifParam'] = kwargs.get('showBifInitSlider', bifPar)
             
     
             # construct controller
@@ -2063,7 +2063,6 @@ class MuMoTview:
                 
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
-        
         return argDict
 
 
@@ -2935,6 +2934,16 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         time = np.linspace(0, self._tend, NrDP)
         
         initDict = self._getInitCondsFromSlider()
+        if len(initDict) == 0:
+            if self._initCondsSV:
+                for SV in self._initCondsSV:
+                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = self._initCondsSV[SV]
+            for SV in self._stateVarList:
+                if Symbol(latex(Symbol('Phi^0_'+str(SV)))) not in initDict:
+                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = INITIAL_COND_INIT_VAL   
+                
+            
+            
         #if len(initDict) < 2 or len(initDict) > 4:
         #    self._showErrorMessage("Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!")
 
@@ -2965,6 +2974,7 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         #y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
         y_data = [sol_ODE_dict[str(self._stateVarListDisplay[kk])] for kk in range(len(self._stateVarListDisplay))]
         
+        print(self._plotProportion)
         if self._plotProportion == False:
             syst_Size = Symbol('systemSize')
             sysS = syst_Size.subs(self._get_argDict())
@@ -3027,6 +3037,8 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
             for key in self._generatingKwargs:
                 if type(self._generatingKwargs[key]) == str:
                     logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                elif key == 'showInitSV':
+                    logStr += key + " = False, "
                 else:
                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
         logStr += "bookmark = False"
@@ -3135,6 +3147,14 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
         time = np.linspace(0, self._tend, NrDP)
         
         initDict = self._getInitCondsFromSlider()
+        if len(initDict) == 0:
+            if self._initCondsSV:
+                for SV in self._initCondsSV:
+                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = self._initCondsSV[SV]
+            for SV in self._stateVarList:
+                if Symbol(latex(Symbol('Phi^0_'+str(SV)))) not in initDict:
+                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = INITIAL_COND_INIT_VAL 
+                    
         
         SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
         SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
@@ -3390,6 +3410,8 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
             for key in self._generatingKwargs:
                 if type(self._generatingKwargs[key]) == str:
                     logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                elif key == 'showInitSV':
+                    logStr += key + " = False, "
                 else:
                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
         logStr += "bookmark = False"
@@ -4482,7 +4504,7 @@ class MuMoTbifurcationView(MuMoTview):
                  
                 #self._pyDSmodel.ics = initDictList[nn]
                 pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
-                pyDSode.set(ics =  initDictList[nn] ) 
+                pyDSode.set(ics =  initDictList[nn] )
                 pyDSode.set(pars = self._getBifParInitCondFromSlider())      
                 pyDScont = dst.ContClass(pyDSode)
                 EQ_iter = 1+nn
@@ -4684,13 +4706,24 @@ class MuMoTbifurcationView(MuMoTview):
         #    logStr += "'" + str(self._stateVarBif2) + "', "
         if includeParams:
             logStr += self._get_bookmarks_params() + ", "
+        if str(self._bifurcationParameter)+'_{init}' in logStr:
+            print('yes')
+            logStr = logStr.replace(str(self._bifurcationParameter)+'_{init}', str(self._bifurcationParameter), 1)
+        else:
+            print('no')
+            
         if len(self._generatingKwargs) > 0:
             for key in self._generatingKwargs:
                 if key == 'initCondsSV':
                     logStr += key + " = " + str(self._pyDSmodel_ics) + ", "
+                elif key == 'showInitSV':
+                    logStr += key + " = False, "
                 else:
-                    if key != 'chooseBifParam':
+                    if key != 'chooseBifParam' and key != 'BifParInit':
                         logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+
+                        
+        logStr += "showBifInitSlider = False, "        
         logStr += "bookmark = False"
         logStr += ")"
         logStr = logStr.replace('\\', '\\\\')
