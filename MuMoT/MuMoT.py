@@ -513,7 +513,12 @@ class MuMoTmodel:
     def numSimStateVar(self, showStateVars = None, params = None, **kwargs):
     #def numSimStateVar(self, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, params = None, **kwargs):
         try:
-            kwargs['showInitSV'] = True
+            kwargs['showInitSV'] = kwargs.get('showInitSV', True)
+            
+            #if params:
+            #    for param in params:
+            #        if param[0] == 'systemSize':
+            #            kwargs['plotProportion'] = False
             
             # construct controller
             viewController = self._controller(False, params = params, **kwargs)
@@ -533,7 +538,7 @@ class MuMoTmodel:
     #def numSimNoiseCorrelations(self, showStateVars = None, params = None, **kwargs):
     def numSimNoiseCorrelations(self, params = None, **kwargs):
         try:
-            kwargs['showInitSV'] = True
+            kwargs['showInitSV'] = kwargs.get('showInitSV', True)
             kwargs['showNoise'] = True
             
             EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
@@ -672,14 +677,14 @@ class MuMoTmodel:
     ## construct interactive PyDSTool plot
     def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, params=None, **kwargs):
         try:
-            kwargs['showInitSV'] = True
+            kwargs['showInitSV'] = kwargs.get('showInitSV', True)
             
             if bifurcationParameter[0]=='\\':
                 bifPar = bifurcationParameter[1:]
             else:
                 bifPar = bifurcationParameter
             
-            kwargs['chooseBifParam'] = bifPar
+            kwargs['chooseBifParam'] = kwargs.get('showBifInitSlider', bifPar)
             
     
             # construct controller
@@ -1006,8 +1011,11 @@ class MuMoTmodel:
                     else:
                         initialInitCondValue = INITIAL_COND_INIT_VAL   
                     paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
-                        
-        systemSizeSlider = kwargs.get('showNoise', False)
+        
+        if kwargs.get('showNoise', False) == True or kwargs.get('plotProportion', True) == False:                 
+            systemSizeSlider = True #kwargs.get('showNoise', False)
+        else:
+            systemSizeSlider = False
         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, plotLimitsSlider, systemSizeSlider, params, **kwargs)
 
         return viewController
@@ -2018,14 +2026,25 @@ class MuMoTview:
         #for key in argDict:
         #    if key in self._mumotModel._constantReactants:
         #        argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
-                
+#          
+#         if self._mumotModel._systemSize:
+#             argDict[self._mumotModel._systemSize] = self._getSystemSize()
+#         else:
+#             systemSize = Symbol('systemSize')
+#             argDict[systemSize] = self._getSystemSize()
+
+
+
         if self._mumotModel._systemSize:
-            argDict[self._mumotModel._systemSize] = self._getSystemSize()
-        else:
-            systemSize = Symbol('systemSize')
-            argDict[systemSize] = self._getSystemSize()
+#             argDict[self._mumotModel._systemSize] = self._getSystemSize()
+# The following line of code should be used if it is compatible with ssa and multiagent  
+            argDict[self._mumotModel._systemSize] = 1
+
+        systemSize = Symbol('systemSize')
+        argDict[systemSize] = self._getSystemSize()
             
         return argDict
+    
     
     def _getInitCondsFromSlider(self):
         #if self._controller != None:
@@ -2040,7 +2059,6 @@ class MuMoTview:
                 
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
-        
         return argDict
 
 
@@ -2877,13 +2895,14 @@ class MuMoTtimeEvolutionView(MuMoTview):
 class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
     ## y-label with default specific to this MuMoTtimeEvoStateVarView class (can be set via keyword)
     _ylab = None
+    ## if True: plots proportion; if False plots absolute numbers
+    _plotProportion = None
     
     def __init__(self, *args, **kwargs):
-        
+        self._plotProportion = kwargs.get('plotProportion', True)
         self._ylab = kwargs.get('ylab', r'evolution of states')
         super().__init__(*args, **kwargs)
         self._generatingCommand = "numSimStateVar"
-        
 
     def _plot_NumSolODE(self, _=None):
         super()._plot_NumSolODE()
@@ -2911,6 +2930,16 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         time = np.linspace(0, self._tend, NrDP)
         
         initDict = self._getInitCondsFromSlider()
+        if len(initDict) == 0:
+            if self._initCondsSV:
+                for SV in self._initCondsSV:
+                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = self._initCondsSV[SV]
+            for SV in self._stateVarList:
+                if Symbol(latex(Symbol('Phi^0_'+str(SV)))) not in initDict:
+                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = INITIAL_COND_INIT_VAL   
+                
+            
+            
         #if len(initDict) < 2 or len(initDict) > 4:
         #    self._showErrorMessage("Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!")
 
@@ -2918,7 +2947,6 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         for nn in range(len(self._stateVarList)):
             SVi0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVarList[nn]))))]
             y0.append(SVi0)
-          
 #             
 #         SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
 #         SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
@@ -2942,7 +2970,23 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         #y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
         y_data = [sol_ODE_dict[str(self._stateVarListDisplay[kk])] for kk in range(len(self._stateVarListDisplay))]
         
-        c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
+        print(self._plotProportion)
+        if self._plotProportion == False:
+            syst_Size = Symbol('systemSize')
+            sysS = syst_Size.subs(self._get_argDict())
+            #sysS = syst_Size.subs(self._getSystemSize())
+            sysS = N(sysS)
+            y_scaling = np.sum(np.asarray(y0))
+            if y_scaling > 0:
+                sysS = sysS/y_scaling
+            for nn in range(len(y_data)):
+                y_temp=np.copy(y_data[nn])
+                for kk in range(len(y_temp)):
+                    y_temp[kk] = y_temp[kk]*sysS
+                y_data[nn] = y_temp
+            c_labels = [r'$'+str(self._stateVarListDisplay[nn])+'$' for nn in range(len(self._stateVarListDisplay))]
+        else:
+            c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
         
 #         
 #         c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
@@ -2951,10 +2995,22 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
 #         if self._stateVariable4:
 #             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
 #         
-
         _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
                            fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
                            legend_fontsize=self._legend_fontsize)
+        
+        with io.capture_output() as log:
+            print('Last point on curve:')  
+            if self._plotProportion == False:
+                for nn in range(len(self._stateVarListDisplay)):
+                    out = latex(str(self._stateVarListDisplay[nn])) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
+                    display(Math(out))
+            else:
+                for nn in range(len(self._stateVarListDisplay)):
+                    out = latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
+                    display(Math(out))
+        self._logs.append(log)
+        
 #        plt.set_aspect('equal') ## @todo
 
 
@@ -2977,6 +3033,8 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
             for key in self._generatingKwargs:
                 if type(self._generatingKwargs[key]) == str:
                     logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                elif key == 'showInitSV':
+                    logStr += key + " = False, "
                 else:
                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
         logStr += "bookmark = False"
@@ -3056,7 +3114,7 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
     
         
         
-    def _plot_NumSolODE(self):
+    def _plot_NumSolODE(self, _=None):
         super()._plot_NumSolODE()
         
         # check input
@@ -3085,6 +3143,14 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
         time = np.linspace(0, self._tend, NrDP)
         
         initDict = self._getInitCondsFromSlider()
+        if len(initDict) == 0:
+            if self._initCondsSV:
+                for SV in self._initCondsSV:
+                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = self._initCondsSV[SV]
+            for SV in self._stateVarList:
+                if Symbol(latex(Symbol('Phi^0_'+str(SV)))) not in initDict:
+                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = INITIAL_COND_INIT_VAL 
+                    
         
         SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
         SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
@@ -3340,6 +3406,8 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
             for key in self._generatingKwargs:
                 if type(self._generatingKwargs[key]) == str:
                     logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                elif key == 'showInitSV':
+                    logStr += key + " = False, "
                 else:
                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
         logStr += "bookmark = False"
@@ -4126,7 +4194,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 SSAView._computeAndPlotSimulation()
         
         _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, 
-                           ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize)
+                           ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatio='equal')
 #        plt.set_aspect('equal') ## @todo
 
         if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None:
@@ -4197,7 +4265,7 @@ class MuMoTvectorView(MuMoTfieldView):
                 plt.xlim(0,self._X.max())
                 plt.ylim(0,self._Y.max())
             _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
-                   ylab = self._ylab, fontsize=self._chooseFontSize)
+                   ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatio='equal')
     #        plt.set_aspect('equal') ## @todo
             if self._showFixedPoints==True:
                 with io.capture_output() as log:
@@ -4432,7 +4500,7 @@ class MuMoTbifurcationView(MuMoTview):
                  
                 #self._pyDSmodel.ics = initDictList[nn]
                 pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
-                pyDSode.set(ics =  initDictList[nn] ) 
+                pyDSode.set(ics =  initDictList[nn] )
                 pyDSode.set(pars = self._getBifParInitCondFromSlider())      
                 pyDScont = dst.ContClass(pyDSode)
                 EQ_iter = 1+nn
@@ -4634,13 +4702,24 @@ class MuMoTbifurcationView(MuMoTview):
         #    logStr += "'" + str(self._stateVarBif2) + "', "
         if includeParams:
             logStr += self._get_bookmarks_params() + ", "
+        if str(self._bifurcationParameter)+'_{init}' in logStr:
+            print('yes')
+            logStr = logStr.replace(str(self._bifurcationParameter)+'_{init}', str(self._bifurcationParameter), 1)
+        else:
+            print('no')
+            
         if len(self._generatingKwargs) > 0:
             for key in self._generatingKwargs:
                 if key == 'initCondsSV':
                     logStr += key + " = " + str(self._pyDSmodel_ics) + ", "
+                elif key == 'showInitSV':
+                    logStr += key + " = False, "
                 else:
-                    if key != 'chooseBifParam':
+                    if key != 'chooseBifParam' and key != 'BifParInit':
                         logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+
+                        
+        logStr += "showBifInitSlider = False, "        
         logStr += "bookmark = False"
         logStr += ")"
         logStr = logStr.replace('\\', '\\\\')
@@ -7597,7 +7676,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
 def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None, 
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
-                       xlab=None, ylab=None, curvelab=None, **kwargs):
+                       xlab=None, ylab=None, curvelab=None, aspectRatio=None, **kwargs):
     #print(kwargs)
     
     linestyle_list = ['solid','dashed', 'dashdot', 'dotted', 'solid','dashed', 'dashdot', 'dotted', 'solid']
@@ -7949,6 +8028,11 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                     tick.label.set_fontsize(18) 
     for tick in ax.yaxis.get_major_ticks():
                     tick.label.set_fontsize(18)
+    
+    if aspectRatio:
+        if aspectRatio=='equal':
+            plt.axes().set_aspect('equal')                
+    
     plt.tight_layout() 
     
 def _decodeNetworkTypeFromString(netTypeStr):
