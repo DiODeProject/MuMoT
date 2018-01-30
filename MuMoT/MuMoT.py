@@ -5528,8 +5528,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
             xpos = np.arange(len( self._initialState.keys() ))  # the x locations for the bars
             width = 1       # the width of the bars
             plt.bar(xpos, finaldata, width, color=colors, yerr=stdev, ecolor='black')
-            plt.axes().set_xticks(xpos + width / 2)
-            plt.axes().set_xticklabels(sorted(self._initialState.keys(), key=str))
+            ax = plt.gca()
+            ax.set_xticks(xpos + width / 2)
+            ax.set_xticklabels(sorted(self._initialState.keys(), key=str))
             _fig_formatting_2D(figure=self._figure, xlab="Reactants", ylab="Population proportion" if self._plotProportions else "Population size", aspectRatioEqual=False)
         # update the figure
         if not self._silent:
