@@ -2974,7 +2974,6 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         #y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
         y_data = [sol_ODE_dict[str(self._stateVarListDisplay[kk])] for kk in range(len(self._stateVarListDisplay))]
         
-        print(self._plotProportion)
         if self._plotProportion == False:
             syst_Size = Symbol('systemSize')
             sysS = syst_Size.subs(self._get_argDict())
@@ -4198,7 +4197,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 SSAView._computeAndPlotSimulation()
         
         _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, 
-                           ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatio='equal')
+                           ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatioEqual=True)
 #        plt.set_aspect('equal') ## @todo
 
         if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None:
@@ -4269,7 +4268,7 @@ class MuMoTvectorView(MuMoTfieldView):
                 plt.xlim(0,self._X.max())
                 plt.ylim(0,self._Y.max())
             _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
-                   ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatio='equal')
+                   ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatioEqual=True)
     #        plt.set_aspect('equal') ## @todo
             if self._showFixedPoints==True:
                 with io.capture_output() as log:
@@ -4366,6 +4365,7 @@ class MuMoTbifurcationView(MuMoTview):
     def __init__(self, model, controller, bifurcationParameter, stateVarExpr1, stateVarExpr2 = None, 
                  figure = None, params = None, **kwargs):
         
+        silent = kwargs.get('silent', False)
         super().__init__(model, controller, figure, params, **kwargs)
         self._generatingCommand = "bifurcation"
 
@@ -4427,16 +4427,27 @@ class MuMoTbifurcationView(MuMoTview):
         self._logs.append(log)
         
         #self._plottingMethod = kwargs.get('plottingMethod', 'mumot')
-        self._plot_bifurcation()     
+        if not self._silent:
+            self._plot_bifurcation()     
 
     def _plot_bifurcation(self, _=None):
-        if not(self._silent): ## @todo is this necessary?
-            #plt.close()
-            #plt.clf()
-            #plt.gcf()
-            plt.figure(self._figureNum)
-            plt.clf()
-            self._resetErrorMessage()
+        self._initFigure()
+        
+        #if not(self._silent): ## @todo is this necessary?
+        #    plt.figure(self._figureNum)
+        #    plt.clf()
+        #    self._resetErrorMessage()
+        #self._showErrorMessage(str(self))
+        
+        
+#         if not(self._silent): ## @todo is this necessary?
+#             #plt.close()
+#             #plt.clf()
+#             #plt.gcf()
+#             plt.figure(self._figureNum)
+#             plt.clf()
+#             self._resetErrorMessage()
+
         #self._showErrorMessage(str(self))
         #self._resetErrorMessage()
         #plt.figure(self._figureNum)
@@ -4683,6 +4694,17 @@ class MuMoTbifurcationView(MuMoTview):
                 return None
 
         self._logs.append(log)
+        
+        
+        
+    def _initFigure(self):
+        if not self._silent:
+            plt.figure(self._figureNum)
+            plt.clf()
+            self._resetErrorMessage()
+        self._showErrorMessage(str(self))
+        
+        
 
     ## utility function to mangle variable names in equations so they are accepted by PyDStool
     def _pydstoolify(self, equation):
@@ -4707,10 +4729,7 @@ class MuMoTbifurcationView(MuMoTview):
         if includeParams:
             logStr += self._get_bookmarks_params() + ", "
         if str(self._bifurcationParameter)+'_{init}' in logStr:
-            print('yes')
             logStr = logStr.replace(str(self._bifurcationParameter)+'_{init}', str(self._bifurcationParameter), 1)
-        else:
-            print('no')
             
         if len(self._generatingKwargs) > 0:
             for key in self._generatingKwargs:
@@ -7680,7 +7699,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
 def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None, 
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
-                       xlab=None, ylab=None, curvelab=None, aspectRatio=None, **kwargs):
+                       xlab=None, ylab=None, curvelab=None, aspectRatioEqual=False, **kwargs):
     #print(kwargs)
     
     linestyle_list = ['solid','dashed', 'dashdot', 'dotted', 'solid','dashed', 'dashdot', 'dotted', 'solid']
@@ -8031,13 +8050,12 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     for tick in ax.xaxis.get_major_ticks():
                     tick.label.set_fontsize(18) 
     for tick in ax.yaxis.get_major_ticks():
-                    tick.label.set_fontsize(18)
-    
-    if aspectRatio:
-        if aspectRatio=='equal':
-            plt.axes().set_aspect('equal')                
+                    tick.label.set_fontsize(18)               
     
     plt.tight_layout() 
+    
+    if aspectRatioEqual:
+        ax.set_aspect('equal') 
     
 def _decodeNetworkTypeFromString(netTypeStr):
     # init the network type
