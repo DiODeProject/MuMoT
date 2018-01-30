@@ -5435,7 +5435,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 markers = [plt.Line2D([0,0],[0,0],color=color, marker='s', linestyle='', markersize=15) for color in self._colors.values()]
                 plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0., numpoints=1)
                 
-                _fig_formatting_2D(figure=self._figure, xlab="Time", ylab="Reactants", choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y) )
+                _fig_formatting_2D(figure=self._figure, xlab="Time", ylab="Reactants", choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False )
                 plt.ylim((0-padding_y, y_max+padding_y))
                 plt.xlim((0-padding_x, self._maxTime+padding_x))
                  
@@ -5451,7 +5451,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                     
                     yrange = max(y_max, max(ytmp))
                     ydata.append(ytmp)
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, yrange) )
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, yrange), aspectRatioEqual=False )
 
         elif (self._visualisationType == "final"):
             points_x = []
@@ -5489,7 +5489,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
 
             #_fig_formatting_2D(xdata=[xdata], ydata=[ydata], curve_replot=False, xlab=self._finalViewAxes[0], ylab=self._finalViewAxes[1])
             plt.plot(points_x, points_y, 'ro')
-            _fig_formatting_2D(figure=self._figure)
+            _fig_formatting_2D(figure=self._figure, aspectRatioEqual=True, xlab=self._finalViewAxes[0], ylab=self._finalViewAxes[1])
         elif (self._visualisationType == "barplot"):
             self._initFigure()
             
@@ -5528,9 +5528,10 @@ class MuMoTstochasticSimulationView(MuMoTview):
             xpos = np.arange(len( self._initialState.keys() ))  # the x locations for the bars
             width = 1       # the width of the bars
             plt.bar(xpos, finaldata, width, color=colors, yerr=stdev, ecolor='black')
-            plt.axes().set_xticks(xpos + width / 2)
-            plt.axes().set_xticklabels(sorted(self._initialState.keys(), key=str))
-            _fig_formatting_2D(figure=self._figure, xlab="Reactants", ylab="Population proportion" if self._plotProportions else "Population size")
+            ax = plt.gca()
+            ax.set_xticks(xpos + width / 2)
+            ax.set_xticklabels(sorted(self._initialState.keys(), key=str))
+            _fig_formatting_2D(figure=self._figure, xlab="Reactants", ylab="Population proportion" if self._plotProportions else "Population size", aspectRatioEqual=False)
         # update the figure
         if not self._silent:
             self._figure.canvas.draw()
@@ -5548,7 +5549,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
             plt.clf()
 
         if (self._visualisationType == 'evo'):
-            plt.axes().set_aspect('auto')
+            #plt.axes().set_aspect('auto')
+            pass
             # create the frame
             #self._plot.axis([0, self._maxTime, 0, totAgents])
             #plt.xlim((0, self._maxTime))
@@ -5557,18 +5559,18 @@ class MuMoTstochasticSimulationView(MuMoTview):
             #y_max = 1.0 if self._plotProportions else self._systemSize
             #_fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent), choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max) )
         elif (self._visualisationType == "final"):
-            plt.axes().set_aspect('equal')
+            #plt.axes().set_aspect('equal')
             if self._plotProportions:           
                 plt.xlim((0, 1.0))
                 plt.ylim((0, 1.0))
             else:
                 plt.xlim((0, self._systemSize))
                 plt.ylim((0, self._systemSize))
-            plt.axes().set_xlabel(self._finalViewAxes[0])
-            plt.axes().set_ylabel(self._finalViewAxes[1])
+            #plt.axes().set_xlabel(self._finalViewAxes[0])
+            #plt.axes().set_ylabel(self._finalViewAxes[1])
         elif (self._visualisationType == "barplot"):
-#             plt.axes().set_aspect('equal') #for piechart
-            plt.axes().set_aspect('auto') # for barchart
+            #plt.axes().set_aspect('equal') #for piechart
+            #plt.axes().set_aspect('auto') # for barchart
             if self._plotProportions:                
                 plt.ylim((0, 1.0))
             else:
@@ -5769,7 +5771,9 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
     def _initFigure(self):
         super()._initFigure()
         if self._visualisationType == "graph": 
-            plt.axes().set_aspect('equal')
+            #plt.axes().set_aspect('equal')
+            ax = plt.gca()
+            ax.set_aspect('equal')
     
     #def _updateSimultationFigure(self, evo, fullPlot=True):
     def _updateSimultationFigure(self, allResults, fullPlot=True, currentEvo=None):
