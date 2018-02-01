@@ -12,7 +12,7 @@ You need to install the following tools: PyDSTool, graphviz (graph visualization
 
 * `pip install pydstool`
 * `pip install graphviz`
-* `pip install antlr4-python3-runtime=4.5.3`
+* `pip install antlr4-python3-runtime==4.5.3`
 
 # Test
 To test your installation run the `MuMoTdemo.ipynb` and `MuMoTtest.ipynb` notebooks.
