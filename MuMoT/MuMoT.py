@@ -14,50 +14,47 @@
 #  graphviz (pip install graphviz; graphviz http://www.graphviz.org/Download.php)
 """
 
-from IPython.display import display, clear_output, Math, Latex, Javascript
+# Core imports (sorted order)
+import ast
+import copy
+import datetime
+import json
+import math
+import numbers
+import os
+import sys
+import tempfile
+import warnings
+from bisect import bisect_left
+from enum import Enum
+from math import floor, log10
+
+# Third-party imports (sorted order)
 import ipywidgets.widgets as widgets
-#import ipywidgets.trait_types.traitlets.TraitError
-from matplotlib import pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.patches as mpatch
+import matplotlib.ticker as ticker
+from mpl_toolkits.mplot3d import Axes3D
+import networkx as nx  # @UnresolvedImport
 import numpy as np
-from scipy.integrate import odeint
-from sympy import *
-import math
 import PyDSTool as dst
 from graphviz import Digraph
-from process_latex.process_latex import process_sympy # was `from process_latex import process_sympy` before packaging for pip
-import tempfile
-import os
-import copy
-from pyexpat import model
-from idlelib.textView import view_file
+from IPython.display import Javascript, Math, display
 from IPython.utils import io
-import datetime
-import warnings
+from latex2sympy.process_latex import process_sympy
+from matplotlib import pyplot as plt
 from matplotlib.cbook import MatplotlibDeprecationWarning
 from mpl_toolkits.mplot3d import axes3d
-import networkx as nx #@UnresolvedImport
-from enum import Enum
-import json
-import sys
-import numbers
-from bisect import bisect_left
+from scipy.integrate import odeint
+from sympy import *
 
-import matplotlib.ticker as ticker
-from math import log10, floor
-from matplotlib.pyplot import plot
-
-#from matplotlib.offsetbox import kwargs
-#from __builtin__ import None
-#from numpy.oldnumeric.fix_default_axis import _args3
-#from matplotlib.offsetbox import kwargs
-
-
+# Local imports? (sorted order)
+#from pyexpat import model
 
 get_ipython().magic('alias_magic model latex')
 get_ipython().magic('matplotlib nbagg')
 
+# Global variables
 figureCounter = 1 # global figure counter for model views
 
 MAX_RANDOM_SEED = 4294967295
@@ -69,7 +66,6 @@ EMPTYSET_SYMBOL = process_sympy('1')
 
 INITIAL_COND_INIT_VAL = 0.0
 INITIAL_COND_INIT_BOUND = 1.0
-
 
 line_color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
 
