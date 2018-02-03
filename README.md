@@ -7,13 +7,14 @@ Repository should contain following files/folders:
 * `MuMoT/MuMoT.py` (main functionality)
 * `MuMoTtest.py` and other demo files
 
-## Installation
+## Installation of a development build
 
 Clone this repository then install using
 
 ```sh
 $ pip install --process-dependency-link path/to/clone
 ```
+
 If you are wanting to use MuMoT in a Jupyter Notebook with ipywidgets, ensure `jupyter` is installed then run:
 
 ```sh
@@ -21,6 +22,7 @@ $ jupyter nbextension enable --py --sys-prefix widgetsnbextension
 ```
 
 # Test
+
 To test your installation run the `MuMoTdemo.ipynb` and `MuMoTtest.ipynb` notebooks.
 
 # Documentation

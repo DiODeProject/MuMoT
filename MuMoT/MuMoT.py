@@ -2970,7 +2970,6 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
         #y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
         y_data = [sol_ODE_dict[str(self._stateVarListDisplay[kk])] for kk in range(len(self._stateVarListDisplay))]
         
-        print(self._plotProportion)
         if self._plotProportion == False:
             syst_Size = Symbol('systemSize')
             sysS = syst_Size.subs(self._get_argDict())
@@ -4137,7 +4136,7 @@ class MuMoTstreamView(MuMoTfieldView):
             ax = plt.gca()
             for kk in range(len(ells)):
                 ax.add_artist(ells[kk])
-                ells[kk].set_alpha(0.25)
+                ells[kk].set_alpha(0.5)
                 if re(EVplot[kk][0]) < 0 and re(EVplot[kk][1]) < 0:
                     Fcolor = line_color_list[1]
                 elif re(EVplot[kk][0]) > 0 and re(EVplot[kk][1]) > 0:
@@ -4159,12 +4158,8 @@ class MuMoTstreamView(MuMoTfieldView):
 #             print(self._stateVariable2)
 #             print(realEQsol)
             for kk in range(len(realEQsol)):
-                # correcting issue when systemSize > 1
-                for react, val in realEQsol[kk].items():
-                    realEQsol[kk][react] = val/self._getSystemSize()
-
                 #print("printing ellipse for point " + str(realEQsol[kk]) )
-                # skip values out of range [0,1]
+                # skip values out of range [0,1] and unstable equilibria
                 skip = False
                 for p in realEQsol[kk].values():
                     if p < 0 or p > 1:
@@ -4190,11 +4185,12 @@ class MuMoTstreamView(MuMoTfieldView):
                                  SSParams = {'maxTime': 2, 'runs': 20, 'realtimePlot': False, 'plotProportions': True, 'aggregateResults': True, 'visualisationType': 'final',
                                              'final_x':latex(self._stateVariable1), 'final_y':latex(self._stateVariable2), 
                                              'initialState': initState, 'randomSeed': np.random.randint(MAX_RANDOM_SEED)}, silent=True )
+                #print(SSAView._printStandaloneViewCmd())
                 SSAView._figure = self._figure
                 SSAView._computeAndPlotSimulation()
         
         _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, 
-                           ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatio='equal')
+                           ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatioEqual=True)
 #        plt.set_aspect('equal') ## @todo
 
         if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None:
@@ -4265,7 +4261,7 @@ class MuMoTvectorView(MuMoTfieldView):
                 plt.xlim(0,self._X.max())
                 plt.ylim(0,self._Y.max())
             _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
-                   ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatio='equal')
+                   ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatioEqual=True)
     #        plt.set_aspect('equal') ## @todo
             if self._showFixedPoints==True:
                 with io.capture_output() as log:
@@ -4362,6 +4358,7 @@ class MuMoTbifurcationView(MuMoTview):
     def __init__(self, model, controller, bifurcationParameter, stateVarExpr1, stateVarExpr2 = None, 
                  figure = None, params = None, **kwargs):
         
+        silent = kwargs.get('silent', False)
         super().__init__(model, controller, figure, params, **kwargs)
         self._generatingCommand = "bifurcation"
 
@@ -4423,16 +4420,27 @@ class MuMoTbifurcationView(MuMoTview):
         self._logs.append(log)
         
         #self._plottingMethod = kwargs.get('plottingMethod', 'mumot')
-        self._plot_bifurcation()     
+        if not self._silent:
+            self._plot_bifurcation()     
 
     def _plot_bifurcation(self, _=None):
-        if not(self._silent): ## @todo is this necessary?
-            #plt.close()
-            #plt.clf()
-            #plt.gcf()
-            plt.figure(self._figureNum)
-            plt.clf()
-            self._resetErrorMessage()
+        self._initFigure()
+        
+        #if not(self._silent): ## @todo is this necessary?
+        #    plt.figure(self._figureNum)
+        #    plt.clf()
+        #    self._resetErrorMessage()
+        #self._showErrorMessage(str(self))
+        
+        
+#         if not(self._silent): ## @todo is this necessary?
+#             #plt.close()
+#             #plt.clf()
+#             #plt.gcf()
+#             plt.figure(self._figureNum)
+#             plt.clf()
+#             self._resetErrorMessage()
+
         #self._showErrorMessage(str(self))
         #self._resetErrorMessage()
         #plt.figure(self._figureNum)
@@ -4679,6 +4687,17 @@ class MuMoTbifurcationView(MuMoTview):
                 return None
 
         self._logs.append(log)
+        
+        
+        
+    def _initFigure(self):
+        if not self._silent:
+            plt.figure(self._figureNum)
+            plt.clf()
+            self._resetErrorMessage()
+        self._showErrorMessage(str(self))
+        
+        
 
     ## utility function to mangle variable names in equations so they are accepted by PyDStool
     def _pydstoolify(self, equation):
@@ -4703,10 +4722,7 @@ class MuMoTbifurcationView(MuMoTview):
         if includeParams:
             logStr += self._get_bookmarks_params() + ", "
         if str(self._bifurcationParameter)+'_{init}' in logStr:
-            print('yes')
             logStr = logStr.replace(str(self._bifurcationParameter)+'_{init}', str(self._bifurcationParameter), 1)
-        else:
-            print('no')
             
         if len(self._generatingKwargs) > 0:
             for key in self._generatingKwargs:
@@ -5216,7 +5232,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
             
             self._latestResults = []
             for r in range(self._runs):
-                self._latestResults.append( self._runSingleSimulation(self._randomSeed+r) )
+                runID = "[" + str(r+1) + "/" + str(self._runs) + "] " if self._runs > 1 else ''
+                self._latestResults.append( self._runSingleSimulation(self._randomSeed+r, runID=runID) )
             
             ## Final Plot
             if not self._realtimePlot or self._aggregateResults:
@@ -5293,7 +5310,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
         # initialise time
         self._t = 0
     
-    def _runSingleSimulation(self, randomSeed):
+    def _runSingleSimulation(self, randomSeed, runID=''):
         # init the random seed
         np.random.seed(randomSeed)
         
@@ -5302,7 +5319,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
         while self._t < self._maxTime:
             # update progress bar
             self._progressBar.value = self._t
-            self._progressBar.description = "Loading " + str(round(self._t/self._maxTime*100)) + "%:"
+            self._progressBar.description = "Loading " + runID + str(round(self._t/self._maxTime*100)) + "%:"
              
             timeInterval,self._currentState = self._simulationStep()
             # increment time
@@ -5409,10 +5426,10 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 for state in sorted(self._initialState.keys(), key=str):
                     labels.append(state)
                 # plot legend
-                markers = [plt.Line2D([0,0],[0,0],color=color, marker='s', linestyle='', markersize=15) for color in self._colors.values()]
-                plt.legend(markers, self._colors.keys(), bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0., numpoints=1)
+                markers = [plt.Line2D([0,0],[0,0],color=color, marker='s', linestyle='', markersize=10) for color in self._colors.values()]
+                plt.legend(markers, self._colors.keys(), loc='upper right', borderaxespad=0., numpoints=1) #bbox_to_anchor=(0.885, 1),
                 
-                _fig_formatting_2D(figure=self._figure, xlab="Time", ylab="Reactants", choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y) )
+                _fig_formatting_2D(figure=self._figure, xlab="Time", ylab="Reactants", choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False )
                 plt.ylim((0-padding_y, y_max+padding_y))
                 plt.xlim((0-padding_x, self._maxTime+padding_x))
                  
@@ -5425,10 +5442,22 @@ class MuMoTstochasticSimulationView(MuMoTview):
                     # modify if plotProportions
                     ytmp = [y / self._systemSize for y in currentEvo[state][-2:] ] if self._plotProportions else currentEvo[state][-2:]
                     y_max = 1.0 if self._plotProportions else self._systemSize
-                    
-                    yrange = max(y_max, max(ytmp))
+                     
+                    y_max = max(y_max, max(ytmp))
                     ydata.append(ytmp)
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, yrange) )
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max), aspectRatioEqual=False, LineThickness=2 )
+                
+#                 y_max = 1.0 if self._plotProportions else self._systemSize
+#                 for state in sorted(self._initialState.keys(), key=str):
+#                     if (state == 'time'): continue
+#                     # modify if plotProportions
+#                     ytmp = [y / self._systemSize for y in currentEvo[state][-2:] ] if self._plotProportions else currentEvo[state][-2:]
+#                     
+#                     y_max = max(y_max, max(ytmp))
+#                     plt.plot(currentEvo['time'][-2:], ytmp, color=self._colors[state], lw=2)
+#                 padding_x = 0
+#                 padding_y = 0
+#                 _fig_formatting_2D(figure=self._figure, xlab="Time", ylab="Reactants", choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False )
 
         elif (self._visualisationType == "final"):
             points_x = []
@@ -5439,9 +5468,11 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 for state in self._mumotModel._getAllReactants()[0]: # the current point added to the list of points
                     if str(state) == self._finalViewAxes[0]:
                         points_x.append( currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1] )
+                        trajectory_x = [x/self._systemSize for x in currentEvo[state]] if self._plotProportions else currentEvo[state]
                     if str(state) == self._finalViewAxes[1]:
                         points_y.append( currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1] )
-            
+                        trajectory_y = [y/self._systemSize for y in currentEvo[state]] if self._plotProportions else currentEvo[state]
+                 
             if self._aggregateResults and len(allResults) > 2: # plot in aggregate mode only if there's enough data
                 self._initFigure()
                 samples_x = []
@@ -5465,8 +5496,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             points_y.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
 
             #_fig_formatting_2D(xdata=[xdata], ydata=[ydata], curve_replot=False, xlab=self._finalViewAxes[0], ylab=self._finalViewAxes[1])
+            if not fullPlot: plt.plot( trajectory_x, trajectory_y, '-', c='0.6')
             plt.plot(points_x, points_y, 'ro')
-            _fig_formatting_2D(figure=self._figure)
+            _fig_formatting_2D(figure=self._figure, aspectRatioEqual=True, xlab=self._finalViewAxes[0], ylab=self._finalViewAxes[1])
         elif (self._visualisationType == "barplot"):
             self._initFigure()
             
@@ -5505,9 +5537,10 @@ class MuMoTstochasticSimulationView(MuMoTview):
             xpos = np.arange(len( self._initialState.keys() ))  # the x locations for the bars
             width = 1       # the width of the bars
             plt.bar(xpos, finaldata, width, color=colors, yerr=stdev, ecolor='black')
-            plt.axes().set_xticks(xpos + width / 2)
-            plt.axes().set_xticklabels(sorted(self._initialState.keys(), key=str))
-            _fig_formatting_2D(figure=self._figure, xlab="Reactants", ylab="Population proportion" if self._plotProportions else "Population size")
+            ax = plt.gca()
+            ax.set_xticks(xpos)  # for matplotlib < 2 ---> ax.set_xticks(xpos - (width/2) )
+            ax.set_xticklabels(sorted(self._initialState.keys(), key=str))
+            _fig_formatting_2D(figure=self._figure, xlab="Reactants", ylab="Population proportion" if self._plotProportions else "Population size", aspectRatioEqual=False)
         # update the figure
         if not self._silent:
             self._figure.canvas.draw()
@@ -5525,7 +5558,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
             plt.clf()
 
         if (self._visualisationType == 'evo'):
-            plt.axes().set_aspect('auto')
+            #plt.axes().set_aspect('auto')
+            pass
             # create the frame
             #self._plot.axis([0, self._maxTime, 0, totAgents])
             #plt.xlim((0, self._maxTime))
@@ -5534,18 +5568,18 @@ class MuMoTstochasticSimulationView(MuMoTview):
             #y_max = 1.0 if self._plotProportions else self._systemSize
             #_fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent), choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max) )
         elif (self._visualisationType == "final"):
-            plt.axes().set_aspect('equal')
+            #plt.axes().set_aspect('equal')
             if self._plotProportions:           
                 plt.xlim((0, 1.0))
                 plt.ylim((0, 1.0))
             else:
                 plt.xlim((0, self._systemSize))
                 plt.ylim((0, self._systemSize))
-            plt.axes().set_xlabel(self._finalViewAxes[0])
-            plt.axes().set_ylabel(self._finalViewAxes[1])
+            #plt.axes().set_xlabel(self._finalViewAxes[0])
+            #plt.axes().set_ylabel(self._finalViewAxes[1])
         elif (self._visualisationType == "barplot"):
-#             plt.axes().set_aspect('equal') #for piechart
-            plt.axes().set_aspect('auto') # for barchart
+            #plt.axes().set_aspect('equal') #for piechart
+            #plt.axes().set_aspect('auto') # for barchart
             if self._plotProportions:                
                 plt.ylim((0, 1.0))
             else:
@@ -5746,7 +5780,9 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
     def _initFigure(self):
         super()._initFigure()
         if self._visualisationType == "graph": 
-            plt.axes().set_aspect('equal')
+            #plt.axes().set_aspect('equal')
+            ax = plt.gca()
+            ax.set_aspect('equal')
     
     #def _updateSimultationFigure(self, evo, fullPlot=True):
     def _updateSimultationFigure(self, allResults, fullPlot=True, currentEvo=None):
@@ -5833,7 +5869,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                     stateColors.append( self._colors.get( self._agents[n], 'w') ) 
                 nx.draw(self._graph, self._positionHistory, node_color=stateColors, with_labels=True)
             # plot legend
-            markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='', markersize=15) for color in self._colors.values()]
+            markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='', markersize=10) for color in self._colors.values()]
             plt.legend(markers, self._colors.keys(), bbox_to_anchor=(1, 1), loc=2, borderaxespad=0., numpoints=1)
 
         super()._updateSimultationFigure(allResults, fullPlot, currentEvo) 
@@ -7642,13 +7678,13 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
         if not kwargs['fontsize']==None:
             chooseFontSize = kwargs['fontsize']
     elif len(xlabelstr) > 40 or len(ylabelstr) > 40 or len(zlabelstr) > 40:
-        chooseFontSize = 16
+        chooseFontSize = 12
     elif 31 <= len(xlabelstr) <= 40 or 31 <= len(ylabelstr) <= 40 or 31 <= len(zlabelstr) <= 40:
-        chooseFontSize = 20
+        chooseFontSize = 16
     elif 26 <= len(xlabelstr) <= 30 or 26 <= len(ylabelstr) <= 30 or 26 <= len(zlabelstr) <= 30:
-        chooseFontSize = 26
+        chooseFontSize = 22
     else:
-        chooseFontSize = 30
+        chooseFontSize = 26
     
     ax.xaxis.labelpad = 20
     ax.yaxis.labelpad = 20
@@ -7676,7 +7712,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
 def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None, 
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
-                       xlab=None, ylab=None, curvelab=None, aspectRatio=None, **kwargs):
+                       xlab=None, ylab=None, curvelab=None, aspectRatioEqual=False, **kwargs):
     #print(kwargs)
     
     linestyle_list = ['solid','dashed', 'dashdot', 'dotted', 'solid','dashed', 'dashdot', 'dotted', 'solid']
@@ -7975,7 +8011,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         if specialPoints != []:
             if specialPoints[0] != []:
                 for jj in range(len(specialPoints[0])):
-                    plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=15, 
+                    plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=8, 
                              c=line_color_list[-1])    
                 for a,b,c in zip(specialPoints[0], specialPoints[1], specialPoints[2]): 
                     if a > plt.xlim()[0]+(plt.xlim()[1]-plt.xlim()[0])/2:
@@ -8010,7 +8046,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                     FPcolor=line_color_list[-1]  
                     FPfill = 'none'
                      
-                plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=12, 
+                plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=8, 
                          c=FPcolor, fillstyle=FPfill, mew=4, mec=FPcolor)
     if kwargs.get('grid', False) == True:
         plt.grid()
@@ -8027,13 +8063,12 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     for tick in ax.xaxis.get_major_ticks():
                     tick.label.set_fontsize(18) 
     for tick in ax.yaxis.get_major_ticks():
-                    tick.label.set_fontsize(18)
-    
-    if aspectRatio:
-        if aspectRatio=='equal':
-            plt.axes().set_aspect('equal')                
+                    tick.label.set_fontsize(18)               
     
     plt.tight_layout() 
+    
+    if aspectRatioEqual:
+        ax.set_aspect('equal') 
     
 def _decodeNetworkTypeFromString(netTypeStr):
     # init the network type
