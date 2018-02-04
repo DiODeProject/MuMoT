@@ -14,15 +14,16 @@
 #  graphviz (pip install graphviz; graphviz http://www.graphviz.org/Download.php)
 """
 
-from IPython.display import display, clear_output, Math, Latex, Javascript
+from IPython.display import display, Math, Javascript #, clear_output, Latex 
 import ipywidgets.widgets as widgets
 #import ipywidgets.trait_types.traitlets.TraitError
 from matplotlib import pyplot as plt
-import matplotlib.cm as cm
+#import matplotlib.cm as cm
 import matplotlib.patches as mpatch
 import numpy as np
 from scipy.integrate import odeint
-from sympy import *
+from sympy import Symbol, latex, solve, lambdify, Matrix, symbols, expand, preview, numbered_symbols, Derivative, default_sort_key, simplify, linsolve, collect, factorial
+import sympy
 import math
 import PyDSTool as dst
 from graphviz import Digraph
@@ -30,16 +31,16 @@ from process_latex.process_latex import process_sympy # was `from process_latex 
 import tempfile
 import os
 import copy
-from pyexpat import model
-from idlelib.textView import view_file
+from pyexpat import model #@UnresolvedImport
+#from idlelib.textView import view_file
 from IPython.utils import io
 import datetime
 import warnings
 from matplotlib.cbook import MatplotlibDeprecationWarning
-from mpl_toolkits.mplot3d import axes3d
+from mpl_toolkits.mplot3d import axes3d #@UnresolvedImport
 import networkx as nx #@UnresolvedImport
 from enum import Enum
-import json
+#import json
 import sys
 import numbers
 from bisect import bisect_left
@@ -1169,7 +1170,7 @@ class MuMoTmodel:
 
     ## get tuple to evalute functions returned by _getFuncs with
     def _getArgTuple(self, argNames, argValues, argDict, reactants, reactantValues):
-        assert false # need to work this out
+        assert False # need to work this out
         argList = []
 #         for arg in self._args:
 #             if arg == stateVariable1:
@@ -2108,7 +2109,7 @@ class MuMoTview:
                 self._showErrorMessage('Some or all solutions are NOT unique.')
                 return None, None
         
-        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
+        realEQsol = [{self._stateVariable1: sympy.re(EQsol[kk][self._stateVariable1]), self._stateVariable2: sympy.re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (sympy.Abs(sympy.im(EQsol[kk][self._stateVariable1]))<=eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable2]))<=eps)]
         
         MAT = Matrix([EQ1, EQ2])
         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
@@ -2161,7 +2162,7 @@ class MuMoTview:
                 self._showErrorMessage('Some or all solutions are NOT unique.')
                 return None, None
         
-        realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps and Abs(im(EQsol[kk][self._stateVariable3]))<=eps)]
+        realEQsol = [{self._stateVariable1: sympy.re(EQsol[kk][self._stateVariable1]), self._stateVariable2: sympy.re(EQsol[kk][self._stateVariable2]), self._stateVariable3: sympy.re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (sympy.Abs(sympy.im(EQsol[kk][self._stateVariable1]))<=eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable2]))<=eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable3]))<=eps)]
         
         MAT = Matrix([EQ1, EQ2, EQ3])
         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
@@ -2978,7 +2979,7 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
             syst_Size = Symbol('systemSize')
             sysS = syst_Size.subs(self._get_argDict())
             #sysS = syst_Size.subs(self._getSystemSize())
-            sysS = N(sysS)
+            sysS = sympy.N(sysS)
             y_scaling = np.sum(np.asarray(y0))
             if y_scaling > 0:
                 sysS = sysS/y_scaling
@@ -3176,13 +3177,13 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
             for kk in range(len(realEQsol)):
                 if self._stateVariable3:
                     if abs(realEQsol[kk][self._stateVariable1] - y_stationary[0]) <= eps and abs(realEQsol[kk][self._stateVariable2] - y_stationary[1]) <= eps and abs(realEQsol[kk][self._stateVariable3] - y_stationary[2]) <= eps:
-                        if all(sign(re(lam)) < 0 for lam in eigList[kk]) == True:
+                        if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
                             steadyStateReached = True
                             steadyStateDict = {self._stateVariable1: realEQsol[kk][self._stateVariable1], self._stateVariable2: realEQsol[kk][self._stateVariable2], self._stateVariable3: realEQsol[kk][self._stateVariable3]}
     
                 else:
                     if abs(realEQsol[kk][self._stateVariable1] - y_stationary[0]) <= eps and abs(realEQsol[kk][self._stateVariable2] - y_stationary[1]) <= eps:
-                        if all(sign(re(lam)) < 0 for lam in eigList[kk]) == True:
+                        if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
                             steadyStateReached = True
                             steadyStateDict = {self._stateVariable1: realEQsol[kk][self._stateVariable1], self._stateVariable2: realEQsol[kk][self._stateVariable2]}
             
@@ -3308,7 +3309,7 @@ class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
         x_data = [time for kk in range(len(y0))]  
         y_data = [sol_ODE[:, kk] for kk in range(len(y0))]
         noiseNorm = systemSize.subs(argDict)
-        noiseNorm = N(noiseNorm)
+        noiseNorm = sympy.N(noiseNorm)
         for nn in range(len(y_data)):
             y_temp=np.copy(y_data[nn])
             for kk in range(len(y_temp)):
@@ -4052,7 +4053,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 EV.append(EVsub)
                 Evects.append(EvectsSub)
                 if self._mumotModel._constantSystemSize == True:
-                    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+                    if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1):
                         EVplot.append(EVsub)
                         EvectsPlot.append(EvectsSub)
                 else:
@@ -4086,30 +4087,30 @@ class MuMoTstreamView(MuMoTfieldView):
                 vec3norm = vec3.norm()
                 vec3 = vec3/vec3norm
                 if vec2norm >= vec3norm:
-                    angle_ell = acos(vec1.dot(vec2)/(vec1.norm()*vec2.norm())).evalf()
+                    angle_ell = sympy.acos(vec1.dot(vec2)/(vec1.norm()*vec2.norm())).evalf()
                 else:
-                    angle_ell = acos(vec1.dot(vec3)/(vec1.norm()*vec3.norm())).evalf()
+                    angle_ell = sympy.acos(vec1.dot(vec3)/(vec1.norm()*vec3.norm())).evalf()
                 angle_ell = angle_ell.evalf()
                 projection_angle_list.append(angle_ell)
-                angle_ell_deg = 180*angle_ell/pi.evalf()
+                angle_ell_deg = 180*angle_ell/(sympy.pi).evalf()
                 angle_ell_list.append(round(angle_ell_deg,5))
-            projection_angle_list = [abs(projection_angle_list[kk]) if abs(projection_angle_list[kk]) <= N(pi/2) else N(pi)-abs(projection_angle_list[kk]) for kk in range(len(projection_angle_list))]
+            projection_angle_list = [abs(projection_angle_list[kk]) if abs(projection_angle_list[kk]) <= sympy.N(sympy.pi/2) else sympy.N(sympy.pi)-abs(projection_angle_list[kk]) for kk in range(len(projection_angle_list))]
         
         if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None or self._showSSANoise:
             if self._mumotModel._constantSystemSize == True:
-                FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)], 
-                             [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)]]
+                FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)], 
+                             [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)]]
                 if self._SOL_2ndOrdMomDict:
-                    Ell_width = [re(cos(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)]
-                    Ell_height = [re(cos(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)]
-                #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)], 
-                #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
+                    Ell_width = [sympy.re(sympy.cos(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sympy.sin(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)]
+                    Ell_height = [sympy.re(sympy.cos(projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sympy.sin(projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)]
+                #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)], 
+                #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)]]
             else:
                 FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList))], 
                              [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList))]]
                 if self._SOL_2ndOrdMomDict:
-                    Ell_width = [re(cos(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList))]
-                    Ell_height = [re(cos(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList))]
+                    Ell_width = [sympy.re(sympy.cos(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sympy.sin(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList))]
+                    Ell_height = [sympy.re(sympy.cos(projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sympy.sin(projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList))]
                 #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
                 #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
                 #Ell_width = [SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)] for kk in range(len(SOL_2ndOrdMomDictList))]
@@ -4141,9 +4142,9 @@ class MuMoTstreamView(MuMoTfieldView):
             for kk in range(len(ells)):
                 ax.add_artist(ells[kk])
                 ells[kk].set_alpha(0.5)
-                if re(EVplot[kk][0]) < 0 and re(EVplot[kk][1]) < 0:
+                if sympy.re(EVplot[kk][0]) < 0 and sympy.re(EVplot[kk][1]) < 0:
                     Fcolor = line_color_list[1]
-                elif re(EVplot[kk][0]) > 0 and re(EVplot[kk][1]) > 0:
+                elif sympy.re(EVplot[kk][0]) > 0 and sympy.re(EVplot[kk][1]) > 0:
                     Fcolor = line_color_list[2]
                 else:
                     Fcolor = line_color_list[0]
@@ -4171,7 +4172,7 @@ class MuMoTstreamView(MuMoTfieldView):
                         #print("Skipping for out range")
                         break
                     for eigenV in EV[kk]:
-                        if re(eigenV) > 0:
+                        if sympy.re(eigenV) > 0:
                             skip = True
                             #print("Skipping for positive eigenvalue")
                             break
@@ -4181,7 +4182,10 @@ class MuMoTstreamView(MuMoTfieldView):
                 initState = copy.deepcopy(realEQsol[kk])
                 for reactant in self._mumotModel._getAllReactants()[0]:
                     if reactant not in initState.keys():
-                        initState[reactant] = 1 - sum(initState.values())
+                        #initState[reactant] = 1 - sum(initState.values())
+                        iniSum = 0
+                        for val in initState.values(): iniSum += np.real(val)
+                        initState[reactant] = 1 - iniSum
                 #print(initState)
                 #print("Using params: " + str(self._get_params()))
                 SSAView = MuMoTSSAView(self._mumotModel, None,
@@ -4231,7 +4235,7 @@ class MuMoTvectorView(MuMoTfieldView):
                             
                     EV.append(EVsub)
                     if self._mumotModel._constantSystemSize == True:
-                        if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+                        if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1):
                             EVplot.append(EVsub)
                     else:
                         EVplot.append(EVsub)
@@ -4243,12 +4247,12 @@ class MuMoTvectorView(MuMoTfieldView):
                 #    for key in eigList[kk]:
                 #        EVsub.append(key.evalf())
                 #    EV.append(EVsub)
-                #    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
+                #    if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1):
                 #        EVplot.append(EVsub)
                 
                 if self._mumotModel._constantSystemSize == True:
-                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)], 
-                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
+                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)], 
+                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)]]
                 else:
                     FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
                                  [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
@@ -4289,15 +4293,15 @@ class MuMoTvectorView(MuMoTfieldView):
                             
                     EV.append(EVsub)
                     if self._mumotModel._constantSystemSize == True:
-                        if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable3]) <= 1):
+                        if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1):
                             EVplot.append(EVsub)
                     else:
                         EVplot.append(EVsub)
                     
                 if self._mumotModel._constantSystemSize == True:
-                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable3]) <= 1)], 
-                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable3]) <= 1)],
-                                 [realEQsol[kk][self._stateVariable3] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= re(realEQsol[kk][self._stateVariable3]) <= 1)]]
+                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)], 
+                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)],
+                                 [realEQsol[kk][self._stateVariable3] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)]]
                 else:
                     FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
                                  [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))],
@@ -4475,7 +4479,7 @@ class MuMoTbifurcationView(MuMoTview):
             realEQsol, eigList = self._get_fixedPoints2d()
             if realEQsol != [] and realEQsol != None:
                 for kk in range(len(realEQsol)):
-                    if all(sign(re(lam)) < 0 for lam in eigList[kk]) == True:
+                    if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
                         initDictList.append(realEQsol[kk])
                 print(len(initDictList), 'stable steady state(s) detected and continuated. Initial conditions for state variables specified on sliders were not used.')
             else:
@@ -5871,7 +5875,8 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                 stateColors=[]
                 for n in self._graph.nodes():
                     stateColors.append( self._colors.get( self._agents[n], 'w') ) 
-                nx.draw(self._graph, self._positionHistory, node_color=stateColors, with_labels=True)
+                nx.draw_networkx(self._graph, self._positionHistory, node_color=stateColors, with_labels=True)
+                plt.axis('off')
             # plot legend
             markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='', markersize=10) for color in self._colors.values()]
             plt.legend(markers, self._colors.keys(), bbox_to_anchor=(1, 1), loc=2, borderaxespad=0., numpoints=1)
@@ -6404,7 +6409,7 @@ def parseModel(modelDescription):
         modelDescr = modelDescription
     else:
         # assume input describes filename and attempt to load
-        assert false
+        assert False
     
     # strip out any basic LaTeX equation formatting user has input
     modelDescr = modelDescr.replace('$','')
@@ -6680,90 +6685,90 @@ def _doVanKampenExpansion(rhs, stoich):
     
     if len(nvec)==2:
         lhs_vKE = (Derivative(P(nvec[0], nvec[1],t),t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
-                  - sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1],t),nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
-                  - sqrt(V)*Derivative(PhiDict[nvec[1]],t)*Derivative(P(nvec[0], nvec[1],t),nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]}))
+                  - sympy.sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1],t),nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
+                  - sympy.sqrt(V)*Derivative(PhiDict[nvec[1]],t)*Derivative(P(nvec[0], nvec[1],t),nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]}))
 
         for key in rhs_dict:
             op = rhs_dict[key][0].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
-            func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sqrt(V)*NoiseDict[nvec[1]]})
+            func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sympy.sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sympy.sqrt(V)*NoiseDict[nvec[1]]})
             func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
             func = func1*func2
             if len(op.args[0].args) ==0:
-                term = (op*func).subs({op*func: func + op.args[1]/sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
+                term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
                 
             else:
-                term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sqrt(V)*Derivative(func, op.args[1].args[0]) 
+                term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sympy.sqrt(V)*Derivative(func, op.args[1].args[0]) 
                                        + op.args[1].args[1]**2/(2*V)*Derivative(func, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sympy.sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             #term_num, term_denom = term.as_numer_denom()
             rhs_vKE += rhs_dict[key][3].subs(PhiConstDict)*(term.doit() - func)
     elif len(nvec)==3:
         lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
-                  - sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
-                  - sqrt(V)*Derivative(PhiDict[nvec[1]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
-                  - sqrt(V)*Derivative(PhiDict[nvec[2]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[2]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]}))
+                  - sympy.sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
+                  - sympy.sqrt(V)*Derivative(PhiDict[nvec[1]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
+                  - sympy.sqrt(V)*Derivative(PhiDict[nvec[2]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[2]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]}))
         rhs_dict, substring = rhs(stoich)
         rhs_vKE = 0
         for key in rhs_dict:
             op = rhs_dict[key][0].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
-            func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sqrt(V)*NoiseDict[nvec[1]], nvec[2]: V*PhiDict[nvec[2]]+sqrt(V)*NoiseDict[nvec[2]]})
+            func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sympy.sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sympy.sqrt(V)*NoiseDict[nvec[1]], nvec[2]: V*PhiDict[nvec[2]]+sympy.sqrt(V)*NoiseDict[nvec[2]]})
             func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
             func = func1*func2
             if len(op.args[0].args) ==0:
-                term = (op*func).subs({op*func: func + op.args[1]/sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
+                term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
                 
             elif len(op.args) ==2:
-                term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sqrt(V)*Derivative(func, op.args[1].args[0]) 
+                term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sympy.sqrt(V)*Derivative(func, op.args[1].args[0]) 
                                        + op.args[1].args[1]**2/(2*V)*Derivative(func, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sympy.sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             elif len(op.args) ==3:
-                term = (op.args[2]*func).subs({op.args[2]*func: func + op.args[2].args[1]/sqrt(V)*Derivative(func, op.args[2].args[0]) 
+                term = (op.args[2]*func).subs({op.args[2]*func: func + op.args[2].args[1]/sympy.sqrt(V)*Derivative(func, op.args[2].args[0]) 
                                        + op.args[2].args[1]**2/(2*V)*Derivative(func, op.args[2].args[0], op.args[2].args[0])})
-                term = (op.args[1]*term).subs({op.args[1]*term: term + op.args[1].args[1]/sqrt(V)*Derivative(term, op.args[1].args[0]) 
+                term = (op.args[1]*term).subs({op.args[1]*term: term + op.args[1].args[1]/sympy.sqrt(V)*Derivative(term, op.args[1].args[0]) 
                                        + op.args[1].args[1]**2/(2*V)*Derivative(term, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sympy.sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             else:
                 print('Something went wrong!')
             rhs_vKE += rhs_dict[key][3].subs(PhiConstDict)*(term.doit() - func)    
     else:
         lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
-                  - sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
-                  - sqrt(V)*Derivative(PhiDict[nvec[1]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
-                  - sqrt(V)*Derivative(PhiDict[nvec[2]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[2]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
-                  - sqrt(V)*Derivative(PhiDict[nvec[3]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[3]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]}))
+                  - sympy.sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
+                  - sympy.sqrt(V)*Derivative(PhiDict[nvec[1]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
+                  - sympy.sqrt(V)*Derivative(PhiDict[nvec[2]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[2]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
+                  - sympy.sqrt(V)*Derivative(PhiDict[nvec[3]],t)*Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[3]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]}))
         rhs_dict, substring = rhs(stoich)
         rhs_vKE = 0
         for key in rhs_dict:
             op = rhs_dict[key][0].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
-            func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sqrt(V)*NoiseDict[nvec[1]], nvec[2]: V*PhiDict[nvec[2]]+sqrt(V)*NoiseDict[nvec[2]], nvec[3]: V*PhiDict[nvec[3]]+sqrt(V)*NoiseDict[nvec[3]]})
+            func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sympy.sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sympy.sqrt(V)*NoiseDict[nvec[1]], nvec[2]: V*PhiDict[nvec[2]]+sympy.sqrt(V)*NoiseDict[nvec[2]], nvec[3]: V*PhiDict[nvec[3]]+sympy.sqrt(V)*NoiseDict[nvec[3]]})
             func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
             func = func1*func2
             if len(op.args[0].args) ==0:
-                term = (op*func).subs({op*func: func + op.args[1]/sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
+                term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
                 
             elif len(op.args) ==2:
-                term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sqrt(V)*Derivative(func, op.args[1].args[0]) 
+                term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sympy.sqrt(V)*Derivative(func, op.args[1].args[0]) 
                                        + op.args[1].args[1]**2/(2*V)*Derivative(func, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sympy.sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             elif len(op.args) ==3:
-                term = (op.args[2]*func).subs({op.args[2]*func: func + op.args[2].args[1]/sqrt(V)*Derivative(func, op.args[2].args[0]) 
+                term = (op.args[2]*func).subs({op.args[2]*func: func + op.args[2].args[1]/sympy.sqrt(V)*Derivative(func, op.args[2].args[0]) 
                                        + op.args[2].args[1]**2/(2*V)*Derivative(func, op.args[2].args[0], op.args[2].args[0])})
-                term = (op.args[1]*term).subs({op.args[1]*term: term + op.args[1].args[1]/sqrt(V)*Derivative(term, op.args[1].args[0]) 
+                term = (op.args[1]*term).subs({op.args[1]*term: term + op.args[1].args[1]/sympy.sqrt(V)*Derivative(term, op.args[1].args[0]) 
                                        + op.args[1].args[1]**2/(2*V)*Derivative(term, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sympy.sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             elif len(op.args) ==4:
-                term = (op.args[3]*func).subs({op.args[3]*func: func + op.args[3].args[1]/sqrt(V)*Derivative(func, op.args[3].args[0]) 
+                term = (op.args[3]*func).subs({op.args[3]*func: func + op.args[3].args[1]/sympy.sqrt(V)*Derivative(func, op.args[3].args[0]) 
                                        + op.args[3].args[1]**2/(2*V)*Derivative(func, op.args[3].args[0], op.args[3].args[0])})
-                term = (op.args[2]*term).subs({op.args[2]*term: term + op.args[2].args[1]/sqrt(V)*Derivative(term, op.args[2].args[0]) 
+                term = (op.args[2]*term).subs({op.args[2]*term: term + op.args[2].args[1]/sympy.sqrt(V)*Derivative(term, op.args[2].args[0]) 
                                        + op.args[2].args[1]**2/(2*V)*Derivative(term, op.args[2].args[0], op.args[2].args[0])})
-                term = (op.args[1]*term).subs({op.args[1]*term: term + op.args[1].args[1]/sqrt(V)*Derivative(term, op.args[1].args[0]) 
+                term = (op.args[1]*term).subs({op.args[1]*term: term + op.args[1].args[1]/sympy.sqrt(V)*Derivative(term, op.args[1].args[0]) 
                                        + op.args[1].args[1]**2/(2*V)*Derivative(term, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sqrt(V)*Derivative(term, op.args[0].args[0]) 
+                term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sympy.sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             else:
                 print('Something went wrong!')
@@ -7321,11 +7326,11 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     lhsODE=0
     for kk in range(len(Vlist_rhs)):
         for key in Vlist_rhs[kk]:
-            if key==sqrt(V):
+            if key==sympy.sqrt(V):
                 rhsODE += Vlist_rhs[kk][key]            
     for kk in range(len(Vlist_lhs)):
         for key in Vlist_lhs[kk]:
-            if key==sqrt(V):
+            if key==sympy.sqrt(V):
                 lhsODE += Vlist_lhs[kk][key]  
         
     ODE = lhsODE-rhsODE
@@ -7665,7 +7670,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
                     lam1 = specialPoints[3][jj][0]
                     lam2 = specialPoints[3][jj][1]
                     lam3 = specialPoints[3][jj][2]
-                    if (re(lam1) < 0 and re(lam2) < 0 and re(lam3) < 0):
+                    if (sympy.re(lam1) < 0 and sympy.re(lam2) < 0 and sympy.re(lam3) < 0):
                         FPcolor = 'g'
                         FPmarker = 'o'
                     else:
@@ -8035,10 +8040,10 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                     len(specialPoints[2][jj]) == 2
                     lam1 = specialPoints[2][jj][0]
                     lam2 = specialPoints[2][jj][1]
-                    if re(lam1) < 0 and re(lam2) < 0:
+                    if sympy.re(lam1) < 0 and sympy.re(lam2) < 0:
                         FPcolor = line_color_list[1]
                         FPfill = 'full'
-                    elif re(lam1) > 0 and re(lam2) > 0:
+                    elif sympy.re(lam1) > 0 and sympy.re(lam2) > 0:
                         FPcolor = line_color_list[2]
                         FPfill = 'none'
                     else:
