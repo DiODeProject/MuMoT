@@ -18,6 +18,7 @@ You need to install the following tools (this step is not necessary when creatin
 
 #### The following has been tested on macOS Sierra Version 10.12.6 and Ubuntu 16.04 (Windows test to follow):
 
+* upgrade to at least conda 4.4
 * get the environment.yml file from the MuMoT repository, go to the folder containing the environment.yml file and type in terminal: `conda env create -f environment.yml`
 * check that the environment has been created: `conda env list` (MumotEnv should appear in that list)
 * activate the environment: `source activate MumotEnv` (on macOS/Linux) or `activate MumotEnv` (on Windows)
