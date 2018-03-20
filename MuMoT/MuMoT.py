@@ -341,9 +341,9 @@ class MuMoTmodel:
             out = latex(self._stoichiometry[reaction]['rate']) + "\; (" + latex(reaction) + ")"
             display(Math(out))        
     
-    def showRatesOLD(self):
-        for rate in self._ratesLaTeX:
-            display(Math(self._ratesLaTeX[rate]))
+#    def showRatesOLD(self):
+#        for rate in self._ratesLaTeX:
+#            display(Math(self._ratesLaTeX[rate]))
 
     def showSingleAgentRules(self):
         for agent,probs in self._agentProbabilities.items():
@@ -392,7 +392,11 @@ class MuMoTmodel:
                     if not key2 in nvec:
                         nvec.append(key2)
         nvec = sorted(nvec, key=default_sort_key)
-        assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+        if len(nvec) < 2 or len(nvec) > 4:
+            print("Derivation of Master Equation works for 2, 3 or 4 different reactants only")
+            
+            return
+#        assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
         rhs_dict, substring = _deriveMasterEquation(stoich)
         #rhs_ME = 0
         term_count = 0
@@ -6409,7 +6413,11 @@ def parseModel(modelDescription):
         modelDescr = modelDescription
     else:
         # assume input describes filename and attempt to load
-        assert False
+        print("Input does not appear to be valid model - attempting to load from file `" + modelDescription + "`...")
+        print("Loading from file not currently supported")
+        
+        return None
+#        assert False
     
     # strip out any basic LaTeX equation formatting user has input
     modelDescr = modelDescr.replace('$','')
@@ -6623,8 +6631,13 @@ def _deriveMasterEquation(stoichiometry):
                 if len(stoich[key1][key2]) == 3:
                     substring = stoich[key1][key2][2]
     nvec = sorted(nvec, key=default_sort_key)
+
+    if len(nvec) < 2 or len(nvec) > 4:
+        print("Derivation of Master Equation works for 2, 3 or 4 different reactants only")
+        
+        return None, None
     
-    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+#    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
     
     rhs = 0
     sol_dict_rhs = {}
@@ -6666,7 +6679,11 @@ def _doVanKampenExpansion(rhs, stoich):
                     nconstvec.append(key2)
                     
     nvec = sorted(nvec, key=default_sort_key)
-    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+    if len(nvec) < 2 or len(nvec) > 4:
+        print("van Kampen expansion works for 2, 3 or 4 different reactants only")
+        
+        return None, None, None    
+#    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
     
     NoiseDict = {}
     PhiDict = {}
@@ -6833,7 +6850,11 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
                 if not key2 in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
-    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+    if len(nvec) < 2 or len(nvec) > 4:
+        print("Derivation of Fokker Planck equation works for 2, 3 or 4 different reactants only")
+        
+        return None, None
+#    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
     
     NoiseDict = {}
     for kk in range(len(nvec)):
@@ -6868,7 +6889,11 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
                 if key2 not in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
-    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+    if len(nvec) < 2 or len(nvec) > 4:
+        print("showNoiseEquations works for 2, 3 or 4 different reactants only")
+        
+        return
+#    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
 
     NoiseDict = {}
     for kk in range(len(nvec)):
@@ -7030,7 +7055,11 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
                 if not key2 in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
-    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+    if len(nvec) < 2 or len(nvec) > 4:
+        print("showNoiseSolutions works for 2, 3 or 4 different reactants only")
+        
+        return
+#    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
 
     NoiseDict = {}
     for kk in range(len(nvec)):
@@ -7344,7 +7373,11 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     #for reactant in reactants:
     #    nvec.append(reactant)
     nvec = sorted(nvec, key=default_sort_key)
-    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+    if len(nvec) < 2 or len(nvec) > 4:
+        print("van Kampen expansions works for 2, 3 or 4 different reactants only")
+        
+        return
+#    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
     
     PhiDict = {}
     NoiseDict = {}
