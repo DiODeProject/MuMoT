@@ -1,17 +1,12 @@
-""" @package MuMoT
-# coding: utf-8
+"""
+Multiscale Modelling Tool (MuMoT)
+Version 0.0
 
-# In[ ]:
+Help:
+https://diodeproject.github.io/MuMoT/
 
-# if has extension .ipynb build this notebook as an importable module using
-# ipython nbconvert --to script MuMoT.ipynb
-
-# dependencies:
-#  tex distribution
-#  libtool (on Mac: brew install libtool --universal; brew link libtool (http://brew.sh))
-#  antlr4 (for generating LaTeX parser; http://www.antlr.org)
-#  latex2sympy (no current pip installer; https://github.com/augustt198/latex2sympy; depends on antlr4 (pip install antlr4-python3-runtime)
-#  graphviz (pip install graphviz; graphviz http://www.graphviz.org/Download.php)
+Contributors:
+James A. R. Marshall, Andreagiovanni Reina, Thomas Bose
 """
 
 from IPython.display import display, Math, Javascript #, clear_output, Latex 
@@ -619,6 +614,21 @@ class MuMoTmodel:
     
     ## construct interactive stream plot with the option to show noise around fixed points
     def stream(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
+        """Display interactive stream plot of `stateVariable1` (x-axis), `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis; not currently supported - see below)
+
+        Arguments:
+            `stateVariable1` - state variable to be plotted on the x-axis
+            `stateVariable2` - state variable to be plotted on the y-axis
+            `stateVariable3 = None` - state variable to be plotted on the z-axis (not currently supported; use `vector` instead for 3-dimensional systems)
+            `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
+
+        Keywords:
+            `showFixedPoints = False` - plot fixed points
+            `showNoise = False` - plot noise around fixed points
+            plotting keywords as described in the user manual: https://diodeproject.github.io/MuMoT/
+            
+        Returns:
+            MuMoTcontroller"""
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             if stateVariable3 != None:
                 print("3d stream plots not currently supported")
@@ -666,6 +676,21 @@ class MuMoTmodel:
     
     ## construct interactive vector plot        
     def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
+        """Display interactive vector plot of `stateVariable1` (x-axis) and `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis)
+
+       Arguments:
+            `stateVariable1` - state variable to be plotted on the x-axis
+            `stateVariable2` - state variable to be plotted on the y-axis
+            `stateVariable3 = None` - state variable to be plotted on the z-axis
+            `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
+
+        Keywords:
+            `showFixedPoints = False` - plot fixed points
+            `showNoise = False` - plot noise around fixed points
+            plotting keywords as described in the user manual: https://diodeproject.github.io/MuMoT/
+
+        Returns:
+            MuMoTcontroller"""
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
 
             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
