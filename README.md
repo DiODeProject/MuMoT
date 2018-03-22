@@ -26,19 +26,14 @@ You need to install the following supporting software:
 * FYI: environments can be deactivated using: `source deactivate` (on macOS/Linux) or `deactivate` (on Windows)
 
 # Test
-To test your installation run the `MuMoTdemo.ipynb` and `MuMoTtest.ipynb` notebooks.
+To test your installation run the `MuMoTuserManual.ipynb` notebook.
 
 # Documentation
 Read the documentation at [https://diodeproject.github.io/MuMoT/](https://diodeproject.github.io/MuMoT/)
 
 # House rules
-* Update the [Doxygen](http://www.stack.nl/~dimitri/doxygen/index.html) documentation when making substantive changes
-  * include [Python comment blocks](http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#pythonblocks) for classes, functions, etc.
-  * use `@todo` for reminders
-  * [download](http://www.stack.nl/~dimitri/doxygen/download.html) Doxygen
-  * run locally with `Doxyfile` configuration file from repository
-  * commit the contents of `docs/`
-
-* Update `MuMoTtest.ipynb` to add tests for new functionality - always run this notebook before committing
+* include [Python docstrings](https://www.python.org/dev/peps/pep-0257/) at the very least for user-visible functions, but ideally also for classes, functions, etc. Include the sections `Arguments`, `Keywords` and `Returns`
+* use `@todo` for reminders
 * Write code using Python [naming conventions](https://www.python.org/dev/peps/pep-0008/#naming-conventions)
+* Update `MuMoTtest.ipynb` to add tests for new functionality - always run this notebook before committing
 
