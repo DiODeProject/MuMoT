@@ -8113,8 +8113,8 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                     FPcolor=line_color_list[-1]  
                     FPfill = 'none'
                      
-                plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=8, 
-                         c=FPcolor, fillstyle=FPfill, mew=4, mec=FPcolor)
+                plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=9, 
+                         c=FPcolor, fillstyle=FPfill, mew=3, mec=FPcolor)
     if kwargs.get('grid', False) == True:
         plt.grid()
         
