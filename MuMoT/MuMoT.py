@@ -8009,13 +8009,13 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         
         
     if len(xlabelstr) > 40 or len(ylabelstr) > 40:
-        chooseFontSize = 16
+        chooseFontSize = 12 #16
     elif 31 <= len(xlabelstr) <= 40 or 31 <= len(ylabelstr) <= 40:
-        chooseFontSize = 20
+        chooseFontSize = 16 #20
     elif 26 <= len(xlabelstr) <= 30 or 26 <= len(ylabelstr) <= 30:
-        chooseFontSize = 26
+        chooseFontSize = 20 #26
     else:
-        chooseFontSize = 30
+        chooseFontSize = 26 #30
         
     if 'fontsize' in kwargs:
         if not kwargs['fontsize']==None:
