@@ -91,6 +91,9 @@ class MuMoTdefault:
     _maxTime = 3
     _timeLimits = (0, 10)
     _timeStep = 0.1
+    #_maxTime = 5
+    #_timeLimits = (0, 50)
+    #_timeStep = 0.5
     @staticmethod
     def setTimeDefaults(initTime=_maxTime, limits=_timeLimits, step=_timeStep):
         MuMoTdefault._maxTime = initTime
@@ -511,7 +514,56 @@ class MuMoTmodel:
                 out += " + "
             out = out[0:len(out) - 2] # delete the last ' + '
             display(Math(out))
+    
+    
+    
+    def Integrate(self, initWidgets = {}, **kwargs):
+        # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
+        
+        if self._systemSize:
+            kwargs['conserved'] = True
+        paramValues = []
+        paramNames = []
+        
+        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
+        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
+        rateStep = RATE_STEP ## @todo choose rate step sensibly
+        for reactant in self._constantReactants:
+            paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+#            paramNames.append('(' + latex(reactant) + ')')
+            paramNames.append(str(reactant)) 
+        
+        for freeParam in self._rates:
+            ## @todo: having params as a list is inefficient, a dictionary would be more convenient (see issue #27)
+            rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
+                                    defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
+                                    initValueRangeStep=initWidgets.get(str(freeParam)), 
+                                    validRange = (0,float("inf")))
+            paramValues.append(rateVals)
+            paramNames.append(str(freeParam))
+        paramNames.append('systemSize')
+        paramValues.append(_parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), 'systemSize'),
+                                    defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
+                                    initValueRangeStep=initWidgets.get('systemSize'), 
+                                    validRange = (0,float("inf"))) )
+        
+        IntParams = {}
+        # read input parameters
+        IntParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
+        IntParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
+        IntParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
+        
+        # construct controller
+        viewController = MuMoTtimeEvolutionController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, tEParams=IntParams, **kwargs)
 
+        modelView = MuMoTIntegrateView(self, viewController, IntParams, **kwargs)
+        viewController.setView(modelView)
+        
+        viewController._setReplotFunction(modelView._plot_NumSolODE, modelView._redrawOnly)
+        
+        return viewController
+    
+    
 
     ## construct interactive time evolution plot for state variables      
     def numSimStateVar(self, showStateVars = None, params = None, **kwargs):
@@ -526,7 +578,7 @@ class MuMoTmodel:
             
             # construct controller
             viewController = self._controller(False, params = params, **kwargs)
- 
+            
             # construct view
             modelView = MuMoTtimeEvoStateVarView(self, viewController, showStateVars, params = params, **kwargs)
              
@@ -1517,6 +1569,81 @@ class MuMoTcontroller:
         
         return Javascript(js_download)
 
+
+
+class MuMoTtimeEvolutionController(MuMoTcontroller):
+    
+    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, tEParams, **kwargs):
+        
+        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, systemSize=True, **kwargs)
+        
+        initialState = tEParams['initialState'][0]
+        if not tEParams['initialState'][-1]:
+            #for state,pop in initialState.items():
+            for i,state in enumerate(sorted(initialState.keys(), key=str)):
+                pop = initialState[state]
+                widget = widgets.FloatSlider(value = pop[0],
+                                             min = pop[1], 
+                                             max = pop[2],
+                                             step = pop[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
+#                                              description = "State " + str(state),
+                                             description = "Reactant " + r'\(' + self._paramLabelDict.get(state,str(state)) + r'\)' + " at t=0: ",
+                                             style = {'description_width': 'initial'},
+                                             continuous_update = continuousReplot)
+                
+                if kwargs.get('conserved', False)==True:
+                    # disable last population widget (if there are more than 1)
+                    if len(initialState) > 1 and i == 0:
+                        widget.disabled = True
+                    else:
+                        widget.observe(self._updateInitialStateWidgets, 'value')
+                        
+                self._widgetsExtraParams['init'+str(state)] = widget
+                #advancedWidgets.append(widget)
+            
+        # Max time slider
+        if not tEParams['maxTime'][-1]:
+            maxTime = tEParams['maxTime']
+            widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
+                                             max = maxTime[2], step = maxTime[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(maxTime[3]))) + 'f',
+                                             description = 'Simulation time:',
+                                             style = {'description_width': 'initial'},
+                                             #layout=widgets.Layout(width='50%'),
+                                             disabled=False,
+                                             continuous_update = continuousReplot) 
+            self._widgetsExtraParams['maxTime'] = widget
+            #advancedWidgets.append(widget)
+        
+        
+        ## Checkbox for proportions or full populations plot
+        if not tEParams['plotProportions'][-1]:
+            widget = widgets.Checkbox(
+                value = tEParams['plotProportions'][0],
+                description='Plot population proportions',
+                disabled = False
+            )
+            self._widgetsPlotOnly['plotProportions'] = widget       
+        
+        self._addSpecificWidgets(tEParams, continuousReplot)
+        self._orderWidgets(initialState)
+        
+        # add widgets to the Advanced options tab
+        if not self._silent:
+            self._displayAdvancedOptionsTab()
+            
+    def _addSpecificWidgets(self, tEParams, continuousReplot):
+        pass
+    
+    def _orderWidgets(self, initialState):
+        # define the widget order
+        for state in sorted(initialState.keys(), key=str):
+            self._extraWidgetsOrder.append('init'+str(state))
+        self._extraWidgetsOrder.append('maxTime')
+        self._extraWidgetsOrder.append('plotProportions')
+
+
 ## class describing a controller for stochastic simulations (base class of the MuMoTmultiagentController)
 class MuMoTstochasticSimulationController(MuMoTcontroller):
     
@@ -2050,6 +2177,7 @@ class MuMoTview:
                 
                 paramNames.append(name)
                 paramValues.append(value.value)
+            
         if self._paramNames is not None:
             paramNames += map(str, self._paramNames)
             paramValues += self._paramValues   
@@ -2078,6 +2206,7 @@ class MuMoTview:
         argDict[systemSize] = self._getSystemSize()
             
         return argDict
+    
     
     
     def _getInitCondsFromSlider(self):
@@ -2515,7 +2644,227 @@ class MuMoTmultiController(MuMoTcontroller):
         #silent = kwargs.get('silent', False)
         if not self._silent:
             self._view._plot()
+
+
+
+
+class MuMoTtimeEvolutionViewNew(MuMoTview):
+    ## list of all state variables
+    _stateVarList = None
+    ## list of all state variables displayed in figure
+    _stateVarListDisplay = None
+    ## 1st state variable
+    _stateVariable1 = None
+    ## 2nd state variable 
+    _stateVariable2 = None
+    ## 3rd state variable 
+    _stateVariable3 = None
+#     ## 4th state variable 
+#     _stateVariable4 = None
+    ## end time of numerical simulation of ODE system of the state variables
+    _tend = None
+    ## time step of numerical simulation of ODE system of the state variables
+    _tstep = None
+    ## defines fontsize on the axes
+    _chooseFontSize = None
+    ## string that defines the x-label
+    _xlab = None
+    ## legend location: combinations like 'upper left', lower right, or 'center center' are allowed (9 options in total)
+    _legend_loc = None
+    
+    ## total number of agents in the simulation
+    _systemSize = None
+    ## the system state at the start of the simulation (timestep zero) described as proportion of _systemSize
+    _initialState = None
+    ## simulation length (in the same time unit of the rates)
+    _maxTime = None
+    ## dictionary of rates
+    _ratesDict = None
+    ## flag to plot proportions or full populations
+    _plotProportions = None
+    ## Parameters for controller specific to this time evolution view
+    _tEParams = None
+    
+    #def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, tEParams, showStateVars = None, figure = None, params = None, **kwargs):
+        #if model._systemSize == None and model._constantSystemSize == True:
+        #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
+        #    return
+        silent = kwargs.get('silent', False)
+        super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
+        #super().__init__(model, controller, figure, params, **kwargs)
+        
+        self._tEParams=tEParams
+        with io.capture_output() as log:
+#         if True:
+                   
+            # storing the rates for each rule
+            ## @todo moving _ratesDict to general method?
+            freeParamDict = self._get_argDict()
+            self._ratesDict = {}
+            for rule in self._mumotModel._rules:
+                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
+            self._systemSize = self._getSystemSize()
             
+            if self._controller == None:
+                # storing the initial state
+                self._initialState = {}
+                for state,pop in tEParams["initialState"].items():
+                    if isinstance(state, str):
+                        self._initialState[process_sympy(state)] = pop # convert string into SymPy symbol
+                    else:
+                        self._initialState[state] = pop
+#####
+#                # add to the _initialState the constant reactants
+#                for constantReactant in self._mumotModel._getAllReactants()[1]:
+#                    self._initialState[constantReactant] = freeParamDict[constantReactant]
+#####
+                # storing all values of MA-specific parameters
+                self._maxTime = tEParams["maxTime"]
+                self._plotProportions = tEParams["plotProportions"]
+            
+            else:
+                # storing the initial state
+                self._initialState = {}
+                for state,pop in tEParams["initialState"][0].items():
+                    if isinstance(state, str):
+                        self._initialState[process_sympy(state)] = pop[0] # convert string into SymPy symbol
+                    else:
+                        self._initialState[state] = pop[0]
+######                        
+#                # add to the _initialState the constant reactants
+#                for constantReactant in self._mumotModel._getAllReactants()[1]:
+#                    self._initialState[constantReactant] = freeParamDict[constantReactant]
+######                    
+                # storing fixed params
+                for key,value in tEParams.items():
+                    if value[-1]:
+                        if key == 'initialState':
+                            self._fixedParams[key] = self._initialState
+                        else:
+                            self._fixedParams[key] = value[0]
+                
+            self._constructorSpecificParams(tEParams)
+           
+            
+        self._logs.append(log)
+        
+        if 'fontsize' in kwargs:
+            self._chooseFontSize = kwargs['fontsize']
+        else:
+            self._chooseFontSize=None
+        self._xlab = kwargs.get('xlab', r'time t')
+        #self._ylab = kwargs.get('ylab', r'evolution of states')
+        
+        self._legend_loc = kwargs.get('legend_loc', 'upper left')
+        self._legend_fontsize = kwargs.get('legend_fontsize', 18)
+        
+        self._stateVarList = []
+        for reactant in self._mumotModel._reactants:
+            if reactant not in self._mumotModel._constantReactants:
+                self._stateVarList.append(reactant)
+              
+        if showStateVars:
+            if type(showStateVars) == list:
+                self._stateVarListDisplay = showStateVars    
+                for kk in range(len(self._stateVarListDisplay)):
+                    self._stateVarListDisplay[kk] = process_sympy(self._stateVarListDisplay[kk])
+            else:
+                self._showErrorMessage('Check input: should be of type list!')
+        else:
+            self._stateVarListDisplay = copy.deepcopy(self._stateVarList)
+        
+        self._stateVariable1 = self._stateVarList[0]
+        self._stateVariable2 = self._stateVarList[1]
+        if len(self._stateVarList) == 3:
+            self._stateVariable3 = self._stateVarList[2]
+        
+
+        #self._tend = kwargs.get('tend', 100)
+        self._tstep = kwargs.get('tstep', 0.01)
+        
+        
+        if not(silent):
+            self._plot_NumSolODE()
+        
+    
+    ## calculates right-hand side of ODE system
+    def _get_eqsODE(self, y_old, time):
+        SVsub = {}
+        
+        for kk in range(len(self._stateVarList)):
+            SVsub[self._stateVarList[kk]] = y_old[kk]
+            
+        argDict = self._get_argDict()
+        ode_sys = []
+        for kk in range(len(self._stateVarList)):
+            EQ = self._mumotModel._equations[self._stateVarList[kk]].subs(argDict)
+            EQ = EQ.subs(SVsub)
+            ode_sys.append(EQ)
+            
+        return ode_sys
+
+    
+    def _plot_NumSolODE(self):
+        if not(self._silent): ## @todo is this necessary?
+            self._update_params()
+            plt.figure(self._figureNum)
+            plt.clf()
+            self._resetErrorMessage()
+        self._showErrorMessage(str(self))
+
+
+    def _update_params(self):
+        if self._controller != None:
+            # getting the rates
+            ## @todo moving _ratesDict to general method?
+#             freeParamDict = {}
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 freeParamDict[ Symbol(name) ] = value.value
+            freeParamDict = self._get_argDict()
+            self._ratesDict = {}
+            for rule in self._mumotModel._rules:
+                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
+                if self._ratesDict[str(rule.rate)] == float('inf'):
+                    self._ratesDict[str(rule.rate)] = sys.maxsize
+            #print("_ratesDict=" + str(self._ratesDict))
+            self._systemSize = self._getSystemSize()
+
+            # getting other parameters specific to Integrate
+            if self._fixedParams.get('initialState') is not None:
+                self._initialState = self._fixedParams['initialState']
+            else:
+                for state in self._initialState.keys():
+                    # add normal and constant reactants to the _initialState 
+                    self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
+            
+            self._plotProportions = self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
+            self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
+    
+               
+    
+    def _get_tEParams(self):
+        freeParamDict=self._get_argDict()
+        if self._controller == None:  
+            # storing the initial state
+            initialState = {}
+            for state,pop in self._tEParams["initialState"].items():
+                if isinstance(state, str):
+                    initialState[process_sympy(state)] = pop # convert string into SymPy symbol
+                else:
+                    initialState[state] = pop
+        
+        else:
+            # storing the initial state
+            initialState = {}
+            for state,pop in self._tEParams["initialState"][0].items():
+                if isinstance(state, str):
+                    initialState[process_sympy(state)] = pop[0] # convert string into SymPy symbol
+                else:
+                    initialState[state] = pop[0]
+                        
+        return initialState
+           
 
 ## time evolution view on model including state variables and noise (specialised by MuMoTtimeEvoStateVarView and ...)
 class MuMoTtimeEvolutionView(MuMoTview):
@@ -2667,7 +3016,8 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #             EQ4 = EQ4.subs(SVsub)
 #             ode_sys.append(EQ4)
 #                
-
+    def _constructorSpecificParams(self, _):
+        pass
     
     def _plot_NumSolODE(self):
         if not(self._silent): ## @todo is this necessary?
@@ -2922,7 +3272,212 @@ class MuMoTtimeEvolutionView(MuMoTview):
 # #             logStr += ")"
 # #             print(logStr)    
 #         self._logs.append(log)
+ 
+ 
+class MuMoTIntegrateView(MuMoTtimeEvolutionViewNew):
+    ## y-label with default specific to this MuMoTtimeEvolutionViewNew class (can be set via keyword)
+    _ylab = None
+    
+    def _constructorSpecificParams(self, _):
+        if self._controller is not None:
+            self._generatingCommand = "Integrate"
+    
+    
+    def __init__(self, *args, **kwargs):
+        #self._plotProportion = kwargs.get('plotProportion', True)
+        self._ylab = kwargs.get('ylab', r'evolution of states')
+        super().__init__(*args, **kwargs)
+        #self._generatingCommand = "numSimStateVar"
         
+        
+
+    def _plot_NumSolODE(self, _=None):
+        super()._plot_NumSolODE()
+        
+        # check input
+        for nn in range(len(self._stateVarListDisplay)):
+            if self._stateVarListDisplay[nn] not in self._stateVarList:
+                self._showErrorMessage('Warning:  '+str(self._stateVarListDisplay[nn])+'  is no reactant in the current model.')
+                return None
+      
+#         
+#         if self._stateVariable1 not in self._mumotModel._reactants:
+#             self._showErrorMessage('Warning:  '+str(self._stateVariable1)+'  is no reactant in the current model.')
+#         if self._stateVariable2 not in self._mumotModel._reactants:
+#             self._showErrorMessage('Warning:  '+str(self._stateVariable2)+'  is no reactant in the current model.')
+#         if self._stateVariable3:
+#             if self._stateVariable3 not in self._mumotModel._reactants:
+#                 self._showErrorMessage('Warning:  '+str(self._stateVariable3)+'  is no reactant in the current model.')
+#         if self._stateVariable4:
+#             if self._stateVariable4 not in self._mumotModel._reactants:
+#                 self._showErrorMessage('Warning:  '+str(self._stateVariable4)+'  is no reactant in the current model.')
+#         
+        
+        NrDP = int(self._maxTime/self._tstep) + 1
+        time = np.linspace(0, self._maxTime, NrDP)
+        
+        initDict=self._initialState  #self._get_tEParams()   #self._initialState
+        
+        """
+        initDict = self._getInitCondsFromSlider()
+        if len(initDict) == 0:
+            if self._initCondsSV:
+                for SV in self._initCondsSV:
+                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = self._initCondsSV[SV]
+            for SV in self._stateVarList:
+                if Symbol(latex(Symbol('Phi^0_'+str(SV)))) not in initDict:
+                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = INITIAL_COND_INIT_VAL   
+        """        
+   
+        #if len(initDict) < 2 or len(initDict) > 4:
+        #    self._showErrorMessage("Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!")
+
+        y0 = []
+        for nn in range(len(self._stateVarList)):
+            #SVi0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVarList[nn]))))]
+            SVi0 = initDict[Symbol(str(self._stateVarList[nn]))]
+            y0.append(SVi0)
+        
+        self._y0=y0
+#
+#         SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
+#         SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
+#         y0 = [SV1_0, SV2_0]
+#         if len(initDict) > 2:
+#             SV3_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable3))))]
+#             y0.append(SV3_0)
+#         if len(initDict) > 3:
+#             SV4_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable4))))]
+#             y0.append(SV4_0)
+#         
+
+        sol_ODE = odeint(self._get_eqsODE, y0, time)  
+        
+        sol_ODE_dict = {}
+        for nn in range(len(self._stateVarList)):
+            sol_ODE_dict[str(self._stateVarList[nn])] = sol_ODE[:, nn]
+        
+        self._sol_ODE_dict=sol_ODE_dict  
+        #x_data = [time for kk in range(len(self._get_eqsODE(y0, time)))]
+        x_data = [time for kk in range(len(self._stateVarListDisplay))]
+        #y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
+        y_data = [sol_ODE_dict[str(self._stateVarListDisplay[kk])] for kk in range(len(self._stateVarListDisplay))]
+        
+        if self._plotProportions == False:
+            syst_Size = Symbol('systemSize')
+            sysS = syst_Size.subs(self._get_argDict())
+            #sysS = syst_Size.subs(self._getSystemSize())
+            sysS = sympy.N(sysS)
+            #y_scaling = np.sum(np.asarray(y0))
+            #if y_scaling > 0:
+            #    sysS = sysS/y_scaling
+            for nn in range(len(y_data)):
+                y_temp=np.copy(y_data[nn])
+                for kk in range(len(y_temp)):
+                    y_temp[kk] = y_temp[kk]*sysS
+                y_data[nn] = y_temp
+            c_labels = [r'$'+str(self._stateVarListDisplay[nn])+'$' for nn in range(len(self._stateVarListDisplay))]
+        else:
+            c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
+        
+#         
+#         c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
+#         if self._stateVariable3:
+#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable3)))+'$')
+#         if self._stateVariable4:
+#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
+#         
+        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
+                           fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
+                           legend_fontsize=self._legend_fontsize)
+        
+        with io.capture_output() as log:
+            print('Last point on curve:')  
+            if self._plotProportions == False:
+                for nn in range(len(self._stateVarListDisplay)):
+                    out = latex(str(self._stateVarListDisplay[nn])) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
+                    display(Math(out))
+            else:
+                for nn in range(len(self._stateVarListDisplay)):
+                    out = latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
+                    display(Math(out))
+        self._logs.append(log)
+        
+#        plt.set_aspect('equal') ## @todo
+    
+    def _redrawOnly(self, _=None):
+        super()._plot_NumSolODE()
+        self._update_params()
+        NrDP = int(self._maxTime/self._tstep) + 1
+        time = np.linspace(0, self._maxTime, NrDP)
+        #x_data = [time for kk in range(len(self._get_eqsODE(y0, time)))]
+        x_data = [time for kk in range(len(self._stateVarListDisplay))]
+        #y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
+        y_data = [self._sol_ODE_dict[str(self._stateVarListDisplay[kk])] for kk in range(len(self._stateVarListDisplay))]
+        
+        if self._plotProportions == False:
+            syst_Size = Symbol('systemSize')
+            sysS = syst_Size.subs(self._get_argDict())
+            #sysS = syst_Size.subs(self._getSystemSize())
+            sysS = sympy.N(sysS)
+            #y_scaling = np.sum(np.asarray(self._y0))
+            #if y_scaling > 0:
+            #    sysS = sysS/y_scaling
+            for nn in range(len(y_data)):
+                y_temp=np.copy(y_data[nn])
+                for kk in range(len(y_temp)):
+                    y_temp[kk] = y_temp[kk]*sysS
+                y_data[nn] = y_temp
+            c_labels = [r'$'+str(self._stateVarListDisplay[nn])+'$' for nn in range(len(self._stateVarListDisplay))]
+        else:
+            c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
+        
+#         
+#         c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
+#         if self._stateVariable3:
+#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable3)))+'$')
+#         if self._stateVariable4:
+#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
+#         
+        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
+                           fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
+                           legend_fontsize=self._legend_fontsize)
+        
+    
+
+    def _build_bookmark(self, includeParams = True):
+        if not self._silent:
+            logStr = "bookmark = "
+        else:
+            logStr = ""
+        
+        logStr += "<modelName>." + self._generatingCommand + "(showStateVars=["
+        for nn in range(len(self._stateVarListDisplay)):
+            if nn == len(self._stateVarListDisplay)-1:
+                logStr += "'" + str(self._stateVarListDisplay[nn]) + "'], "
+            else:
+                logStr += "'" + str(self._stateVarListDisplay[nn]) + "', "
+        initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+        logStr += "initialState = " + str(initState_str) + ", "
+        logStr += "maxTime = " + str(self._maxTime) + ", "
+        logStr += "plotProportions = " + str(self._plotProportions) + ", "
+        if includeParams:
+            logStr += self._get_bookmarks_params() + ", "
+        if len(self._generatingKwargs) > 0:
+            for key in self._generatingKwargs:
+                if type(self._generatingKwargs[key]) == str:
+                    logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                elif key == 'showInitSV':
+                    logStr += key + " = False, "
+                else:
+                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "    
+        logStr += "bookmark = False"
+        logStr += ")"
+        logStr = logStr.replace('\\', '\\\\')
+        
+        return logStr
+        
+       
 
 
 ## numerical solution of state variables plot view on model
@@ -8123,14 +8678,14 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         #    legend_loc = kwargs['legend_loc']
         #else:
         #    legend_loc = 'upper left'
-        legend_fontsize = kwargs.get('legend_fontsize', 20)
+        legend_fontsize = kwargs.get('legend_fontsize', 12)
         legend_loc = kwargs.get('legend_loc', 'upper left')
         plt.legend(loc=str(legend_loc), fontsize=legend_fontsize, ncol=2)
         
     for tick in ax.xaxis.get_major_ticks():
-                    tick.label.set_fontsize(18) 
+                    tick.label.set_fontsize(14) 
     for tick in ax.yaxis.get_major_ticks():
-                    tick.label.set_fontsize(18)               
+                    tick.label.set_fontsize(14)               
     
     plt.tight_layout() 
     
