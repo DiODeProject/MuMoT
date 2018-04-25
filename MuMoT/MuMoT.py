@@ -2701,7 +2701,7 @@ class MuMoTmultiController(MuMoTcontroller):
 
 
 ## time evolution view on model including state variables and noise (specialised by MuMoTIntegrateView and MuMoTNoiseCorrelationView)
-class MuMoTtimeEvolutionViewNew(MuMoTview):
+class MuMoTtimeEvolutionView(MuMoTview):
     ## list of all state variables
     _stateVarList = None
     ## list of all state variables displayed in figure
@@ -2920,7 +2920,7 @@ class MuMoTtimeEvolutionViewNew(MuMoTview):
            
 
 ## time evolution view on model including state variables and noise (specialised by MuMoTtimeEvoStateVarView and ...)
-class MuMoTtimeEvolutionView(MuMoTview):
+class MuMoTtimeEvolutionViewOld(MuMoTview):
     ## list of all state variables
     _stateVarList = None
     ## list of all state variables displayed in figure
@@ -3327,9 +3327,9 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #         self._logs.append(log)
  
 ## numerical solution of state variables plot view on model
-class MuMoTIntegrateView(MuMoTtimeEvolutionViewNew):
+class MuMoTIntegrateView(MuMoTtimeEvolutionView):
     
-    ## y-label with default specific to this MuMoTtimeEvolutionViewNew class (can be set via keyword)
+    ## y-label with default specific to this MuMoTIntegrateView class (can be set via keyword)
     _ylab = None
     ## initial conditions used for proportion plot
     _y0 = None
@@ -3539,8 +3539,8 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionViewNew):
 
 
 ## numerical solution of state variables plot view on model
-class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
-    ## y-label with default specific to this MuMoTtimeEvoStateVarView class (can be set via keyword)
+class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionViewOld):
+    ## y-label with default specific to this MuMoTtimeEvoStateVarViewOld class (can be set via keyword)
     _ylab = None
     ## if True: plots proportion; if False plots absolute numbers
     _plotProportion = None
@@ -3732,7 +3732,7 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
 
 
 ## numerical solution of noise correlations around fixed points plot view on model
-class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionViewNew):
+class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
     
     ## equations of motion for first order moments of noise variables
     _EOM_1stOrdMomDict = None
@@ -3742,7 +3742,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionViewNew):
     _tendDS = None
     ## time step of simulation for dynamical system to reach equilibrium (can be set via keyword)
     _tstepDS = None
-    ## y-label with default specific to this MuMoTtimeEvoNoiseCorrView class (can be set via keyword)
+    ## y-label with default specific to this MuMoTNoiseCorrelationsView class (can be set via keyword)
     _ylab = None
     
     def _constructorSpecificParams(self, _):
@@ -4068,7 +4068,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionViewNew):
         
 
 
-class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionView):
+class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionViewOld):
     ## equations of motion for first order moments of noise variables
     _EOM_1stOrdMomDict = None
     ## equations of motion for second order moments of noise variables
