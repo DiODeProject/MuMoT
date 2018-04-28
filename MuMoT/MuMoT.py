@@ -66,8 +66,17 @@ EMPTYSET_SYMBOL = process_sympy('1')
 INITIAL_COND_INIT_VAL = 0.0
 INITIAL_COND_INIT_BOUND = 1.0
 
-
 line_color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
+
+GREEK_LETT_LIST_1=['alpha', 'beta', 'gamma', 'Gamma', 'delta', 'Delta', 'epsilon',
+                    'zeta', 'theta', 'Theta', 'iota', 'kappa', 'lambda', 'Lambda', 
+                    'mu', 'nu', 'xi', 'Xi', 'pi', 'Pi', 'rho', 'sigma', 'Sigma', 'tau', 
+                    'upsilon', 'Upsilon', 'phi', 'Phi', 'chi', 'psi', 'Psi', 'omega', 'Omega']
+GREEK_LETT_LIST_2=['\\alpha', '\\beta', '\\gamma', '\\Gamma', '\\delta', '\\Delta', '\\epsilon',
+                    '\\zeta', '\\theta', '\\Theta', '\\iota', '\\kappa', '\\lambda', '\\Lambda', 
+                    '\\mu', '\\nu', '\\xi', '\\Xi', '\\pi', '\\Pi', '\\rho', '\\sigma', '\\Sigma', '\\tau', 
+                    '\\upsilon', '\\Upsilon', '\\phi', '\\Phi', '\\chi', '\\psi', '\\Psi', '\\omega', '\\Omega']
+
 
 # enum possible Network types
 class NetworkType(Enum):
@@ -296,8 +305,13 @@ class MuMoTmodel:
 
     ## show a sorted LaTeX representation of the model's constant reactants
     def showConstantReactants(self):
-        for reactant in self._constantReactants:
-            display(Math(self._ratesLaTeX[repr(reactant)]))
+        if len(self._constantReactants) == 0:
+            print('No constant reactants in the model!')
+        else:
+            for reactant in self._constantReactants:
+                out = self._ratesLaTeX[repr(reactant)]
+                out = _doubleUnderscorify(_greekPrependify(out))
+                display(Math(out))
 #         if self._constantReactantsLaTeX == None:
 #             self._constantReactantsLaTeX = []
 #             reactants = map(latex, list(self._constantReactants))
@@ -324,7 +338,8 @@ class MuMoTmodel:
                 self._reactantsLaTeX.append(reactant)
             self._reactantsLaTeX.sort()
         for reactant in self._reactantsLaTeX:
-            display(Math(reactant))
+            out = _doubleUnderscorify(_greekPrependify(reactant))
+            display(Math(out))
         #reactant_list = []
         #for reaction in self._stoichiometry:
         #    for reactant in self._stoichiometry[reaction]:
@@ -337,6 +352,7 @@ class MuMoTmodel:
     def showRates(self):
         for reaction in self._stoichiometry:
             out = latex(self._stoichiometry[reaction]['rate']) + "\; (" + latex(reaction) + ")"
+            out = _doubleUnderscorify(_greekPrependify(out))
             display(Math(out))        
     
 #    def showRatesOLD(self):
@@ -370,12 +386,14 @@ class MuMoTmodel:
     def showODEs(self):
         for reactant in self._reactants:
             out = "\\displaystyle \\frac{\\textrm{d}" + latex(reactant) + "}{\\textrm{d}t} := " + latex(self._equations[reactant])
+            out = _doubleUnderscorify(_greekPrependify(out))
             display(Math(out))
     
     ## displays stoichiometry as a dictionary with keys ReactionNr,
     # ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry
     def showStoichiometry(self):
         out = latex(self._stoichiometry)
+        out = _doubleUnderscorify(_greekPrependify(out))
         display(Math(out))
     
     ## displays Master equation expressed with ladder operators
@@ -404,7 +422,7 @@ class MuMoTmodel:
                 rhs_plus = ""
             else:
                 rhs_plus = " + "
-            out_rhs += rhs_plus + latex(rhs_dict[key][3]) + " ( " + latex((rhs_dict[key][0]-1)) + " ) " +  latex(rhs_dict[key][1]) + latex(rhs_dict[key][2])
+            out_rhs += rhs_plus + latex(rhs_dict[key][3]) + " ( " + latex((rhs_dict[key][0]-1)) + " ) " +  latex(rhs_dict[key][1]) + " " + latex(rhs_dict[key][2])
             term_count += 1
         if len(nvec)==2:
             lhs_ME = Derivative(P(nvec[0], nvec[1],t),t)
@@ -415,18 +433,24 @@ class MuMoTmodel:
         
         #return {lhs_ME: rhs_ME}
         out = latex(lhs_ME) + ":= " + out_rhs
+        out = _doubleUnderscorify(out)
+        out = _greekPrependify(out)
         display(Math(out))
         if not substring == None:
             for sub in substring:
+                sub = _doubleUnderscorify(sub)
+                sub = _greekPrependify(sub)
                 display(Math("With \; substitution:\;" + latex(sub) + ":= " + latex(substring[sub])))
         
     ## shows van Kampen expansion when the operators are expanded up to second order
     def showVanKampenExpansion(self):
         rhs_vke, lhs_vke, substring = _doVanKampenExpansion(_deriveMasterEquation, self._stoichiometry)
         out = latex(lhs_vke) + " := \n" + latex(rhs_vke)
+        out = _doubleUnderscorify(_greekPrependify(out))
         display(Math(out))
         if not substring == None:
             for sub in substring:
+                sub = _doubleUnderscorify(_greekPrependify(sub))
                 display(Math("With \; substitution:\;" + latex(sub) + ":= " + latex(substring[sub])))
     
     ## shows ODEs derived from the leading term in van Kampen expansion
@@ -434,6 +458,7 @@ class MuMoTmodel:
         ODEdict = _getODEs_vKE(_get_orderedLists_vKE, self._stoichiometry)
         for ode in ODEdict:
             out = latex(ode) + " := " + latex(ODEdict[ode])
+            out = _doubleUnderscorify(_greekPrependify(out))
             display(Math(out))
         
     ## shows Fokker-Planck equation derived from term ~ O(1) in van Kampen expansion
@@ -442,9 +467,11 @@ class MuMoTmodel:
         FPEdict, substring = _getFokkerPlanckEquation(_get_orderedLists_vKE, self._stoichiometry)
         for fpe in FPEdict:
             out = latex(fpe) + " := " + latex(FPEdict[fpe])
+            out = _doubleUnderscorify(_greekPrependify(out))
             display(Math(out))
             if not substring == None:
                 for sub in substring:
+                    sub = _doubleUnderscorify(_greekPrependify(sub))
                     display(Math("With \; substitution:\;" + latex(sub) + ":= " + latex(substring[sub])))
     
     ## displays equations of motion of first and second order moments of noise                
@@ -452,9 +479,13 @@ class MuMoTmodel:
         EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         for eom1 in EOM_1stOrderMom:
             out = "\\displaystyle \\frac{\\textrm{d}" + latex(eom1.subs(NoiseSubs1stOrder)) + "}{\\textrm{d}t} := " + latex(EOM_1stOrderMom[eom1].subs(NoiseSubs1stOrder))
+            out = _doubleUnderscorify(out)
+            out = _greekPrependify(out)
             display(Math(out))
         for eom2 in EOM_2ndOrderMom:
             out = "\\displaystyle \\frac{\\textrm{d}" + latex(eom2.subs(NoiseSubs2ndOrder)) + "}{\\textrm{d}t} := " + latex(EOM_2ndOrderMom[eom2].subs(NoiseSubs2ndOrder))
+            out = _doubleUnderscorify(out)
+            out = _greekPrependify(out)
             display(Math(out))
     
     
@@ -468,6 +499,7 @@ class MuMoTmodel:
         else:
             for sol1 in SOL_1stOrderMom:
                 out = latex(sol1.subs(NoiseSubs1stOrder)) + latex(r'(t \to \infty)') + ":= " + latex(SOL_1stOrderMom[sol1].subs(NoiseSubs1stOrder))
+                out = _doubleUnderscorify(_greekPrependify(out))
                 display(Math(out))
         if SOL_2ndOrdMomDict == None:
             print('Noise 2nd-order moments could not be calculated analytically.')
@@ -475,6 +507,7 @@ class MuMoTmodel:
         else:
             for sol2 in SOL_2ndOrdMomDict:
                 out = latex(sol2.subs(NoiseSubs2ndOrder)) + latex(r'(t \to \infty)') + " := " + latex(SOL_2ndOrdMomDict[sol2].subs(NoiseSubs2ndOrder))
+                out = _doubleUnderscorify(_greekPrependify(out))
                 display(Math(out)) 
 #         for sol1 in SOL_1stOrderMom:
 #             out = latex(sol1.subs(NoiseSubs1stOrder)) + latex(r'(t \to \infty)') + ":= " + latex(SOL_1stOrderMom[sol1].subs(NoiseSubs1stOrder))
@@ -513,6 +546,7 @@ class MuMoTmodel:
                     out += ")"                 
                 out += " + "
             out = out[0:len(out) - 2] # delete the last ' + '
+            out = _doubleUnderscorify(_greekPrependify(out))
             display(Math(out))
     
     
@@ -555,7 +589,10 @@ class MuMoTmodel:
         
         # construct controller
         viewController = MuMoTtimeEvolutionController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, tEParams=IntParams, **kwargs)
-
+        
+        #if showStateVars:
+        #    showStateVars = [r'' + showStateVars[kk] for kk in range(len(showStateVars))]
+        
         modelView = MuMoTIntegrateView(self, viewController, IntParams, showStateVars, **kwargs)
         viewController.setView(modelView)
         
@@ -1455,7 +1492,7 @@ class MuMoTcontroller:
                 widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
                                              max = pair[1][2], step = pair[1][3],
                                              readout_format='.' + str(_count_sig_decimals(str(pair[1][3]))) + 'f',
-                                             description = r'\(' + self._paramLabelDict.get(pair[0],pair[0]) + r'\)', 
+                                             description = r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(pair[0],pair[0]))) + r'\)', 
                                              continuous_update = continuousReplot)
                 self._widgetsFreeParams[pair[0]] = widget
                 if not(self._silent):
@@ -1638,7 +1675,7 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
                                              step = pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
 #                                              description = "State " + str(state),
-                                             description = "Reactant " + r'\(' + self._paramLabelDict.get(state,str(state)) + r'\)' + " at t=0: ",
+                                             description = "Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + r'\)' + " at t=0: ",
                                              style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
                 
@@ -2274,6 +2311,7 @@ class MuMoTview:
                 
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
+        #print(argDict)
         return argDict
 
 
@@ -2819,7 +2857,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
               
         if showStateVars:
             if type(showStateVars) == list:
-                self._stateVarListDisplay = showStateVars    
+                self._stateVarListDisplay = showStateVars
                 for kk in range(len(self._stateVarListDisplay)):
                     self._stateVarListDisplay[kk] = process_sympy(self._stateVarListDisplay[kk])
             else:
@@ -3438,6 +3476,7 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
         else:
             c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
         
+        c_labels = [_doubleUnderscorify(_greekPrependify(c_labels[jj])) for jj in range(len(c_labels))]
 #         
 #         c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
 #         if self._stateVariable3:
@@ -3949,6 +3988,9 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
         else:
             y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)], SOL_2ndOrdMomDict[M_2(eta_SV2**2)], 
                   SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)]]
+        #print(time)
+        #print(y0)
+        #print(SOL_2ndOrdMomDict)
         sol_ODE = odeint(noiseODEsys, y0, time) # sol_ODE overwritten
         
         x_data = [time for kk in range(len(y0))]  
@@ -3977,7 +4019,9 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
                         r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV2)+'(0)'+ '>$', 
                         r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
                         r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV2)+'(0)'+ '>$']
-       
+        
+        c_labels = [_doubleUnderscorify(_greekPrependify(c_labels[jj])) for jj in range(len(c_labels))]
+        
         _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
                            fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True, 
                            legend_fontsize=self._legend_fontsize)
@@ -4427,6 +4471,10 @@ class MuMoTfieldView(MuMoTview):
     _speed = None 
     ## class-global dictionary of memoised masks with (mesh size, dimension) as key
     _mask = {} 
+    ##x-label
+    _xlab = None
+    ## y-label
+    _ylab = None
     
     def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
         if model._systemSize == None and model._constantSystemSize == True:
@@ -4440,10 +4488,10 @@ class MuMoTfieldView(MuMoTview):
         else:
             self._chooseFontSize=None
         self._showFixedPoints = kwargs.get('showFixedPoints', False)
-        self._xlab = kwargs.get('xlab', r'$'+latex(Symbol('Phi_'+str(stateVariable1)))+'$')
-        self._ylab = kwargs.get('ylab', r'$'+latex(Symbol('Phi_'+str(stateVariable2)))+'$')
+        self._xlab = kwargs.get('xlab', r'$'+ '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable1)))+'}$')
+        self._ylab = kwargs.get('ylab', r'$'+ '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable2)))+'}$')
         if stateVariable3:
-            self._zlab = kwargs.get('zlab', r'$'+latex(Symbol('Phi_'+str(stateVariable3)))+'$') 
+            self._zlab = kwargs.get('zlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable3))) + '}$') 
         
         self._stateVariable1 = process_sympy(stateVariable1)
         self._stateVariable2 = process_sympy(stateVariable2)
@@ -5352,7 +5400,9 @@ class MuMoTbifurcationView(MuMoTview):
         self._generatingCommand = "bifurcation"
 
         self._chooseFontSize = kwargs.get('fontsize', None)
+        #self._LabelY =  kwargs.get('ylab', r'$' + _doubleUnderscorify(_greekPrependify(stateVarExpr1)) +'$') 
         self._LabelY =  kwargs.get('ylab', r'$' + stateVarExpr1 +'$') 
+        #self._LabelX = kwargs.get('xlab', r'$' + _doubleUnderscorify(_greekPrependify(bifurcationParameter)) +'$')
         self._LabelX = kwargs.get('xlab', r'$' + bifurcationParameter +'$')
         self._chooseXrange = kwargs.get('choose_xrange', None)
         self._chooseYrange = kwargs.get('choose_yrange', None)
@@ -5362,6 +5412,8 @@ class MuMoTbifurcationView(MuMoTview):
         self._bifurcationParameter = self._pydstoolify(bifurcationParameter)
         self._stateVarExpr1 = stateVarExpr1
         stateVarExpr1 = self._pydstoolify(stateVarExpr1)
+        #print(stateVarExpr1)
+        
         if stateVarExpr2:
             stateVarExpr2 = self._pydstoolify(stateVarExpr2)
         
@@ -5371,7 +5423,7 @@ class MuMoTbifurcationView(MuMoTview):
             self._stateVarBif1 = stateVarExpr1[:stateVarExpr1.index('-')]
             self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('-')+1:]
             self._SVoperation = '-'
-            
+  
         except ValueError:
             try:
                 stateVarExpr1.index('+')
@@ -5381,6 +5433,9 @@ class MuMoTbifurcationView(MuMoTview):
             except ValueError:
                 self._stateVarBif1 = stateVarExpr1
                 self._stateVarBif2 = stateVarExpr2
+        
+        #print(self._stateVarBif1) 
+        #print(self._stateVarBif2) 
                 
         #self._bifInit = kwargs.get('BifParInit', None)
                   
@@ -5398,6 +5453,13 @@ class MuMoTbifurcationView(MuMoTview):
             return None
         self._stateVariable1 = stateVariableList[0]
         self._stateVariable2 = stateVariableList[1]
+        
+        #print(self._stateVariable1)
+        #print(self._pydstoolify(self._stateVariable1))
+        #print(self._stateVariable2)
+        #print(self._pydstoolify(self._stateVariable2))
+        
+        
         if self._stateVarBif2 == None:
             if self._stateVarBif1 == self._pydstoolify(self._stateVariable1):
                 self._stateVarBif2 = self._pydstoolify(self._stateVariable2)
@@ -5452,7 +5514,9 @@ class MuMoTbifurcationView(MuMoTview):
             YDATA = [] # list of arrays containing the state variable data (either one variable, or the sum or difference of the two SVs) for bifurcation diagram data
             
             initDictList = []
+            #print(initDictList)
             self._pyDSmodel_ics   = self._getInitCondsFromSlider()
+            #print(self._pyDSmodel_ics)
             for ic in self._pyDSmodel_ics:
                 if 'Phi0' in self._pydstoolify(ic):
                     self._pyDSmodel_ics[self._pydstoolify(ic)[self._pydstoolify(ic).index('0')+1:]] = self._pyDSmodel_ics.pop(ic)  #{'A': 0.1, 'B': 0.9 }  
@@ -5476,7 +5540,7 @@ class MuMoTbifurcationView(MuMoTview):
             sPoints_Z=[] #stateVarBif2
             k_iter_BPlabel = 0
             k_iter_LPlabel = 0
-            
+            #print(initDictList)
             for nn in range(len(initDictList)):
 # # The following few lines that are commented out prevent continuation of branches where the initial condition
 # # will lead to a copy of a curve that has already been computed.                
@@ -5498,13 +5562,15 @@ class MuMoTbifurcationView(MuMoTview):
                 #self._pyDSmodel.ics = initDictList[nn]
                 pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
                 pyDSode.set(ics =  initDictList[nn] )
-                pyDSode.set(pars = self._getBifParInitCondFromSlider())      
+                pyDSode.set(pars = self._getBifParInitCondFromSlider())   
+                #print(self._getBifParInitCondFromSlider())  
                 pyDScont = dst.ContClass(pyDSode)
                 EQ_iter = 1+nn
                 k_iter_BP = 1
                 k_iter_LP = 1
                 pyDScontArgs = dst.args(name='EQ'+str(EQ_iter), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
                 pyDScontArgs.freepars     = [self._bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
+                #print(self._bifurcationParameter)
                 pyDScontArgs.MaxNumPoints = self._MaxNumPoints    # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
                 pyDScontArgs.MaxStepSize  = 1e-1
                 pyDScontArgs.MinStepSize  = 1e-5
@@ -8914,7 +8980,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                         plt.plot(solX_dict['solX_unst'][jj], 
                                  solY_dict['solY_unst'][jj], 
                                  c = line_color_list[2], 
-                                 ls = linestyle_list[3], lw = LineThickness, label = r'unstable')
+                                 ls = linestyle_list[1], lw = LineThickness, label = r'unstable')
                 if not solX_dict['solX_stab'] == []:            
                     for jj in range(len(solX_dict['solX_stab'])):
                         plt.plot(solX_dict['solX_stab'][jj], 
@@ -8926,7 +8992,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                         plt.plot(solX_dict['solX_saddle'][jj], 
                                  solY_dict['solY_saddle'][jj], 
                                  c = line_color_list[0], 
-                                 ls = linestyle_list[1], lw = LineThickness, label = r'saddle')
+                                 ls = linestyle_list[3], lw = LineThickness, label = r'saddle')
                 
                 
                 
@@ -9519,6 +9585,64 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                                                            paramNameForErrorMsg=optionName)  
     
     return [None,False] # default output for unknown optionName
+
+
+def _doubleUnderscorify(s):
+    ind_list = [kk for kk, char in enumerate(s) if char == '_' and s[kk+1] != '{']
+    if len(ind_list) == 0:
+        return s
+    else:
+        index_MinCharLength = 1
+        index_MaxCharLength_init = 20
+        s_list=list(s)
+        
+        for ind in ind_list:
+            ind_diff=len(s_list)-1-ind
+            if ind_diff > 5:
+                index_MaxCharLength=min(index_MaxCharLength_init,ind_diff-5)
+                # the following requires that indices consist of 1 or 2 charcter(s) only
+                for nn in range(4+index_MinCharLength,5+index_MaxCharLength):
+                    if s_list[ind+nn] == '}' and s_list[ind+nn+1] !='}' :
+                        s_list[ind]='_{'
+                        s_list[ind+nn]='}}' 
+                        break
+        
+    return ''.join(s_list)
+
+
+def _greekPrependify(s):
+    for nn in range(len(GREEK_LETT_LIST_1)):
+        if 'eta' in s:
+            s = _greekReplace(s, 'eta', '\\eta')
+        if GREEK_LETT_LIST_1[nn] in s:
+            s = _greekReplace(s, GREEK_LETT_LIST_1[nn], GREEK_LETT_LIST_2[nn]) 
+            #if s[s.find(GREEK_LETT_LIST_1[nn]+'_')-1] !='\\':
+            #    s = s.replace(GREEK_LETT_LIST_1[nn]+'_',GREEK_LETT_LIST_2[nn]+'_')
+    return s
+
+
+def _greekReplace(s, sub, repl):
+    # if find_index is not minus1 we have found at least one match for the substring
+    find_index = s.find(sub)
+    # loop util we find no (more) match
+    while find_index != -1:
+        if s[find_index-1] != '\\':
+            if sub != 'eta':
+                s=s[:find_index]+repl+s[find_index + len(sub):]
+            else:
+                if s[find_index-1] != 'b' and s[find_index-1] != 'z':
+                    if s[find_index-1] != 'h':
+                        s=s[:find_index]+repl+s[find_index + len(sub):]
+                    elif s[find_index-1] == 'h':
+                        if s[find_index-2] != 't' and s[find_index-2] != 'T':
+                            s=s[:find_index]+repl+s[find_index + len(sub):]
+        # find + 1 means we start at the last match start index + 1
+        find_index = s.find(sub, find_index + 1)
+    return s
+
+
+
+
 
 # import gc, inspect
 # def _find_obj_names(obj):
