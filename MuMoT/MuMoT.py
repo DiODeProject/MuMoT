@@ -7663,7 +7663,7 @@ def _getStoichiometry(rules, const_reactants):
 def _deriveMasterEquation(stoichiometry):
     substring = None
     P, E_op, x, y, v, w, t, m = symbols('P E_op x y v w t m')
-    V = Symbol('V', real=True, constant=True)
+    V = Symbol('\overline{V}', real=True, constant=True)
     stoich = stoichiometry
     nvec = []
     for key1 in stoich:
@@ -7709,7 +7709,7 @@ def _deriveMasterEquation(stoichiometry):
 ## Function returning the left-hand side and right-hand side of van Kampen expansion    
 def _doVanKampenExpansion(rhs, stoich):
     P, E_op, x, y, v, w, t, m = symbols('P E_op x y v w t m')
-    V = Symbol('V', real=True, constant=True)
+    V = Symbol('\overline{V}', real=True, constant=True)
     nvec = []
     nconstvec = []
     for key1 in stoich:
@@ -7839,7 +7839,7 @@ def _doVanKampenExpansion(rhs, stoich):
 ## creates list of dictionaries where the key is the system size order
 #def _get_orderedLists_vKE( _getStoichiometry,rules):
 def _get_orderedLists_vKE(stoich):
-    V = Symbol('V', real=True, constant=True)
+    V = Symbol('\overline{V}', real=True, constant=True)
     stoichiometry = stoich
     rhs_vke, lhs_vke, substring = _doVanKampenExpansion(_deriveMasterEquation, stoichiometry)
     Vlist_lhs=[]
@@ -7871,7 +7871,7 @@ def _get_orderedLists_vKE(stoich):
 ## Function that returns the Fokker-Planck equation
 def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
     P, t = symbols('P t')
-    V = Symbol('V', real=True, constant=True)
+    V = Symbol('\overline{V}', real=True, constant=True)
     Vlist_lhs, Vlist_rhs, substring = _get_orderedLists_vKE(stoich)
     rhsFPE=0
     lhsFPE=0
@@ -8392,7 +8392,7 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
 ## Function that returns the ODE system deerived from Master equation
 def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     P, t = symbols('P t')
-    V = Symbol('V', real=True, constant=True)
+    V = Symbol('\overline{V}', real=True, constant=True)
     Vlist_lhs, Vlist_rhs, substring = _get_orderedLists_vKE(stoich)
     rhsODE=0
     lhsODE=0
