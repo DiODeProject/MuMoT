@@ -846,9 +846,73 @@ class MuMoTmodel:
             return viewController
         else:
             return None
+    
+    ## construct interactive time evolution plot for state variables 
+    def Bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, initWidgets = {}, **kwargs):
+        # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
+        
+        #if bifurcationParameter[0]=='\\':
+        #        bifPar = bifurcationParameter[1:]
+        #else:
+        #    bifPar = bifurcationParameter
+        bifPar = bifurcationParameter
+        #if self._systemSize:
+        #    kwargs['conserved'] = True
+        
+        paramValues = []
+        paramNames = []
+        
+        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
+        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
+        rateStep = RATE_STEP ## @todo choose rate step sensibly
+        for reactant in self._constantReactants:
+            paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+#            paramNames.append('(' + latex(reactant) + ')')
+            paramNames.append(str(reactant)) 
+#         
+#         for rate in self._rates:
+#             if str(rate) != bifParam:
+#                 paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+#                 paramNames.append(str(rate))
+#             else:
+#                 if bifParInitVal:
+#                     paramValues.append((bifParInitVal, rateLimits[0], rateLimits[1], rateStep))
+#                 else:
+#                     paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+#                 #paramNames.append(str(rate)+'_{init}')
+#                 paramNames.append(latex(Symbol(str(rate)+'_init')))
+#       
+        for freeParam in self._rates:
+            ## @todo: having params as a list is inefficient, a dictionary would be more convenient (see issue #27)
+            if str(freeParam) != str(process_sympy(bifPar)):
+                rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
+                                        defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
+                                        initValueRangeStep=initWidgets.get(str(freeParam)), 
+                                        validRange = (0,float("inf")))
+                paramValues.append(rateVals)
+                paramNames.append(str(freeParam))
+        
+        BfcParams = {}
+        # read input parameters
+        BfcParams['initBifParam'] = _format_advanced_option(optionName='initBifParam', inputValue=kwargs.get('initBifParam'), initValues=initWidgets.get('initBifParam'))
+        BfcParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
+        
+        # construct controller
+        viewController = MuMoTbifurcationController(bifurcationParameter=bifPar, paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, BfcParams=BfcParams, **kwargs)
+        
+        #if showStateVars:
+        #    showStateVars = [r'' + showStateVars[kk] for kk in range(len(showStateVars))]
+        
+        modelView = MuMoTBifurcationView(self, viewController, BfcParams, bifurcationParameter, stateVariable1, stateVariable2, **kwargs)
+        viewController.setView(modelView)
+        
+        viewController._setReplotFunction(modelView._plot_bifurcation)
+        
+        return viewController
+    
         
     ## construct interactive PyDSTool plot
-    def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, params=None, **kwargs):
+    def bifurcationOLD(self, bifurcationParameter, stateVariable1, stateVariable2 = None, params=None, **kwargs):
         try:
             kwargs['showInitSV'] = kwargs.get('showInitSV', True)
             
@@ -864,7 +928,7 @@ class MuMoTmodel:
             viewController = self._controller(False, params = params, **kwargs)
            
             # construct view
-            modelView = MuMoTbifurcationView(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, params = params, **kwargs)
+            modelView = MuMoTbifurcationViewOLD(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, params = params, **kwargs)
             
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_bifurcation)
@@ -1657,6 +1721,70 @@ class MuMoTcontroller:
         return Javascript(js_download)
 
 
+class MuMoTbifurcationController(MuMoTcontroller):
+    
+    def __init__(self, bifurcationParameter, paramValues, paramNames, paramLabelDict, continuousReplot, BfcParams, **kwargs):
+        
+        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, systemSize=False, **kwargs)
+        
+        initialState = BfcParams['initialState'][0]
+        if not BfcParams['initialState'][-1]:
+            #for state,pop in initialState.items():
+            for i,state in enumerate(sorted(initialState.keys(), key=str)):
+                pop = initialState[state]
+                widget = widgets.FloatSlider(value = pop[0],
+                                             min = pop[1], 
+                                             max = pop[2],
+                                             step = pop[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
+#                                              description = "State " + str(state),
+                                             description = "Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + r'\)' + " at t=0: ",
+                                             style = {'description_width': 'initial'},
+                                             continuous_update = continuousReplot)
+                
+                if kwargs.get('conserved', False)==True:
+                    # disable last population widget (if there are more than 1)
+                    if len(initialState) > 1 and i == 0:
+                        widget.disabled = True
+                    else:
+                        widget.observe(self._updateInitialStateWidgets, 'value')
+                        
+                self._widgetsExtraParams['init'+str(state)] = widget
+                #advancedWidgets.append(widget)
+            
+        # init bifurcation paramter value slider
+        if not BfcParams['initBifParam'][-1]:
+            initBifParam = BfcParams['initBifParam']
+            widget = widgets.FloatSlider(value = initBifParam[0], min = initBifParam[1], 
+                                             max = initBifParam[2], step = initBifParam[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(initBifParam[3]))) + 'f',
+                                             description = 'Initial ' + r'\(' + _doubleUnderscorify(_greekPrependify(str(bifurcationParameter))) + r'\) : ',
+                                             style = {'description_width': 'initial:'},
+                                             #layout=widgets.Layout(width='50%'),
+                                             disabled=False,
+                                             continuous_update = continuousReplot) 
+            self._widgetsExtraParams['initBifParam'] = widget
+            #advancedWidgets.append(widget)
+        
+        
+               
+        
+        self._addSpecificWidgets(BfcParams, continuousReplot)
+        self._orderWidgets(initialState)
+        
+        # add widgets to the Advanced options tab
+        if not self._silent:
+            self._displayAdvancedOptionsTab()
+            
+    def _addSpecificWidgets(self, BfcParams, continuousReplot):
+        pass
+    
+    def _orderWidgets(self, initialState):
+        # define the widget order
+        self._extraWidgetsOrder.append('initBifParam')
+        for state in sorted(initialState.keys(), key=str):
+            self._extraWidgetsOrder.append('init'+str(state))
+
 
 class MuMoTtimeEvolutionController(MuMoTcontroller):
     
@@ -2266,10 +2394,23 @@ class MuMoTview:
                 
                 paramNames.append(name)
                 paramValues.append(value.value)
-            
+        
+            if self._controller._widgetsExtraParams != {}:
+                for name, value in self._controller._widgetsExtraParams.items():
+                    if name == 'initBifParam':
+                        paramNames.append(self._bifurcationParameter_for_get_argDict)
+                        paramValues.append(value.value)
+                        
+        if self._fixedParams != {}:
+            for key in self._fixedParams:
+                if key == 'initBifParam':
+                    paramNames.append(self._bifurcationParameter_for_get_argDict)
+                    paramValues.append(self._fixedParams[key])
+    
         if self._paramNames is not None:
             paramNames += map(str, self._paramNames)
             paramValues += self._paramValues   
+        
                  
         #funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
@@ -2283,8 +2424,6 @@ class MuMoTview:
 #         else:
 #             systemSize = Symbol('systemSize')
 #             argDict[systemSize] = self._getSystemSize()
-
-
 
         if self._mumotModel._systemSize:
 #             argDict[self._mumotModel._systemSize] = self._getSystemSize()
@@ -2334,21 +2473,25 @@ class MuMoTview:
 #         argDict = dict(zip(argNamesSymb, paramValues))
 #         argDict[self._mumotModel._systemSize] = 1
        
-        argDict = self._get_argDict()   
-        for arg in argDict:
-            if '_{init}' in str(arg):
-                if str(arg)[0] == '\\':
-                    arg1 = str(arg)[1:]
-                    argReplace = Symbol(arg1.replace('_{init}', ''))
-                    argDict[argReplace] = argDict.pop(arg)
-                else:
-                    argReplace = Symbol(str(arg).replace('_{init}', ''))
-                    argDict[argReplace] = argDict.pop(arg)
-            #if arg[0] == '\\':
-            #    argDict[arg[1:]] = argDict.pop(arg)
+        argDict = self._get_argDict()
+        
+#         
+#         for arg in argDict:
+#             if '_{init}' in str(arg):
+#                 if str(arg)[0] == '\\':
+#                     arg1 = str(arg)[1:]
+#                     argReplace = Symbol(arg1.replace('_{init}', ''))
+#                     argDict[argReplace] = argDict.pop(arg)
+#                 else:
+#                     argReplace = Symbol(str(arg).replace('_{init}', ''))
+#                     argDict[argReplace] = argDict.pop(arg)
+#             #if arg[0] == '\\':
+#             #    argDict[arg[1:]] = argDict.pop(arg)
+#         
+
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
-        
+       
         eps=1e-8
         EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
 
@@ -2767,10 +2910,8 @@ class MuMoTtimeEvolutionView(MuMoTview):
     
     ## total number of agents in the simulation
     _systemSize = None
-    ## the system state at the start of the simulation (timestep zero) described as proportion of _systemSize
+    ## the system state at the start of the simulation (timestep zero)
     _initialState = None
-    ## dictionary of rates
-    _ratesDict = None
     ## flag to plot proportions or full populations
     _plotProportions = None
     ## Parameters for controller specific to this time evolution view
@@ -2788,15 +2929,18 @@ class MuMoTtimeEvolutionView(MuMoTview):
         self._tEParams=tEParams
         with io.capture_output() as log:
 #         if True:
-                   
-            # storing the rates for each rule
-            ## @todo moving _ratesDict to general method?
-            freeParamDict = self._get_argDict()
-            self._ratesDict = {}
-            for rule in self._mumotModel._rules:
-                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
+ 
+#                    
+#             # storing the rates for each rule
+#             ## @todo moving _ratesDict to general method?
+#             freeParamDict = self._get_argDict()
+#             self._ratesDict = {}
+#             for rule in self._mumotModel._rules:
+#                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
+#
+
             self._systemSize = self._getSystemSize()
-            
+             
             if self._controller == None:
                 # storing the initial state
                 self._initialState = {}
@@ -2913,12 +3057,16 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #             for name, value in self._controller._widgetsFreeParams.items():
 #                 freeParamDict[ Symbol(name) ] = value.value
             freeParamDict = self._get_argDict()
-            self._ratesDict = {}
-            for rule in self._mumotModel._rules:
-                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
-                if self._ratesDict[str(rule.rate)] == float('inf'):
-                    self._ratesDict[str(rule.rate)] = sys.maxsize
-            #print("_ratesDict=" + str(self._ratesDict))
+
+# 
+#             self._ratesDict = {}
+#             for rule in self._mumotModel._rules:
+#                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
+#                 if self._ratesDict[str(rule.rate)] == float('inf'):
+#                     self._ratesDict[str(rule.rate)] = sys.maxsize
+#             #print("_ratesDict=" + str(self._ratesDict))
+#             
+
             self._systemSize = self._getSystemSize()
 
             # getting other parameters specific to Integrate
@@ -2933,29 +3081,29 @@ class MuMoTtimeEvolutionView(MuMoTview):
             self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
     
                
-    
-    def _get_tEParams(self):
-        freeParamDict=self._get_argDict()
-        if self._controller == None:  
-            # storing the initial state
-            initialState = {}
-            for state,pop in self._tEParams["initialState"].items():
-                if isinstance(state, str):
-                    initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-                else:
-                    initialState[state] = pop
-        
-        else:
-            # storing the initial state
-            initialState = {}
-            for state,pop in self._tEParams["initialState"][0].items():
-                if isinstance(state, str):
-                    initialState[process_sympy(state)] = pop[0] # convert string into SymPy symbol
-                else:
-                    initialState[state] = pop[0]
-                        
-        return initialState
-           
+#      
+#     def _get_tEParams(self):
+#         freeParamDict=self._get_argDict()
+#         if self._controller == None:  
+#             # storing the initial state
+#             initialState = {}
+#             for state,pop in self._tEParams["initialState"].items():
+#                 if isinstance(state, str):
+#                     initialState[process_sympy(state)] = pop # convert string into SymPy symbol
+#                 else:
+#                     initialState[state] = pop
+#          
+#         else:
+#             # storing the initial state
+#             initialState = {}
+#             for state,pop in self._tEParams["initialState"][0].items():
+#                 if isinstance(state, str):
+#                     initialState[process_sympy(state)] = pop[0] # convert string into SymPy symbol
+#                 else:
+#                     initialState[state] = pop[0]
+#                          
+#         return initialState
+#             
 
 ## time evolution view on model including state variables and noise (specialised by MuMoTtimeEvoStateVarView and ...)
 class MuMoTtimeEvolutionViewOld(MuMoTview):
@@ -3493,10 +3641,12 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
             if self._plotProportions == False:
                 for nn in range(len(self._stateVarListDisplay)):
                     out = latex(str(self._stateVarListDisplay[nn])) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
+                    out = _doubleUnderscorify(_greekPrependify(out))
                     display(Math(out))
             else:
                 for nn in range(len(self._stateVarListDisplay)):
                     out = latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
+                    out = _doubleUnderscorify(_greekPrependify(out))
                     display(Math(out))
         self._logs.append(log)
         
@@ -3529,6 +3679,7 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
         else:
             c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
         
+        c_labels = [_doubleUnderscorify(_greekPrependify(c_labels[jj])) for jj in range(len(c_labels))]
 #         
 #         c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
 #         if self._stateVariable3:
@@ -3564,13 +3715,13 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
             for key in self._generatingKwargs:
                 if type(self._generatingKwargs[key]) == str:
                     logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
-                elif key == 'showInitSV':
-                    logStr += key + " = False, "
                 else:
                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "    
         logStr += "bookmark = False"
         logStr += ")"
+        logStr = _greekPrependify(logStr)
         logStr = logStr.replace('\\', '\\\\')
+        logStr = logStr.replace('\\\\\\\\', '\\\\')
         
         return logStr
         
@@ -3888,7 +4039,8 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
             else:  
                 print('This plot depicts the noise-noise auto-correlation and cross-correlation functions around the following stable steady state:')
             for reactant in steadyStateDict:
-                out = latex(Symbol('Phi^s_'+str(reactant))) + '=' + latex(steadyStateDict[reactant])
+                out = 'Phi^s_{' + latex(str(reactant)) + '} = ' + latex(steadyStateDict[reactant])
+                out = _doubleUnderscorify(_greekPrependify(out))
                 display(Math(out))
         self._logs.append(log)
         
@@ -4084,7 +4236,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
             
         return SOL_2ndOrdMomDict
 
-
+    
     def _build_bookmark(self, includeParams = True):
         if not self._silent:
             logStr = "bookmark = "
@@ -4092,25 +4244,25 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
             logStr = ""
         
         logStr += "<modelName>." + self._generatingCommand + "("
-     
+        initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+        logStr += "initialState = " + str(initState_str) + ", "
+        logStr += "maxTime = " + str(self._maxTime) + ", "
         if includeParams:
             logStr += self._get_bookmarks_params() + ", "
         if len(self._generatingKwargs) > 0:
             for key in self._generatingKwargs:
                 if type(self._generatingKwargs[key]) == str:
                     logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
-                elif key == 'showInitSV':
-                    logStr += key + " = False, "
                 else:
-                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
+                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "    
         logStr += "bookmark = False"
         logStr += ")"
+        logStr = _greekPrependify(logStr)
         logStr = logStr.replace('\\', '\\\\')
+        logStr = logStr.replace('\\\\\\\\', '\\\\')
         
         return logStr
-        
-        
-
+    
 
 class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionViewOld):
     ## equations of motion for first order moments of noise variables
@@ -4523,7 +4675,9 @@ class MuMoTfieldView(MuMoTview):
                 logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
         logStr += "bookmark = False"
         logStr += ")"
+        logStr = _greekPrependify(logStr)
         logStr = logStr.replace('\\', '\\\\')
+        logStr = logStr.replace('\\\\\\\\', '\\\\')
         
         return logStr
 
@@ -5353,8 +5507,505 @@ class MuMoTvectorView(MuMoTfieldView):
                 self._logs.append(log)
 
 
+
+
+
+class MuMoTBifurcationView(MuMoTview):
+    ## model for bifurcation analysis
+    _pyDSmodel = None
+    ## critical parameter for bifurcation analysis
+    _bifurcationParameter = None
+    ## first state variable of 2D system
+    _stateVariable1 = None
+    ## second state variable of 2D system
+    _stateVariable2 = None
+    ## state variable of 2D system used for bifurcation analysis, can either be _stateVariable1 or _stateVariable2
+    _stateVarBif1 = None
+    ## state variable of 2D system used for bifurcation analysis, can either be _stateVariable1 or _stateVariable2
+    _stateVarBif2 = None
+    
+    ## generates command for bookmark functionality
+    _generatingCommand = None
+    ## fontsize on figure axes
+    _chooseFontSize = None
+    ## label for vertical axis
+    _LabelY = None
+    ## label for horizontal axis
+    _LabelX = None
+    ## displayed range for vertical axis
+    _chooseXrange = None
+    ## displayed range for horizontal axis
+    _chooseYrange = None
+    ## maximum number of points in one continuation calculation 
+    _MaxNumPoints = None
+    ## information about the mathematical expression displayed on vertical axis; can be 'None', '+' or '-'
+    _SVoperation = None
+    ## initial conditions specified on corresponding sliders, will be used when calculation of fixed points fails
+    _pyDSmodel_ics = None
+    
+    ## Parameters for controller specific to this MuMoTBifurcationView
+    _BfcParams = None
+    ## bifurcation parameter prepared for use in _get_argDict function in MuMoTView
+    _bifurcationParameter_for_get_argDict = None
+    ## bifurcation parameter to be used in bookmark function
+    _bifurcationParameter_for_bookmark = None
+    ## the system state at the start of the simulation (timestep zero)
+    _initialState = None
+    
+    def _constructorSpecificParams(self, _):
+        if self._controller is not None:
+            self._generatingCommand = "Bifurcation"
+    
+    def __init__(self, model, controller, BfcParams, bifurcationParameter, stateVarExpr1, stateVarExpr2 = None, 
+                 figure = None, params = None, **kwargs):
+        
+        silent = kwargs.get('silent', False)
+        super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
+        
+        self._bifurcationParameter_for_get_argDict = str(process_sympy(bifurcationParameter))
+        #self._bifurcationParameter_for_bookmark = _greekPrependify(_doubleUnderscorify(self._bifurcationParameter_for_get_argDict))
+        self._bifurcationParameter_for_bookmark = bifurcationParameter
+        
+        self._chooseFontSize = kwargs.get('fontsize', None)
+        #self._LabelY =  kwargs.get('ylab', r'$' + _doubleUnderscorify(_greekPrependify(stateVarExpr1)) +'$') 
+        self._LabelY =  kwargs.get('ylab', r'$' + stateVarExpr1 +'$') 
+        #self._LabelX = kwargs.get('xlab', r'$' + _doubleUnderscorify(_greekPrependify(bifurcationParameter)) +'$')
+        self._LabelX = kwargs.get('xlab', r'$' + bifurcationParameter +'$')
+        self._chooseXrange = kwargs.get('choose_xrange', None)
+        self._chooseYrange = kwargs.get('choose_yrange', None)
+        
+        self._MaxNumPoints = kwargs.get('ContMaxNumPoints',100)
+        
+        self._bifurcationParameter = self._pydstoolify(bifurcationParameter)
+        self._stateVarExpr1 = stateVarExpr1
+        stateVarExpr1 = self._pydstoolify(stateVarExpr1)
+        #print(stateVarExpr1)
+        
+        if stateVarExpr2:
+            stateVarExpr2 = self._pydstoolify(stateVarExpr2)
+        
+        self._SVoperation = None
+        try:
+            stateVarExpr1.index('-')
+            self._stateVarBif1 = stateVarExpr1[:stateVarExpr1.index('-')]
+            self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('-')+1:]
+            self._SVoperation = '-'
+  
+        except ValueError:
+            try:
+                stateVarExpr1.index('+')
+                self._stateVarBif1 = stateVarExpr1[:stateVarExpr1.index('+')]
+                self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('+')+1:] 
+                self._SVoperation = '+'
+            except ValueError:
+                self._stateVarBif1 = stateVarExpr1
+                self._stateVarBif2 = stateVarExpr2
+        
+        #print(self._stateVarBif1) 
+        #print(self._stateVarBif2)
+        
+        self._BfcParams=BfcParams
+        #with io.capture_output() as log:
+#         if True:
+                   
+        # storing the rates for each rule
+        ## @todo moving _ratesDict to general method?
+        freeParamDict = self._get_argDict()
+        
+#             
+#             self._ratesDict = {}
+#             for rule in self._mumotModel._rules:
+#                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
+#             
+#             
+#             self._systemSize = self._getSystemSize()
+#             
+
+        if self._controller == None:
+            # storing the initial state
+            self._initialState = {}
+            for state,pop in BfcParams["initialState"].items():
+                if isinstance(state, str):
+                    self._initialState[process_sympy(state)] = pop # convert string into SymPy symbol
+                else:
+                    self._initialState[state] = pop
+
+            # storing all values of Bfc-specific parameters
+            self._initBifParam = BfcParams["initBifParam"]
+        
+        else:
+            # storing the initial state
+            self._initialState = {}
+            for state,pop in BfcParams["initialState"][0].items():
+                if isinstance(state, str):
+                    self._initialState[process_sympy(state)] = pop[0] # convert string into SymPy symbol
+                else:
+                    self._initialState[state] = pop[0]
+            
+            # storing fixed params
+            for key,value in BfcParams.items():
+                if value[-1]:
+                    if key == 'initialState':
+                        self._fixedParams[key] = self._initialState
+                    else:
+                        self._fixedParams[key] = value[0]
+            
+        self._constructorSpecificParams(BfcParams)
+       
+        
+        #self._logs.append(log)
+         
+        self._pyDSmodel = dst.args(name = 'MuMoT Model' + str(id(self)))
+        varspecs = {}
+        stateVariableList = []
+        for reactant in self._mumotModel._reactants:
+            if reactant not in self._mumotModel._constantReactants:
+                stateVariableList.append(reactant)
+                varspecs[self._pydstoolify(reactant)] = self._pydstoolify(self._mumotModel._equations[reactant])
+        self._pyDSmodel.varspecs = varspecs
+        if len(stateVariableList) != 2:
+            self._showErrorMessage('Bifurcation diagrams are currently only supported for 2D systems (2 time-dependent variables in the ODE system)!')
+            return None
+        self._stateVariable1 = stateVariableList[0]
+        self._stateVariable2 = stateVariableList[1]
+        
+        
+        if self._stateVarBif2 == None:
+            if self._stateVarBif1 == self._pydstoolify(self._stateVariable1):
+                self._stateVarBif2 = self._pydstoolify(self._stateVariable2)
+            elif self._stateVarBif1 == self._pydstoolify(self._stateVariable2):
+                self._stateVarBif2 = self._pydstoolify(self._stateVariable1)
+        with io.capture_output() as log:
+            print('Bifurcation diagram with state variables: ', self._stateVarBif1, 'and ', self._stateVarBif2, '.')
+            print('The bifurcation parameter chosen is: ', self._bifurcationParameter, '.')
+        self._logs.append(log)
+        
+        if not self._silent:
+            self._plot_bifurcation()     
+
+    def _plot_bifurcation(self, _=None):
+        self._initFigure()
+        self._update_params()
+         
+        argDict = self._get_argDict()
+        paramDict = {}
+        for arg in argDict:
+            paramDict[self._pydstoolify(arg)] = argDict[arg]
+        
+        with io.capture_output() as log:
+            
+            self._pyDSmodel.pars = paramDict 
+            
+            XDATA = [] # list of arrays containing the bifurcation-parameter data for bifurcation diagram data 
+            YDATA = [] # list of arrays containing the state variable data (either one variable, or the sum or difference of the two SVs) for bifurcation diagram data
+            
+            initDictList = []
+            #print(initDictList)
+            self._pyDSmodel_ics   = self._initialState #self._getInitCondsFromSlider()
+            #print(self._pyDSmodel_ics)
+            #for ic in self._pyDSmodel_ics:
+            #    if 'Phi0' in self._pydstoolify(ic):
+            #        self._pyDSmodel_ics[self._pydstoolify(ic)[self._pydstoolify(ic).index('0')+1:]] = self._pyDSmodel_ics.pop(ic)  #{'A': 0.1, 'B': 0.9 }  
+                
+            realEQsol, eigList = self._get_fixedPoints2d()
+            if realEQsol != [] and realEQsol != None:
+                for kk in range(len(realEQsol)):
+                    if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
+                        initDictList.append(realEQsol[kk])
+                print(len(initDictList), 'stable steady state(s) detected and continuated. Initial conditions for state variables specified on sliders were not used.')
+            else:
+                initDictList.append(self._pyDSmodel_ics)
+                print('Stationary states could not be calculated; used initial conditions specified on sliders instead: ', self._pyDSmodel_ics, '. This means only one branch was continuated and the starting point might not have been a stationary state.')   
+            
+            specialPoints=[]  # list of special points: LP and BP
+            sPoints_X=[] #bifurcation parameter
+            sPoints_Y=[] #stateVarBif1
+            sPoints_Labels=[]
+            EIGENVALUES = []
+            sPoints_Z=[] #stateVarBif2
+            k_iter_BPlabel = 0
+            k_iter_LPlabel = 0
+            #print(initDictList)
+            
+            for nn in range(len(initDictList)):
+                for key in initDictList[nn]:
+                    old_key = key
+                    new_key = self._pydstoolify(key)
+                    initDictList[nn][new_key] = initDictList[nn].pop(old_key)
+                     
+                #self._pyDSmodel.ics = initDictList[nn]
+                pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
+                pyDSode.set(ics =  initDictList[nn] )
+                #pyDSode.set(pars = self._getBifParInitCondFromSlider()) 
+                pyDSode.set(pars = {self._bifurcationParameter: self._initBifParam})   
+                 
+                #print(self._getBifParInitCondFromSlider())  
+                pyDScont = dst.ContClass(pyDSode)
+                EQ_iter = 1+nn
+                k_iter_BP = 1
+                k_iter_LP = 1
+                pyDScontArgs = dst.args(name='EQ'+str(EQ_iter), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
+                pyDScontArgs.freepars     = [self._bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
+                #print(self._bifurcationParameter)
+                pyDScontArgs.MaxNumPoints = self._MaxNumPoints    # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
+                pyDScontArgs.MaxStepSize  = 1e-1
+                pyDScontArgs.MinStepSize  = 1e-5
+                pyDScontArgs.StepSize     = 2e-3
+                pyDScontArgs.LocBifPoints = ['LP', 'BP']       # 'Limit Points' and 'Branch Points may be detected'
+                pyDScontArgs.SaveEigen    = True            # to tell unstable from stable branches
+                
+                pyDScont.newCurve(pyDScontArgs)   
+                
+                try:
+                    try:
+                        pyDScont['EQ'+str(EQ_iter)].backward()
+                    except:
+                        self._showErrorMessage('Continuation failure (backward) on initial branch<br>')
+                    try:
+                        pyDScont['EQ'+str(EQ_iter)].forward()              
+                    except:
+                        self._showErrorMessage('Continuation failure (forward) on initial branch<br>')
+                except ZeroDivisionError:
+                    self._showErrorMessage('Division by zero<br>')  
+                #pyDScont['EQ'+str(EQ_iter)].info()
+                if self._stateVarBif2 != None:
+                    try:
+                        XDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._bifurcationParameter])
+                        if self._SVoperation:
+                            if self._SVoperation == '-':
+                                YDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1] -
+                                             pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif2])
+                            elif self._SVoperation == '+':
+                                YDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1] +
+                                             pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif2])  
+                            else:
+                                self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')  
+                        else:
+                            YDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1])
+                        
+                        EIGENVALUES.append(np.array([pyDScont['EQ'+str(EQ_iter)].sol[kk].labels['EP']['data'].evals 
+                                                     for kk in range(len(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1]))]))
+                        
+                        while pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP)):
+                            if (round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
+                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):
+                                sPoints_X.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._bifurcationParameter])
+                                sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif1])
+                                sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif2])
+                                k_iter_LPlabel += 1
+                                sPoints_Labels.append('LP'+str(k_iter_LPlabel))
+                            k_iter_LP+=1
+                        
+                        
+                        k_iter_BPlabel_previous = k_iter_BPlabel
+                        while pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP)):
+                            if (round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
+                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):
+                                sPoints_X.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._bifurcationParameter])
+                                sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif1])
+                                sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif2])
+                                k_iter_BPlabel += 1
+                                sPoints_Labels.append('BP'+str(k_iter_BPlabel))
+                            k_iter_BP+=1
+                        for jj in range(1,k_iter_BP):
+                            if 'BP'+str(jj+k_iter_BPlabel_previous) in sPoints_Labels:
+                                EQ_iter_BP = jj
+                                print(EQ_iter_BP)
+                                k_iter_next = 1
+                                pyDScontArgs = dst.args(name='EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
+                                pyDScontArgs.freepars     = [self._bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
+                                pyDScontArgs.MaxNumPoints = self._MaxNumPoints    # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
+                                pyDScontArgs.MaxStepSize  = 1e-1
+                                pyDScontArgs.MinStepSize  = 1e-5
+                                pyDScontArgs.StepSize     = 5e-3
+                                pyDScontArgs.LocBifPoints = ['LP', 'BP']        # 'Limit Points' and 'Branch Points may be detected'
+                                pyDScontArgs.SaveEigen    = True             # to tell unstable from stable branches
+                                pyDScontArgs.initpoint = 'EQ'+str(EQ_iter)+':BP'+str(jj)
+                                pyDScont.newCurve(pyDScontArgs)
+                                
+                                try:
+                                    try:
+                                        pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].backward()
+                                    except:
+                                        self._showErrorMessage('Continuation failure (backward) starting from branch point<br>')
+                                    try:
+                                        pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].forward()              
+                                    except:
+                                        self._showErrorMessage('Continuation failure (forward) starting from branch point<br>')
+                                except ZeroDivisionError:
+                                    self._showErrorMessage('Division by zero<br>')
+                                
+                                XDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._bifurcationParameter])
+                                if self._SVoperation:
+                                    if self._SVoperation == '-':
+                                        YDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1] -
+                                                     pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif2])
+                                    elif self._SVoperation == '+':
+                                        YDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1] +
+                                                     pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif2])
+                                    else:
+                                        self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')
+                                else:
+                                    YDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1])
+                                    
+                                EIGENVALUES.append(np.array([pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[kk].labels['EP']['data'].evals 
+                                                             for kk in range(len(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1]))]))
+                                while pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next)):
+                                    if (round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
+                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):    
+                                        sPoints_X.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._bifurcationParameter])
+                                        sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif1])
+                                        sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif2])
+                                        sPoints_Labels.append('EQ_BP_BP'+str(k_iter_next))
+                                    k_iter_next += 1
+                                k_iter_next = 1
+                                while pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next)):
+                                    if (round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
+                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):
+                                        sPoints_X.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._bifurcationParameter])
+                                        sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif1])
+                                        sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif2])
+                                        sPoints_Labels.append('EQ_BP_LP'+str(k_iter_next))
+                                    k_iter_next += 1
+    
+                    except TypeError:
+                        print('Continuation failed; try with different parameters - use sliders. If that does not work, try changing maximum number of continuation points using the keyword ContMaxNumPoints. If not set, default value is ContMaxNumPoints=100.')       
+                
+                
+                del(pyDScontArgs)
+                del(pyDScont)
+                del(pyDSode)
+            if self._SVoperation:
+                if self._SVoperation == '-':    
+                    specialPoints=[sPoints_X, np.asarray(sPoints_Y)-np.asarray(sPoints_Z), sPoints_Labels]
+                elif self._SVoperation == '+':    
+                    specialPoints=[sPoints_X, np.asarray(sPoints_Y)+np.asarray(sPoints_Z), sPoints_Labels]
+                else:
+                    self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')
+            else:
+                specialPoints=[sPoints_X, np.asarray(sPoints_Y), sPoints_Labels]
+                
+            #print('Special Points on curve: ', specialPoints)
+            print('Special Points on curve:')
+            for kk in range(len(specialPoints[0])):
+                print(specialPoints[2][kk], ': ', self._bifurcationParameter, '=', str(round(specialPoints[0][kk], 3)), ',',
+                      self._stateVarExpr1, '=', str(round(specialPoints[1][kk], 3)) )
+            
+            if self._chooseYrange == None:
+                if self._mumotModel._systemSize:
+                    self._chooseYrange = [-self._getSystemSize(), self._getSystemSize()]
+                          
+            if XDATA != [] and self._chooseXrange == None:
+                xmaxbif = np.max([np.max(XDATA[kk]) for kk in range(len(XDATA))])
+                self._chooseXrange = [0, xmaxbif]
+                
+            if XDATA !=[] and YDATA != []:
+                #plt.clf()
+                _fig_formatting_2D(xdata=XDATA, 
+                                ydata=YDATA,
+                                xlab = self._LabelX, 
+                                ylab = self._LabelY,
+                                specialPoints=specialPoints, 
+                                eigenvalues=EIGENVALUES, 
+                                choose_xrange=self._chooseXrange, choose_yrange=self._chooseYrange,
+                                ax_reformat=False, curve_replot=False, fontsize=self._chooseFontSize)
+            else:
+                self._showErrorMessage('Bifurcation diagram could not be computed. Try changing parameter values on the sliders')
+                return None
+
+        self._logs.append(log)
+        
+        
+        
+    def _initFigure(self):
+        if not self._silent:
+            plt.figure(self._figureNum)
+            plt.clf()
+            self._resetErrorMessage()
+        self._showErrorMessage(str(self))
+        
+        
+
+    ## utility function to mangle variable names in equations so they are accepted by PyDStool
+    def _pydstoolify(self, equation):
+        equation = str(equation)
+        equation = equation.replace('{', '')
+        equation = equation.replace('}', '')
+        equation = equation.replace('_', '')
+        equation = equation.replace('\\', '')
+        equation = equation.replace('^', '')
+        
+        return equation
+    
+    
+    def _build_bookmark(self, includeParams = True):
+        if not self._silent:
+            logStr = "bookmark = "
+        else:
+            logStr = ""
+        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._bifurcationParameter_for_bookmark) + "', '" + str(self._stateVarExpr1) +"', "
+        #if self._stateVarBif2 != None:
+        #    logStr += "'" + str(self._stateVarBif2) + "', "
+        initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+        logStr += "initBifParam = " + str(self._initBifParam) + ", "
+        logStr += "initialState = " + str(initState_str) + ", "
+        if includeParams:
+            logStr += self._get_bookmarks_params() + ", "        
+        if len(self._generatingKwargs) > 0:
+            for key in self._generatingKwargs:
+                if type(self._generatingKwargs[key]) == str:
+                    logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                else:
+                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "    
+        logStr += "bookmark = False"
+        logStr += ")"
+        logStr = _greekPrependify(logStr)
+        logStr = logStr.replace('\\', '\\\\')
+        logStr = logStr.replace('\\\\\\\\', '\\\\')
+        
+        
+        return logStr    
+
+    def _update_params(self):
+        if self._controller != None:
+            # getting the rates
+            ## @todo moving _ratesDict to general method?
+#             freeParamDict = {}
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 freeParamDict[ Symbol(name) ] = value.value
+            freeParamDict = self._get_argDict()
+#            self._ratesDict = {}
+#             
+#             for rule in self._mumotModel._rules:
+#                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
+#                 if self._ratesDict[str(rule.rate)] == float('inf'):
+#                     self._ratesDict[str(rule.rate)] = sys.maxsize
+#             #print("_ratesDict=" + str(self._ratesDict))
+#             
+            
+            self._systemSize = self._getSystemSize()
+
+            # getting other parameters specific to Integrate
+            if self._fixedParams.get('initialState') is not None:
+                self._initialState = self._fixedParams['initialState']
+            else:
+                for state in self._initialState.keys():
+                    # add normal and constant reactants to the _initialState 
+                    self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
+            
+            self._initBifParam = self._fixedParams['initBifParam'] if self._fixedParams.get('initBifParam') is not None else self._controller._widgetsExtraParams['initBifParam'].value
+    
+
+
+
+
+
 ## bifurcation view on model 
-class MuMoTbifurcationView(MuMoTview):
+class MuMoTbifurcationViewOLD(MuMoTview):
     ## model for bifurcation analysis
     _pyDSmodel = None
     ## critical parameter for bifurcation analysis
@@ -8800,6 +9451,8 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                        xlab=None, ylab=None, curvelab=None, aspectRatioEqual=False, **kwargs):
     #print(kwargs)
     
+    showLegend = kwargs.get('showLegend', False)
+    
     linestyle_list = ['solid','dashed', 'dashdot', 'dotted', 'solid','dashed', 'dashdot', 'dotted', 'solid']
     
     if xdata and ydata:
@@ -8869,12 +9522,14 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         plt.ylim(y_lim_bot,y_lim_top)
         
     if figure==None or curve_replot==True:
+
         if 'LineThickness' in kwargs:
             LineThickness = kwargs['LineThickness']
         else:
             LineThickness = 4
         
         if eigenvalues:
+            showLegend = False
             round_digit = 10
 #             solX_dict={} #bifurcation parameter
 #             solY_dict={} #state variable 1
@@ -8891,6 +9546,11 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
 #             data_x_tmp=[]
 #             data_y_tmp=[]
 #             #print(specialPoints)
+            
+            Nr_unstable = 0 
+            Nr_stable = 0 
+            Nr_saddle = 0 
+            
             for nn in range(len(data_x)):
                 solX_dict={} #bifurcation parameter
                 solY_dict={} #state variable 1
@@ -8975,24 +9635,39 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                         else:
                             print('Something went wrong!')
                         
-                if not solX_dict['solX_unst'] == []:            
+                if not solX_dict['solX_unst'] == []:           
                     for jj in range(len(solX_dict['solX_unst'])):
+                        if jj == 0 and Nr_unstable ==0:
+                            label_description = r'unstable'
+                            Nr_unstable = 1 
+                        else:
+                            label_description = '_nolegend_'
                         plt.plot(solX_dict['solX_unst'][jj], 
                                  solY_dict['solY_unst'][jj], 
                                  c = line_color_list[2], 
-                                 ls = linestyle_list[1], lw = LineThickness, label = r'unstable')
-                if not solX_dict['solX_stab'] == []:            
+                                 ls = linestyle_list[1], lw = LineThickness, label = label_description)
+                if not solX_dict['solX_stab'] == []:           
                     for jj in range(len(solX_dict['solX_stab'])):
+                        if jj == 0 and Nr_stable ==0:
+                            label_description = r'stable'
+                            Nr_stable = 1
+                        else:
+                            label_description = '_nolegend_'
                         plt.plot(solX_dict['solX_stab'][jj], 
                                  solY_dict['solY_stab'][jj], 
                                  c = line_color_list[1], 
-                                 ls = linestyle_list[0], lw = LineThickness, label = r'stable')
-                if not solX_dict['solX_saddle'] == []:            
+                                 ls = linestyle_list[0], lw = LineThickness, label = label_description)
+                if not solX_dict['solX_saddle'] == []:           
                     for jj in range(len(solX_dict['solX_saddle'])):
+                        if jj == 0 and Nr_saddle == 0:
+                            label_description = r'saddle'
+                            Nr_saddle = 1
+                        else:
+                            label_description = '_nolegend_'
                         plt.plot(solX_dict['solX_saddle'][jj], 
                                  solY_dict['solY_saddle'][jj], 
                                  c = line_color_list[0], 
-                                 ls = linestyle_list[3], lw = LineThickness, label = r'saddle')
+                                 ls = linestyle_list[3], lw = LineThickness, label = label_description)
                 
                 
                 
@@ -9136,7 +9811,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     if kwargs.get('grid', False) == True:
         plt.grid()
         
-    if curvelab != None:
+    if curvelab != None or showLegend == True:
         #if 'legend_loc' in kwargs:
         #    legend_loc = kwargs['legend_loc']
         #else:
@@ -9583,6 +10258,13 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                                                            defaultValue=True, 
                                                            initValue=initValues,
                                                            paramNameForErrorMsg=optionName)  
+        
+    if (optionName == 'initBifParam'):
+        return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
+                                    defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
+                                    initValueRangeStep=initValues, 
+                                    validRange = (0,float("inf")) )
+        
     
     return [None,False] # default output for unknown optionName
 
