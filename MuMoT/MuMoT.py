@@ -3118,7 +3118,8 @@ class MuMoTtimeEvolutionView(MuMoTview):
             self._stateVarListDisplay = copy.deepcopy(self._stateVarList)
         
         self._stateVariable1 = self._stateVarList[0]
-        self._stateVariable2 = self._stateVarList[1]
+        if len(self._stateVarList) == 2 or len(self._stateVarList) == 3:
+            self._stateVariable2 = self._stateVarList[1]
         if len(self._stateVarList) == 3:
             self._stateVariable3 = self._stateVarList[2]
         
