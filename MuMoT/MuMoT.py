@@ -3800,7 +3800,19 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
                            fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
                            legend_fontsize=self._legend_fontsize)
         
-    
+        with io.capture_output() as log:
+            print('Last point on curve:')  
+            if self._plotProportions == False:
+                for nn in range(len(self._stateVarListDisplay)):
+                    out = latex(str(self._stateVarListDisplay[nn])) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
+                    out = _doubleUnderscorify(_greekPrependify(out))
+                    display(Math(out))
+            else:
+                for nn in range(len(self._stateVarListDisplay)):
+                    out = latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
+                    out = _doubleUnderscorify(_greekPrependify(out))
+                    display(Math(out))
+        self._logs.append(log)
 
     def _build_bookmark(self, includeParams = True):
         if not self._silent:
