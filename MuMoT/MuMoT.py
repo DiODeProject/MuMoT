@@ -959,6 +959,14 @@ class MuMoTmodel:
     def Bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, initWidgets = {}, **kwargs):
         # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
         
+        stateVariableList = []
+        for reactant in self._reactants:
+            if reactant not in self._constantReactants:
+                stateVariableList.append(reactant)
+        if len(stateVariableList) > 2:
+            print('Sorry, bifurcation diagrams are currently only supported for 1D and 2D systems (1 or 2 time-dependent variables in the ODE system)!')
+            return None
+        
         #if bifurcationParameter[0]=='\\':
         #        bifPar = bifurcationParameter[1:]
         #else:
@@ -2560,7 +2568,35 @@ class MuMoTview:
         argDict = dict(zip(argNamesSymb, paramValues))
         #print(argDict)
         return argDict
+    
+    
+    def _get_fixedPoints1d(self):
+        argDict = self._get_argDict()
 
+        EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+       
+        eps=1e-8
+        EQsol = solve((EQ1), (self._stateVariable1), dict=True)
+        
+        realEQsol = [{self._stateVariable1: sympy.re(EQsol[kk][self._stateVariable1])} for kk in range(len(EQsol)) if sympy.Abs(sympy.im(EQsol[kk][self._stateVariable1]))<=eps]
+        
+        MAT = Matrix([EQ1])
+        JAC = MAT.jacobian([self._stateVariable1])
+        
+        eigList = []
+        
+        for nn in range(len(realEQsol)): 
+            evSet = {}
+            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1])])
+            #evSet = JACsub.eigenvals()
+            eigVects = JACsub.eigenvects()
+            for kk in range(len(eigVects)):
+                evSet[eigVects[kk][0]] = (eigVects[kk][1])
+            eigList.append(evSet)
+        return realEQsol, eigList #returns two lists of dictionaries
+    
+    
+    
 
     def _get_fixedPoints2d(self):
 #         #plotLimits = self._controller._getPlotLimits()
@@ -6211,6 +6247,8 @@ class MuMoTBifurcationView(MuMoTview):
     _bifurcationParameter_for_bookmark = None
     ## the system state at the start of the simulation (timestep zero)
     _initialState = None
+    ## list of state variables
+    _stateVariableList = None
     
     def _constructorSpecificParams(self, _):
         if self._controller is not None:
@@ -6323,18 +6361,21 @@ class MuMoTBifurcationView(MuMoTview):
                 stateVariableList.append(reactant)
                 varspecs[self._pydstoolify(reactant)] = self._pydstoolify(self._mumotModel._equations[reactant])
         self._pyDSmodel.varspecs = varspecs
-        if len(stateVariableList) != 2:
-            self._showErrorMessage('Bifurcation diagrams are currently only supported for 2D systems (2 time-dependent variables in the ODE system)!')
+        if len(stateVariableList) > 2:
+            self._showErrorMessage('Bifurcation diagrams are currently only supported for 1D and 2D systems (1 or 2 time-dependent variables in the ODE system)!')
             return None
+        self._stateVariableList = stateVariableList
+        
         self._stateVariable1 = stateVariableList[0]
-        self._stateVariable2 = stateVariableList[1]
-        
-        
+        if len(stateVariableList) == 2:
+            self._stateVariable2 = stateVariableList[1]
+
         if self._stateVarBif2 == None:
-            if self._stateVarBif1 == self._pydstoolify(self._stateVariable1):
-                self._stateVarBif2 = self._pydstoolify(self._stateVariable2)
-            elif self._stateVarBif1 == self._pydstoolify(self._stateVariable2):
-                self._stateVarBif2 = self._pydstoolify(self._stateVariable1)
+            if self._stateVariable2:
+                if self._stateVarBif1 == self._pydstoolify(self._stateVariable1):
+                    self._stateVarBif2 = self._pydstoolify(self._stateVariable2)
+                elif self._stateVarBif1 == self._pydstoolify(self._stateVariable2):
+                    self._stateVarBif2 = self._pydstoolify(self._stateVariable1)
         with io.capture_output() as log:
             print('Bifurcation diagram with state variables: ', self._stateVarBif1, 'and ', self._stateVarBif2, '.')
             print('The bifurcation parameter chosen is: ', self._bifurcationParameter, '.')
@@ -6366,8 +6407,12 @@ class MuMoTBifurcationView(MuMoTview):
             #for ic in self._pyDSmodel_ics:
             #    if 'Phi0' in self._pydstoolify(ic):
             #        self._pyDSmodel_ics[self._pydstoolify(ic)[self._pydstoolify(ic).index('0')+1:]] = self._pyDSmodel_ics.pop(ic)  #{'A': 0.1, 'B': 0.9 }  
+            
+            if len(self._stateVariableList) == 1:    
+                realEQsol, eigList = self._get_fixedPoints1d()
+            elif len(self._stateVariableList) == 2:    
+                realEQsol, eigList = self._get_fixedPoints2d()
                 
-            realEQsol, eigList = self._get_fixedPoints2d()
             if realEQsol != [] and realEQsol != None:
                 for kk in range(len(realEQsol)):
                     if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
@@ -6535,6 +6580,86 @@ class MuMoTBifurcationView(MuMoTview):
                     except TypeError:
                         print('Continuation failed; try with different parameters - use sliders. If that does not work, try changing maximum number of continuation points using the keyword ContMaxNumPoints. If not set, default value is ContMaxNumPoints=100.')       
                 
+                # bifurcation routine fr 1D system
+                else:
+                    try:
+                        XDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._bifurcationParameter])
+                        YDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1])
+                        
+                        EIGENVALUES.append(np.array([pyDScont['EQ'+str(EQ_iter)].sol[kk].labels['EP']['data'].evals 
+                                                     for kk in range(len(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1]))]))
+                        
+                        while pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP)):
+                            if (round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]):
+                                sPoints_X.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._bifurcationParameter])
+                                sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif1])
+                                k_iter_LPlabel += 1
+                                sPoints_Labels.append('LP'+str(k_iter_LPlabel))
+                            k_iter_LP+=1
+                        
+                        
+                        k_iter_BPlabel_previous = k_iter_BPlabel
+                        while pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP)):
+                            if (round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]):
+                                sPoints_X.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._bifurcationParameter])
+                                sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif1])
+                                k_iter_BPlabel += 1
+                                sPoints_Labels.append('BP'+str(k_iter_BPlabel))
+                            k_iter_BP+=1
+                        for jj in range(1,k_iter_BP):
+                            if 'BP'+str(jj+k_iter_BPlabel_previous) in sPoints_Labels:
+                                EQ_iter_BP = jj
+                                print(EQ_iter_BP)
+                                k_iter_next = 1
+                                pyDScontArgs = dst.args(name='EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
+                                pyDScontArgs.freepars     = [self._bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
+                                pyDScontArgs.MaxNumPoints = self._MaxNumPoints    # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
+                                pyDScontArgs.MaxStepSize  = 1e-1
+                                pyDScontArgs.MinStepSize  = 1e-5
+                                pyDScontArgs.StepSize     = 5e-3
+                                pyDScontArgs.LocBifPoints = ['LP', 'BP']        # 'Limit Points' and 'Branch Points may be detected'
+                                pyDScontArgs.SaveEigen    = True             # to tell unstable from stable branches
+                                pyDScontArgs.initpoint = 'EQ'+str(EQ_iter)+':BP'+str(jj)
+                                pyDScont.newCurve(pyDScontArgs)
+                                
+                                try:
+                                    try:
+                                        pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].backward()
+                                    except:
+                                        self._showErrorMessage('Continuation failure (backward) starting from branch point<br>')
+                                    try:
+                                        pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].forward()              
+                                    except:
+                                        self._showErrorMessage('Continuation failure (forward) starting from branch point<br>')
+                                except ZeroDivisionError:
+                                    self._showErrorMessage('Division by zero<br>')
+                                
+                                XDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._bifurcationParameter])
+                                YDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1])
+                                    
+                                EIGENVALUES.append(np.array([pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[kk].labels['EP']['data'].evals 
+                                                             for kk in range(len(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1]))]))
+                                while pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next)):
+                                    if (round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]):    
+                                        sPoints_X.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._bifurcationParameter])
+                                        sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif1])
+                                        sPoints_Labels.append('EQ_BP_BP'+str(k_iter_next))
+                                    k_iter_next += 1
+                                k_iter_next = 1
+                                while pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next)):
+                                    if (round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
+                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]):
+                                        sPoints_X.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._bifurcationParameter])
+                                        sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif1])
+                                        sPoints_Labels.append('EQ_BP_LP'+str(k_iter_next))
+                                    k_iter_next += 1
+    
+                    except TypeError:
+                        print('Continuation failed; try with different parameters - use sliders. If that does not work, try changing maximum number of continuation points using the keyword ContMaxNumPoints. If not set, default value is ContMaxNumPoints=100.')       
+                
                 
                 del(pyDScontArgs)
                 del(pyDScont)
@@ -6551,9 +6676,12 @@ class MuMoTBifurcationView(MuMoTview):
                 
             #print('Special Points on curve: ', specialPoints)
             print('Special Points on curve:')
-            for kk in range(len(specialPoints[0])):
-                print(specialPoints[2][kk], ': ', self._bifurcationParameter, '=', str(round(specialPoints[0][kk], 3)), ',',
-                      self._stateVarExpr1, '=', str(round(specialPoints[1][kk], 3)) )
+            if len(specialPoints[0])==0:
+                print('No special points could be detected.')
+            else:
+                for kk in range(len(specialPoints[0])):
+                    print(specialPoints[2][kk], ': ', self._bifurcationParameter, '=', str(round(specialPoints[0][kk], 3)), ',',
+                          self._stateVarExpr1, '=', str(round(specialPoints[1][kk], 3)) )
             
             if self._chooseYrange == None:
                 if self._mumotModel._systemSize:
@@ -6573,6 +6701,7 @@ class MuMoTBifurcationView(MuMoTview):
                                 eigenvalues=EIGENVALUES, 
                                 choose_xrange=self._chooseXrange, choose_yrange=self._chooseYrange,
                                 ax_reformat=False, curve_replot=False, fontsize=self._chooseFontSize)
+                
             else:
                 self._showErrorMessage('Bifurcation diagram could not be computed. Try changing parameter values on the sliders')
                 return None
@@ -10229,55 +10358,97 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                 #sign_change=0
                 for kk in range(len(eigenvalues[nn])):
                     if kk > 0:
-                        if (np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][0]), round_digit)) <= 0
-                            or np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][1]), round_digit)) <= 0):
-                            #print('sign change')
-                            #sign_change+=1
-                            #print(sign_change)
-                            #if specialPoints !=None and specialPoints[0]!=[]:
-                            #    data_x_tmp.append(specialPoints[0][sign_change-1])
-                            #    data_y_tmp.append(specialPoints[1][sign_change-1])
-                            
-                            if nr_sol_unst == 1:
-                                solX_dict['solX_unst'].append(data_x_tmp)
-                                solY_dict['solY_unst'].append(data_y_tmp)
-                            elif nr_sol_saddle == 1:
-                                solX_dict['solX_saddle'].append(data_x_tmp)
-                                solY_dict['solY_saddle'].append(data_y_tmp)
-                            elif nr_sol_stab == 1:
-                                solX_dict['solX_stab'].append(data_x_tmp)
-                                solY_dict['solY_stab'].append(data_y_tmp)
-                            else:
-                                print('Something went wrong!')
-                            
-                            data_x_tmp_first=data_x_tmp[-1]
-                            data_y_tmp_first=data_y_tmp[-1]
-                            nr_sol_stab=0
-                            nr_sol_saddle=0
-                            nr_sol_unst=0
-                            data_x_tmp=[]
-                            data_y_tmp=[]
-                            data_x_tmp.append(data_x_tmp_first)
-                            data_y_tmp.append(data_y_tmp_first)
-                            #if specialPoints !=None and specialPoints[0]!=[]:
-                            #    data_x_tmp.append(specialPoints[0][sign_change-1])
-                            #    data_y_tmp.append(specialPoints[1][sign_change-1])
-                    if np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:  
-                        nr_sol_stab=1
-                    elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) in [0,1] and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:
-                        nr_sol_saddle=1
-                    elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) in [0,1]:
-                        nr_sol_saddle=1
-                    else:
-                        nr_sol_unst=1                
-#                     if np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) < 0:  
-#                         nr_sol_stab=1
-#                     elif np.real(eigenvalues[nn][kk][0]) >= 0 and np.real(eigenvalues[nn][kk][1]) < 0:
-#                         nr_sol_saddle=1
-#                     elif np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) >= 0:
-#                         nr_sol_saddle=1
-#                     else:
-#                         nr_sol_unst=1
+                        if len(eigenvalues[0][0]) == 1:
+                            if (np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][0]), round_digit)) <= 0):
+                                #print('sign change')
+                                #sign_change+=1
+                                #print(sign_change)
+                                #if specialPoints !=None and specialPoints[0]!=[]:
+                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
+                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
+                                
+                                if nr_sol_unst == 1:
+                                    solX_dict['solX_unst'].append(data_x_tmp)
+                                    solY_dict['solY_unst'].append(data_y_tmp)
+                                elif nr_sol_saddle == 1:
+                                    solX_dict['solX_saddle'].append(data_x_tmp)
+                                    solY_dict['solY_saddle'].append(data_y_tmp)
+                                elif nr_sol_stab == 1:
+                                    solX_dict['solX_stab'].append(data_x_tmp)
+                                    solY_dict['solY_stab'].append(data_y_tmp)
+                                else:
+                                    print('Something went wrong!')
+                                
+                                data_x_tmp_first=data_x_tmp[-1]
+                                data_y_tmp_first=data_y_tmp[-1]
+                                nr_sol_stab=0
+                                nr_sol_saddle=0
+                                nr_sol_unst=0
+                                data_x_tmp=[]
+                                data_y_tmp=[]
+                                data_x_tmp.append(data_x_tmp_first)
+                                data_y_tmp.append(data_y_tmp_first)
+                                #if specialPoints !=None and specialPoints[0]!=[]:
+                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
+                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
+                        elif len(eigenvalues[0][0]) == 2:
+                            if (np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][0]), round_digit)) <= 0
+                                or np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][1]), round_digit)) <= 0):
+                                #print('sign change')
+                                #sign_change+=1
+                                #print(sign_change)
+                                #if specialPoints !=None and specialPoints[0]!=[]:
+                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
+                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
+                                
+                                if nr_sol_unst == 1:
+                                    solX_dict['solX_unst'].append(data_x_tmp)
+                                    solY_dict['solY_unst'].append(data_y_tmp)
+                                elif nr_sol_saddle == 1:
+                                    solX_dict['solX_saddle'].append(data_x_tmp)
+                                    solY_dict['solY_saddle'].append(data_y_tmp)
+                                elif nr_sol_stab == 1:
+                                    solX_dict['solX_stab'].append(data_x_tmp)
+                                    solY_dict['solY_stab'].append(data_y_tmp)
+                                else:
+                                    print('Something went wrong!')
+                                
+                                data_x_tmp_first=data_x_tmp[-1]
+                                data_y_tmp_first=data_y_tmp[-1]
+                                nr_sol_stab=0
+                                nr_sol_saddle=0
+                                nr_sol_unst=0
+                                data_x_tmp=[]
+                                data_y_tmp=[]
+                                data_x_tmp.append(data_x_tmp_first)
+                                data_y_tmp.append(data_y_tmp_first)
+                                #if specialPoints !=None and specialPoints[0]!=[]:
+                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
+                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
+                    
+                    if len(eigenvalues[0][0]) == 1:
+                        if np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1:  
+                            nr_sol_stab=1
+                        else:
+                            nr_sol_unst=1    
+                    
+                    elif len(eigenvalues[0][0]) == 2:
+                        if np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:  
+                            nr_sol_stab=1
+                        elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) in [0,1] and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:
+                            nr_sol_saddle=1
+                        elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) in [0,1]:
+                            nr_sol_saddle=1
+                        else:
+                            nr_sol_unst=1                
+    #                     if np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) < 0:  
+    #                         nr_sol_stab=1
+    #                     elif np.real(eigenvalues[nn][kk][0]) >= 0 and np.real(eigenvalues[nn][kk][1]) < 0:
+    #                         nr_sol_saddle=1
+    #                     elif np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) >= 0:
+    #                         nr_sol_saddle=1
+    #                     else:
+    #                         nr_sol_unst=1
                          
                     data_x_tmp.append(data_x[nn][kk])
                     data_y_tmp.append(data_y[nn][kk])
