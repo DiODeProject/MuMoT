@@ -406,12 +406,20 @@ class MuMoTmodel:
         nvec = []
         for key1 in stoich:
             for key2 in stoich[key1]:
-                if not key2 == 'rate':
+                if key2 != 'rate' and stoich[key1][key2] != 'const':
                     if not key2 in nvec:
                         nvec.append(key2)
         nvec = sorted(nvec, key=default_sort_key)
-        if len(nvec) < 2 or len(nvec) > 4:
-            print("Derivation of Master Equation works for 2, 3 or 4 different reactants only")
+        #nvec = []
+        #for key1 in stoich:
+        #    for key2 in stoich[key1]:
+        #        if not key2 == 'rate':
+        #            if not key2 in nvec:
+        #                nvec.append(key2)
+        #nvec = sorted(nvec, key=default_sort_key)
+        
+        if len(nvec) < 1 or len(nvec) > 4:
+            print("Derivation of Master Equation works for 1, 2, 3 or 4 different reactants only")
             
             return
 #        assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
@@ -426,7 +434,10 @@ class MuMoTmodel:
                 rhs_plus = " + "
             out_rhs += rhs_plus + latex(rhs_dict[key][3]) + " ( " + latex((rhs_dict[key][0]-1)) + " ) " +  latex(rhs_dict[key][1]) + " " + latex(rhs_dict[key][2])
             term_count += 1
-        if len(nvec)==2:
+        
+        if len(nvec)==1:
+            lhs_ME = Derivative(P(nvec[0], t),t)
+        elif len(nvec)==2:
             lhs_ME = Derivative(P(nvec[0], nvec[1],t),t)
         elif len(nvec)==3:
             lhs_ME = Derivative(P(nvec[0], nvec[1], nvec[2], t), t)
@@ -571,12 +582,13 @@ class MuMoTmodel:
         
         for freeParam in self._rates:
             ## @todo: having params as a list is inefficient, a dictionary would be more convenient (see issue #27)
-            rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
-                                    defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
-                                    initValueRangeStep=initWidgets.get(str(freeParam)), 
-                                    validRange = (0,float("inf")))
-            paramValues.append(rateVals)
-            paramNames.append(str(freeParam))
+            if freeParam not in self._constantReactants:
+                rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
+                                        defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
+                                        initValueRangeStep=initWidgets.get(str(freeParam)), 
+                                        validRange = (0,float("inf")))
+                paramValues.append(rateVals)
+                paramNames.append(str(freeParam))
         paramNames.append('systemSize')
         paramValues.append(_parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), 'systemSize'),
                                     defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
@@ -621,12 +633,13 @@ class MuMoTmodel:
         
         for freeParam in self._rates:
             ## @todo: having params as a list is inefficient, a dictionary would be more convenient (see issue #27)
-            rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
-                                    defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
-                                    initValueRangeStep=initWidgets.get(str(freeParam)), 
-                                    validRange = (0,float("inf")))
-            paramValues.append(rateVals)
-            paramNames.append(str(freeParam))
+            if freeParam not in self._constantReactants:
+                rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
+                                        defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
+                                        initValueRangeStep=initWidgets.get(str(freeParam)), 
+                                        validRange = (0,float("inf")))
+                paramValues.append(rateVals)
+                paramNames.append(str(freeParam))
         paramNames.append('systemSize')
         paramValues.append(_parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), 'systemSize'),
                                     defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
@@ -982,9 +995,9 @@ class MuMoTmodel:
         rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly
         for reactant in self._constantReactants:
-            paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-#            paramNames.append('(' + latex(reactant) + ')')
-            paramNames.append(str(reactant)) 
+            if str(reactant) != str(process_sympy(bifPar)):
+                paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+                paramNames.append(str(reactant)) 
 #         
 #         for rate in self._rates:
 #             if str(rate) != bifParam:
@@ -1000,13 +1013,14 @@ class MuMoTmodel:
 #       
         for freeParam in self._rates:
             ## @todo: having params as a list is inefficient, a dictionary would be more convenient (see issue #27)
-            if str(freeParam) != str(process_sympy(bifPar)):
-                rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
-                                        defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
-                                        initValueRangeStep=initWidgets.get(str(freeParam)), 
-                                        validRange = (0,float("inf")))
-                paramValues.append(rateVals)
-                paramNames.append(str(freeParam))
+            if freeParam not in self._constantReactants:
+                if str(freeParam) != str(process_sympy(bifPar)):
+                    rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
+                                            defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
+                                            initValueRangeStep=initWidgets.get(str(freeParam)), 
+                                            validRange = (0,float("inf")))
+                    paramValues.append(rateVals)
+                    paramNames.append(str(freeParam))
         
         BfcParams = {}
         # read input parameters
@@ -1645,6 +1659,7 @@ class MuMoTcontroller:
         self._widgetsPlotOnly = {}
         self._extraWidgetsOrder = []
         unsortedPairs = zip(paramNames, paramValues)
+        
         fixedParams = None
 #       fixedParamsDecoded = None
         if params is not None:
@@ -4106,8 +4121,8 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
         super().__init__(model=model, controller=controller, tEParams=NCParams, showStateVars = None, figure=figure, params=params, **kwargs)
         #super().__init__(model, controller, None, figure, params, **kwargs)
         
-        if len(self._stateVarList) < 2 or len(self._stateVarList) > 3:
-            self._showErrorMessage("Not implemented: This feature is available only for systems with 2 or 3 time-dependent reactants!")
+        if len(self._stateVarList) < 1 or len(self._stateVarList) > 3:
+            self._showErrorMessage("Not implemented: This feature is available only for systems with 1, 2 or 3 time-dependent reactants!")
             return None
     
     def _plot_NumSolODE(self, _=None):
@@ -4148,8 +4163,10 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
         """  
           
         SV1_0 = initDict[Symbol(str(self._stateVariable1))]
-        SV2_0 = initDict[Symbol(str(self._stateVariable2))]
-        y0 = [SV1_0, SV2_0]
+        y0 = [SV1_0]
+        if self._stateVariable2:
+            SV2_0 = initDict[Symbol(str(self._stateVariable2))]
+            y0.append(SV2_0)
         if self._stateVariable3:
             SV3_0 = initDict[Symbol(str(self._stateVariable3))]
             y0.append(SV3_0)
@@ -4158,8 +4175,10 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
         
         if self._stateVariable3:
             realEQsol, eigList = self._get_fixedPoints3d()
-        else:
+        elif self._stateVariable2:
             realEQsol, eigList = self._get_fixedPoints2d()
+        else:
+            realEQsol, eigList = self._get_fixedPoints1d()
    
         y_stationary = [sol_ODE[-1, kk] for kk in range(len(y0))]
         
@@ -4173,12 +4192,19 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
                             steadyStateReached = True
                             steadyStateDict = {self._stateVariable1: realEQsol[kk][self._stateVariable1], self._stateVariable2: realEQsol[kk][self._stateVariable2], self._stateVariable3: realEQsol[kk][self._stateVariable3]}
     
-                else:
+                elif self._stateVariable2:
                     if abs(realEQsol[kk][self._stateVariable1] - y_stationary[0]) <= eps and abs(realEQsol[kk][self._stateVariable2] - y_stationary[1]) <= eps:
                         if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
                             steadyStateReached = True
                             steadyStateDict = {self._stateVariable1: realEQsol[kk][self._stateVariable1], self._stateVariable2: realEQsol[kk][self._stateVariable2]}
+                
+                else:
+                    if abs(realEQsol[kk][self._stateVariable1] - y_stationary[0]) <= eps:
+                        if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
+                            steadyStateReached = True
+                            steadyStateDict = {self._stateVariable1: realEQsol[kk][self._stateVariable1]}
             
+                
             if steadyStateReached == False:
                 self._showErrorMessage('Stable steady state has not been reached: Try changing the initial conditions or model parameters using the sliders provided, increase simulation time, or decrease timestep tstep.') 
                 return None
@@ -4187,8 +4213,10 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
             self._showErrorMessage('Warning: steady state may have not been reached. Substituted values of state variables at t=tendDS (tendDS can be set via keyword \'tendDS = <number>\').')
             if self._stateVariable3:
                 steadyStateDict = {self._stateVariable1: y_stationary[0], self._stateVariable2: y_stationary[1], self._stateVariable3: y_stationary[2]}
+            elif self._stateVariable2:
+                steadyStateDict = {self._stateVariable1: y_stationary[0], self._stateVariable2: y_stationary[1]}
             else:
-                steadyStateDict = {self._stateVariable1: y_stationary[0], self._stateVariable2: y_stationary[1]}    
+                steadyStateDict = {self._stateVariable1: y_stationary[0]}    
         
         with io.capture_output() as log:
             if steadyStateReached == 'uncertain':
@@ -4229,16 +4257,22 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
             for key in EOM_1stOrdMomDict:
                 noiseCorrEOMdict[sym*key] = expand(sym*EOM_1stOrdMomDict[key])
         
-        eta_SV1 = Symbol('eta_'+str(self._stateVariable1))
-        eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
         M_1, M_2 = symbols('M_1 M_2')
-        cVar1, cVar2, cVar3, cVar4 = symbols('cVar1 cVar2 cVar3 cVar4')
+        eta_SV1 = Symbol('eta_'+str(self._stateVariable1))
+        cVar1 = symbols('cVar1')
+        if self._stateVariable2:
+            eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
+            cVar2, cVar3, cVar4 = symbols('cVar2 cVar3 cVar4')
         if self._stateVariable3:
             eta_SV3 = Symbol('eta_'+str(self._stateVariable3))
             cVar5, cVar6, cVar7, cVar8, cVar9 = symbols('cVar5 cVar6 cVar7 cVar8 cVar9')
         
         cVarSubdict = {}    
-        if len(time_depend_noise) == 2:
+        if len(time_depend_noise) == 1:
+            cVarSubdict[eta_SV1*M_1(eta_SV1)] = cVar1
+            #auto-correlation
+            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV1*M_1(eta_SV1)])
+        elif len(time_depend_noise) == 2:
             cVarSubdict[eta_SV1*M_1(eta_SV1)] = cVar1
             cVarSubdict[eta_SV2*M_1(eta_SV2)] = cVar2
             cVarSubdict[eta_SV1*M_1(eta_SV2)] = cVar3
@@ -4282,8 +4316,10 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
                 if self._stateVariable3:
                     dydt[kk] = dydt[kk].subs({cVar1: yin[0], cVar2: yin[1], cVar3: yin[2], cVar4: yin[3],
                                               cVar5: yin[4], cVar6: yin[5], cVar7: yin[6], cVar8: yin[7], cVar9: yin[8]})
-                else:
+                elif self._stateVariable2:
                     dydt[kk] = dydt[kk].subs({cVar1: yin[0], cVar2: yin[1], cVar3: yin[2], cVar4: yin[3]})
+                else:
+                    dydt[kk] = dydt[kk].subs({cVar1: yin[0]})
                 dydt[kk] = dydt[kk].evalf()
             return dydt
         
@@ -4294,9 +4330,11 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
                   SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)],
                   SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)],
                   SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)], SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)]]
-        else:
+        elif self._stateVariable2:
             y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)], SOL_2ndOrdMomDict[M_2(eta_SV2**2)], 
                   SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)]]
+        else:
+            y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)]]
         #print(time)
         #print(y0)
         #print(SOL_2ndOrdMomDict)
@@ -4323,11 +4361,13 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
                         r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV2)+'(0)'+ '>$', 
                         r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV3)+'(0)'+ '>$']
             
-        else:
+        elif self._stateVariable2:
             c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
                         r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV2)+'(0)'+ '>$', 
                         r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
                         r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV2)+'(0)'+ '>$']
+        else:
+            c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)'+ '>$']
         
         c_labels = [_doubleUnderscorify(_greekPrependify(c_labels[jj])) for jj in range(len(c_labels))]
         
@@ -4348,10 +4388,10 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
 #         if len(self._stateVarList) == 3:
 #             eta_SV3 = Symbol('eta_'+str(self._stateVarList[2]))
 #             
-             
+        M_1, M_2 = symbols('M_1 M_2')     
         eta_SV1 = Symbol('eta_'+str(self._stateVariable1))
-        eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
-        M_1, M_2 = symbols('M_1 M_2')
+        if self._stateVariable2:
+            eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
         if self._stateVariable3:
             eta_SV3 = Symbol('eta_'+str(self._stateVariable3))
              
@@ -4379,7 +4419,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)] = SOL_2ndOrderMom[4]
             SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)] = SOL_2ndOrderMom[5]
         
-        else:
+        elif self._stateVariable2:
             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
@@ -4390,6 +4430,11 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
             SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[2]
+            
+        else:
+            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
+            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1)]))[0] #only one set of solutions (if any) in linear system of equations
+            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
             
         return SOL_2ndOrdMomDict
 
@@ -9115,8 +9160,8 @@ def _deriveMasterEquation(stoichiometry):
                     substring = stoich[key1][key2][2]
     nvec = sorted(nvec, key=default_sort_key)
 
-    if len(nvec) < 2 or len(nvec) > 4:
-        print("Derivation of Master Equation works for 2, 3 or 4 different reactants only")
+    if len(nvec) < 1 or len(nvec) > 4:
+        print("Derivation of Master Equation works for 1, 2, 3 or 4 different reactants only")
         
         return None, None
     
@@ -9136,7 +9181,10 @@ def _deriveMasterEquation(stoichiometry):
                 prod2 *= g(key2, stoich[key1][key2][0], V)
             if stoich[key1][key2] == 'const':
                 rate_fact *= key2/V
-        if len(nvec)==2:
+        
+        if len(nvec)==1:
+            sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], t), stoich[key1]['rate']*rate_fact)
+        elif len(nvec)==2:
             sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t), stoich[key1]['rate']*rate_fact)
         elif len(nvec)==3:
             sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t), stoich[key1]['rate']*rate_fact)
@@ -9162,8 +9210,8 @@ def _doVanKampenExpansion(rhs, stoich):
                     nconstvec.append(key2)
                     
     nvec = sorted(nvec, key=default_sort_key)
-    if len(nvec) < 2 or len(nvec) > 4:
-        print("van Kampen expansion works for 2, 3 or 4 different reactants only")
+    if len(nvec) < 1 or len(nvec) > 4:
+        print("van Kampen expansion works for 1, 2, 3 or 4 different reactants only")
         
         return None, None, None    
 #    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
@@ -9183,7 +9231,25 @@ def _doVanKampenExpansion(rhs, stoich):
     rhs_dict, substring = rhs(stoich)
     rhs_vKE = 0
     
-    if len(nvec)==2:
+    
+    if len(nvec)==1:
+        lhs_vKE = (Derivative(P(nvec[0],t),t).subs({nvec[0]: NoiseDict[nvec[0]]})
+                  - sympy.sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], t),nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]]}))
+        for key in rhs_dict:
+            op = rhs_dict[key][0].subs({nvec[0]: NoiseDict[nvec[0]]})
+            func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sympy.sqrt(V)*NoiseDict[nvec[0]]})
+            func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]]})
+            func = func1*func2
+            #if len(op.args[0].args) ==0:
+            term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
+            #    
+            #else:
+            #    term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sympy.sqrt(V)*Derivative(func, op.args[1].args[0]) 
+            #                           + op.args[1].args[1]**2/(2*V)*Derivative(func, op.args[1].args[0], op.args[1].args[0])})
+            #    term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sympy.sqrt(V)*Derivative(term, op.args[0].args[0]) 
+            #                           + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
+            rhs_vKE += rhs_dict[key][3].subs(PhiConstDict)*(term.doit() - func)
+    elif len(nvec)==2:
         lhs_vKE = (Derivative(P(nvec[0], nvec[1],t),t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
                   - sympy.sqrt(V)*Derivative(PhiDict[nvec[0]],t)*Derivative(P(nvec[0], nvec[1],t),nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
                   - sympy.sqrt(V)*Derivative(PhiDict[nvec[1]],t)*Derivative(P(nvec[0], nvec[1],t),nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]}))
@@ -9333,8 +9399,8 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
                 if not key2 in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
-    if len(nvec) < 2 or len(nvec) > 4:
-        print("Derivation of Fokker Planck equation works for 2, 3 or 4 different reactants only")
+    if len(nvec) < 1 or len(nvec) > 4:
+        print("Derivation of Fokker Planck equation works for 1, 2, 3 or 4 different reactants only")
         
         return None, None
 #    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
@@ -9343,7 +9409,9 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
     for kk in range(len(nvec)):
         NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
     
-    if len(Vlist_lhs)-1 == 2:
+    if len(Vlist_lhs)-1 == 1:
+        SOL_FPE = solve(FPE, Derivative(P(NoiseDict[nvec[0]],t),t), dict=True)[0]
+    elif len(Vlist_lhs)-1 == 2:
         SOL_FPE = solve(FPE, Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],t),t), dict=True)[0]
     elif len(Vlist_lhs)-1 == 3:
         SOL_FPE = solve(FPE, Derivative(P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],t),t), dict=True)[0]
@@ -9372,8 +9440,8 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
                 if key2 not in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
-    if len(nvec) < 2 or len(nvec) > 4:
-        print("showNoiseEquations works for 2, 3 or 4 different reactants only")
+    if len(nvec) < 1 or len(nvec) > 4:
+        print("showNoiseEquations works for 1, 2, 3 or 4 different reactants only")
         
         return
 #    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
@@ -9385,8 +9453,10 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
     
     NoiseSub1stOrder = {}
     NoiseSub2ndOrder = {}
-
-    if len(NoiseDict)==2:
+    
+    if len(NoiseDict)==1:
+        Pdim = P(NoiseDict[nvec[0]],t)
+    elif len(NoiseDict)==2:
         Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],t)
     elif len(NoiseDict)==3:
         Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],t)
@@ -9464,7 +9534,9 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
         for noise in NoiseDict:
             eq1stOrderMoment = (NoiseDict[noise]*FPEdict[fpe_lhs]).expand() 
             eq1stOrderMoment = eq1stOrderMoment.subs(NoiseSub1stOrder)
-            if len(NoiseDict)==2:
+            if len(NoiseDict)==1:
+                eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[0]]))
+            elif len(NoiseDict)==2:
                 eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[0]]))
                 eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[1]]))
             elif len(NoiseDict)==3:
@@ -9491,7 +9563,9 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
                 eq2ndOrderMoment = eq2ndOrderMoment.subs(NoiseSub2ndOrder)
                 eq2ndOrderMoment = eq2ndOrderMoment.subs(NoiseSub1stOrder)
                 #eq2ndOrderMoment = eq2ndOrderMoment.subs(SOL_1stOrderMom[0])
-                if len(NoiseDict)==2:
+                if len(NoiseDict)==1:
+                    eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
+                elif len(NoiseDict)==2:
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]))
@@ -9538,8 +9612,8 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
                 if not key2 in nvec:
                     nvec.append(key2)
     nvec = sorted(nvec, key=default_sort_key)
-    if len(nvec) < 2 or len(nvec) > 4:
-        print("showNoiseSolutions works for 2, 3 or 4 different reactants only")
+    if len(nvec) < 1 or len(nvec) > 4:
+        print("showNoiseSolutions works for 1, 2, 3 or 4 different reactants only")
         
         return
 #    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
@@ -9547,8 +9621,9 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
     NoiseDict = {}
     for kk in range(len(nvec)):
         NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
-            
-    if len(NoiseDict)==2:
+    if len(NoiseDict)==1:
+        SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]])], dict=True)        
+    elif len(NoiseDict)==2:
         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]])], dict=True)
     elif len(NoiseDict)==3:
         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]]),M_1(NoiseDict[nvec[2]])], dict=True)
@@ -9560,7 +9635,12 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
         return None, None, None, None
                     
     SOL_2ndOrdMomDict = {} 
-    if len(NoiseDict)==2:
+    
+    if len(NoiseDict)==1:
+        SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])]))[0] #only one set of solutions (if any) in linear system of equations        
+        SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
+    
+    elif len(NoiseDict)==2:
         SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), 
                                                          M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), 
                                                          M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])]))[0] #only one set of solutions (if any) in linear system of equations
@@ -9856,8 +9936,8 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     #for reactant in reactants:
     #    nvec.append(reactant)
     nvec = sorted(nvec, key=default_sort_key)
-    if len(nvec) < 2 or len(nvec) > 4:
-        print("van Kampen expansions works for 2, 3 or 4 different reactants only")
+    if len(nvec) < 1 or len(nvec) > 4:
+        print("van Kampen expansions works for 1, 2, 3 or 4 different reactants only")
         
         return
 #    assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
@@ -9884,7 +9964,28 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
                     PhiSubDict[key] = PhiSubDict[key].subs({sym: 1}) #here we assume that if a reactant in the substitution string is not a time-dependent reactant it can only be the total number of reactants which is constant, i.e. 1=N/N
     
     
-    if len(Vlist_lhs)-1 == 2:
+    if len(Vlist_lhs)-1 == 1:
+        ode1 = 0
+        for kk in range(len(ODE.args)):
+            prod=1
+            for nn in range(len(ODE.args[kk].args)-1):
+                prod *= ODE.args[kk].args[nn]
+            if ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]],t), NoiseDict[nvec[0]]):
+                ode1 += prod
+            else:
+                print('Check ODE.args!')
+                
+        if PhiSubDict:
+            ode1 = ode1.subs(PhiSubDict)
+            
+            for key in PhiSubDict:
+                ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+                ODEsys = {**ODE_1[0]}            
+        else:        
+            ODE_1 = solve(ode1, Derivative(PhiDict[nvec[0]] , t), dict=True)
+            ODEsys = {**ODE_1[0]}
+    
+    elif len(Vlist_lhs)-1 == 2:
         ode1 = 0
         ode2 = 0
         for kk in range(len(ODE.args)):
