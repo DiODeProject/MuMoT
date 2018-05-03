@@ -2777,9 +2777,10 @@ class MuMoTmultiView(MuMoTview):
         if not(self._shareAxes):
             self._numColumns = MULTIPLOT_COLUMNS
             self._numRows = math.ceil(self._subPlotNum / self._numColumns)
+            plt.gcf().set_size_inches(9, 4.5)
         
     def _plot(self, _=None):
-        plt.figure(self._figureNum)
+        fig=plt.figure(self._figureNum)
         plt.clf()
         self._resetErrorMessage()
         if self._shareAxes:
@@ -2795,6 +2796,8 @@ class MuMoTmultiView(MuMoTview):
                 else:
                     plt.subplot(self._numRows, self._numColumns, subPlotNum)
                 func()
+            plt.subplots_adjust(left=0.12, bottom=0.25, right=0.98, top=0.9, wspace=0.45, hspace=None)
+            #plt.tight_layout()
 #                subplotNum += 1
 
 
@@ -3076,6 +3079,11 @@ class MuMoTtimeEvolutionView(MuMoTview):
     ## Parameters for controller specific to this time evolution view
     _tEParams = None
     
+    ## displayed range for vertical axis
+    _chooseXrange = None
+    ## displayed range for horizontal axis
+    _chooseYrange = None
+    
     #def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, figure = None, params = None, **kwargs):
     def __init__(self, model, controller, tEParams, showStateVars = None, figure = None, params = None, **kwargs):
         #if model._systemSize == None and model._constantSystemSize == True:
@@ -3086,6 +3094,9 @@ class MuMoTtimeEvolutionView(MuMoTview):
         #super().__init__(model, controller, figure, params, **kwargs)
         
         self._tEParams=tEParams
+        self._chooseXrange = kwargs.get('choose_xrange', None)
+        self._chooseYrange = kwargs.get('choose_yrange', None)
+        
         with io.capture_output() as log:
 #         if True:
  
@@ -3790,10 +3801,15 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
 #             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable3)))+'$')
 #         if self._stateVariable4:
 #             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
-#         
-        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
-                           fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
+        
+        if self._chooseXrange:
+            choose_xrange=self._chooseXrange
+        else:
+            choose_xrange=[0, self._maxTime]
+        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, choose_xrange=choose_xrange,
+                           choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
                            legend_fontsize=self._legend_fontsize)
+        
         
         with io.capture_output() as log:
             print('Last point on curve:')  
@@ -3846,8 +3862,12 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
 #         if self._stateVariable4:
 #             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
 #         
-        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
-                           fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
+        if self._chooseXrange:
+            choose_xrange=self._chooseXrange
+        else:
+            choose_xrange=[0, self._maxTime]
+        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, choose_xrange=choose_xrange,
+                           choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
                            legend_fontsize=self._legend_fontsize)
         
         with io.capture_output() as log:
@@ -3876,10 +3896,14 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
                 logStr += "'" + str(self._stateVarListDisplay[nn]) + "'], "
             else:
                 logStr += "'" + str(self._stateVarListDisplay[nn]) + "', "
-        initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
-        logStr += "initialState = " + str(initState_str) + ", "
-        logStr += "maxTime = " + str(self._maxTime) + ", "
-        logStr += "plotProportions = " + str(self._plotProportions) + ", "
+        
+        if "initialState" not in self._generatingKwargs.keys():
+            initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+            logStr += "initialState = " + str(initState_str) + ", "
+        if "maxTime" not in self._generatingKwargs.keys():
+            logStr += "maxTime = " + str(self._maxTime) + ", "
+        if "plotProportions" not in self._generatingKwargs.keys():
+            logStr += "plotProportions = " + str(self._plotProportions) + ", "
         if includeParams:
             logStr += self._get_bookmarks_params() + ", "
         if len(self._generatingKwargs) > 0:
@@ -4370,8 +4394,12 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
         
         c_labels = [_doubleUnderscorify(_greekPrependify(c_labels[jj])) for jj in range(len(c_labels))]
         
-        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
-                           fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True, 
+        if self._chooseXrange:
+            choose_xrange=self._chooseXrange
+        else:
+            choose_xrange=[0, self._maxTime]
+        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, choose_xrange=choose_xrange, 
+                           choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True, 
                            legend_fontsize=self._legend_fontsize)
 #        plt.set_aspect('equal') ## @todo
         
@@ -4445,9 +4473,11 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
             logStr = ""
         
         logStr += "<modelName>." + self._generatingCommand + "("
-        initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
-        logStr += "initialState = " + str(initState_str) + ", "
-        logStr += "maxTime = " + str(self._maxTime) + ", "
+        if "initialState" not in self._generatingKwargs.keys():
+            initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+            logStr += "initialState = " + str(initState_str) + ", "
+        if "maxTime" not in self._generatingKwargs.keys():
+            logStr += "maxTime = " + str(self._maxTime) + ", "
         if includeParams:
             logStr += self._get_bookmarks_params() + ", "
         if len(self._generatingKwargs) > 0:
@@ -4835,6 +4865,10 @@ class MuMoTfieldView(MuMoTview):
     _showSSANoise = None
     ## flag to show Noise
     _showNoise = None
+    ## displayed range for vertical axis
+    _chooseXrange = None
+    ## displayed range for horizontal axis
+    _chooseYrange = None
     
     def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
         if model._systemSize == None and model._constantSystemSize == True:
@@ -4868,6 +4902,10 @@ class MuMoTfieldView(MuMoTview):
             self._showSSANoise = True
         else:
             self._showSSANoise = False
+        
+        if stateVariable3 == None:    
+            self._chooseXrange = kwargs.get('choose_xrange', None)
+            self._chooseYrange = kwargs.get('choose_yrange', None)
         
         if not(silent):
             self._plot_field()
@@ -5804,11 +5842,23 @@ class MuMoTvectorView(MuMoTfieldView):
             
             if self._mumotModel._constantSystemSize == True:
                 plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
-                choose_xrange = [0,1]
-                choose_yrange = [0,1]
+                if self._chooseXrange:
+                    choose_xrange=self._chooseXrange
+                else:
+                    choose_xrange = [0,1]
+                if self._chooseYrange:
+                    choose_yrange=self._chooseYrange
+                else:
+                    choose_yrange = [0,1]
             else:
-                choose_xrange = [0, self._X.max()]
-                choose_yrange = [0, self._Y.max()]
+                if self._chooseXrange:
+                    choose_xrange=self._chooseXrange
+                else:
+                    choose_xrange = [0, self._X.max()]
+                if self._chooseYrange:
+                    choose_yrange=self._chooseYrange
+                else:
+                    choose_yrange = [0, self._Y.max()]
                 #plt.xlim(0,self._X.max())
                 #plt.ylim(0,self._Y.max())
             
@@ -5874,11 +5924,23 @@ class MuMoTstreamView(MuMoTfieldView):
             
             if self._mumotModel._constantSystemSize == True:
                 plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
-                choose_xrange = [0,1]
-                choose_yrange = [0,1]
+                if self._chooseXrange:
+                    choose_xrange=self._chooseXrange
+                else:
+                    choose_xrange = [0,1]
+                if self._chooseYrange:
+                    choose_yrange=self._chooseYrange
+                else:
+                    choose_yrange = [0,1]
             else:
-                choose_xrange = [0, self._X.max()]
-                choose_yrange = [0, self._Y.max()]
+                if self._chooseXrange:
+                    choose_xrange=self._chooseXrange
+                else:
+                    choose_xrange = [0, self._X.max()]
+                if self._chooseYrange:
+                    choose_yrange=self._chooseYrange
+                else:
+                    choose_yrange = [0, self._Y.max()]
                 #plt.xlim(0,self._X.max())
                 #plt.ylim(0,self._Y.max())
             
@@ -6783,9 +6845,11 @@ class MuMoTBifurcationView(MuMoTview):
         logStr += "<modelName>." + self._generatingCommand + "('" + str(self._bifurcationParameter_for_bookmark) + "', '" + str(self._stateVarExpr1) +"', "
         #if self._stateVarBif2 != None:
         #    logStr += "'" + str(self._stateVarBif2) + "', "
-        initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
-        logStr += "initBifParam = " + str(self._initBifParam) + ", "
-        logStr += "initialState = " + str(initState_str) + ", "
+        if "initialState" not in self._generatingKwargs.keys():
+            initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+            logStr += "initialState = " + str(initState_str) + ", "
+        if "initBifParam" not in self._generatingKwargs.keys():
+            logStr += "initBifParam = " + str(self._initBifParam) + ", "
         if includeParams:
             logStr += self._get_bookmarks_params() + ", "        
         if len(self._generatingKwargs) > 0:
@@ -10368,7 +10432,8 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     if xdata and ydata:
         if len(xdata) == len(ydata):
             #plt.figure(figsize=(8,6), dpi=80)
-            ax = plt.axes()
+            #ax = plt.axes()
+            ax = plt.gca()
             data_x=xdata
             data_y=ydata
             
@@ -10671,7 +10736,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     #ax.set_xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
     #ax.set_ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
      
-    if figure==None or ax_reformat==True:
+    if figure==None or ax_reformat==True or choose_xrange!=None or choose_yrange!=None:
         if choose_xrange:
             max_xrange = choose_xrange[1]-choose_xrange[0]
         else:
@@ -10773,9 +10838,9 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         plt.legend(loc=str(legend_loc), fontsize=legend_fontsize, ncol=2)
         
     for tick in ax.xaxis.get_major_ticks():
-                    tick.label.set_fontsize(14) 
+                    tick.label.set_fontsize(13) 
     for tick in ax.yaxis.get_major_ticks():
-                    tick.label.set_fontsize(14)               
+                    tick.label.set_fontsize(13)               
     
     plt.tight_layout();
     
