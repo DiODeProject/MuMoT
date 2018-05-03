@@ -564,7 +564,7 @@ class MuMoTmodel:
     
     
     ## construct interactive time evolution plot for state variables 
-    def Integrate(self, showStateVars = None, initWidgets = {}, **kwargs):
+    def integrate(self, showStateVars = None, initWidgets = {}, **kwargs):
         # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
         
         if self._systemSize:
@@ -615,7 +615,7 @@ class MuMoTmodel:
         return viewController
     
     ## construct interactive time evolution plot for noise around fixed points     
-    def NoiseCorrelations(self, initWidgets = {}, **kwargs):
+    def noiseCorrelations(self, initWidgets = {}, **kwargs):
         # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
         
         if self._systemSize:
@@ -969,7 +969,7 @@ class MuMoTmodel:
             return None
     
     ## construct interactive time evolution plot for state variables 
-    def Bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, initWidgets = {}, **kwargs):
+    def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, initWidgets = {}, **kwargs):
         # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
         
         stateVariableList = []
@@ -3694,7 +3694,7 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
     
     def _constructorSpecificParams(self, _):
         if self._controller is not None:
-            self._generatingCommand = "Integrate"
+            self._generatingCommand = "integrate"
     
     
     def __init__(self, *args, **kwargs):
@@ -4132,7 +4132,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
     
     def _constructorSpecificParams(self, _):
         if self._controller is not None:
-            self._generatingCommand = "NoiseCorrelations"
+            self._generatingCommand = "noiseCorrelations"
     
     def __init__(self, model, controller, NCParams, EOM_1stOrdMom, EOM_2ndOrdMom, figure=None, params = None, **kwargs):
         self._EOM_1stOrdMomDict = EOM_1stOrdMom
@@ -6358,7 +6358,7 @@ class MuMoTBifurcationView(MuMoTview):
     
     def _constructorSpecificParams(self, _):
         if self._controller is not None:
-            self._generatingCommand = "Bifurcation"
+            self._generatingCommand = "bifurcation"
     
     def __init__(self, model, controller, BfcParams, bifurcationParameter, stateVarExpr1, stateVarExpr2 = None, 
                  figure = None, params = None, **kwargs):
