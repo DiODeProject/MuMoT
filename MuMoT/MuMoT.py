@@ -10157,6 +10157,27 @@ def _raiseModelError(expected, read, rule):
 def _buildFig(object, figure = None):
     global figureCounter
     object._figureNum = figureCounter
+    if figureCounter==1:
+        plt.ion()
+    else:
+        plt.ioff()
+    figureCounter += 1
+    with warnings.catch_warnings(): # ignore warnings when plt.hold has been deprecated in installed libraries - still need to try plt.hold(True) in case older libraries in use
+        warnings.filterwarnings("ignore",category=MatplotlibDeprecationWarning)
+        warnings.filterwarnings("ignore",category=UserWarning)
+        plt.hold(True)  
+    if figure == None:
+        if figureCounter>2:
+            plt.ion()
+        object._figure = plt.figure(object._figureNum) 
+    else:
+        object._figure = figure
+
+
+## generic method for constructing figures in MuMoTview and MuMoTmultiController classes
+def _buildFigOLD(object, figure = None):
+    global figureCounter
+    object._figureNum = figureCounter
     figureCounter += 1
     plt.ion()
     with warnings.catch_warnings(): # ignore warnings when plt.hold has been deprecated in installed libraries - still need to try plt.hold(True) in case older libraries in use
