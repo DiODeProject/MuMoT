@@ -3201,8 +3201,8 @@ class MuMoTtimeEvolutionView(MuMoTview):
 
     
     def _plot_NumSolODE(self):
+        self._update_params()
         if not(self._silent): ## @todo is this necessary?
-            self._update_params()
             plt.figure(self._figureNum)
             plt.clf()
             self._resetErrorMessage()
