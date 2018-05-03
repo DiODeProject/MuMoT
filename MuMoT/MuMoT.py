@@ -3202,12 +3202,11 @@ class MuMoTtimeEvolutionView(MuMoTview):
     
     def _plot_NumSolODE(self):
         if not(self._silent): ## @todo is this necessary?
-            self._update_params()
             plt.figure(self._figureNum)
             plt.clf()
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
-
+        self._update_params()
 
     def _update_params(self):
         if self._controller != None:
