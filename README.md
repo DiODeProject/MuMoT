@@ -35,5 +35,5 @@ Read the documentation at [https://diodeproject.github.io/MuMoT/](https://diodep
 * include [Python docstrings](https://www.python.org/dev/peps/pep-0257/) at the very least for user-visible functions, but ideally also for classes, functions, etc. Include the sections `Arguments`, `Keywords` and `Returns`
 * use `@todo` for reminders
 * Write code using Python [naming conventions](https://www.python.org/dev/peps/pep-0008/#naming-conventions)
-* Update `MuMoTtest.ipynb` to add tests for new functionality - always run this notebook before committing
+* Update `TestNotebooks/MuMoTtest.ipynb` to add tests for new functionality - always run this notebook before committing
 
