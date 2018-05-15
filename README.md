@@ -12,6 +12,9 @@ You need to install the following supporting software:
 
 * a LaTeX compiler
 
+## Path
+Given subfolders are used for demo and for test notebooks, the `PYTHONPATH` environment variable needs to be set appropriately, *e.g.* `export PYTHONPATH=$PYTHONPATH:<your MuMoT repository directoty` (Mac). Ideally, add this somewhere where it will be set during every session, *e.g.* in your `.bashrc` file
+
 ## Creating a conda environment for MuMoT named "MumotEnv" (this name is specified in environment.yml):
 
 #### The following has been tested on macOS Sierra Version 10.12.6 and Ubuntu 16.04 (Windows test to follow):
