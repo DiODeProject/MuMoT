@@ -5216,6 +5216,8 @@ class MuMoTfieldView(MuMoTview):
             self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             try:
                 self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
+                if np.isnan(self._speed).any():
+                    self._speed = None
             except:
 #                self._speed = np.ones(self._X.shape, dtype=float)
                 self._speed = None
