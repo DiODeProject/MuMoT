@@ -362,6 +362,8 @@ class MuMoTmodel:
 #            display(Math(self._ratesLaTeX[rate]))
 
     def showSingleAgentRules(self):
+        if not self._agentProbabilities:
+            self._getSingleAgentRules()
         for agent,probs in self._agentProbabilities.items():
             if agent == EMPTYSET_SYMBOL:
                 print("Spontaneous birth from EMPTYSET", end=' ' )
@@ -8008,8 +8010,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             flier.set_markeredgecolor("None")
                             flier.set(marker='o', alpha=0.5)
                 
-                    padding_x = self._maxTime/20
-                    padding_y = y_max/20
+                    padding_x = self._maxTime/20.0
+                    padding_y = y_max/20.0
                     
                 else:
                     for state in sorted(self._initialState.keys(), key=str):
@@ -8028,8 +8030,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
                             plt.plot(results['time'], ydata, color=self._colors[state], lw=2)
                     #_fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max) )
-                    padding_x = 0
-                    padding_y = 0
+                    padding_x = self._maxTime/100.0
+                    padding_y = y_max/100.0
 
                 labels = []
                 for state in sorted(self._initialState.keys(), key=str):
@@ -8039,8 +8041,6 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 plt.legend(markers, self._colors.keys(), loc='upper right', borderaxespad=0., numpoints=1) #bbox_to_anchor=(0.885, 1),
                 
                 _fig_formatting_2D(figure=self._figure, xlab="Time", ylab="Reactants", choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False )
-                plt.ylim((0-padding_y, y_max+padding_y))
-                plt.xlim((0-padding_x, self._maxTime+padding_x))
                  
             if not fullPlot: # If realtime-plot mode, draw only the last timestep rather than overlay all
                 xdata = []
