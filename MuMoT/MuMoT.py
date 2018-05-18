@@ -42,7 +42,7 @@ from bisect import bisect_left
 
 import matplotlib.ticker as ticker
 from math import log10, floor
-#from matplotlib.pyplot import plot
+from matplotlib.pyplot import plot
 
 #from matplotlib.offsetbox import kwargs
 #from __builtin__ import None
@@ -56,7 +56,7 @@ get_ipython().magic('matplotlib nbagg')
 
 figureCounter = 1 # global figure counter for model views
 
-MAX_RANDOM_SEED = 4294967295
+MAX_RANDOM_SEED = 2147483647
 INITIAL_RATE_VALUE = 0.5
 RATE_BOUND = 10.0
 RATE_STEP = 0.1
@@ -7762,8 +7762,6 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
-                if self._ratesDict[str(rule.rate)] == float('inf') or self._ratesDict[str(rule.rate)] is sympy.zoo:
-                    self._ratesDict[str(rule.rate)] = sys.maxsize
             self._systemSize = self._getSystemSize()
             if self._controller == None:
             
@@ -7861,10 +7859,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
-                if self._ratesDict[str(rule.rate)] == float('inf') or self._ratesDict[str(rule.rate)] is sympy.zoo:
+                if self._ratesDict[str(rule.rate)] == float('inf'):
                     self._ratesDict[str(rule.rate)] = sys.maxsize
-                    errorMsg = "WARNING! Rate with division by zero. \nThe rule has a rate with division by zero: \n" + str(rule.lhsReactants) + " --> " + str(rule.rhsReactants) + " with rate " + str(rule.rate) + ".\n The system has run the simulation with the maximum system value: " + str(self._ratesDict[str(rule.rate)]) 
-                    self._showErrorMessage(errorMsg)
             #print("_ratesDict=" + str(self._ratesDict))
             self._systemSize = self._getSystemSize()
 
