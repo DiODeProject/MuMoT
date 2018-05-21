@@ -4927,8 +4927,9 @@ class MuMoTfieldView(MuMoTview):
     
     def _plot_field(self):
         if not(self._silent): ## @todo is this necessary?
-            plt.figure(self._figureNum)
-            plt.clf()
+            plt.figure(self._figureNum)          
+            plt.clf()            
+            _show_computation_start()  
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
         
@@ -5161,6 +5162,9 @@ class MuMoTfieldView(MuMoTview):
                 FixedPoints = None
         
             self._FixedPoints = FixedPoints
+
+        if not(self._silent): ## @todo is this necessary?
+            _show_computation_stop()
 
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
@@ -5938,7 +5942,7 @@ class MuMoTstreamView(MuMoTfieldView):
                                choose_xrange=choose_xrange, choose_yrange=choose_yrange)
             
         else:
-            print('3d sream plot not yet implemented.')
+            print('3d stream plot not yet implemented.')
 
 
 ## stream plot view on model
@@ -6801,6 +6805,9 @@ class MuMoTBifurcationView(MuMoTview):
                 self._showErrorMessage('Bifurcation diagram could not be computed. Try changing parameter values on the sliders')
                 return None
 
+        if not(self._silent):
+            _show_computation_stop()
+
         self._logs.append(log)
         
         
@@ -6809,6 +6816,7 @@ class MuMoTBifurcationView(MuMoTview):
         if not self._silent:
             plt.figure(self._figureNum)
             plt.clf()
+            _show_computation_start()
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
         
@@ -11331,6 +11339,18 @@ def _greekReplace(s, sub, repl):
     return s
 
 
+def _show_computation_start():
+    ax = plt.gca()
+    ax.set_facecolor('xkcd:salmon')
+    plt.show()
+    #print("pink on")
+    
+    
+    
+def _show_computation_stop():
+    ax = plt.gca()
+    ax.set_facecolor('xkcd:white')
+    #print("pink off")
 
 
 
