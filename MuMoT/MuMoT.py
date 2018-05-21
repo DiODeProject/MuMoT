@@ -574,9 +574,9 @@ class MuMoTmodel:
         paramValues = []
         paramNames = []
         
-        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
-        rateStep = RATE_STEP ## @todo choose rate step sensibly
+        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly) (issue #52)
+        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly (issue #52)
+        rateStep = RATE_STEP ## @todo choose rate step sensibly (issue #52)
         for reactant in self._constantReactants:
             paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
 #            paramNames.append('(' + latex(reactant) + ')')
@@ -602,9 +602,10 @@ class MuMoTmodel:
         IntParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
         IntParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
         IntParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
+        IntParams['conserved'] = [kwargs.get('conserved', False), True]
         
         # construct controller
-        viewController = MuMoTtimeEvolutionController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, tEParams=IntParams, **kwargs)
+        viewController = MuMoTtimeEvolutionController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=IntParams, systemSize=True, **kwargs)
         
         #if showStateVars:
         #    showStateVars = [r'' + showStateVars[kk] for kk in range(len(showStateVars))]
@@ -653,11 +654,12 @@ class MuMoTmodel:
         NCParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
         NCParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
         #NCParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
+        NCParams['conserved'] = [kwargs.get('conserved', False), True]
         
         EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         
         # construct controller
-        viewController = MuMoTtimeEvolutionController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, tEParams=NCParams, **kwargs)
+        viewController = MuMoTtimeEvolutionController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=NCParams, systemSize=True, **kwargs)
         
         modelView = MuMoTNoiseCorrelationsView(self, viewController, NCParams, EOM_1stOrderMom, EOM_2ndOrderMom, **kwargs)
         
@@ -1028,9 +1030,11 @@ class MuMoTmodel:
         # read input parameters
         BfcParams['initBifParam'] = _format_advanced_option(optionName='initBifParam', inputValue=kwargs.get('initBifParam'), initValues=initWidgets.get('initBifParam'))
         BfcParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
+        BfcParams['bifurcationParameter'] = [bifPar, True]
+        BfcParams['conserved'] = [kwargs.get('conserved', False), True]
         
         # construct controller
-        viewController = MuMoTbifurcationController(bifurcationParameter=bifPar, paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, BfcParams=BfcParams, **kwargs)
+        viewController = MuMoTbifurcationController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=BfcParams, systemSize=False, **kwargs)
         
         #if showStateVars:
         #    showStateVars = [r'' + showStateVars[kk] for kk in range(len(showStateVars))]
@@ -1172,7 +1176,7 @@ class MuMoTmodel:
                     MAParams['netParam'][-1] = True
         
         # construct controller
-        viewController = MuMoTmultiagentController(paramValues, paramNames, self._ratesLaTeX, False, MAParams, **kwargs)
+        viewController = MuMoTmultiagentController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=MAParams, systemSize=True, **kwargs)
         # Get the default network values assigned from the controller
         modelView = MuMoTmultiagentView(self, viewController, MAParams, **kwargs)
         viewController.setView(modelView)
@@ -1226,7 +1230,7 @@ class MuMoTmodel:
         ssaParams['aggregateResults'] = _format_advanced_option(optionName='aggregateResults', inputValue=kwargs.get('aggregateResults'), initValues=initWidgets.get('aggregateResults'))
         
         # construct controller
-        viewController = MuMoTstochasticSimulationController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, SSParams=ssaParams, **kwargs)
+        viewController = MuMoTstochasticSimulationController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=ssaParams, systemSize=True, **kwargs)
 
         modelView = MuMoTSSAView(self, viewController, ssaParams, **kwargs)
         viewController.setView(modelView)
@@ -1652,7 +1656,7 @@ class MuMoTcontroller:
     ## bookmark button widget
     _bookmarkWidget = None
 
-    def __init__(self, paramValues, paramNames, paramLabelDict = {}, continuousReplot = False, plotLimits = False, systemSize = False, params = None, **kwargs):
+    def __init__(self, paramValues, paramNames, paramLabelDict = {}, continuousReplot = False, plotLimits = False, systemSize = False, params = None, advancedOpts=None, **kwargs):
         silent = kwargs.get('silent', False)
         self._silent = silent
         self._paramLabelDict = paramLabelDict
@@ -1701,7 +1705,7 @@ class MuMoTcontroller:
                                              max = 10.0, step = 0.5,
                                              readout_format='.1f',
                                              description = "Plot limits", 
-                                             continuous_update = False)
+                                             continuous_update = continuousReplot)
                 if not silent:
                     display(self._plotLimitsWidget)
                 
@@ -1716,9 +1720,17 @@ class MuMoTcontroller:
                 self._systemSizeWidget = widgets.IntSlider(value = sysSize[0], min = sysSize[1], 
                                              max = sysSize[2], step = sysSize[3], 
                                              description = "System size", 
-                                             continuous_update = False)
+                                             continuous_update = continuousReplot)
                 if not silent:  
                     display(self._systemSizeWidget)
+        
+        # create advanced widgets (that will be added into the 'Advanced options' tab)
+        initialState = self._createAdvancedWidgets(advancedOpts, continuousReplot)
+        self._orderAdvancedWidgets(initialState)
+        # add widgets to the Advanced options tab
+        if not self._silent:
+            self._displayAdvancedOptionsTab()
+        
                         
         self._bookmarkWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Paste bookmark to log', icon='fa-bookmark')
         self._bookmarkWidget.on_click(self._print_standalone_view_cmd)
@@ -1736,11 +1748,16 @@ class MuMoTcontroller:
         self._errorMessage.value = "Pasted bookmark to log - view with showLogs(tail = True)"
         self._view._print_standalone_view_cmd()
 
-    
     ## set the functions that must be triggered when the widgets are changed.
     ## @param[in]    recomputeFunction    The function to be called when recomputing is necessary 
     ## @param[in]    redrawFunction    The function to be called when only redrawing (relying on previous computation) is sufficient 
     def _setReplotFunction(self, recomputeFunction, redrawFunction=None):
+        """set the functions that must be triggered when the widgets are changed.
+        :param recomputeFunction
+            The function to be called when recomputing is necessary
+        :param redrawFunction
+            The function to be called when only redrawing (relying on previous computation) is sufficient
+        """ 
         self._replotFunction = recomputeFunction
         self._redrawFunction = redrawFunction
         for widget in self._widgetsFreeParams.values():
@@ -1756,8 +1773,17 @@ class MuMoTcontroller:
             for widget in self._widgetsPlotOnly.values():
                 widget.observe(redrawFunction, 'value')
 
+    def _createAdvancedWidgets(self, _advancedOpts, _continuousReplot=False):
+        """interface method to add advanced options (if needed)"""
+        return None
+    
+    def _orderAdvancedWidgets(self, initialState):
+        """interface method to sort the advanced options, in the self._extraWidgetsOrder list"""
+        pass
+
     ## create and display the "Advanced options" tab (if not empty)
     def _displayAdvancedOptionsTab(self):
+        """create and display the "Advanced options" tab (if not empty)"""
         advancedWidgets = []
         for widgetName in self._extraWidgetsOrder:
             if self._widgetsExtraParams.get(widgetName):
@@ -1856,10 +1882,7 @@ class MuMoTcontroller:
 
 class MuMoTbifurcationController(MuMoTcontroller):
     
-    def __init__(self, bifurcationParameter, paramValues, paramNames, paramLabelDict, continuousReplot, BfcParams, **kwargs):
-        
-        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, systemSize=False, **kwargs)
-        
+    def _createAdvancedWidgets(self, BfcParams, continuousReplot=False):
         initialState = BfcParams['initialState'][0]
         if not BfcParams['initialState'][-1]:
             #for state,pop in initialState.items():
@@ -1870,12 +1893,11 @@ class MuMoTbifurcationController(MuMoTcontroller):
                                              max = pop[2],
                                              step = pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
-#                                              description = "State " + str(state),
                                              description = "Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + r'\)' + " at t=0: ",
                                              style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
                 
-                if kwargs.get('conserved', False)==True:
+                if BfcParams['conserved'][0]==True:
                     # disable last population widget (if there are more than 1)
                     if len(initialState) > 1 and i == 0:
                         widget.disabled = True
@@ -1883,7 +1905,6 @@ class MuMoTbifurcationController(MuMoTcontroller):
                         widget.observe(self._updateInitialStateWidgets, 'value')
                         
                 self._widgetsExtraParams['init'+str(state)] = widget
-                #advancedWidgets.append(widget)
             
         # init bifurcation paramter value slider
         if not BfcParams['initBifParam'][-1]:
@@ -1891,28 +1912,16 @@ class MuMoTbifurcationController(MuMoTcontroller):
             widget = widgets.FloatSlider(value = initBifParam[0], min = initBifParam[1], 
                                              max = initBifParam[2], step = initBifParam[3],
                                              readout_format='.' + str(_count_sig_decimals(str(initBifParam[3]))) + 'f',
-                                             description = 'Initial ' + r'\(' + _doubleUnderscorify(_greekPrependify(str(bifurcationParameter))) + r'\) : ',
+                                             description = 'Initial ' + r'\(' + _doubleUnderscorify(_greekPrependify(str(BfcParams['bifurcationParameter'][0]))) + r'\) : ',
                                              style = {'description_width': 'initial:'},
                                              #layout=widgets.Layout(width='50%'),
                                              disabled=False,
                                              continuous_update = continuousReplot) 
             self._widgetsExtraParams['initBifParam'] = widget
-            #advancedWidgets.append(widget)
         
-        
-               
-        
-        self._addSpecificWidgets(BfcParams, continuousReplot)
-        self._orderWidgets(initialState)
-        
-        # add widgets to the Advanced options tab
-        if not self._silent:
-            self._displayAdvancedOptionsTab()
-            
-    def _addSpecificWidgets(self, BfcParams, continuousReplot):
-        pass
+        return initialState
     
-    def _orderWidgets(self, initialState):
+    def _orderAdvancedWidgets(self, initialState):
         # define the widget order
         self._extraWidgetsOrder.append('initBifParam')
         for state in sorted(initialState.keys(), key=str):
@@ -1921,10 +1930,7 @@ class MuMoTbifurcationController(MuMoTcontroller):
 
 class MuMoTtimeEvolutionController(MuMoTcontroller):
     
-    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, tEParams, **kwargs):
-        
-        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, systemSize=True, **kwargs)
-        
+    def _createAdvancedWidgets(self, tEParams, continuousReplot=False):
         initialState = tEParams['initialState'][0]
         if not tEParams['initialState'][-1]:
             #for state,pop in initialState.items():
@@ -1935,12 +1941,11 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
                                              max = pop[2],
                                              step = pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
-#                                              description = "State " + str(state),
                                              description = "Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + r'\)' + " at t=0: ",
                                              style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
                 
-                if kwargs.get('conserved', False)==True:
+                if tEParams['conserved'][0]==True:
                     # disable last population widget (if there are more than 1)
                     if len(initialState) > 1 and i == 0:
                         widget.disabled = True
@@ -1948,7 +1953,6 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
                         widget.observe(self._updateInitialStateWidgets, 'value')
                         
                 self._widgetsExtraParams['init'+str(state)] = widget
-                #advancedWidgets.append(widget)
             
         # Max time slider
         if not tEParams['maxTime'][-1]:
@@ -1962,7 +1966,6 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
                                              disabled=False,
                                              continuous_update = continuousReplot) 
             self._widgetsExtraParams['maxTime'] = widget
-            #advancedWidgets.append(widget)
         
         
         ## Checkbox for proportions or full populations plot
@@ -1973,19 +1976,11 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
                     description='Plot population proportions',
                     disabled = False
                 )
-                self._widgetsPlotOnly['plotProportions'] = widget       
+                self._widgetsPlotOnly['plotProportions'] = widget
         
-        self._addSpecificWidgets(tEParams, continuousReplot)
-        self._orderWidgets(initialState)
-        
-        # add widgets to the Advanced options tab
-        if not self._silent:
-            self._displayAdvancedOptionsTab()
-            
-    def _addSpecificWidgets(self, tEParams, continuousReplot):
-        pass
+        return initialState
     
-    def _orderWidgets(self, initialState):
+    def _orderAdvancedWidgets(self, initialState):
         # define the widget order
         for state in sorted(initialState.keys(), key=str):
             self._extraWidgetsOrder.append('init'+str(state))
@@ -1997,9 +1992,7 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
 ## class describing a controller for stochastic simulations (base class of the MuMoTmultiagentController)
 class MuMoTstochasticSimulationController(MuMoTcontroller):
     
-    def __init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, SSParams, **kwargs):
-        MuMoTcontroller.__init__(self, paramValues, paramNames, paramLabelDict, continuousReplot, systemSize=True, **kwargs)
-        
+    def _createAdvancedWidgets(self, SSParams, continuousReplot=False):
         initialState = SSParams['initialState'][0]
         if not SSParams['initialState'][-1]:
             #for state,pop in initialState.items():
@@ -2010,7 +2003,6 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                                              max = pop[2],
                                              step = pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
-#                                              description = "State " + str(state),
                                              description = "Reactant " + r'\(' + self._paramLabelDict.get(state,str(state)) + r'\)',
                                              style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
@@ -2021,7 +2013,6 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                     widget.observe(self._updateInitialStateWidgets, 'value')
                         
                 self._widgetsExtraParams['init'+str(state)] = widget
-                #advancedWidgets.append(widget)
             
         # Max time slider
         if not SSParams['maxTime'][-1]:
@@ -2035,7 +2026,6 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                                              disabled=False,
                                              continuous_update = continuousReplot) 
             self._widgetsExtraParams['maxTime'] = widget
-            #advancedWidgets.append(widget)
         
         # Random seed input field
         if not SSParams['randomSeed'][-1]:
@@ -2046,7 +2036,6 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                 disabled=False
             )
             self._widgetsExtraParams['randomSeed'] = widget
-            #advancedWidgets.append(widget)
         
         try:
             ## Toggle buttons for plotting style 
@@ -2062,7 +2051,7 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                 )
                 plotToggle.observe(self._updateFinalViewWidgets, 'value')
                 self._widgetsPlotOnly['visualisationType'] = plotToggle
-                #advancedWidgets.append(plotToggle)
+
         except widgets.trait_types.traitlets.TraitError: # this widget could be redefined in a subclass and the init-value in SSParams['visualisationType'][0] might raise an exception
             pass
         
@@ -2111,7 +2100,6 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                 disabled = False
             )
             self._widgetsExtraParams['realtimePlot'] = widget
-            #advancedWidgets.append(widget)
         
         # Number of runs slider
         if not SSParams['runs'][-1]:
@@ -2136,16 +2124,13 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
             self._widgetsPlotOnly['aggregateResults'] = widget
         
         self._addSpecificWidgets(SSParams, continuousReplot)
-        self._orderWidgets(initialState)
-        
-        # add widgets to the Advanced options tab
-        if not self._silent:
-            self._displayAdvancedOptionsTab()
+    
+        return initialState
             
     def _addSpecificWidgets(self, SSParams, continuousReplot):
         pass
     
-    def _orderWidgets(self, initialState):
+    def _orderAdvancedWidgets(self, initialState):
         # define the widget order
         for state in sorted(initialState.keys(), key=str):
             self._extraWidgetsOrder.append('init'+str(state))
@@ -2280,7 +2265,7 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
             self._widgetsPlotOnly['showInteractions'] = widget
             #advancedWidgets.append(widget)
     
-    def _orderWidgets(self, initialState): 
+    def _orderAdvancedWidgets(self, initialState): 
         # define the widget order
         for state in sorted(initialState.keys(), key=str):
             self._extraWidgetsOrder.append('init'+str(state))
