@@ -128,6 +128,15 @@ class MuMoTdefault:
         MuMoTdefault._systemSize = initSysSize
         MuMoTdefault._systemSizeLimits = limits
         MuMoTdefault._systemSizeStep = step
+        
+    _plotLimits = 1.0
+    _plotLimitsLimits = (0.1, 5.0)
+    _plotLimitsStep = 0.1
+    @staticmethod
+    def setPlotLimitsDefaults(initPlotLimits=_plotLimits, limits=_plotLimitsLimits, step=_plotLimitsStep):
+        MuMoTdefault._plotLimits = initPlotLimits
+        MuMoTdefault._plotLimitsLimits = limits
+        MuMoTdefault._plotLimitsStep = step
     
 
 ## class describing a model
@@ -567,35 +576,10 @@ class MuMoTmodel:
     
     ## construct interactive time evolution plot for state variables 
     def integrate(self, showStateVars = None, initWidgets = {}, **kwargs):
-        # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
-        
         if self._systemSize:
             kwargs['conserved'] = True
-        paramValues = []
-        paramNames = []
         
-        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly) (issue #52)
-        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly (issue #52)
-        rateStep = RATE_STEP ## @todo choose rate step sensibly (issue #52)
-        for reactant in self._constantReactants:
-            paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-#            paramNames.append('(' + latex(reactant) + ')')
-            paramNames.append(str(reactant)) 
-        
-        for freeParam in self._rates:
-            ## @todo: having params as a list is inefficient, a dictionary would be more convenient (see issue #27)
-            if freeParam not in self._constantReactants:
-                rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
-                                        defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
-                                        initValueRangeStep=initWidgets.get(str(freeParam)), 
-                                        validRange = (0,float("inf")))
-                paramValues.append(rateVals)
-                paramNames.append(str(freeParam))
-        paramNames.append('systemSize')
-        paramValues.append(_parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), 'systemSize'),
-                                    defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
-                                    initValueRangeStep=initWidgets.get('systemSize'), 
-                                    validRange = (0,float("inf"))) )
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False )
         
         IntParams = {}
         # read input parameters
@@ -605,7 +589,7 @@ class MuMoTmodel:
         IntParams['conserved'] = [kwargs.get('conserved', False), True]
         
         # construct controller
-        viewController = MuMoTtimeEvolutionController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=IntParams, systemSize=True, **kwargs)
+        viewController = MuMoTtimeEvolutionController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=IntParams, showSystemSize=True, **kwargs)
         
         #if showStateVars:
         #    showStateVars = [r'' + showStateVars[kk] for kk in range(len(showStateVars))]
@@ -619,35 +603,10 @@ class MuMoTmodel:
     
     ## construct interactive time evolution plot for noise around fixed points     
     def noiseCorrelations(self, initWidgets = {}, **kwargs):
-        # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
-        
         if self._systemSize:
             kwargs['conserved'] = True
-        paramValues = []
-        paramNames = []
         
-        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
-        rateStep = RATE_STEP ## @todo choose rate step sensibly
-        for reactant in self._constantReactants:
-            paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-#            paramNames.append('(' + latex(reactant) + ')')
-            paramNames.append(str(reactant)) 
-        
-        for freeParam in self._rates:
-            ## @todo: having params as a list is inefficient, a dictionary would be more convenient (see issue #27)
-            if freeParam not in self._constantReactants:
-                rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
-                                        defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
-                                        initValueRangeStep=initWidgets.get(str(freeParam)), 
-                                        validRange = (0,float("inf")))
-                paramValues.append(rateVals)
-                paramNames.append(str(freeParam))
-        paramNames.append('systemSize')
-        paramValues.append(_parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), 'systemSize'),
-                                    defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
-                                    initValueRangeStep=initWidgets.get('systemSize'), 
-                                    validRange = (0,float("inf"))) )
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False )
         
         NCParams = {}
         # read input parameters
@@ -659,7 +618,7 @@ class MuMoTmodel:
         EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         
         # construct controller
-        viewController = MuMoTtimeEvolutionController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=NCParams, systemSize=True, **kwargs)
+        viewController = MuMoTtimeEvolutionController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=NCParams, showSystemSize=True, **kwargs)
         
         modelView = MuMoTNoiseCorrelationsView(self, viewController, NCParams, EOM_1stOrderMom, EOM_2ndOrderMom, **kwargs)
         
@@ -799,7 +758,7 @@ class MuMoTmodel:
         return SOL_2ndOrdMomDict
     
     ## construct interactive stream plot with the option to show noise around fixed points
-    def stream(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
+    def stream(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, initWidgets = {}, **kwargs):
         """Display interactive stream plot of `stateVariable1` (x-axis), `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis; not currently supported - see below)
 
         Arguments:
@@ -807,6 +766,7 @@ class MuMoTmodel:
             `stateVariable2` - state variable to be plotted on the y-axis
             `stateVariable3 = None` - state variable to be plotted on the z-axis (not currently supported; use `vector` instead for 3-dimensional systems)
             `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
+            `initWidgets = {} - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
 
         Keywords:
             `showFixedPoints = False` - plot fixed points
@@ -825,7 +785,7 @@ class MuMoTmodel:
                     
             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
             # construct controller
-            viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
+            viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, initWidgets=initWidgets, **kwargs)
             
             # construct view
             modelView = MuMoTstreamView(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params = params, **kwargs)
@@ -839,7 +799,7 @@ class MuMoTmodel:
     
     
     ## construct interactive vector plot with the option to show noise around fixed points
-    def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
+    def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, initWidgets = {}, **kwargs):
         """Display interactive stream plot of `stateVariable1` (x-axis), `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis; not currently supported - see below)
 
         Arguments:
@@ -847,6 +807,7 @@ class MuMoTmodel:
             `stateVariable2` - state variable to be plotted on the y-axis
             `stateVariable3 = None` - state variable to be plotted on the z-axis (not currently supported; use `vector` instead for 3-dimensional systems)
             `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
+            `initWidgets = {} - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
 
         Keywords:
             `showFixedPoints = False` - plot fixed points
@@ -863,7 +824,7 @@ class MuMoTmodel:
                     
             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
             # construct controller
-            viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
+            viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, initWidgets=initWidgets, **kwargs)
             
             # construct view
             modelView = MuMoTvectorView(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params = params, **kwargs)
@@ -974,7 +935,6 @@ class MuMoTmodel:
     
     ## construct interactive time evolution plot for state variables 
     def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, initWidgets = {}, **kwargs):
-        # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
         
         stateVariableList = []
         for reactant in self._reactants:
@@ -991,40 +951,10 @@ class MuMoTmodel:
         bifPar = bifurcationParameter
         #if self._systemSize:
         #    kwargs['conserved'] = True
+                    
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=False, showPlotLimits=False )
         
-        paramValues = []
-        paramNames = []
-        
-        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
-        rateStep = RATE_STEP ## @todo choose rate step sensibly
-        for reactant in self._constantReactants:
-            if str(reactant) != str(process_sympy(bifPar)):
-                paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-                paramNames.append(str(reactant)) 
-#         
-#         for rate in self._rates:
-#             if str(rate) != bifParam:
-#                 paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-#                 paramNames.append(str(rate))
-#             else:
-#                 if bifParInitVal:
-#                     paramValues.append((bifParInitVal, rateLimits[0], rateLimits[1], rateStep))
-#                 else:
-#                     paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-#                 #paramNames.append(str(rate)+'_{init}')
-#                 paramNames.append(latex(Symbol(str(rate)+'_init')))
-#       
-        for freeParam in self._rates:
-            ## @todo: having params as a list is inefficient, a dictionary would be more convenient (see issue #27)
-            if freeParam not in self._constantReactants:
-                if str(freeParam) != str(process_sympy(bifPar)):
-                    rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
-                                            defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
-                                            initValueRangeStep=initWidgets.get(str(freeParam)), 
-                                            validRange = (0,float("inf")))
-                    paramValues.append(rateVals)
-                    paramNames.append(str(freeParam))
+        if str(process_sympy(bifPar)) in paramValuesDict: del paramValuesDict[str(process_sympy(bifPar))]
         
         BfcParams = {}
         # read input parameters
@@ -1034,7 +964,7 @@ class MuMoTmodel:
         BfcParams['conserved'] = [kwargs.get('conserved', False), True]
         
         # construct controller
-        viewController = MuMoTbifurcationController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=BfcParams, systemSize=False, **kwargs)
+        viewController = MuMoTbifurcationController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=BfcParams, showSystemSize=False, **kwargs)
         
         #if showStateVars:
         #    showStateVars = [r'' + showStateVars[kk] for kk in range(len(showStateVars))]
@@ -1126,22 +1056,7 @@ class MuMoTmodel:
     ## @param[in] showInteractions (active only for netType='dynamic') flag to plot the interaction range between particles (type: boolean)
     ## @param[in] initWidgets dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]  
     def multiagent(self, initWidgets = {}, **kwargs):
-        # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27) 
-        paramValues = []
-        paramNames = [] 
-        for freeParam in self._rates:
-            ## @todo: having (input) params as a list is inefficient, a dictionary would be convenient 
-            rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
-                                    defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
-                                    initValueRangeStep=initWidgets.get(str(freeParam)), 
-                                    validRange = (0,float("inf")))
-            paramValues.append(rateVals)
-            paramNames.append(str(freeParam))
-        paramNames.append('systemSize')
-        paramValues.append(_parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), 'systemSize'),
-                                    defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
-                                    initValueRangeStep=initWidgets.get('systemSize'), 
-                                    validRange = (0,float("inf"))) )
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False )
         
         MAParams = {} 
         # read input parameters
@@ -1152,7 +1067,7 @@ class MuMoTmodel:
         MAParams['particleSpeed'] = _format_advanced_option(optionName='particleSpeed', inputValue=kwargs.get('particleSpeed'), initValues=initWidgets.get('particleSpeed'))
         MAParams['timestepSize'] = _format_advanced_option(optionName='timestepSize', inputValue=kwargs.get('timestepSize'), initValues=initWidgets.get('timestepSize'))
         MAParams['netType'] = _format_advanced_option(optionName='netType', inputValue=kwargs.get('netType'), initValues=initWidgets.get('netType'))
-        systemSize = dict(zip(paramNames, paramValues))["systemSize"][0] ## @todo: a dictionary would be better (issue #27)
+        systemSize = paramValuesDict["systemSize"][0]
         MAParams['netParam'] = _format_advanced_option(optionName='netParam', inputValue=kwargs.get('netParam'), initValues=initWidgets.get('netParam'), extraParam=MAParams['netType'], extraParam2=systemSize)
         MAParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
         MAParams['realtimePlot'] = _format_advanced_option(optionName='realtimePlot', inputValue=kwargs.get('realtimePlot'), initValues=initWidgets.get('realtimePlot'))
@@ -1176,7 +1091,7 @@ class MuMoTmodel:
                     MAParams['netParam'][-1] = True
         
         # construct controller
-        viewController = MuMoTmultiagentController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=MAParams, systemSize=True, **kwargs)
+        viewController = MuMoTmultiagentController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=MAParams, showSystemSize=True, **kwargs)
         # Get the default network values assigned from the controller
         modelView = MuMoTmultiagentView(self, viewController, MAParams, **kwargs)
         viewController.setView(modelView)
@@ -1199,22 +1114,7 @@ class MuMoTmodel:
     ## @param[in] aggregateResults flag to aggregate or not the results from several runs
     ## @param[in] initWidgets dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
     def SSA(self, initWidgets = {}, **kwargs):
-        # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
-        paramValues = []
-        paramNames = [] 
-        for freeParam in self._rates:
-            ## @todo: having params as a list is inefficient, a dictionary would be more convenient (see issue #27)
-            rateVals = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), str(freeParam)),
-                                    defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
-                                    initValueRangeStep=initWidgets.get(str(freeParam)), 
-                                    validRange = (0,float("inf")))
-            paramValues.append(rateVals)
-            paramNames.append(str(freeParam))
-        paramNames.append('systemSize')
-        paramValues.append(_parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(kwargs.get('params',[]), 'systemSize'),
-                                    defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
-                                    initValueRangeStep=initWidgets.get('systemSize'), 
-                                    validRange = (0,float("inf"))) )
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False )
         
         ssaParams = {}
         # read input parameters
@@ -1230,7 +1130,7 @@ class MuMoTmodel:
         ssaParams['aggregateResults'] = _format_advanced_option(optionName='aggregateResults', inputValue=kwargs.get('aggregateResults'), initValues=initWidgets.get('aggregateResults'))
         
         # construct controller
-        viewController = MuMoTstochasticSimulationController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=ssaParams, systemSize=True, **kwargs)
+        viewController = MuMoTstochasticSimulationController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=ssaParams, showSystemSize=True, **kwargs)
 
         modelView = MuMoTSSAView(self, viewController, ssaParams, **kwargs)
         viewController.setView(modelView)
@@ -1334,8 +1234,71 @@ class MuMoTmodel:
             self._solutions = solve(iter(self._equations.values()), self._reactants, force = False, positive = False, set = False)
         return self._solutions
 
+
+    def _create_free_param_dictionary_for_controller(self, inputParams, initWidgets = {}, showSystemSize = False, showPlotLimits = False):
+        paramValuesDict = {}        
+        for freeParam in self._rates.union(self._constantReactants):
+            paramValuesDict[str(freeParam)] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(inputParams, str(freeParam)),
+                                    defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
+                                    initValueRangeStep=initWidgets.get(str(freeParam)), 
+                                    validRange = (-float("inf"),float("inf")))
+            
+        if showSystemSize:
+            paramValuesDict['systemSize'] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(inputParams, 'systemSize'),
+                                    defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
+                                    initValueRangeStep=initWidgets.get('systemSize'), 
+                                    validRange = (1,float("inf"))) 
+        if showPlotLimits:
+            paramValuesDict['plotLimits'] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(inputParams, 'plotLimits'),
+                                    defaultValueRangeStep=[MuMoTdefault._plotLimits, MuMoTdefault._plotLimitsLimits[0], MuMoTdefault._plotLimitsLimits[1], MuMoTdefault._plotLimitsStep], 
+                                    initValueRangeStep=initWidgets.get('plotLimits'), 
+                                    validRange = (-float("inf"),float("inf"))) 
+        
+        return paramValuesDict
+
     ## general controller constructor with all rates as free parameters
-    def _controller(self, contRefresh, displayController = True, plotLimitsSlider = False, params = None, **kwargs):
+    def _controller(self, contRefresh, plotLimitsSlider = False, params = None, initWidgets = {}, **kwargs):            
+        if kwargs.get('showNoise', False) == True or kwargs.get('plotProportion', True) == False:                 
+            systemSizeSlider = True
+        else:
+            systemSizeSlider = False
+        
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=params if params is not None else [], initWidgets=initWidgets, showSystemSize=systemSizeSlider, showPlotLimits=plotLimitsSlider )
+        
+        ############################################################################################################################################           
+        ## @todo: to be removed  ###################################################################################################################
+        ############################################################################################################################################           
+        bifParam = kwargs.get('chooseBifParam', False)    
+        bifParInitVal = kwargs.get('BifParInit', None) 
+        
+        if bifParam != False:
+            del paramValuesDict[str(bifParam)]
+            paramValuesDict[latex(Symbol(str(bifParam)+'_init'))] = (bifParInitVal,0,1,0.1)
+
+        if kwargs.get('showInitSV', False) == True:
+            initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
+            initCondsSV = kwargs.get('initCondsSV', False)
+            for reactant in self._reactants:
+                if reactant not in self._constantReactants:
+                    if initCondsSV != False:
+                        # check input of initCondsSV
+                        if str(reactant) not in initCondsSV:
+                            initialInitCondValue = INITIAL_COND_INIT_VAL
+                        else:
+                            initialInitCondValue = initCondsSV[str(reactant)]
+                    else:
+                        initialInitCondValue = INITIAL_COND_INIT_VAL   
+                    paramValuesDict[latex(Symbol('Phi^0_'+str(reactant)))] = (initialInitCondValue, initialCondLimits[0], initialCondLimits[1], MuMoTdefault._rateStep) 
+        ############################################################################################################################################           
+         
+#         print("ParamNames: " + str(paramNames))
+#         print("paramValues: " + str(paramValues))
+        viewController = MuMoTcontroller(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=contRefresh, showPlotLimits=plotLimitsSlider, showSystemSize=systemSizeSlider, **kwargs)
+
+        return viewController
+    
+    ## general controller constructor with all rates as free parameters
+    def _controller_deprecated(self, contRefresh, displayController = True, plotLimitsSlider = False, params = None, **kwargs):
         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
         rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
         rateStep = RATE_STEP ## @todo choose rate step sensibly                
@@ -1386,7 +1349,7 @@ class MuMoTmodel:
                     paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
         
         if kwargs.get('showNoise', False) == True or kwargs.get('plotProportion', True) == False:                 
-            systemSizeSlider = True #kwargs.get('showNoise', False)
+            systemSizeSlider = True
         else:
             systemSizeSlider = False
         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, plotLimitsSlider, systemSizeSlider, params, **kwargs)
@@ -1505,7 +1468,7 @@ class MuMoTmodel:
         return self._funcs
     
     ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
-    def _getArgTuple2d(self, argNames, argValues, argDict, stateVariable1, stateVariable2, X, Y):
+    def _getArgTuple2d(self, argDict, stateVariable1, stateVariable2, X, Y):
         argList = []
         for arg in self._args:
             if arg == stateVariable1:
@@ -1520,7 +1483,7 @@ class MuMoTmodel:
         return tuple(argList)
 
     ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
-    def _getArgTuple3d(self, argNames, argValues, argDict, stateVariable1, stateVariable2, stateVariable3, X, Y, Z):
+    def _getArgTuple3d(self, argDict, stateVariable1, stateVariable2, stateVariable3, X, Y, Z):
         argList = []
         for arg in self._args:
             if arg == stateVariable1:
@@ -1537,7 +1500,7 @@ class MuMoTmodel:
         return tuple(argList)
 
     ## get tuple to evalute functions returned by _getFuncs with
-    def _getArgTuple(self, argNames, argValues, argDict, reactants, reactantValues):
+    def _getArgTuple(self, argDict, reactants, reactantValues):
         assert False # need to work this out
         argList = []
 #         for arg in self._args:
@@ -1656,72 +1619,50 @@ class MuMoTcontroller:
     ## bookmark button widget
     _bookmarkWidget = None
 
-    def __init__(self, paramValues, paramNames, paramLabelDict = {}, continuousReplot = False, plotLimits = False, systemSize = False, params = None, advancedOpts=None, **kwargs):
-        silent = kwargs.get('silent', False)
-        self._silent = silent
+    def __init__(self, paramValuesDict, paramLabelDict = {}, continuousReplot = False, showPlotLimits = False, showSystemSize = False, advancedOpts=None, **kwargs):
+        self._silent = kwargs.get('silent', False)
         self._paramLabelDict = paramLabelDict
         self._widgetsFreeParams = {}
         self._widgetsExtraParams = {}
         self._widgetsPlotOnly = {}
         self._extraWidgetsOrder = []
-        unsortedPairs = zip(paramNames, paramValues)
         
-        fixedParams = None
-#       fixedParamsDecoded = None
-        if params is not None:
-            fixedParams, _ = zip(*params)
-            fixedParamsDecoded = []
-            for fixedParam in fixedParams:
-                if fixedParam == 'plotLimits' or fixedParam == 'systemSize':
-                    pass
-                else:
-                    expr = process_sympy(fixedParam.replace('\\\\','\\'))
-                    atoms = expr.atoms()
-                    if len(atoms) > 1:
-                        raise SyntaxError("Non-singleton parameter name in parameter " + fixedParam)
-                    for atom in atoms:
-                        # parameter name should contain a single atom
-                        pass
-                    fixedParamsDecoded.append(str(atom))    
-## @todo: refactor the above to use _process_params (below didn't work when first tried)                                
-#        fixedParamsDecoded = None
-#        if params is not None:
-#            (fixedParamsDecoded, foo) = _process_params(params)
-        for pair in sorted(unsortedPairs):
-            if pair[0] == 'plotLimits' or pair[0] == 'systemSize': continue
-            if fixedParams is None or pair[0] not in fixedParamsDecoded: 
-                widget = widgets.FloatSlider(value = pair[1][0], min = pair[1][1], 
-                                             max = pair[1][2], step = pair[1][3],
-                                             readout_format='.' + str(_count_sig_decimals(str(pair[1][3]))) + 'f',
-                                             description = r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(pair[0],pair[0]))) + r'\)', 
+        for paramName in sorted(paramValuesDict.keys()):
+            if paramName == 'plotLimits' or paramName == 'systemSize': continue
+            if not paramValuesDict[paramName][-1]:
+                paramValue = paramValuesDict[paramName]
+                widget = widgets.FloatSlider(value = paramValue[0], min = paramValue[1], 
+                                             max = paramValue[2], step = paramValue[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(paramValue[3]))) + 'f',
+                                             description = r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(paramName,paramName))) + r'\)', 
+                                             style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
-                self._widgetsFreeParams[pair[0]] = widget
-                if not(self._silent):
+                self._widgetsFreeParams[paramName] = widget
+                if not self._silent:
                     display(widget)
-        if plotLimits:
-            if fixedParams is None or 'plotLimits' not in fixedParams:             
-                ## @todo: remove hard coded values and limits
-                self._plotLimitsWidget = widgets.FloatSlider(value = 1.0, min = 1.0, 
-                                             max = 10.0, step = 0.5,
-                                             readout_format='.1f',
-                                             description = "Plot limits", 
+        if showPlotLimits:
+            if not paramValuesDict['plotLimits'][-1]:
+                paramValue = paramValuesDict['plotLimits']
+                self._plotLimitsWidget = widgets.FloatSlider(value = paramValue[0], min = paramValue[1], 
+                                             max = paramValue[2], step = paramValue[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(paramValue[3]))) + 'f',
+                                             description = 'Plot limits', 
+                                             style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
-                if not silent:
+                #@todo: it would be better to remove self._plotLimitsWidget and use the self._widgetsExtraParams['plotLimits'] = widget
+                if not self._silent:
                     display(self._plotLimitsWidget)
                 
-        if systemSize:
-            if fixedParams is None or 'systemSize' not in fixedParams: ## @todo: following the implementation of _parse_input_keyword_for_numeric_widgets(), the check (param is Fixed) could be done as paramDict['systemSize'][-1]==True 
-                paramDict= dict(zip(paramNames, paramValues)) ## @todo a dictionary would be much better (as indicated in issue #27)
-                sysSize = paramDict.get('systemSize')  
-                ## @todo: all methods using systemSize should provide this information (although at the moment I provide a check to allow compatibility with methods that do not implement it yet)
-                if sysSize is None:
-                    ## @todo: remove hard coded values and limits
-                    sysSize = [5,5,100,1]
-                self._systemSizeWidget = widgets.IntSlider(value = sysSize[0], min = sysSize[1], 
-                                             max = sysSize[2], step = sysSize[3], 
-                                             description = "System size", 
+        if showSystemSize:
+            if not paramValuesDict['systemSize'][-1]:
+                paramValue = paramValuesDict['systemSize']
+                self._systemSizeWidget = widgets.FloatSlider(value = paramValue[0], min = paramValue[1], 
+                                             max = paramValue[2], step = paramValue[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(paramValue[3]))) + 'f',
+                                             description = 'System size', 
+                                             style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
-                if not silent:  
+                if not self._silent:
                     display(self._systemSizeWidget)
         
         # create advanced widgets (that will be added into the 'Advanced options' tab)
@@ -1735,13 +1676,13 @@ class MuMoTcontroller:
         self._bookmarkWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Paste bookmark to log', icon='fa-bookmark')
         self._bookmarkWidget.on_click(self._print_standalone_view_cmd)
         bookmark = kwargs.get('bookmark', True)
-        if not silent and bookmark:
+        if not self._silent and bookmark:
             display(self._bookmarkWidget)
 
         widget = widgets.HTML()
         widget.value = ''
         self._errorMessage = widget
-        if not silent and bookmark:
+        if not self._silent and bookmark:
             display(self._errorMessage)
 
     def _print_standalone_view_cmd(self, _):
@@ -2166,7 +2107,6 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
             )
             netDropdown.observe(self._update_net_params, 'value')
             self._widgetsExtraParams['netType'] = netDropdown
-            #advancedWidgets.append(netDropdown)
         
         # Network connectivity slider
         if not MAParams['netParam'][-1]:
@@ -2183,7 +2123,6 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
                                 disabled=False
             )
             self._widgetsExtraParams['netParam'] = widget
-            #advancedWidgets.append(widget)
         
         # Agent speed
         if not MAParams['particleSpeed'][-1]:
@@ -2198,7 +2137,6 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
                                 disabled=False
             )
             self._widgetsExtraParams['particleSpeed'] = widget
-            #advancedWidgets.append(widget)
             
         # Random walk correlatedness
         if not MAParams['motionCorrelatedness'][-1]:
@@ -2215,7 +2153,6 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
                                 disabled=False
             )
             self._widgetsExtraParams['motionCorrelatedness'] = widget
-            #advancedWidgets.append(widget)
         
         # Time scaling slider
         if not MAParams['timestepSize'][-1]:
@@ -2231,7 +2168,6 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
                                 continuous_update = continuousReplot
             )
             self._widgetsExtraParams['timestepSize'] = widget
-            #advancedWidgets.append(widget)
         
         ## Toggle buttons for plotting style
         if not MAParams['visualisationType'][-1]:
@@ -2245,7 +2181,6 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
             )
             plotToggle.observe(self._updateFinalViewWidgets, 'value')
             self._widgetsPlotOnly['visualisationType'] = plotToggle
-            #advancedWidgets.append(plotToggle)
             
         # Particle display checkboxes
         if not MAParams['showTrace'][-1]:
@@ -2255,7 +2190,6 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
                 disabled = False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
             )
             self._widgetsPlotOnly['showTrace'] = widget
-            #advancedWidgets.append(widget)
         if not MAParams['showInteractions'][-1]:
             widget = widgets.Checkbox(
                 value = MAParams['showInteractions'][0],
@@ -2263,7 +2197,6 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
                 disabled = False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
             )
             self._widgetsPlotOnly['showInteractions'] = widget
-            #advancedWidgets.append(widget)
     
     def _orderAdvancedWidgets(self, initialState): 
         # define the widget order
@@ -2311,12 +2244,12 @@ class MuMoTview:
     _controller = None
     ## Summary logs of view behaviour
     _logs = None
-    ## parameter names when used without controller
-    _paramNames = None
-    ## parameter values when used without controller
-    _paramValues = None
     ## parameter values when used without controller
     _fixedParams = None
+    ## dictionary of rates and value
+    _ratesDict = None
+    ## total number of agents in the simulation
+    _systemSize = None
     ## silent flag (TRUE = do not try to acquire figure handle from pyplot)
     _silent = None
     ## plot limits (for non-constant system size) @todo: not used?
@@ -2334,10 +2267,23 @@ class MuMoTview:
         self._axes3d = False
         self._fixedParams = {}
         self._plotLimits = 1
-        #self._plotLimits = 6 ## @todo: why this magic number?
+
         self._generatingKwargs = kwargs
         if params != None:
-            (self._paramNames, self._paramValues) = _process_params(params)
+            (paramNames, paramValues) = _process_params(params)
+            self._fixedParams = dict(zip(paramNames, paramValues))
+        
+        # storing the rates for each rule
+        if self._mumotModel:
+            freeParamDict = self._get_argDict()
+            self._ratesDict = {}
+            for rule in self._mumotModel._rules:
+                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
+                if self._ratesDict[str(rule.rate)] == float('inf') or self._ratesDict[str(rule.rate)] is sympy.zoo:
+                    self._ratesDict[str(rule.rate)] = sys.maxsize
+            #print(self._ratesDict)
+        self._systemSize = self._getSystemSize()
+        
         if not(self._silent):
             _buildFig(self, figure)
     
@@ -2369,10 +2315,13 @@ class MuMoTview:
             for name in sorted(self._controller._widgetsExtraParams.keys()):
                 paramNames.append(name)
                 paramValues.append(self._controller._widgetsExtraParams[name].value)
-        if self._paramNames is not None:
-            paramNames += map(str, self._paramNames)
-            paramValues += self._paramValues
-            ## @todo: in soloView, this does not show the extra parameters (we should make clearer what the use of showLogs) 
+#         if self._paramNames is not None:
+#             paramNames += map(str, self._paramNames)
+#             paramValues += self._paramValues
+            ## @todo: in soloView, this does not show the extra parameters (we should make clearer what the use of showLogs)
+        for key,value in self._fixedParams.items():
+            paramNames.append( str(key) )
+            paramValues.append( value )
 
         for i in zip(paramNames, paramValues):
             print('(' + i[0] + '=' + repr(i[1]) + '), ', end='')
@@ -2412,16 +2361,26 @@ class MuMoTview:
                 if name not in paramInitCheck:
                     #logStr += "('" + latex(name) + "', " + str(value.value) + "), "
                     params.append( ( latex(name) , value.value ) )
-        if self._paramNames != None:
-            for name, value in zip(self._paramNames, self._paramValues):
-                if name == 'systemSize' or name == 'plotLimits': continue
-                name= repr(name)
-                if name in model._ratesLaTeX:
-                    name = model._ratesLaTeX[name]
-                name = name.replace('(', '')
-                name = name.replace(')', '')
-                #logStr += "('" + latex(name) + "', " + str(value) + "), "
-                params.append( ( latex(name) , value ) )
+#         if self._paramNames != None:
+#             for name, value in zip(self._paramNames, self._paramValues):
+#                 if name == 'systemSize' or name == 'plotLimits': continue
+#                 name= repr(name)
+#                 if name in model._ratesLaTeX:
+#                     name = model._ratesLaTeX[name]
+#                 name = name.replace('(', '')
+#                 name = name.replace(')', '')
+#                 #logStr += "('" + latex(name) + "', " + str(value) + "), "
+#                 params.append( ( latex(name) , value ) )
+
+        for name, value in self._fixedParams.items():
+            if name == 'systemSize' or name == 'plotLimits': continue
+            name= repr(name)
+            if name in model._ratesLaTeX:
+                name = model._ratesLaTeX[name]
+            name = name.replace('(', '')
+            name = name.replace(')', '')
+            #logStr += "('" + latex(name) + "', " + str(value) + "), "
+            params.append( ( latex(name) , value ) )
         params.append( ( 'plotLimits' , self._getPlotLimits() ) )
         params.append( ( 'systemSize' , self._getSystemSize() ) )
                  
@@ -2448,18 +2407,26 @@ class MuMoTview:
                 name = name.replace(')', '')
                 if name not in paramInitCheck:
                     logStr += "('" + latex(name) + "', " + str(value.value) + "), "
-        if self._paramNames != None:
-            for name, value in zip(self._paramNames, self._paramValues):
-                if name == 'systemSize' or name == 'plotLimits': continue
-                name= repr(name)
-                if name in model._ratesLaTeX:
-                    name = model._ratesLaTeX[name]
-                name = name.replace('(', '')
-                name = name.replace(')', '')
-                logStr += "('" + latex(name) + "', " + str(value) + "), "
+#         if self._paramNames != None:
+#             for name, value in zip(self._paramNames, self._paramValues):
+#                 if name == 'systemSize' or name == 'plotLimits': continue
+#                 name= repr(name)
+#                 if name in model._ratesLaTeX:
+#                     name = model._ratesLaTeX[name]
+#                 name = name.replace('(', '')
+#                 name = name.replace(')', '')
+#                 logStr += "('" + latex(name) + "', " + str(value) + "), "
+        for name, value in self._fixedParams.items():
+            #if name == 'systemSize' or name == 'plotLimits': continue
+            if name not in self._mumotModel._rates and name not in self._mumotModel._constantReactants: continue
+            name= repr(name)
+            if name in model._ratesLaTeX:
+                name = model._ratesLaTeX[name]
+            name = name.replace('(', '')
+            name = name.replace(')', '')
+            logStr += "('" + latex(name) + "', " + str(value) + "), "
         logStr += "('plotLimits', " + str(self._getPlotLimits()) + "), " ## @todo is it necessary for every view? I think no.
         logStr += "('systemSize', " + str(self._getSystemSize()) + "), "
-#                if len(self._controller._widgetsFreeParams.items()) > 0:
         logStr = logStr[:-2] # throw away last ", "
         logStr += "]"
                 
@@ -2473,10 +2440,10 @@ class MuMoTview:
 
 
     def _getPlotLimits(self, defaultLimits = 1):
-        # if we don't do the check in this order setting plot limits via params will not work in multi controllers 
-        if self._paramNames is not None and 'plotLimits' in self._paramNames:
-            ## @todo: this is crying out to be refactored as a dictionary - no time just now
-            plotLimits = self._paramValues[self._paramNames.index('plotLimits')]
+#         if self._paramNames is not None and 'plotLimits' in self._paramNames:
+        if self._fixedParams is not None and 'plotLimits' in self._fixedParams:
+#             systemSize = self._paramValues[self._paramNames.index('plotLimits')]
+            plotLimits = self._fixedParams['plotLimits']
         elif self._controller is not None and self._controller._plotLimitsWidget is not None:
             plotLimits = self._controller._plotLimitsWidget.value
         else:
@@ -2486,10 +2453,10 @@ class MuMoTview:
 
 
     def _getSystemSize(self, defaultSize = 1):
-        # if we don't do the check in this order setting system size via params will not work in multi controllers
-        if self._paramNames is not None and 'systemSize' in self._paramNames:
-            ## @todo: this is crying out to be refactored as a dictionary - no time just now
-            systemSize = self._paramValues[self._paramNames.index('systemSize')]
+        # if self._paramNames is not None and 'systemSize' in self._paramNames:
+        if self._fixedParams is not None and 'systemSize' in self._fixedParams:
+#             systemSize = self._paramValues[self._paramNames.index('systemSize')]
+            systemSize = self._fixedParams['systemSize']
         elif self._controller is not None and self._controller._systemSizeWidget is not None:
             systemSize = self._controller._systemSizeWidget.value
         else:
@@ -2499,58 +2466,38 @@ class MuMoTview:
 
     ## gets and returns names and values from widgets
     def _get_argDict(self):
-        #plotLimits = self._getPlotLimits()
-        #systemSize = Symbol('systemSize')
-        #argDict[systemSize] = self._getSystemSize()
         paramNames = []
         paramValues = []
         if self._controller is not None:
             for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-                #name = name.replace('(','')
-                #name = name.replace(')','')
-                
+                #print("wdg-name: " + str(name) + " wdg-val: " + str(value.value))
                 paramNames.append(name)
                 paramValues.append(value.value)
         
-            if self._controller._widgetsExtraParams != {}:
-                for name, value in self._controller._widgetsExtraParams.items():
-                    if name == 'initBifParam':
-                        paramNames.append(self._bifurcationParameter_for_get_argDict)
-                        paramValues.append(value.value)
-                        
-        if self._fixedParams != {}:
-            for key in self._fixedParams:
-                if key == 'initBifParam':
-                    paramNames.append(self._bifurcationParameter_for_get_argDict)
-                    paramValues.append(self._fixedParams[key])
-    
-        if self._paramNames is not None:
-            paramNames += map(str, self._paramNames)
-            paramValues += self._paramValues   
+            if self._controller._widgetsExtraParams and 'initBifParam' in self._controller._widgetsExtraParams:     
+                paramNames.append(self._bifurcationParameter_for_get_argDict)
+                paramValues.append(self._controller._widgetsExtraParams['initBifParam'].value)
+
+        if self._fixedParams and 'initBifParam' in self._fixedParams:
+            paramNames.append(self._bifurcationParameter_for_get_argDict)
+            paramValues.append(self._fixedParams['initBifParam'])
+
+        if self._fixedParams is not None:
+            for key, item in self._fixedParams.items():
+                #print("fix-name: " + str(key) + " fix-val: " + str(item))
+                paramNames.append(str(key))
+                paramValues.append(item)
         
-                 
-        #funcs = self._mumotModel._getFuncs()
         argNamesSymb = list(map(Symbol, paramNames))
         argDict = dict(zip(argNamesSymb, paramValues))
-        #for key in argDict:
-        #    if key in self._mumotModel._constantReactants:
-        #        argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
-#          
-#         if self._mumotModel._systemSize:
-#             argDict[self._mumotModel._systemSize] = self._getSystemSize()
-#         else:
-#             systemSize = Symbol('systemSize')
-#             argDict[systemSize] = self._getSystemSize()
 
         if self._mumotModel._systemSize:
-#             argDict[self._mumotModel._systemSize] = self._getSystemSize()
-# The following line of code should be used if it is compatible with ssa and multiagent  
             argDict[self._mumotModel._systemSize] = 1
 
+        #@todo: is this necessary? for which view?
         systemSize = Symbol('systemSize')
         argDict[systemSize] = self._getSystemSize()
-            
+        
         return argDict
     
     
@@ -2721,8 +2668,25 @@ class MuMoTview:
             
         return realEQsol, eigList #returns two lists of dictionaries
     
-
+    def _update_params(self):
+        """method to update parameters from widgets, if the view requires view-specific params they can be updated implementing _update_view_specific_params()"""
+        freeParamDict = self._get_argDict()
+        if self._controller != None:
+            # getting the rates' value
+            self._ratesDict = {}
+            for rule in self._mumotModel._rules:
+                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
+                if self._ratesDict[str(rule.rate)] == float('inf') or self._ratesDict[str(rule.rate)] is sympy.zoo:
+                    self._ratesDict[str(rule.rate)] = sys.maxsize
+                    errorMsg = "WARNING! Rate with division by zero. \nThe rule has a rate with division by zero: \n" + str(rule.lhsReactants) + " --> " + str(rule.rhsReactants) + " with rate " + str(rule.rate) + ".\n The system has run the simulation with the maximum system value: " + str(self._ratesDict[str(rule.rate)]) 
+                    self._showErrorMessage(errorMsg)
+            #print("_ratesDict=" + str(self._ratesDict))
+            self._systemSize = self._getSystemSize()
+        self._update_view_specific_params(freeParamDict)
         
+    def _update_view_specific_params(self, freeParamDict = {}):
+        """interface method to update view-specific params from widgets"""
+        pass
                         
     def showLogs(self, tail = False):
         if tail:
@@ -2827,35 +2791,57 @@ class MuMoTmultiController(MuMoTcontroller):
     ## replot function list to invoke on views
     _replotFunctions = None
 
-    def __init__(self, controllers, params = None, **kwargs):
+    def __init__(self, controllers, params = None, initWidgets = {},  **kwargs):
         global figureCounter
 
         self._silent = kwargs.get('silent', False)
         self._replotFunctions = []
-        paramNames = []
-        paramValues = []
         fixedParamNames = None
-        paramValueDict = {}
+        paramValuesDict = {}
         paramLabelDict = {}
-        plotLimits = False
-        systemSize = False
-        #widgetsExtraParamsTmp = {} # cannot be the final dict already, because it will be erased when constructor is called
+        showPlotLimits = False
+        showSystemSize = False
         views = []
         subPlotNum = 1
+        ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
+        #paramValuesDict = controllers[0]._view._mumotModel._create_free_param_dictionary_for_controller(inputParams=params if params is not None else [], initWidgets=initWidgets, showSystemSize=True, showPlotLimits=True )
+        
         if params is not None:
             (fixedParamNames, fixedParamValues) = _process_params(params)
         for controller in controllers:
             # pass through the fixed params to each constituent view
             view = controller._view
             if params is not None:
-                (view._paramNames, view._paramValues) = _process_params(params)
+#                 view._fixedParams = dict(zip(fixedParamNames, fixedParamValues))
+                view._fixedParams = {**dict(zip(fixedParamNames, fixedParamValues)), **view._fixedParams} # this operation merge the two dictionaries with the second overriding the values of the first
             for name, value in controller._widgetsFreeParams.items():
-                if params is None or name not in fixedParamNames:
-                    paramValueDict[name] = (value.value, value.min, value.max, value.step)
+                #if params is None or name not in fixedParamNames:
+                #    paramValueDict[name] = (value.value, value.min, value.max, value.step)
+                if name in initWidgets:
+                    paramValuesDict[name] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(params if params is not None else [], name),
+                                    defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
+                                    initValueRangeStep=initWidgets.get(name), 
+                                    validRange = (-float("inf"),float("inf")))
+                else:
+                    paramValuesDict[name] = (value.value, value.min, value.max, value.step, not(params is None or name not in map(str, view._fixedParams.keys())) )
             if controller._plotLimitsWidget is not None:
-                plotLimits = True
+                showPlotLimits = True
+                if 'plotLimits' in initWidgets:
+                    paramValuesDict['plotLimits'] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(params if params is not None else [], 'plotLimits'),
+                                    defaultValueRangeStep=[MuMoTdefault._plotLimits, MuMoTdefault._plotLimitsLimits[0], MuMoTdefault._plotLimitsLimits[1], MuMoTdefault._plotLimitsStep], 
+                                    initValueRangeStep=initWidgets.get('plotLimits'), 
+                                    validRange = (-float("inf"),float("inf"))) 
+                else:
+                    paramValuesDict['plotLimits'] = (controller._plotLimitsWidget.value, controller._plotLimitsWidget.min, controller._plotLimitsWidget.max, controller._plotLimitsWidget.step, not(params is None or 'plotLimits' not in map(str, view._fixedParams.keys())))
             if controller._systemSizeWidget is not None:
-                systemSize = True
+                showSystemSize = True
+                if 'systemSize' in initWidgets:
+                    paramValuesDict['systemSize'] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(params if params is not None else [], 'systemSize'),
+                                    defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
+                                    initValueRangeStep=initWidgets.get('systemSize'), 
+                                    validRange = (1,float("inf")))
+                else:
+                    paramValuesDict['systemSize'] = (controller._systemSizeWidget.value, controller._systemSizeWidget.min, controller._systemSizeWidget.max, controller._systemSizeWidget.step, not(params is None or 'systemSize' not in map(str, view._fixedParams.keys())))
             paramLabelDict.update(controller._paramLabelDict)
 #             for name, value in controller._widgetsExtraParams.items():
 #                 widgetsExtraParamsTmp[name] = value
@@ -2876,10 +2862,6 @@ class MuMoTmultiController(MuMoTcontroller):
 #                 else:
                 self._replotFunctions.append((controller._replotFunction, subPlotNum, controller._view._axes3d))                    
             subPlotNum += 1
-
-        for name, value in paramValueDict.items():
-            paramNames.append(name)
-            paramValues.append(value)
             
 #         for view in self._views:
 #             if view._controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
@@ -2888,8 +2870,7 @@ class MuMoTmultiController(MuMoTcontroller):
 #             else:
 #                 self._replotFunctions.append(view._controller._replotFunction)
 #             view._controller = self
-        
-        super().__init__(paramValues, paramNames, paramLabelDict, False, plotLimits, systemSize, params = params, **kwargs)
+        super().__init__(paramValuesDict, paramLabelDict, False, showPlotLimits, showSystemSize, params = params, **kwargs)
         
         # handle Extra and PlotOnly params
         addProgressBar = False
@@ -2924,7 +2905,6 @@ class MuMoTmultiController(MuMoTcontroller):
 #                 addProgressBar = True
         if self._widgetsExtraParams or self._widgetsPlotOnly:
             # set widgets to possible initial/fixed values if specified in the multi-controller
-            initWidgets = kwargs.get("initWidgets") if kwargs.get("initWidgets") is not None else {}
             #for key, value in kwargs.items():
             for key in kwargs.keys() | initWidgets.keys():
                 inputValue = kwargs.get(key) 
@@ -3015,8 +2995,7 @@ class MuMoTmultiController(MuMoTcontroller):
 
         self._view = MuMoTmultiView(self, views, subPlotNum - 1, **kwargs)
         if fixedParamNames is not None:
-            self._view._paramNames = fixedParamNames
-            self._view._paramValues = fixedParamValues
+            self._view._fixedParams = dict(zip(fixedParamNames, fixedParamValues)) 
                 
         for controller in controllers:
             controller._setErrorWidget(self._errorMessage)
@@ -3085,16 +3064,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
         self._chooseYrange = kwargs.get('choose_yrange', None)
         
         with io.capture_output() as log:
-#         if True:
- 
-#                    
-#             # storing the rates for each rule
-#             ## @todo moving _ratesDict to general method?
-#             freeParamDict = self._get_argDict()
-#             self._ratesDict = {}
-#             for rule in self._mumotModel._rules:
-#                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
-#
 
             self._systemSize = self._getSystemSize()
              
@@ -3206,27 +3175,9 @@ class MuMoTtimeEvolutionView(MuMoTview):
         self._showErrorMessage(str(self))
         self._update_params()
 
-    def _update_params(self):
+    def _update_view_specific_params(self, freeParamDict = {}):
+        """getting other parameters specific to integrate"""
         if self._controller != None:
-            # getting the rates
-            ## @todo moving _ratesDict to general method?
-#             freeParamDict = {}
-#             for name, value in self._controller._widgetsFreeParams.items():
-#                 freeParamDict[ Symbol(name) ] = value.value
-            freeParamDict = self._get_argDict()
-
-# 
-#             self._ratesDict = {}
-#             for rule in self._mumotModel._rules:
-#                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
-#                 if self._ratesDict[str(rule.rate)] == float('inf'):
-#                     self._ratesDict[str(rule.rate)] = sys.maxsize
-#             #print("_ratesDict=" + str(self._ratesDict))
-#             
-
-            self._systemSize = self._getSystemSize()
-
-            # getting other parameters specific to Integrate
             if self._fixedParams.get('initialState') is not None:
                 self._initialState = self._fixedParams['initialState']
             else:
@@ -3236,7 +3187,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
             if 'plotProportions' in self._tEParams:
                 self._plotProportions =  self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
             self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
-    
+
                
 #      
 #     def _get_tEParams(self):
@@ -5169,30 +5120,30 @@ class MuMoTfieldView(MuMoTview):
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
         plotLimits = self._getPlotLimits()
-        paramNames = []
-        paramValues = []
-        if self._controller is not None:
-            for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-#                 name = name.replace('(','')
-#                 name = name.replace(')','')
-                paramNames.append(name)
-                paramValues.append(value.value)
-        if self._paramNames is not None:
-            paramNames += map(str, self._paramNames)
-            paramValues += self._paramValues           
+#         paramNames = []
+#         paramValues = []
+#         if self._controller is not None:
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 # throw away formatting for constant reactants
+# #                 name = name.replace('(','')
+# #                 name = name.replace(')','')
+#                 paramNames.append(name)
+#                 paramValues.append(value.value)
+#         if self._paramNames is not None:
+#             paramNames += map(str, self._paramNames)
+#             paramValues += self._paramValues           
+#         argNamesSymb = list(map(Symbol, paramNames))
+#         argDict = dict(zip(argNamesSymb, paramValues))
+        argDict = self._get_argDict()
         funcs = self._mumotModel._getFuncs()
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
         
-        
-        return (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits)
+        return (funcs, argDict, plotLimits)
 
     ## get 2-dimensional field for plotting
     def _get_field2d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
-            (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits) = self._get_field()
+            (funcs, argDict, plotLimits) = self._get_field()
             self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
             if self._mumotModel._constantSystemSize:
                 mask = self._mask.get((meshPoints, 2))
@@ -5203,8 +5154,8 @@ class MuMoTfieldView(MuMoTview):
                     np.fill_diagonal(mask, False)
                     mask = np.flipud(mask)
                     self._mask[(meshPoints, 2)] = mask
-            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
-            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
+            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
+            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             try:
                 self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
                 if np.isnan(self._speed).any():
@@ -5221,7 +5172,7 @@ class MuMoTfieldView(MuMoTview):
     def _get_field3d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
-            (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits) = self._get_field()
+            (funcs, argDict, plotLimits) = self._get_field()
             self._Z, self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
             if self._mumotModel._constantSystemSize:
                 mask = self._mask.get((meshPoints, 3))
@@ -5234,9 +5185,9 @@ class MuMoTfieldView(MuMoTview):
                     mask = self._X + self._Y + self._Z >= 1
     #                mask = mask.astype(int)
                     self._mask[(meshPoints, 3)] = mask
-            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple3d(argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple3d(argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple3d(argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
             try:
                 self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2 + self._Zdot ** 2))
             except:
@@ -5467,30 +5418,30 @@ class MuMoTfieldViewOLD(MuMoTview):
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
         plotLimits = self._getPlotLimits()
-        paramNames = []
-        paramValues = []
-        if self._controller is not None:
-            for name, value in self._controller._widgetsFreeParams.items():
-                # throw away formatting for constant reactants
-#                 name = name.replace('(','')
-#                 name = name.replace(')','')
-                paramNames.append(name)
-                paramValues.append(value.value)
-        if self._paramNames is not None:
-            paramNames += map(str, self._paramNames)
-            paramValues += self._paramValues           
+#         paramNames = []
+#         paramValues = []
+#         if self._controller is not None:
+#             for name, value in self._controller._widgetsFreeParams.items():
+#                 # throw away formatting for constant reactants
+# #                 name = name.replace('(','')
+# #                 name = name.replace(')','')
+#                 paramNames.append(name)
+#                 paramValues.append(value.value)
+#         if self._paramNames is not None:
+#             paramNames += map(str, self._paramNames)
+#             paramValues += self._paramValues           
+#         argNamesSymb = list(map(Symbol, paramNames))
+#         argDict = dict(zip(argNamesSymb, paramValues))
+        argDict = self._get_argDict()
         funcs = self._mumotModel._getFuncs()
-        argNamesSymb = list(map(Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
         
-        
-        return (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits)
+        return (funcs, argDict, plotLimits)
 
     ## get 2-dimensional field for plotting
     def _get_field2d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
-            (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits) = self._get_field()
+            (funcs, argDict, plotLimits) = self._get_field()
             self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
             if self._mumotModel._constantSystemSize:
                 mask = self._mask.get((meshPoints, 2))
@@ -5501,8 +5452,8 @@ class MuMoTfieldViewOLD(MuMoTview):
                     np.fill_diagonal(mask, False)
                     mask = np.flipud(mask)
                     self._mask[(meshPoints, 2)] = mask
-            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
-            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
+            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
+            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
             try:
                 self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
             except:
@@ -5517,7 +5468,7 @@ class MuMoTfieldViewOLD(MuMoTview):
     def _get_field3d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
-            (funcs, argNamesSymb, argDict, paramNames, paramValues, plotLimits) = self._get_field()
+            (funcs, argDict, plotLimits) = self._get_field()
             self._Z, self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
             if self._mumotModel._constantSystemSize:
                 mask = self._mask.get((meshPoints, 3))
@@ -5530,9 +5481,9 @@ class MuMoTfieldViewOLD(MuMoTview):
                     mask = self._X + self._Y + self._Z >= 1
     #                mask = mask.astype(int)
                     self._mask[(meshPoints, 3)] = mask
-            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple3d(paramNames, paramValues, argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple3d(argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple3d(argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
+            self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple3d(argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
             try:
                 self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2 + self._Zdot ** 2))
             except:
@@ -6356,12 +6307,13 @@ class MuMoTBifurcationView(MuMoTview):
     def __init__(self, model, controller, BfcParams, bifurcationParameter, stateVarExpr1, stateVarExpr2 = None, 
                  figure = None, params = None, **kwargs):
         
-        silent = kwargs.get('silent', False)
-        super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
+        self._silent = kwargs.get('silent', False)
         
         self._bifurcationParameter_for_get_argDict = str(process_sympy(bifurcationParameter))
         #self._bifurcationParameter_for_bookmark = _greekPrependify(_doubleUnderscorify(self._bifurcationParameter_for_get_argDict))
         self._bifurcationParameter_for_bookmark = bifurcationParameter
+        
+        super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
         
         self._chooseFontSize = kwargs.get('fontsize', None)
         #self._LabelY =  kwargs.get('ylab', r'$' + _doubleUnderscorify(_greekPrependify(stateVarExpr1)) +'$') 
@@ -6401,22 +6353,7 @@ class MuMoTBifurcationView(MuMoTview):
         #print(self._stateVarBif1) 
         #print(self._stateVarBif2)
         
-        self._BfcParams=BfcParams
-        #with io.capture_output() as log:
-#         if True:
-                   
-        # storing the rates for each rule
-        ## @todo moving _ratesDict to general method?
-        freeParamDict = self._get_argDict()
-        
-#             
-#             self._ratesDict = {}
-#             for rule in self._mumotModel._rules:
-#                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
-#             
-#             
-#             self._systemSize = self._getSystemSize()
-#             
+        self._BfcParams=BfcParams            
 
         if self._controller == None:
             # storing the initial state
@@ -6490,7 +6427,8 @@ class MuMoTBifurcationView(MuMoTview):
         argDict = self._get_argDict()
         paramDict = {}
         for arg in argDict:
-            paramDict[self._pydstoolify(arg)] = argDict[arg]
+            if arg in self._mumotModel._rates or arg in self._mumotModel._constantReactants or arg == self._mumotModel._systemSize:
+                paramDict[self._pydstoolify(arg)] = argDict[arg]
         
         with io.capture_output() as log:
             
@@ -6864,26 +6802,9 @@ class MuMoTBifurcationView(MuMoTview):
         
         return logStr    
 
-    def _update_params(self):
+    def _update_view_specific_params(self, freeParamDict = {}):
+        """get other parameters specific to bifurcation()"""
         if self._controller != None:
-            # getting the rates
-            ## @todo moving _ratesDict to general method?
-#             freeParamDict = {}
-#             for name, value in self._controller._widgetsFreeParams.items():
-#                 freeParamDict[ Symbol(name) ] = value.value
-            freeParamDict = self._get_argDict()
-#            self._ratesDict = {}
-#             
-#             for rule in self._mumotModel._rules:
-#                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
-#                 if self._ratesDict[str(rule.rate)] == float('inf'):
-#                     self._ratesDict[str(rule.rate)] = sys.maxsize
-#             #print("_ratesDict=" + str(self._ratesDict))
-#             
-            
-            self._systemSize = self._getSystemSize()
-
-            # getting other parameters specific to Integrate
             if self._fixedParams.get('initialState') is not None:
                 self._initialState = self._fixedParams['initialState']
             else:
@@ -6892,10 +6813,6 @@ class MuMoTBifurcationView(MuMoTview):
                     self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
             
             self._initBifParam = self._fixedParams['initBifParam'] if self._fixedParams.get('initBifParam') is not None else self._controller._widgetsExtraParams['initBifParam'].value
-    
-
-
-
 
 
 ## bifurcation view on model 
@@ -7696,8 +7613,6 @@ class MuMoTbifurcationViewOLD(MuMoTview):
 
 ## stochastic-simulations-view view (for views that allow for multiple runs with different random-seeds)
 class MuMoTstochasticSimulationView(MuMoTview):
-    ## total number of agents in the simulation
-    _systemSize = None
     ## the system state at the start of the simulation (timestep zero) described as proportion of _systemSize
     _initialState = None
     ## variable to link a color to each reactant
@@ -7710,8 +7625,6 @@ class MuMoTstochasticSimulationView(MuMoTview):
     _visualisationType = None
     ## reactants to display on the two axes
     _finalViewAxes = None
-    ## dictionary of rates
-    _ratesDict = None
     ## flag to plot proportions or full populations
     _plotProportions = None
     ## realtimePlot flag (TRUE = the plot is updated each timestep of the simulation; FALSE = it is updated once at the end of the simulation)
@@ -7750,18 +7663,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
 
         with io.capture_output() as log:
 #         if True:
-                   
-            # storing the rates for each rule
-            ## @todo moving _ratesDict to general method?
+
             freeParamDict = self._get_argDict()
-            self._ratesDict = {}
-            for rule in self._mumotModel._rules:
-                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict) 
-                if self._ratesDict[str(rule.rate)] == float('inf') or self._ratesDict[str(rule.rate)] is sympy.zoo:
-                    self._ratesDict[str(rule.rate)] = sys.maxsize
-            self._systemSize = self._getSystemSize()
             if self._controller == None:
-            
                 # storing the initial state
                 self._initialState = {}
                 for state,pop in SSParams["initialState"].items():
@@ -7825,6 +7729,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
     def _computeAndPlotSimulation(self, _=None):
         with io.capture_output() as log:
 #         if True:
+#             log=''
             self._update_params()
             self._log("Stochastic Simulation")
             self._printStandaloneViewCmd()
@@ -7845,25 +7750,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
            
         self._logs.append(log)
         
-    def _update_params(self):
+    def _update_view_specific_params(self, freeParamDict = {}):
+        """getting other parameters specific to SSA"""
         if self._controller != None:
-            # getting the rates
-            ## @todo moving _ratesDict to general method?
-#             freeParamDict = {}
-#             for name, value in self._controller._widgetsFreeParams.items():
-#                 freeParamDict[ Symbol(name) ] = value.value
-            freeParamDict = self._get_argDict()
-            self._ratesDict = {}
-            for rule in self._mumotModel._rules:
-                self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
-                if self._ratesDict[str(rule.rate)] == float('inf') or self._ratesDict[str(rule.rate)] is sympy.zoo:
-                    self._ratesDict[str(rule.rate)] = sys.maxsize
-                    errorMsg = "WARNING! Rate with division by zero. \nThe rule has a rate with division by zero: \n" + str(rule.lhsReactants) + " --> " + str(rule.rhsReactants) + " with rate " + str(rule.rate) + ".\n The system has run the simulation with the maximum system value: " + str(self._ratesDict[str(rule.rate)]) 
-                    self._showErrorMessage(errorMsg)
-            #print("_ratesDict=" + str(self._ratesDict))
-            self._systemSize = self._getSystemSize()
-
-            # getting other parameters specific to SSA
             if self._fixedParams.get('initialState') is not None:
                 self._initialState = self._fixedParams['initialState']
             else:
@@ -8352,10 +8241,9 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
 #         sortedDict += "}"
         print( "mmt.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params().replace('\\','\\\\') + ", SSParams = " + str(MAParams) + " )")
     
-    ## reads the new parameters (in case they changed in the controller)
-    ## this function should only update local parameters and not compute data
-    def _update_params(self):
-        super()._update_params()
+    def _update_view_specific_params(self, freeParamDict = {}):
+        """read the new parameters (in case they changed in the controller) specific to multiagent(). This function should only update local parameters and not compute data"""
+        super()._update_view_specific_params(freeParamDict)
         if self._controller != None:
             if self._fixedParams.get('netType') is not None:
                 self._netType = self._fixedParams['netType']
@@ -8370,7 +8258,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                     self._showInteractions = self._fixedParams['showInteractions'] if self._fixedParams.get('showInteractions') is not None else self._controller._widgetsPlotOnly['showInteractions'].value
             self._timestepSize = self._fixedParams['timestepSize'] if self._fixedParams.get('timestepSize') is not None else self._controller._widgetsExtraParams['timestepSize'].value
         
-        self._computeScalingFactor()     
+        self._computeScalingFactor()
     
     def _initSingleSimulation(self):
         super()._initSingleSimulation()    
@@ -8485,7 +8373,8 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             sumRates = 0
             for reaction in reactions:
                 sumRates += self._ratesDict[str(reaction[1])]
-#             print("reactant " + str(reactant) + " has sum rates: " + str(sumRates))
+            #print("self._ratesDict " + str(self._ratesDict) )
+            #print("reactant " + str(reactant) + " has sum rates: " + str(sumRates))
             if sumRates > maxRatesAll:
                 maxRatesAll = sumRates
         
