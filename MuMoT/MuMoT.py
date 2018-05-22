@@ -974,7 +974,7 @@ class MuMoTmodel:
             return None
     
     ## construct interactive time evolution plot for state variables 
-    def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, initWidgets = {}, **kwargs):
+    def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, initWidgets = {}, conserved=False, **kwargs):
         # @todo keeping paramValues and paramNames for compatibility, but a dictionary would be better (issue #27)
         
         stateVariableList = []
@@ -984,6 +984,15 @@ class MuMoTmodel:
         if len(stateVariableList) > 2:
             print('Sorry, bifurcation diagrams are currently only supported for 1D and 2D systems (1 or 2 time-dependent variables in the ODE system)!')
             return None
+        
+        conserved=conserved
+        #check for substitutions of state variables in conserved systems
+        stoich=self._stoichiometry
+        for key1 in stoich:
+            for key2 in stoich[key1]:
+                if key2 != 'rate' and stoich[key1][key2] != 'const':
+                    if len(stoich[key1][key2]) == 3:
+                        conserved=True
         
         #if bifurcationParameter[0]=='\\':
         #        bifPar = bifurcationParameter[1:]
@@ -1032,7 +1041,8 @@ class MuMoTmodel:
         BfcParams['initBifParam'] = _format_advanced_option(optionName='initBifParam', inputValue=kwargs.get('initBifParam'), initValues=initWidgets.get('initBifParam'))
         BfcParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
         BfcParams['bifurcationParameter'] = [bifPar, True]
-        BfcParams['conserved'] = [kwargs.get('conserved', False), True]
+        BfcParams['conserved'] = [conserved, True]
+        #BfcParams['conserved'] = [kwargs.get('conserved', False), True]
         
         # construct controller
         viewController = MuMoTbifurcationController(paramValues=paramValues, paramNames=paramNames, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=BfcParams, systemSize=False, **kwargs)
@@ -4112,7 +4122,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
     ## equations of motion for second order moments of noise variables
     _EOM_2ndOrdMomDict = None
     ## upper bound of simulation time for dynamical system to reach equilibrium (can be set via keyword)
-    _tendDS = None
+    _maxTimeDS = None
     ## time step of simulation for dynamical system to reach equilibrium (can be set via keyword)
     _tstepDS = None
     ## y-label with default specific to this MuMoTNoiseCorrelationsView class (can be set via keyword)
@@ -4125,7 +4135,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
     def __init__(self, model, controller, NCParams, EOM_1stOrdMom, EOM_2ndOrdMom, figure=None, params = None, **kwargs):
         self._EOM_1stOrdMomDict = EOM_1stOrdMom
         self._EOM_2ndOrdMomDict = EOM_2ndOrdMom
-        self._tendDS = kwargs.get('tendDS', 100)
+        self._maxTimeDS = kwargs.get('maxTimeDS', 100)
         self._tstepDS= kwargs.get('tstepDS', 0.01)
         self._ylab = kwargs.get('ylab', 'noise-noise correlation')
         silent = kwargs.get('silent', False)
@@ -4149,8 +4159,8 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
         systemSize = Symbol('systemSize')
         
         
-        NrDP = int(self._tendDS/self._tstepDS) + 1
-        time = np.linspace(0, self._tendDS, NrDP)
+        NrDP = int(self._maxTimeDS/self._tstepDS) + 1
+        time = np.linspace(0, self._maxTimeDS, NrDP)
         #NrDP = int(self._tend/self._tstep) + 1
         #time = np.linspace(0, self._tend, NrDP)
         
@@ -4221,7 +4231,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
                 return None
         else:
             steadyStateReached = 'uncertain'
-            self._showErrorMessage('Warning: steady state may have not been reached. Substituted values of state variables at t=tendDS (tendDS can be set via keyword \'tendDS = <number>\').')
+            self._showErrorMessage('Warning: steady state may have not been reached. Substituted values of state variables at t=maxTimeDS (maxTimeDS can be set via keyword \'maxTimeDS = <number>\').')
             if self._stateVariable3:
                 steadyStateDict = {self._stateVariable1: y_stationary[0], self._stateVariable2: y_stationary[1], self._stateVariable3: y_stationary[2]}
             elif self._stateVariable2:
@@ -6503,7 +6513,12 @@ class MuMoTBifurcationView(MuMoTview):
             
             initDictList = []
             #print(initDictList)
-            self._pyDSmodel_ics   = self._initialState #self._getInitCondsFromSlider()
+            self._pyDSmodel_ics = {}
+            for inState in self._initialState:
+                if inState in self._stateVariableList: 
+                    self._pyDSmodel_ics[inState] = self._initialState[inState]
+            #self._pyDSmodel_ics   = self._initialState #self._getInitCondsFromSlider()
+            
             #print(self._pyDSmodel_ics)
             #for ic in self._pyDSmodel_ics:
             #    if 'Phi0' in self._pydstoolify(ic):
@@ -6518,9 +6533,11 @@ class MuMoTBifurcationView(MuMoTview):
                 for kk in range(len(realEQsol)):
                     if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
                         initDictList.append(realEQsol[kk])
+                self._showErrorMessage('Stationary state(s) detected and continuated. Initial conditions for state variables specified on sliders were not used. (Those are only used in case the calculation of fixed points fails.) ')
                 print(len(initDictList), 'stable steady state(s) detected and continuated. Initial conditions for state variables specified on sliders were not used.')
             else:
                 initDictList.append(self._pyDSmodel_ics)
+                self._showErrorMessage('Stationary states could not be calculated; used initial conditions specified on sliders instead. This means only one branch was attempted to be continuated and the starting point might not have been a stationary state. ')
                 print('Stationary states could not be calculated; used initial conditions specified on sliders instead: ', self._pyDSmodel_ics, '. This means only one branch was continuated and the starting point might not have been a stationary state.')   
             
             specialPoints=[]  # list of special points: LP and BP
