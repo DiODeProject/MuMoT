@@ -42,6 +42,7 @@ from bisect import bisect_left
 
 import matplotlib.ticker as ticker
 from math import log10, floor
+import time
 #from matplotlib.pyplot import plot
 
 #from matplotlib.offsetbox import kwargs
@@ -4928,8 +4929,9 @@ class MuMoTfieldView(MuMoTview):
     def _plot_field(self):
         if not(self._silent): ## @todo is this necessary?
             plt.figure(self._figureNum)          
+            _show_computation_start(self._controller)
+            time.sleep(1)
             plt.clf()            
-            _show_computation_start()  
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
         
@@ -5164,7 +5166,7 @@ class MuMoTfieldView(MuMoTview):
             self._FixedPoints = FixedPoints
 
         if not(self._silent): ## @todo is this necessary?
-            _show_computation_stop()
+            _show_computation_stop(self._controller)
 
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
@@ -6806,7 +6808,7 @@ class MuMoTBifurcationView(MuMoTview):
                 return None
 
         if not(self._silent):
-            _show_computation_stop()
+            _show_computation_stop(self._controller)
 
         self._logs.append(log)
         
@@ -6815,8 +6817,8 @@ class MuMoTBifurcationView(MuMoTview):
     def _initFigure(self):
         if not self._silent:
             plt.figure(self._figureNum)
+            _show_computation_start(self._controller)
             plt.clf()
-            _show_computation_start()
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
         
@@ -11339,19 +11341,24 @@ def _greekReplace(s, sub, repl):
     return s
 
 
-def _show_computation_start():
-    ax = plt.gca()
-    ax.set_facecolor('xkcd:salmon')
-    plt.show()
-    #print("pink on")
+def _show_computation_start(controller):
+    # ax = plt.gca()
+    # ax.set_facecolor('xkcd:salmon')
+    # try:
+    #     plt.pause(0.0000001)
+    #     #ax.redraw_in_frame()
+    #     print("pink on")
+    # except:
+    #     pass
+    controller._bookmarkWidget.style.button_color = 'pink'
     
     
     
-def _show_computation_stop():
-    ax = plt.gca()
-    ax.set_facecolor('xkcd:white')
-    #print("pink off")
-
+def _show_computation_stop(controller):
+    # ax = plt.gca()
+    # ax.set_facecolor('xkcd:white')
+    # print("pink off")
+    controller._bookmarkWidget.style.button_color = 'silver'
 
 
 # import gc, inspect
