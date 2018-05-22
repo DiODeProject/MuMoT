@@ -42,7 +42,6 @@ from bisect import bisect_left
 
 import matplotlib.ticker as ticker
 from math import log10, floor
-import time
 #from matplotlib.pyplot import plot
 
 #from matplotlib.offsetbox import kwargs
