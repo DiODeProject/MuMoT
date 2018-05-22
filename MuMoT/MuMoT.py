@@ -11332,7 +11332,7 @@ def _greekReplace(s, sub, repl):
     find_index = s.find(sub)
     # loop util we find no (more) match
     while find_index != -1:
-        if s[find_index-1] != '\\':
+        if s[find_index-1] != '\\' and not s[find_index-1].isalpha():
             if sub != 'eta':
                 s=s[:find_index]+repl+s[find_index + len(sub):]
             else:
