@@ -73,6 +73,7 @@ GREEK_LETT_LIST_1=['alpha', 'beta', 'gamma', 'Gamma', 'delta', 'Delta', 'epsilon
                     'mu', 'xi', 'Xi', 'pi', 'Pi', 'rho', 'sigma', 'Sigma', 'tau', 
                     'upsilon', 'Upsilon', 'phi', 'Phi', 'chi', 'psi', 'Psi', 'omega', 'Omega']
 GREEK_LETT_LIST_2=['\\'+ GreekLett for GreekLett in GREEK_LETT_LIST_1]
+GREEK_LETT_RESERVED_LIST=['eta', 'varrho', 'vartheta', 'varepsilon', 'varphi', 'nu', 'Phi']
 # 
 # GREEK_LETT_LIST_2=['\\alpha', '\\beta', '\\gamma', '\\Gamma', '\\delta', '\\Delta', '\\epsilon',
 #                     '\\zeta', '\\theta', '\\Theta', '\\iota', '\\kappa', '\\lambda', '\\Lambda', 
