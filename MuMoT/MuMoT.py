@@ -7,6 +7,12 @@ https://diodeproject.github.io/MuMoT/
 
 Contributors:
 James A. R. Marshall, Andreagiovanni Reina, Thomas Bose
+
+Packaging, Documentation and Deployment:
+Will Furnass
+
+Windows Compatibility:
+Renato Pagliara Vasquez
 """
 
 from IPython.display import display, Math, Javascript #, clear_output, Latex 
@@ -56,7 +62,7 @@ get_ipython().magic('matplotlib nbagg')
 
 figureCounter = 1 # global figure counter for model views
 
-MAX_RANDOM_SEED = 4294967295
+MAX_RANDOM_SEED = 2147483647
 INITIAL_RATE_VALUE = 0.5
 RATE_BOUND = 10.0
 RATE_STEP = 0.1
@@ -73,6 +79,7 @@ GREEK_LETT_LIST_1=['alpha', 'beta', 'gamma', 'Gamma', 'delta', 'Delta', 'epsilon
                     'mu', 'xi', 'Xi', 'pi', 'Pi', 'rho', 'sigma', 'Sigma', 'tau', 
                     'upsilon', 'Upsilon', 'phi', 'Phi', 'chi', 'psi', 'Psi', 'omega', 'Omega']
 GREEK_LETT_LIST_2=['\\'+ GreekLett for GreekLett in GREEK_LETT_LIST_1]
+GREEK_LETT_RESERVED_LIST=['eta', 'varrho', 'vartheta', 'varepsilon', 'varphi', 'nu', 'Phi']
 # 
 # GREEK_LETT_LIST_2=['\\alpha', '\\beta', '\\gamma', '\\Gamma', '\\delta', '\\Delta', '\\epsilon',
 #                     '\\zeta', '\\theta', '\\Theta', '\\iota', '\\kappa', '\\lambda', '\\Lambda', 
@@ -944,6 +951,15 @@ class MuMoTmodel:
             print('Sorry, bifurcation diagrams are currently only supported for 1D and 2D systems (1 or 2 time-dependent variables in the ODE system)!')
             return None
         
+        conserved=conserved
+        #check for substitutions of state variables in conserved systems
+        stoich=self._stoichiometry
+        for key1 in stoich:
+            for key2 in stoich[key1]:
+                if key2 != 'rate' and stoich[key1][key2] != 'const':
+                    if len(stoich[key1][key2]) == 3:
+                        conserved=True
+        
         #if bifurcationParameter[0]=='\\':
         #        bifPar = bifurcationParameter[1:]
         #else:
@@ -961,7 +977,8 @@ class MuMoTmodel:
         BfcParams['initBifParam'] = _format_advanced_option(optionName='initBifParam', inputValue=kwargs.get('initBifParam'), initValues=initWidgets.get('initBifParam'))
         BfcParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
         BfcParams['bifurcationParameter'] = [bifPar, True]
-        BfcParams['conserved'] = [kwargs.get('conserved', False), True]
+        BfcParams['conserved'] = [conserved, True]
+        #BfcParams['conserved'] = [kwargs.get('conserved', False), True]
         
         # construct controller
         viewController = MuMoTbifurcationController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=BfcParams, showSystemSize=False, **kwargs)
@@ -4062,7 +4079,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
     ## equations of motion for second order moments of noise variables
     _EOM_2ndOrdMomDict = None
     ## upper bound of simulation time for dynamical system to reach equilibrium (can be set via keyword)
-    _tendDS = None
+    _maxTimeDS = None
     ## time step of simulation for dynamical system to reach equilibrium (can be set via keyword)
     _tstepDS = None
     ## y-label with default specific to this MuMoTNoiseCorrelationsView class (can be set via keyword)
@@ -4075,7 +4092,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
     def __init__(self, model, controller, NCParams, EOM_1stOrdMom, EOM_2ndOrdMom, figure=None, params = None, **kwargs):
         self._EOM_1stOrdMomDict = EOM_1stOrdMom
         self._EOM_2ndOrdMomDict = EOM_2ndOrdMom
-        self._tendDS = kwargs.get('tendDS', 100)
+        self._maxTimeDS = kwargs.get('maxTimeDS', 100)
         self._tstepDS= kwargs.get('tstepDS', 0.01)
         self._ylab = kwargs.get('ylab', 'noise-noise correlation')
         silent = kwargs.get('silent', False)
@@ -4099,8 +4116,8 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
         systemSize = Symbol('systemSize')
         
         
-        NrDP = int(self._tendDS/self._tstepDS) + 1
-        time = np.linspace(0, self._tendDS, NrDP)
+        NrDP = int(self._maxTimeDS/self._tstepDS) + 1
+        time = np.linspace(0, self._maxTimeDS, NrDP)
         #NrDP = int(self._tend/self._tstep) + 1
         #time = np.linspace(0, self._tend, NrDP)
         
@@ -4171,7 +4188,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
                 return None
         else:
             steadyStateReached = 'uncertain'
-            self._showErrorMessage('Warning: steady state may have not been reached. Substituted values of state variables at t=tendDS (tendDS can be set via keyword \'tendDS = <number>\').')
+            self._showErrorMessage('Warning: steady state may have not been reached. Substituted values of state variables at t=maxTimeDS (maxTimeDS can be set via keyword \'maxTimeDS = <number>\').')
             if self._stateVariable3:
                 steadyStateDict = {self._stateVariable1: y_stationary[0], self._stateVariable2: y_stationary[1], self._stateVariable3: y_stationary[2]}
             elif self._stateVariable2:
@@ -4879,8 +4896,9 @@ class MuMoTfieldView(MuMoTview):
     def _plot_field(self):
         if not(self._silent): ## @todo is this necessary?
             plt.figure(self._figureNum)          
+            _show_computation_start(self._controller)
+            time.sleep(1)
             plt.clf()            
-            _show_computation_start()  
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
         
@@ -5115,7 +5133,7 @@ class MuMoTfieldView(MuMoTview):
             self._FixedPoints = FixedPoints
 
         if not(self._silent): ## @todo is this necessary?
-            _show_computation_stop()
+            _show_computation_stop(self._controller)
 
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
@@ -6439,7 +6457,12 @@ class MuMoTBifurcationView(MuMoTview):
             
             initDictList = []
             #print(initDictList)
-            self._pyDSmodel_ics   = self._initialState #self._getInitCondsFromSlider()
+            self._pyDSmodel_ics = {}
+            for inState in self._initialState:
+                if inState in self._stateVariableList: 
+                    self._pyDSmodel_ics[inState] = self._initialState[inState]
+            #self._pyDSmodel_ics   = self._initialState #self._getInitCondsFromSlider()
+            
             #print(self._pyDSmodel_ics)
             #for ic in self._pyDSmodel_ics:
             #    if 'Phi0' in self._pydstoolify(ic):
@@ -6454,9 +6477,11 @@ class MuMoTBifurcationView(MuMoTview):
                 for kk in range(len(realEQsol)):
                     if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
                         initDictList.append(realEQsol[kk])
+                self._showErrorMessage('Stationary state(s) detected and continuated. Initial conditions for state variables specified on sliders were not used. (Those are only used in case the calculation of fixed points fails.) ')
                 print(len(initDictList), 'stable steady state(s) detected and continuated. Initial conditions for state variables specified on sliders were not used.')
             else:
                 initDictList.append(self._pyDSmodel_ics)
+                self._showErrorMessage('Stationary states could not be calculated; used initial conditions specified on sliders instead. This means only one branch was attempted to be continuated and the starting point might not have been a stationary state. ')
                 print('Stationary states could not be calculated; used initial conditions specified on sliders instead: ', self._pyDSmodel_ics, '. This means only one branch was continuated and the starting point might not have been a stationary state.')   
             
             specialPoints=[]  # list of special points: LP and BP
@@ -6744,7 +6769,7 @@ class MuMoTBifurcationView(MuMoTview):
                 return None
 
         if not(self._silent):
-            _show_computation_stop()
+            _show_computation_stop(self._controller)
 
         self._logs.append(log)
         
@@ -6753,8 +6778,8 @@ class MuMoTBifurcationView(MuMoTview):
     def _initFigure(self):
         if not self._silent:
             plt.figure(self._figureNum)
+            _show_computation_start(self._controller)
             plt.clf()
-            _show_computation_start()
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
         
@@ -8901,6 +8926,10 @@ def parseModel(modelDescription):
     # strip out any basic LaTeX equation formatting user has input
     modelDescr = modelDescr.replace('$','')
     modelDescr = modelDescr.replace(r'\\\\','')
+    # add white space to make parsing easy
+    modelDescr = modelDescr.replace('+',' + ')
+    modelDescr = modelDescr.replace('->',' -> ')
+    modelDescr = modelDescr.replace(':',' : ')
     # split _rules line-by-line, one rule per line
     modelRules = modelDescr.split('\\n')
     # parse and construct the model
@@ -11213,7 +11242,7 @@ def _greekReplace(s, sub, repl):
     find_index = s.find(sub)
     # loop util we find no (more) match
     while find_index != -1:
-        if s[find_index-1] != '\\':
+        if s[find_index-1] != '\\' and not s[find_index-1].isalpha():
             if sub != 'eta':
                 s=s[:find_index]+repl+s[find_index + len(sub):]
             else:
@@ -11228,19 +11257,24 @@ def _greekReplace(s, sub, repl):
     return s
 
 
-def _show_computation_start():
-    ax = plt.gca()
-    ax.set_facecolor('xkcd:salmon')
-    plt.show()
-    #print("pink on")
+def _show_computation_start(controller):
+    # ax = plt.gca()
+    # ax.set_facecolor('xkcd:salmon')
+    # try:
+    #     plt.pause(0.0000001)
+    #     #ax.redraw_in_frame()
+    #     print("pink on")
+    # except:
+    #     pass
+    controller._bookmarkWidget.style.button_color = 'pink'
     
     
     
-def _show_computation_stop():
-    ax = plt.gca()
-    ax.set_facecolor('xkcd:white')
-    #print("pink off")
-
+def _show_computation_stop(controller):
+    # ax = plt.gca()
+    # ax.set_facecolor('xkcd:white')
+    # print("pink off")
+    controller._bookmarkWidget.style.button_color = 'silver'
 
 
 # import gc, inspect

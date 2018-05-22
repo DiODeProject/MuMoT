@@ -45,3 +45,14 @@ For more technical information read the documentation at [https://diodeproject.g
 * Write code using Python [naming conventions](https://www.python.org/dev/peps/pep-0008/#naming-conventions)
 * Update `TestNotebooks/MuMoTtest.ipynb` to add tests for new functionality - always run this notebook before committing
 
+# Contributors
+## Core Development Team:
+* James A. R. Marshall
+* Andreagiovanni Reina
+* Thomas Bose
+
+## Packaging, Documentation and Deployment:
+* Will Furnass
+
+## Windows Compatibility
+* Renato Pagliara Vasquez
