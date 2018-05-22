@@ -7,6 +7,12 @@ https://diodeproject.github.io/MuMoT/
 
 Contributors:
 James A. R. Marshall, Andreagiovanni Reina, Thomas Bose
+
+Packaging, Documentation and Deployment:
+Will Furnass
+
+Windows Compatibility:
+Renato Pagliara Vasquez
 """
 
 from IPython.display import display, Math, Javascript #, clear_output, Latex 
@@ -9009,6 +9015,10 @@ def parseModel(modelDescription):
     # strip out any basic LaTeX equation formatting user has input
     modelDescr = modelDescr.replace('$','')
     modelDescr = modelDescr.replace(r'\\\\','')
+    # add white space to make parsing easy
+    modelDescr = modelDescr.replace('+',' + ')
+    modelDescr = modelDescr.replace('->',' -> ')
+    modelDescr = modelDescr.replace(':',' : ')
     # split _rules line-by-line, one rule per line
     modelRules = modelDescr.split('\\n')
     # parse and construct the model
