@@ -180,6 +180,10 @@ class MuMoTmodel:
     
     ## create new model with variable substitutions listed as comma separated string of assignments
     def substitute(self, subsString):
+        sizeSet = False
+        sizeSetrhs = []
+        sizeSetExpr = None
+        sizeSetKosher = False
         subs = []
         subsStrings = subsString.split(',')
         for subString in subsStrings:
@@ -214,18 +218,25 @@ class MuMoTmodel:
             for sub in subs:
                 rule.rate = rule.rate.subs(sub[0], sub[1])
         for sub in subs:
-            if sub[0] in newModel._reactants:
+            if sub[0] in newModel._reactants or (sub[0] * -1) in newModel._reactants:
                 for atom in sub[1].atoms(Symbol):
                     if atom not in newModel._reactants and atom != self._systemSize:
                         if newModel._systemSize == None:
                             newModel._systemSize = atom
+                            sizeSet = True
+                            sizeSetExpr = sub[1] - sub[0]
+                            if sub[0] in newModel._reactants:
+                                sizeSetKosher = True
                         else:
                             raise SyntaxError("More than one unknown reactant encountered when trying to set system size: " + str(sub[0]) + " = " + str(sub[1]))
+                    else:
+                        sizeSetrhs.append(atom)
                 if newModel._systemSize == None:
                     raise SyntaxError("Expected to find system size parameter but failed: " + str(sub[0]) + " = " + str(sub[1]))
                 ## @todo: more thorough error checking for valid system size expression
                 newModel._reactants.discard(sub[0])
-                del newModel._equations[sub[0]]
+                if sizeSetKosher:
+                    del newModel._equations[sub[0]]
         if newModel._systemSize == None:
             newModel._systemSize = self._systemSize
         for reactant in newModel._equations:
@@ -240,7 +251,20 @@ class MuMoTmodel:
         constantReactants = map(latex, list(newModel._constantReactants))
         for (reactant, latexStr) in zip(newModel._constantReactants, constantReactants):
             newModel._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'
-
+        if sizeSet:
+            # need to check setting system size was done correctly
+            candidateExpr = newModel._systemSize
+            for reactant in self._equations:
+                # check all reactants in original model present in substitution string (first check, to help users explicitly realise they must inlude all reactants)
+                if sizeSetKosher and reactant != sub[0] and reactant not in sizeSetrhs:
+                    raise SyntaxError("Expected to find reactant " + str(reactant) + " but failed: " + str(sub[0]) + " = " + str(sub[1]))
+                candidateExpr = candidateExpr - reactant
+#                if reactant not in sizeSetrhs:
+            # check substitution format is correct
+            diffExpr = candidateExpr - sizeSetExpr
+            if diffExpr != 0:
+                raise SyntaxError("System size not set by expression of form <reactant> = <system size> - <reactants>: difference = " + str(diffExpr))
+                    
         ## @todo: what else should be copied to new model?
 
         return newModel
