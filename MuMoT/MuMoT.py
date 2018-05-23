@@ -72,6 +72,7 @@ EMPTYSET_SYMBOL = process_sympy('1')
 INITIAL_COND_INIT_VAL = 0.0
 INITIAL_COND_INIT_BOUND = 1.0
 
+# LINE_COLOR_LIST
 line_color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
 
 GREEK_LETT_LIST_1=['alpha', 'beta', 'gamma', 'Gamma', 'delta', 'Delta', 'epsilon',
@@ -3175,6 +3176,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
                 self._showErrorMessage('Check input: should be of type list!')
         else:
             self._stateVarListDisplay = copy.deepcopy(self._stateVarList)
+        self._stateVarListDisplay = sorted(self._stateVarListDisplay, key=str)
         
         self._stateVariable1 = self._stateVarList[0]
         if len(self._stateVarList) == 2 or len(self._stateVarList) == 3:
@@ -3670,6 +3672,8 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
     _y0 = None
     ## save solution for redraw to switch between plotProportions = True and False
     _sol_ODE_dict = None
+    ## ordered list of colors to be used
+    _colors = None
     
     def _constructorSpecificParams(self, _):
         if self._controller is not None:
@@ -3682,7 +3686,10 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
         super().__init__(*args, **kwargs)
         #self._generatingCommand = "numSimStateVar"
         
-        
+        self._colors = []
+        for idx, state in enumerate(sorted(self._initialState.keys(), key=str)):
+            if state in self._stateVarListDisplay:
+                self._colors.append(line_color_list[idx]) 
 
     def _plot_NumSolODE(self, _=None):
         super()._plot_NumSolODE()
@@ -3787,7 +3794,7 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
             choose_xrange=[0, self._maxTime]
         _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, choose_xrange=choose_xrange,
                            choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
-                           legend_fontsize=self._legend_fontsize)
+                           legend_fontsize=self._legend_fontsize, line_color_list=self._colors)
         
         
         with io.capture_output() as log:
@@ -7767,7 +7774,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             i = 0
             for state in sorted(self._initialState.keys(), key=str): #sorted(self._mumotModel._reactants, key=str):
                 self._colors[state] = line_color_list[i] 
-                i += 1            
+                i += 1
             
         self._logs.append(log)
         if not self._silent:
@@ -10370,7 +10377,8 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
 def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None, 
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
-                       xlab=None, ylab=None, curvelab=None, aspectRatioEqual=False, **kwargs):
+                       xlab=None, ylab=None, curvelab=None, aspectRatioEqual=False, line_color_list=line_color_list, 
+                       **kwargs):
     #print(kwargs)
     
     showLegend = kwargs.get('showLegend', False)
