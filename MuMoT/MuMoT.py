@@ -4921,7 +4921,6 @@ class MuMoTfieldView(MuMoTview):
         if not(self._silent): ## @todo is this necessary?
             plt.figure(self._figureNum)          
             _show_computation_start(self._controller)
-            time.sleep(1)
             plt.clf()            
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
