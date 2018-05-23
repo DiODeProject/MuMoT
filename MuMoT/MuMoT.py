@@ -4918,9 +4918,10 @@ class MuMoTfieldView(MuMoTview):
     
     
     def _plot_field(self):
+        if self._controller is not None:
+            _show_computation_start(self._controller)
         if not(self._silent): ## @todo is this necessary?
             plt.figure(self._figureNum)          
-            _show_computation_start(self._controller)
             plt.clf()            
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
@@ -5155,7 +5156,7 @@ class MuMoTfieldView(MuMoTview):
         
             self._FixedPoints = FixedPoints
 
-        if not(self._silent): ## @todo is this necessary?
+        if self._controller is not None:
             _show_computation_stop(self._controller)
 
     ## helper for _get_field_2d() and _get_field_3d()
@@ -6791,7 +6792,7 @@ class MuMoTBifurcationView(MuMoTview):
                 self._showErrorMessage('Bifurcation diagram could not be computed. Try changing parameter values on the sliders')
                 return None
 
-        if not(self._silent):
+        if self._controller is not None:
             _show_computation_stop(self._controller)
 
         self._logs.append(log)
@@ -6799,9 +6800,10 @@ class MuMoTBifurcationView(MuMoTview):
         
         
     def _initFigure(self):
+        if self._controller is not None: 
+            _show_computation_start(self._controller)
         if not self._silent:
             plt.figure(self._figureNum)
-            _show_computation_start(self._controller)
             plt.clf()
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
@@ -7778,6 +7780,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
         with io.capture_output() as log:
 #         if True:
 #             log=''
+            if self._controller is not None:
+                _show_computation_start(self._controller)
             self._update_params()
             self._log("Stochastic Simulation")
             self._printStandaloneViewCmd()
@@ -7795,7 +7799,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
 #                 for results in self._latestResults:
 #                     self._updateSimultationFigure(results, fullPlot=True)
                 self._updateSimultationFigure(self._latestResults, fullPlot=True)
-           
+            
+            if self._controller is not None:
+                _show_computation_stop(self._controller)
         self._logs.append(log)
         
     def _update_view_specific_params(self, freeParamDict = {}):
