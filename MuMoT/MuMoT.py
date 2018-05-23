@@ -77,9 +77,9 @@ line_color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
 GREEK_LETT_LIST_1=['alpha', 'beta', 'gamma', 'Gamma', 'delta', 'Delta', 'epsilon',
                     'zeta', 'theta', 'Theta', 'iota', 'kappa', 'lambda', 'Lambda', 
                     'mu', 'xi', 'Xi', 'pi', 'Pi', 'rho', 'sigma', 'Sigma', 'tau', 
-                    'upsilon', 'Upsilon', 'phi', 'Phi', 'chi', 'psi', 'Psi', 'omega', 'Omega']
+                    'upsilon', 'Upsilon', 'phi', 'Phi', 'chi', 'psi', 'Psi', 'omega', 'Omega', 'varrho', 'vartheta', 'varepsilon', 'varphi']
 GREEK_LETT_LIST_2=['\\'+ GreekLett for GreekLett in GREEK_LETT_LIST_1]
-GREEK_LETT_RESERVED_LIST=['\\eta', '\\varrho', '\\vartheta', '\\varepsilon', '\\varphi', '\\nu', '\\Phi']
+GREEK_LETT_RESERVED_LIST=['\\eta', '\\nu', '\\Phi']
 # 
 # GREEK_LETT_LIST_2=['\\alpha', '\\beta', '\\gamma', '\\Gamma', '\\delta', '\\Delta', '\\epsilon',
 #                     '\\zeta', '\\theta', '\\Theta', '\\iota', '\\kappa', '\\lambda', '\\Lambda', 
