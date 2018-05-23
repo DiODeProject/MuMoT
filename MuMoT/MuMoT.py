@@ -72,8 +72,7 @@ EMPTYSET_SYMBOL = process_sympy('1')
 INITIAL_COND_INIT_VAL = 0.0
 INITIAL_COND_INIT_BOUND = 1.0
 
-# LINE_COLOR_LIST
-line_color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
+LINE_COLOR_LIST = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
 
 GREEK_LETT_LIST_1=['alpha', 'beta', 'gamma', 'Gamma', 'delta', 'Delta', 'epsilon',
                     'zeta', 'theta', 'Theta', 'iota', 'kappa', 'lambda', 'Lambda', 
@@ -3689,7 +3688,7 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
         self._colors = []
         for idx, state in enumerate(sorted(self._initialState.keys(), key=str)):
             if state in self._stateVarListDisplay:
-                self._colors.append(line_color_list[idx]) 
+                self._colors.append(LINE_COLOR_LIST[idx]) 
 
     def _plot_NumSolODE(self, _=None):
         super()._plot_NumSolODE()
@@ -5068,11 +5067,11 @@ class MuMoTfieldView(MuMoTview):
                     ax.add_artist(ells[kk])
                     ells[kk].set_alpha(0.5)
                     if sympy.re(EVplot[kk][0]) < 0 and sympy.re(EVplot[kk][1]) < 0:
-                        Fcolor = line_color_list[1]
+                        Fcolor = LINE_COLOR_LIST[1]
                     elif sympy.re(EVplot[kk][0]) > 0 and sympy.re(EVplot[kk][1]) > 0:
-                        Fcolor = line_color_list[2]
+                        Fcolor = LINE_COLOR_LIST[2]
                     else:
-                        Fcolor = line_color_list[0]
+                        Fcolor = LINE_COLOR_LIST[0]
                     ells[kk].set_facecolor(Fcolor)
                 #self._ells = ells
             
@@ -6121,11 +6120,11 @@ class MuMoTstreamViewOLD(MuMoTfieldViewOLD):
                 ax.add_artist(ells[kk])
                 ells[kk].set_alpha(0.5)
                 if sympy.re(EVplot[kk][0]) < 0 and sympy.re(EVplot[kk][1]) < 0:
-                    Fcolor = line_color_list[1]
+                    Fcolor = LINE_COLOR_LIST[1]
                 elif sympy.re(EVplot[kk][0]) > 0 and sympy.re(EVplot[kk][1]) > 0:
-                    Fcolor = line_color_list[2]
+                    Fcolor = LINE_COLOR_LIST[2]
                 else:
-                    Fcolor = line_color_list[0]
+                    Fcolor = LINE_COLOR_LIST[0]
                 ells[kk].set_facecolor(Fcolor)
         if self._mumotModel._constantSystemSize == True:
             plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')            
@@ -7773,7 +7772,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._colors = {}
             i = 0
             for state in sorted(self._initialState.keys(), key=str): #sorted(self._mumotModel._reactants, key=str):
-                self._colors[state] = line_color_list[i] 
+                self._colors[state] = LINE_COLOR_LIST[i] 
                 i += 1
             
         self._logs.append(log)
@@ -10377,7 +10376,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
 #This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
 def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None, 
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
-                       xlab=None, ylab=None, curvelab=None, aspectRatioEqual=False, line_color_list=line_color_list, 
+                       xlab=None, ylab=None, curvelab=None, aspectRatioEqual=False, line_color_list=LINE_COLOR_LIST, 
                        **kwargs):
     #print(kwargs)
     
