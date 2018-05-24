@@ -56,3 +56,6 @@ For more technical information read the documentation at [https://diodeproject.g
 
 ## Windows Compatibility
 * Renato Pagliara Vasquez
+
+# Funding
+MuMoT developed with funds from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement number 647704 - [DiODe](http://diode.group.shef.ac.uk)).
