@@ -46,6 +46,7 @@ For more technical information read the documentation at [https://diodeproject.g
 * Update `TestNotebooks/MuMoTtest.ipynb` to add tests for new functionality - always run this notebook before committing
 
 ## Contributors
+
 ### Core Development Team:
 * James A. R. Marshall
 * Andreagiovanni Reina
@@ -56,6 +57,8 @@ For more technical information read the documentation at [https://diodeproject.g
 
 ### Windows Compatibility
 * Renato Pagliara Vasquez
+
+*Contains code snippets (C) 2012 Free Software Foundation, under the MIT Licence*
 
 ## Funding
 MuMoT developed with funds from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement number 647704 - [DiODe](http://diode.group.shef.ac.uk)).
