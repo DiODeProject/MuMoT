@@ -201,11 +201,13 @@ class MuMoTmodel:
             assignment = process_sympy(subString)
             subs.append((assignment.lhs, assignment.rhs))
         newModel = MuMoTmodel()
+        newModel._constantSystemSize = self._constantSystemSize
         newModel._rules = copy.deepcopy(self._rules)
         newModel._reactants = copy.deepcopy(self._reactants)
         newModel._constantReactants = copy.deepcopy(self._constantReactants)
         newModel._equations = copy.deepcopy(self._equations)
         newModel._stoichiometry = copy.deepcopy(self._stoichiometry)
+        
         for sub in subs:
             if sub[0] in newModel._reactants and len(sub[1].atoms(Symbol)) == 1:
                 raise SyntaxError("Using substitute to rename reactants not supported: " + str(sub[0]) + " = " + str(sub[1]))
@@ -251,7 +253,7 @@ class MuMoTmodel:
         for reactant in newModel._equations:
             rhs = newModel._equations[reactant]
             for symbol in rhs.atoms(Symbol):
-                if symbol not in newModel._reactants and symbol != newModel._systemSize:
+                if symbol not in newModel._reactants and symbol not in newModel._constantReactants and symbol != newModel._systemSize:
                     newModel._rates.add(symbol)
         newModel._ratesLaTeX = {}
         rates = map(latex, list(newModel._rates))
@@ -259,7 +261,8 @@ class MuMoTmodel:
             newModel._ratesLaTeX[repr(rate)] = latexStr
         constantReactants = map(latex, list(newModel._constantReactants))
         for (reactant, latexStr) in zip(newModel._constantReactants, constantReactants):
-            newModel._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'
+#            newModel._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'
+            newModel._ratesLaTeX[repr(reactant)] = '\Phi_{' + latexStr + '}'
         if sizeSet:
             # need to check setting system size was done correctly
             candidateExpr = newModel._systemSize
@@ -9124,7 +9127,8 @@ def parseModel(modelDescription):
         model._ratesLaTeX[repr(rate)] = latexStr
     constantReactants = map(latex, list(model._constantReactants))
     for (reactant, latexStr) in zip(model._constantReactants, constantReactants):
-        model._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'    
+#        model._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'    
+        model._ratesLaTeX[repr(reactant)] = '\Phi_{' + latexStr + '}'
     
     model._stoichiometry = _getStoichiometry(model._rules, model._constantReactants)
     
