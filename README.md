@@ -7,7 +7,7 @@ Repository should contain following files/folders:
 * `gen` (includes submodules used by MuMoT, important: there must be an empty file called `__init__.py` (with 2 underscores before and after init in the filename) in that folder, so Python can recognise the modules)
 * `MuMoTtest.py` and other demo files
 
-## Dependencies:
+## Dependencies
 You need to install the following supporting software:
 
 * a LaTeX compiler
@@ -15,9 +15,9 @@ You need to install the following supporting software:
 ### Path
 Given subfolders are used for demo and for test notebooks, the `PYTHONPATH` environment variable needs to be set appropriately, *e.g.* `export PYTHONPATH=$PYTHONPATH:<your MuMoT repository directoty` (Mac). Ideally, add this somewhere where it will be set during every session, *e.g.* in your `.bashrc` file
 
-### Creating a conda environment for MuMoT named "MumotEnv" (this name is specified in environment.yml):
+### Creating a conda environment for MuMoT named "MumotEnv" (this name is specified in environment.yml)
 
-#### The following has been tested on macOS Sierra Version 10.12.6 and Ubuntu 16.04 (Windows test to follow):
+#### The following has been tested on macOS Sierra Version 10.12.6 and Ubuntu 16.04 (Windows test to follow)
 
 * upgrade to at least conda 4.4
 * get the environment.yml file from the MuMoT repository, go to the folder containing the environment.yml file and type in terminal: `conda env create -f environment.yml`
