@@ -1,4 +1,4 @@
-name: MumotEnvWin
+name: MumotEnv
 channels:
 - conda-forge
 - defaults
