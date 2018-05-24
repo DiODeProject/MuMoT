@@ -2340,6 +2340,27 @@ class MuMoTview:
         else:
             print(message)
             
+    def _show_computation_start(self):
+        # ax = plt.gca()
+        # ax.set_facecolor('xkcd:salmon')
+        # try:
+        #     plt.pause(0.0000001)
+        #     #ax.redraw_in_frame()
+        #     print("pink on")
+        # except:
+        #     pass
+        if self._controller is not None:
+            self._controller._bookmarkWidget.style.button_color = 'pink'
+        
+        
+        
+    def _show_computation_stop(self):
+        # ax = plt.gca()
+        # ax.set_facecolor('xkcd:white')
+        # print("pink off")
+        if self._controller is not None:
+            self._controller._bookmarkWidget.style.button_color = 'silver'
+
             
     def _setLog(self, log):
         self._logs = log
@@ -4930,8 +4951,7 @@ class MuMoTfieldView(MuMoTview):
     
     
     def _plot_field(self):
-        if self._controller is not None:
-            _show_computation_start(self._controller)
+        self._show_computation_start()
         if not(self._silent): ## @todo is this necessary?
             plt.figure(self._figureNum)          
             plt.clf()            
@@ -5168,8 +5188,7 @@ class MuMoTfieldView(MuMoTview):
         
             self._FixedPoints = FixedPoints
 
-        if self._controller is not None:
-            _show_computation_stop(self._controller)
+        self._show_computation_stop()
 
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
@@ -6804,16 +6823,14 @@ class MuMoTBifurcationView(MuMoTview):
                 self._showErrorMessage('Bifurcation diagram could not be computed. Try changing parameter values on the sliders')
                 return None
 
-        if self._controller is not None:
-            _show_computation_stop(self._controller)
+        self._show_computation_stop()
 
         self._logs.append(log)
         
         
         
     def _initFigure(self):
-        if self._controller is not None: 
-            _show_computation_start(self._controller)
+        self._show_computation_start()
         if not self._silent:
             plt.figure(self._figureNum)
             plt.clf()
@@ -7792,8 +7809,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
         with io.capture_output() as log:
 #         if True:
 #             log=''
-            if self._controller is not None:
-                _show_computation_start(self._controller)
+            self._show_computation_start()
             self._update_params()
             self._log("Stochastic Simulation")
             self._printStandaloneViewCmd()
@@ -7812,8 +7828,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
 #                     self._updateSimultationFigure(results, fullPlot=True)
                 self._updateSimultationFigure(self._latestResults, fullPlot=True)
             
-            if self._controller is not None:
-                _show_computation_stop(self._controller)
+            self._show_computation_stop()
         self._logs.append(log)
         
     def _update_view_specific_params(self, freeParamDict = {}):
@@ -11299,27 +11314,6 @@ def _greekReplace(s, sub, repl):
         # find + 1 means we start at the last match start index + 1
         find_index = s.find(sub, find_index + 1)
     return s
-
-
-def _show_computation_start(controller):
-    # ax = plt.gca()
-    # ax.set_facecolor('xkcd:salmon')
-    # try:
-    #     plt.pause(0.0000001)
-    #     #ax.redraw_in_frame()
-    #     print("pink on")
-    # except:
-    #     pass
-    controller._bookmarkWidget.style.button_color = 'pink'
-    
-    
-    
-def _show_computation_stop(controller):
-    # ax = plt.gca()
-    # ax.set_facecolor('xkcd:white')
-    # print("pink off")
-    controller._bookmarkWidget.style.button_color = 'silver'
-
 
 # import gc, inspect
 # def _find_obj_names(obj):
