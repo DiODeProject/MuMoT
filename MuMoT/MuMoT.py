@@ -2951,6 +2951,12 @@ class MuMoTmultiController(MuMoTcontroller):
                 inputValue = kwargs.get(key) 
                 ep1 = None
                 ep2 = None
+                if key == 'choose_yrange':
+                    for controller in controllers:
+                        controller._view._chooseYrange = kwargs.get('choose_yrange')
+                if key == 'choose_xrange':
+                    for controller in controllers:
+                        controller._view._chooseXrange = kwargs.get('choose_xrange')
                 if key=='initialState': ep1 = views[0]._mumotModel._getAllReactants() ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
                 if key=='visualisationType': ep1="multicontroller"
                 if key=='final_x' or key=='final_y': ep1=views[0]._mumotModel._getAllReactants()[0] ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
