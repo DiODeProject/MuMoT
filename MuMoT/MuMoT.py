@@ -15,6 +15,7 @@ Windows Compatibility:
 Renato Pagliara Vasquez
 """
 
+import sys
 from IPython.display import display, Math, Javascript #, clear_output, Latex 
 import ipywidgets.widgets as widgets
 #import ipywidgets.trait_types.traitlets.TraitError
@@ -55,10 +56,27 @@ from math import log10, floor
 #from numpy.oldnumeric.fix_default_axis import _args3
 #from matplotlib.offsetbox import kwargs
 
+ipython = get_ipython()
+ipython.magic('alias_magic model latex')
+ipython.magic('matplotlib nbagg')
 
+def _hide_traceback(exc_tuple=None, filename=None, tb_offset=None,
+                   exception_only=False, running_compiled_code=False):
+    etype, value, tb = sys.exc_info()
+    return ipython._showtraceback(etype, value, ipython.InteractiveTB.get_exception_only(etype, value))
 
-get_ipython().magic('alias_magic model latex')
-get_ipython().magic('matplotlib nbagg')
+_show_traceback = ipython.showtraceback
+ipython.showtraceback = _hide_traceback
+
+class MuMoTError(Exception):
+    pass
+
+class MuMoTValueError(MuMoTError):
+    pass
+
+class MuMoTSyntaxError(MuMoTError):
+    pass
+
 
 figureCounter = 1 # global figure counter for model views
 
@@ -197,18 +215,20 @@ class MuMoTmodel:
         subsStrings = subsString.split(',')
         for subString in subsStrings:
             if '=' not in subString:
-                raise SyntaxError("No '=' in assignment " + subString)
+                raise MuMoTSyntaxError("No '=' in assignment " + subString)
             assignment = process_sympy(subString)
             subs.append((assignment.lhs, assignment.rhs))
         newModel = MuMoTmodel()
+        newModel._constantSystemSize = self._constantSystemSize
         newModel._rules = copy.deepcopy(self._rules)
         newModel._reactants = copy.deepcopy(self._reactants)
         newModel._constantReactants = copy.deepcopy(self._constantReactants)
         newModel._equations = copy.deepcopy(self._equations)
         newModel._stoichiometry = copy.deepcopy(self._stoichiometry)
+        
         for sub in subs:
             if sub[0] in newModel._reactants and len(sub[1].atoms(Symbol)) == 1:
-                raise SyntaxError("Using substitute to rename reactants not supported: " + str(sub[0]) + " = " + str(sub[1]))
+                raise MuMoTSyntaxError("Using substitute to rename reactants not supported: " + str(sub[0]) + " = " + str(sub[1]))
         for reaction in newModel._stoichiometry:
             for sub in subs:
                 newModel._stoichiometry[reaction]['rate'] = newModel._stoichiometry[reaction]['rate'].subs(sub[0], sub[1])
@@ -237,11 +257,11 @@ class MuMoTmodel:
                             if sub[0] in newModel._reactants:
                                 sizeSetKosher = True
                         else:
-                            raise SyntaxError("More than one unknown reactant encountered when trying to set system size: " + str(sub[0]) + " = " + str(sub[1]))
+                            raise MuMoTSyntaxError("More than one unknown reactant encountered when trying to set system size: " + str(sub[0]) + " = " + str(sub[1]))
                     else:
                         sizeSetrhs.append(atom)
                 if newModel._systemSize == None:
-                    raise SyntaxError("Expected to find system size parameter but failed: " + str(sub[0]) + " = " + str(sub[1]))
+                    raise MuMoTSyntaxError("Expected to find system size parameter but failed: " + str(sub[0]) + " = " + str(sub[1]))
                 ## @todo: more thorough error checking for valid system size expression
                 newModel._reactants.discard(sub[0])
                 if sizeSetKosher:
@@ -251,7 +271,7 @@ class MuMoTmodel:
         for reactant in newModel._equations:
             rhs = newModel._equations[reactant]
             for symbol in rhs.atoms(Symbol):
-                if symbol not in newModel._reactants and symbol != newModel._systemSize:
+                if symbol not in newModel._reactants and symbol not in newModel._constantReactants and symbol != newModel._systemSize:
                     newModel._rates.add(symbol)
         newModel._ratesLaTeX = {}
         rates = map(latex, list(newModel._rates))
@@ -259,20 +279,21 @@ class MuMoTmodel:
             newModel._ratesLaTeX[repr(rate)] = latexStr
         constantReactants = map(latex, list(newModel._constantReactants))
         for (reactant, latexStr) in zip(newModel._constantReactants, constantReactants):
-            newModel._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'
+#            newModel._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'
+            newModel._ratesLaTeX[repr(reactant)] = '\Phi_{' + latexStr + '}'
         if sizeSet:
             # need to check setting system size was done correctly
             candidateExpr = newModel._systemSize
             for reactant in self._equations:
                 # check all reactants in original model present in substitution string (first check, to help users explicitly realise they must inlude all reactants)
                 if sizeSetKosher and reactant != sub[0] and reactant not in sizeSetrhs:
-                    raise SyntaxError("Expected to find reactant " + str(reactant) + " but failed: " + str(sub[0]) + " = " + str(sub[1]))
+                    raise MuMoTSyntaxError("Expected to find reactant " + str(reactant) + " but failed: " + str(sub[0]) + " = " + str(sub[1]))
                 candidateExpr = candidateExpr - reactant
 #                if reactant not in sizeSetrhs:
             # check substitution format is correct
             diffExpr = candidateExpr - sizeSetExpr
             if diffExpr != 0:
-                raise SyntaxError("System size not set by expression of form <reactant> = <system size> - <reactants>: difference = " + str(diffExpr))
+                raise MuMoTSyntaxError("System size not set by expression of form <reactant> = <system size> - <reactants>: difference = " + str(diffExpr))
                     
         ## @todo: what else should be copied to new model?
 
@@ -1417,13 +1438,13 @@ class MuMoTmodel:
 #                                     'Constant reactants must either match the same constant reactant or the EMPTYSET on the right-handside. \n' \
 #                                     'NOTE THAT ORDER MATTERS: MuMoT assumes that first reactant on left-handside becomes first reactant on right-handside and so on for sencond and third...'
 #                         print(errorMsg)
-#                         raise ValueError(errorMsg)
+#                         raise MuMoTValueError(errorMsg)
 #                 elif rule.rhsReactants[idx] in allConstantReactants:
 #                     errorMsg = 'In rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' constant reactant are not properly used.' \
 #                                     'Constant reactants appears on the right-handside and not on the left-handside. \n' \
 #                                     'NOTE THAT ORDER MATTERS: MuMoT assumes that first reactant on left-handside becomes first reactant on right-handside and so on for sencond and third...'
 #                     print(errorMsg)
-#                     raise ValueError(errorMsg)
+#                     raise MuMoTValueError(errorMsg)
 #                 
 #                 if reactant == EMPTYSET_SYMBOL:
 #                     targetReact.append(rule.rhsReactants[idx])
@@ -1580,16 +1601,16 @@ class MuMoTmodel:
 #         if len(parts) > 1:
 #             subscript = parts[1]
 #             if len(parts) > 2:
-#                 raise SyntaxError("Nested subscripts not currently supported: " + subscript + " in " + errorLabel)
+#                 raise MuMoTSyntaxError("Nested subscripts not currently supported: " + subscript + " in " + errorLabel)
 #                 return
 #             if len(subscript) > 1:
 #                 if  subscript[0] == '{' and subscript[len(subscript) - 1] == '}':
 #                     subscript = subscript[1:-1]
 #                     if '{' in subscript or '}' in subscript:
-#                         raise SyntaxError("Malformed subscript: {" + subscript + "} in " + errorLabel)
+#                         raise MuMoTSyntaxError("Malformed subscript: {" + subscript + "} in " + errorLabel)
 #                         return
 #                 else:
-#                     raise SyntaxError("Non single-character subscript not {} delimited: " + subscript + " in " + errorLabel)
+#                     raise MuMoTSyntaxError("Non single-character subscript not {} delimited: " + subscript + " in " + errorLabel)
 #                     return
 #             htmlLabel += label + "<SUB>" + subscript + "</SUB>" + r'</I>>'
 #         else:
@@ -1738,8 +1759,7 @@ class MuMoTcontroller:
         :param recomputeFunction
             The function to be called when recomputing is necessary
         :param redrawFunction
-            The function to be called when only redrawing (relying on previous computation) is sufficient
-        """ 
+            The function to be called when only redrawing (relying on previous computation) is sufficient""" 
         self._replotFunction = recomputeFunction
         self._redrawFunction = redrawFunction
         for widget in self._widgetsFreeParams.values():
@@ -1806,7 +1826,7 @@ class MuMoTcontroller:
                     self._widgetsExtraParams['init'+str(state)].unobserve(self._view._controller._replotFunction, 'value')
 #                     self._widgetsExtraParams['init'+str(state)].unobserve(self._replotFunction, 'value')
                     toLinkPlotFunction = True
-                except ValueError:
+                except MuMoTValueError:
                     pass
                 
 
@@ -2340,6 +2360,27 @@ class MuMoTview:
         else:
             print(message)
             
+    def _show_computation_start(self):
+        # ax = plt.gca()
+        # ax.set_facecolor('xkcd:salmon')
+        # try:
+        #     plt.pause(0.0000001)
+        #     #ax.redraw_in_frame()
+        #     print("pink on")
+        # except:
+        #     pass
+        if self._controller is not None:
+            self._controller._bookmarkWidget.style.button_color = 'pink'
+        
+        
+        
+    def _show_computation_stop(self):
+        # ax = plt.gca()
+        # ax.set_facecolor('xkcd:white')
+        # print("pink off")
+        if self._controller is not None:
+            self._controller._bookmarkWidget.style.button_color = 'silver'
+
             
     def _setLog(self, log):
         self._logs = log
@@ -2951,6 +2992,12 @@ class MuMoTmultiController(MuMoTcontroller):
                 inputValue = kwargs.get(key) 
                 ep1 = None
                 ep2 = None
+                if key == 'choose_yrange':
+                    for controller in controllers:
+                        controller._view._chooseYrange = kwargs.get('choose_yrange')
+                if key == 'choose_xrange':
+                    for controller in controllers:
+                        controller._view._chooseXrange = kwargs.get('choose_xrange')
                 if key=='initialState': ep1 = views[0]._mumotModel._getAllReactants() ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
                 if key=='visualisationType': ep1="multicontroller"
                 if key=='final_x' or key=='final_y': ep1=views[0]._mumotModel._getAllReactants()[0] ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
@@ -4922,8 +4969,7 @@ class MuMoTfieldView(MuMoTview):
     
     
     def _plot_field(self):
-        if self._controller is not None:
-            _show_computation_start(self._controller)
+        self._show_computation_start()
         if not(self._silent): ## @todo is this necessary?
             plt.figure(self._figureNum)          
             plt.clf()            
@@ -5160,8 +5206,7 @@ class MuMoTfieldView(MuMoTview):
         
             self._FixedPoints = FixedPoints
 
-        if self._controller is not None:
-            _show_computation_stop(self._controller)
+        self._show_computation_stop()
 
     ## helper for _get_field_2d() and _get_field_3d()
     def _get_field(self):
@@ -6386,13 +6431,13 @@ class MuMoTBifurcationView(MuMoTview):
             self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('-')+1:]
             self._SVoperation = '-'
   
-        except ValueError:
+        except MuMoTValueError:
             try:
                 stateVarExpr1.index('+')
                 self._stateVarBif1 = stateVarExpr1[:stateVarExpr1.index('+')]
                 self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('+')+1:] 
                 self._SVoperation = '+'
-            except ValueError:
+            except MuMoTValueError:
                 self._stateVarBif1 = stateVarExpr1
                 self._stateVarBif2 = stateVarExpr2
         
@@ -6796,16 +6841,14 @@ class MuMoTBifurcationView(MuMoTview):
                 self._showErrorMessage('Bifurcation diagram could not be computed. Try changing parameter values on the sliders')
                 return None
 
-        if self._controller is not None:
-            _show_computation_stop(self._controller)
+        self._show_computation_stop()
 
         self._logs.append(log)
         
         
         
     def _initFigure(self):
-        if self._controller is not None: 
-            _show_computation_start(self._controller)
+        self._show_computation_start()
         if not self._silent:
             plt.figure(self._figureNum)
             plt.clf()
@@ -6940,13 +6983,13 @@ class MuMoTbifurcationViewOLD(MuMoTview):
             self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('-')+1:]
             self._SVoperation = '-'
   
-        except ValueError:
+        except MuMoTValueError:
             try:
                 stateVarExpr1.index('+')
                 self._stateVarBif1 = stateVarExpr1[:stateVarExpr1.index('+')]
                 self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('+')+1:] 
                 self._SVoperation = '+'
-            except ValueError:
+            except MuMoTValueError:
                 self._stateVarBif1 = stateVarExpr1
                 self._stateVarBif2 = stateVarExpr2
         
@@ -7428,7 +7471,7 @@ class MuMoTbifurcationViewOLD(MuMoTview):
 #                 self._stateVariable1 = stateVariable1[:stateVariable1.index('-')]
 #                 self._stateVariable2 = stateVariable1[stateVariable1.index('-')+1:]
 #                 self._LabelY = self._stateVariable1+'-'+self._stateVariable2 if self._ylab == None else self._ylab
-#             except ValueError:
+#             except MuMoTValueError:
 #                 self._stateVariable1 = stateVariable1
 #                 self._stateVariable2 = stateVariable2
 #                 self._LabelY = self._stateVariable1 if self._ylab == None else self._ylab
@@ -7784,8 +7827,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
         with io.capture_output() as log:
 #         if True:
 #             log=''
-            if self._controller is not None:
-                _show_computation_start(self._controller)
+            self._show_computation_start()
             self._update_params()
             self._log("Stochastic Simulation")
             self._printStandaloneViewCmd()
@@ -7804,8 +7846,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
 #                     self._updateSimultationFigure(results, fullPlot=True)
                 self._updateSimultationFigure(self._latestResults, fullPlot=True)
             
-            if self._controller is not None:
-                _show_computation_stop(self._controller)
+            self._show_computation_stop()
         self._logs.append(log)
         
     def _update_view_specific_params(self, freeParamDict = {}):
@@ -8443,7 +8484,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             errorMsg = "ERROR! Invalid rate values. The current rates limit the agent timestep to be too small and would correspond to more than 10 milions simulation timesteps.\n"\
                         "Please modify the free parameters value to allow quicker simulations."
             self._showErrorMessage(errorMsg)
-            raise ValueError(errorMsg)
+            raise MuMoTValueError(errorMsg)
         if self._timestepSize > maxTimestepSize:
             self._timestepSize = maxTimestepSize
         self._maxTimeSteps = math.ceil( self._maxTime / self._timestepSize )
@@ -8493,14 +8534,14 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                         errorMsg = "ERROR! Invalid network parameter (link probability="+str(self._netParam)+") for E-R networks. After "+str(i)+" attempts of network initialisation, the network is never connected.\n"\
                                "Please increase the network parameter value."
                         print(errorMsg)
-                        raise ValueError(errorMsg)
+                        raise MuMoTValueError(errorMsg)
                     #print("Graph was not connected; Resampling!")
                     i = i+1
                     self._graph = nx.erdos_renyi_graph(numNodes, self._netParam, np.random.randint(MAX_RANDOM_SEED))
             else:
                 errorMsg = "ERROR! Invalid network parameter (link probability) for E-R networks. It must be between 0 and 1; input is " + str(self._netParam) 
                 print(errorMsg)
-                raise ValueError(errorMsg)
+                raise MuMoTValueError(errorMsg)
         elif (self._netType == NetworkType.BARABASI_ALBERT):
             #print("Generating Barabasi-Albert graph")
             netParam = int(self._netParam)
@@ -8509,12 +8550,12 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             else:
                 errorMsg = "ERROR! Invalid network parameter (number of edges per new node) for B-A networks. It must be an integer between 1 and " + str(numNodes) + "; input is " + str(self._netParam)
                 print(errorMsg)
-                raise ValueError(errorMsg)
+                raise MuMoTValueError(errorMsg)
         elif (self._netType == NetworkType.SPACE):
             ## @todo: implement network generate by placing points (with local communication range) randomly in 2D space
             errorMsg = "ERROR: Graphs of type SPACE are not implemented yet."
             print(errorMsg)
-            raise ValueError(errorMsg)
+            raise MuMoTValueError(errorMsg)
         elif (self._netType == NetworkType.DYNAMIC):
             self._positions = []
             for _ in range(numNodes):
@@ -8720,7 +8761,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             try:
                 self._controller._widgetsExtraParams['netParam'].unobserve(self._controller._replotFunction, 'value')
                 toLinkPlotFunction = True
-            except ValueError:
+            except MuMoTValueError:
                 pass
         if resetValueAndRange:
             self._controller._widgetsExtraParams['netParam'].max = float("inf") # temp to avoid min > max exception
@@ -8988,14 +9029,14 @@ def parseModel(modelDescription):
                 # state E: expecting a rate equation until end of rule
                 token = token.replace("\\\\",'\\')
                 if token in GREEK_LETT_RESERVED_LIST:
-                    raise SyntaxError("Reserved letter " + token + " encountered: reserved letters are " + str(GREEK_LETT_RESERVED_LIST))                
+                    raise MuMoTSyntaxError("Reserved letter " + token + " encountered: reserved letters are " + str(GREEK_LETT_RESERVED_LIST))                
                 constantReactant = False
 
                 if state == 'A':
                     if token != "+" and token != "->" and token != ":":
                         state = 'B'
                         if '^' in token:
-                            raise SyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
+                            raise MuMoTSyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
                         reactantCount += 1
                         if (token[0] == '(' and token[-1] == ')'):
                             constantReactant = True
@@ -9008,7 +9049,7 @@ def parseModel(modelDescription):
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
-                            raise SyntaxError("Non-singleton symbol set in token " + token +" in rule " + rule)
+                            raise MuMoTSyntaxError("Non-singleton symbol set in token " + token +" in rule " + rule)
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
                         if constantReactant:
@@ -9033,7 +9074,7 @@ def parseModel(modelDescription):
                     if token != "+" and token != "->" and token != ":":
                         state = 'D'
                         if '^' in token:
-                            raise SyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
+                            raise MuMoTSyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
                         reactantCount -= 1
                         if (token[0] == '(' and token[-1] == ')'):
                             constantReactant = True
@@ -9046,7 +9087,7 @@ def parseModel(modelDescription):
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
-                            raise SyntaxError("Non-singleton symbol set in token " + token +" in rule " + rule)
+                            raise MuMoTSyntaxError("Non-singleton symbol set in token " + token +" in rule " + rule)
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
                         if constantReactant:
@@ -9083,7 +9124,7 @@ def parseModel(modelDescription):
             if reactantCount == 0:
                 rules.append(newRule)
             else:
-                raise SyntaxError("Unequal number of reactants on lhs and rhs of rule " + rule)
+                raise MuMoTSyntaxError("Unequal number of reactants on lhs and rhs of rule " + rule)
 
             
     model._rules = rules
@@ -9092,7 +9133,7 @@ def parseModel(modelDescription):
     # check intersection of reactants and constantReactants is empty
     intersect = model._reactants.intersection(model._constantReactants) 
     if len(intersect) != 0:
-        raise SyntaxError("Following reactants defined as both constant and variable: " + str(intersect))
+        raise MuMoTSyntaxError("Following reactants defined as both constant and variable: " + str(intersect))
     model._rates = rates
     model._equations = _deriveODEsFromRules(model._reactants, model._rules)
     model._ratesLaTeX = {}
@@ -9101,12 +9142,23 @@ def parseModel(modelDescription):
         model._ratesLaTeX[repr(rate)] = latexStr
     constantReactants = map(latex, list(model._constantReactants))
     for (reactant, latexStr) in zip(model._constantReactants, constantReactants):
-        model._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'    
+#        model._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'    
+        model._ratesLaTeX[repr(reactant)] = '\Phi_{' + latexStr + '}'
     
     model._stoichiometry = _getStoichiometry(model._rules, model._constantReactants)
     
     return model
 
+def setVerboseExceptions(verbose = True):
+    """Set the verbosity of exception handling
+    
+    Parameters:
+        verbose = True - show exception traceback?"""
+    if verbose:
+        ipython.showtraceback = _show_traceback
+    else:
+        ipython.showtraceback = _hide_traceback
+    
 def _deriveODEsFromRules(reactants, rules):
     ## @todo: replace with principled derivation via Master Equation and van Kampen expansion
     equations = {}
@@ -10155,7 +10207,7 @@ def _process_params(params):
             expr = process_sympy(name.replace('\\\\','\\'))
             atoms = expr.atoms()
             if len(atoms) > 1:
-                raise SyntaxError("Non-singleton parameter name in parameter " + name)
+                raise MuMoTSyntaxError("Non-singleton parameter name in parameter " + name)
             for atom in atoms:
                 # parameter name should contain a single atom
                 pass
@@ -10165,7 +10217,7 @@ def _process_params(params):
 
     
 def _raiseModelError(expected, read, rule):
-    raise SyntaxError("Expected " + expected + " but read '" + read + "' in rule: " + rule)
+    raise MuMoTSyntaxError("Expected " + expected + " but read '" + read + "' in rule: " + rule)
 
 
 ## generic method for constructing figures in MuMoTview and MuMoTmultiController classes
@@ -10833,7 +10885,7 @@ def _almostEqual(a,b):
     epsilon = 0.0000001
     return abs(a-b) < epsilon
 
-# function copied from https://github.com/joferkington/oost_paper_code/blob/master/error_ellipse.py
+
 def _plot_point_cov(points, nstd=2, ax=None, **kwargs):
     """
     Plots an `nstd` sigma ellipse based on the mean and covariance of a point
@@ -10851,7 +10903,30 @@ def _plot_point_cov(points, nstd=2, ax=None, **kwargs):
     Returns
     -------
         A matplotlib ellipse artist
+        
+    Credit
+    ------
+        https://github.com/joferkington/oost_paper_code/blob/master/error_ellipse.py        
     """
+    # Copyright (c) 2012 Free Software Foundation
+    # 
+    # Permission is hereby granted, free of charge, to any person obtaining a copy of
+    # this software and associated documentation files (the "Software"), to deal in
+    # the Software without restriction, including without limitation the rights to
+    # use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+    # of the Software, and to permit persons to whom the Software is furnished to do
+    # so, subject to the following conditions:
+    # 
+    # The above copyright notice and this permission notice shall be included in all
+    # copies or substantial portions of the Software.
+    # 
+    # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    # SOFTWARE.
     pos = points.mean(axis=0)
     cov = np.cov(points, rowvar=False)
     return _plot_cov_ellipse(cov, pos, nstd, ax, **kwargs)
@@ -10877,7 +10952,30 @@ def _plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
     Returns
     -------
         A matplotlib ellipse artist
+        
+    Credit
+    ------
+        https://github.com/joferkington/oost_paper_code/blob/master/error_ellipse.py        
     """
+    # Copyright (c) 2012 Free Software Foundation
+    # 
+    # Permission is hereby granted, free of charge, to any person obtaining a copy of
+    # this software and associated documentation files (the "Software"), to deal in
+    # the Software without restriction, including without limitation the rights to
+    # use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+    # of the Software, and to permit persons to whom the Software is furnished to do
+    # so, subject to the following conditions:
+    # 
+    # The above copyright notice and this permission notice shall be included in all
+    # copies or substantial portions of the Software.
+    # 
+    # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    # SOFTWARE.
     def _eigsorted(cov):
         vals, vecs = np.linalg.eigh(cov)
         order = vals.argsort()[::-1]
@@ -10922,18 +11020,18 @@ def _parse_input_keyword_for_numeric_widgets(inputValue, defaultValueRangeStep, 
             errorMsg = "initValueRangeStep value '" + str(initValueRangeStep) + "' must be specified in the format [val,min,max,step].\n" \
                     "Please, correct the value and retry."
             print(errorMsg)
-            raise ValueError(errorMsg)
+            raise MuMoTValueError(errorMsg)
     if not inputValue == None:
         if not isinstance(inputValue, numbers.Number):
             errorMsg = "Input value '" + str(inputValue) + "' is not a numeric vaule and must be a number.\n" \
                     "Please, correct the value and retry."
             print(errorMsg)
-            raise ValueError(errorMsg)
+            raise MuMoTValueError(errorMsg)
         elif validRange and (inputValue < validRange[0] or inputValue > validRange[1]):
             errorMsg = "Input value '" + str(inputValue) + "' has raised out-of-range exception. Valid range is " + str(validRange) + "\n" \
                     "Please, correct the value and retry."
             print(errorMsg)
-            raise ValueError(errorMsg)
+            raise MuMoTValueError(errorMsg)
         else:
             if onlyValue:
                 return [inputValue,True]
@@ -10949,7 +11047,7 @@ def _parse_input_keyword_for_numeric_widgets(inputValue, defaultValueRangeStep, 
                 errorMsg = "Invalid init value=" + str(initValueRangeStep) + ". has raised out-of-range exception. Valid range is " + str(validRange) + "\n" \
                             "Please, correct the value and retry."
                 print(errorMsg)
-                raise ValueError(errorMsg)
+                raise MuMoTValueError(errorMsg)
             else:
                 outputValues = [initValueRangeStep]
         else:
@@ -10957,12 +11055,12 @@ def _parse_input_keyword_for_numeric_widgets(inputValue, defaultValueRangeStep, 
                 errorMsg = "Invalid init range [val,min,max,step]=" + str(initValueRangeStep) + ". Value must be within min and max values.\n"\
                             "Please, correct the value and retry."
                 print(errorMsg)
-                raise ValueError(errorMsg)
+                raise MuMoTValueError(errorMsg)
             elif validRange and (initValueRangeStep[1] < validRange[0] or initValueRangeStep[2] > validRange[1]):
                 errorMsg = "Invalid init range [val,min,max,step]=" + str(initValueRangeStep) + ". has raised out-of-range exception. Valid range is " + str(validRange) + "\n" \
                             "Please, correct the value and retry."
                 print(errorMsg)
-                raise ValueError(errorMsg)
+                raise MuMoTValueError(errorMsg)
             else:
                 outputValues = initValueRangeStep
     
@@ -10981,7 +11079,7 @@ def _parse_input_keyword_for_boolean_widgets(inputValue, defaultValue, initValue
             errorMsg = "The specified value " + paramNameForErrorMsg + "'" + str(inputValue) + "' is not valid. \n" \
                         "The value must be a boolean True/False."
             print(errorMsg)
-            raise ValueError(errorMsg)
+            raise MuMoTValueError(errorMsg)
         return [inputValue,True]
     else:
         if isinstance(initValue, bool):
@@ -11036,7 +11134,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                 errorMsg = "Reactant '" + str(reactant) + "' does not exist in this model.\n" \
                     "Valid reactants are " + str(allReactants) + ". Please, correct the value and retry."
                 print(errorMsg)
-                raise ValueError(errorMsg) 
+                raise MuMoTValueError(errorMsg) 
             
             pop = initialState[reactant]
             # check if the proportions sum to 1 
@@ -11109,7 +11207,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                 errorMsg = "The specified value for netType =" + str(inputValue) + " is not valid. \n" \
                             "Accepted values are: 'full',  'erdos-renyi', 'barabasi-albert', and 'dynamic'."
                 print(errorMsg)
-                raise ValueError(errorMsg)
+                raise MuMoTValueError(errorMsg)
                     
             return [inputValue,True]
         else:
@@ -11126,7 +11224,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
         if (not netType[-1]) and inputValue is not None:
             errorMsg = "If netType is not fixed, netParam cannot be fixed. Either leave free to widget the 'netParam' or fix the 'netType'."
             print(errorMsg)
-            raise ValueError(errorMsg)
+            raise MuMoTValueError(errorMsg)
         # check if netParam range is valid or set the correct default range (systemSize is necessary) 
         if _decodeNetworkTypeFromString(netType[0]) == NetworkType.FULLY_CONNECTED:
             return [0,0,0,False]
@@ -11188,7 +11286,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                 errorMsg = "The specified value for visualisationType = " + str(inputValue) + " is not valid. \n" \
                             "Valid values are: " + str(validVisualisationTypes) + ". Please correct it and retry."
                 print(errorMsg)
-                raise ValueError(errorMsg)
+                raise MuMoTValueError(errorMsg)
             return [inputValue,True]
         else:
             if initValues in validVisualisationTypes:
@@ -11204,7 +11302,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                 errorMsg = "The specified value for " + optionName + " = " + str(inputValue) + " is not valid. \n" \
                             "Valid values are the reactants: " + str(reactants_str) + ". Please correct it and retry."
                 print(errorMsg)
-                raise ValueError(errorMsg)
+                raise MuMoTValueError(errorMsg)
             else:
                 return [inputValue,True]
         else:
@@ -11291,27 +11389,6 @@ def _greekReplace(s, sub, repl):
         # find + 1 means we start at the last match start index + 1
         find_index = s.find(sub, find_index + 1)
     return s
-
-
-def _show_computation_start(controller):
-    # ax = plt.gca()
-    # ax.set_facecolor('xkcd:salmon')
-    # try:
-    #     plt.pause(0.0000001)
-    #     #ax.redraw_in_frame()
-    #     print("pink on")
-    # except:
-    #     pass
-    controller._bookmarkWidget.style.button_color = 'pink'
-    
-    
-    
-def _show_computation_stop(controller):
-    # ax = plt.gca()
-    # ax.set_facecolor('xkcd:white')
-    # print("pink off")
-    controller._bookmarkWidget.style.button_color = 'silver'
-
 
 # import gc, inspect
 # def _find_obj_names(obj):

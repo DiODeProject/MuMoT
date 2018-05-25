@@ -7,17 +7,17 @@ Repository should contain following files/folders:
 * `gen` (includes submodules used by MuMoT, important: there must be an empty file called `__init__.py` (with 2 underscores before and after init in the filename) in that folder, so Python can recognise the modules)
 * `MuMoTtest.py` and other demo files
 
-# Dependencies:
+## Dependencies
 You need to install the following supporting software:
 
 * a LaTeX compiler
 
-## Path
+### Path
 Given subfolders are used for demo and for test notebooks, the `PYTHONPATH` environment variable needs to be set appropriately, *e.g.* `export PYTHONPATH=$PYTHONPATH:<your MuMoT repository directoty` (Mac). Ideally, add this somewhere where it will be set during every session, *e.g.* in your `.bashrc` file
 
-## Creating a conda environment for MuMoT named "MumotEnv" (this name is specified in environment.yml):
+### Creating a conda environment for MuMoT named "MumotEnv" (this name is specified in environment.yml)
 
-#### The following has been tested on macOS Sierra Version 10.12.6 and Ubuntu 16.04 (Windows test to follow):
+#### The following has been tested on macOS Sierra Version 10.12.6 and Ubuntu 16.04 (Windows test to follow)
 
 * upgrade to at least conda 4.4
 * get the environment.yml file from the MuMoT repository, go to the folder containing the environment.yml file and type in terminal: `conda env create -f environment.yml`
@@ -31,28 +31,34 @@ Given subfolders are used for demo and for test notebooks, the `PYTHONPATH` envi
 * start Jupyter notebook: `jupyter notebook` and run MuMoTtest.ipynb notebook
 * FYI: environments can be deactivated using: `source deactivate` (on macOS/Linux) or `deactivate` (on Windows)
 
-# Test
+## Test
 To test your installation run the `MuMoTuserManual.ipynb` notebook.
 
-# Documentation
+## Documentation
 The `MuMoTuserManual.ipynb` notebook provides the most accessible introduction to working with MuMoT.
 
 For more technical information read the documentation at [https://diodeproject.github.io/MuMoT/](https://diodeproject.github.io/MuMoT/)
 
-# House rules
+## House rules
 * include [Python docstrings](https://www.python.org/dev/peps/pep-0257/) at the very least for user-visible functions, but ideally also for classes, functions, etc. Include the sections `Arguments`, `Keywords` and `Returns`
 * use `@todo` for reminders
 * Write code using Python [naming conventions](https://www.python.org/dev/peps/pep-0008/#naming-conventions)
 * Update `TestNotebooks/MuMoTtest.ipynb` to add tests for new functionality - always run this notebook before committing
 
-# Contributors
-## Core Development Team:
+## Contributors
+
+### Core Development Team:
 * James A. R. Marshall
 * Andreagiovanni Reina
 * Thomas Bose
 
-## Packaging, Documentation and Deployment:
+### Packaging, Documentation and Deployment:
 * Will Furnass
 
-## Windows Compatibility
+### Windows Compatibility
 * Renato Pagliara Vasquez
+
+*Contains code snippets (C) 2012 Free Software Foundation, under the MIT Licence*
+
+## Funding
+MuMoT developed with funds from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement number 647704 - [DiODe](http://diode.group.shef.ac.uk)).
