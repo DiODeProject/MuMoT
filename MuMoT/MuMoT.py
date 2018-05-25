@@ -43,7 +43,6 @@ from mpl_toolkits.mplot3d import axes3d #@UnresolvedImport
 import networkx as nx #@UnresolvedImport
 from enum import Enum
 #import json
-import sys
 import numbers
 from bisect import bisect_left
 
@@ -1943,7 +1942,8 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
                                              max = pop[2],
                                              step = pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
-                                             description = "Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + r'\)' + " at t=0: ",
+                                             #description = "Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + r'\)' + " at t=0: ",
+                                             description = r'\(' + latex(Symbol('Phi_'+str(state))) + r'\)' + " at t=0: ",
                                              style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
                 
@@ -2005,7 +2005,7 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                                              max = pop[2],
                                              step = pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
-                                             description = "Reactant " + r'\(' + self._paramLabelDict.get(state,str(state)) + r'\)',
+                                             description = r'\(' + latex(Symbol('Phi_'+str(state))) + r'\)' + " at t=0: ",
                                              style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
                 # disable last population widget (if there are more than 1)
@@ -2060,7 +2060,7 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
         if not SSParams['final_x'][-1] and (SSParams['visualisationType'][-1]==False or SSParams['visualisationType'][0]=='final'):
             opts = []
             for reactant in sorted(initialState.keys(), key=str):
-                opts.append( (str(reactant), str(reactant) ) )
+                opts.append( ( "Reactant " + r'$'+ latex(Symbol(str(reactant)))+r'$', str(reactant) ) )
             dropdown = widgets.Dropdown( 
                 options=opts,
                 description='Final distribution (x axis):',
@@ -2073,7 +2073,11 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
         if not SSParams['final_y'][-1] and (SSParams['visualisationType'][-1]==False or SSParams['visualisationType'][0]=='final'):
             opts = []
             for reactant in sorted(initialState.keys(), key=str):
-                opts.append( (str(reactant), str(reactant)) )
+#                 opts.append( ( r'$'+ _doubleUnderscorify(_greekPrependify(str(reactant))) +'$' , str(reactant) ) )
+#                 print("the reactant is " + str(reactant))
+#                 print("the _greekPrependify(str(reactant) is " + str(_greekPrependify(str(reactant))) )
+#                 print("the _doubleUnderscorify(_greekPrependify(str(reactant))) is " + str(_doubleUnderscorify(_greekPrependify(str(reactant)))) )
+                opts.append( ( "Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(str(reactant))) + r'\)', str(reactant) ) )
             dropdown = widgets.Dropdown( 
                 options=opts,
                 description='Final distribution (y axis):',
@@ -8014,12 +8018,13 @@ class MuMoTstochasticSimulationView(MuMoTview):
                     padding_x = self._maxTime/100.0
                     padding_y = y_max/100.0
 
-                labels = []
-                for state in sorted(self._initialState.keys(), key=str):
-                    labels.append(state)
                 # plot legend
-                markers = [plt.Line2D([0,0],[0,0],color=color, marker='s', linestyle='', markersize=10) for color in self._colors.values()]
-                plt.legend(markers, self._colors.keys(), loc='upper right', borderaxespad=0., numpoints=1) #bbox_to_anchor=(0.885, 1),
+                if self._plotProportions:
+                    stateNamesLabel = [r'$'+latex(Symbol('Phi_'+str(state))) +'$' for state in sorted(self._initialState.keys(), key=str)]
+                else:
+                    stateNamesLabel = [r'$'+latex(Symbol(str(state)))+'$' for state in sorted(self._initialState.keys(), key=str)]
+                markers = [plt.Line2D([0,0],[0,0],color=self._colors[state], marker='s', linestyle='', markersize=10) for state in sorted(self._initialState.keys(), key=str)]
+                plt.legend(markers, stateNamesLabel, loc='upper right', borderaxespad=0., numpoints=1) #bbox_to_anchor=(0.885, 1),
                 
                 _fig_formatting_2D(figure=self._figure, xlab="Time", ylab="Reactants", choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False )
                  
@@ -8088,12 +8093,18 @@ class MuMoTstochasticSimulationView(MuMoTview):
             #_fig_formatting_2D(xdata=[xdata], ydata=[ydata], curve_replot=False, xlab=self._finalViewAxes[0], ylab=self._finalViewAxes[1])
             if not fullPlot: plt.plot( trajectory_x, trajectory_y, '-', c='0.6')
             plt.plot(points_x, points_y, 'ro')
-            _fig_formatting_2D(figure=self._figure, aspectRatioEqual=True, xlab=self._finalViewAxes[0], ylab=self._finalViewAxes[1])
+            if self._plotProportions:
+                xlab = r'$'+ '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[0])))+'}$'
+                ylab = r'$'+ '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[1])))+'}$'
+            else:
+                xlab = r'$'+ _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[0])))+'$'
+                ylab = r'$'+ _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[1])))+'$'                
+            _fig_formatting_2D(figure=self._figure, aspectRatioEqual=True, xlab=xlab, ylab=ylab)
         elif (self._visualisationType == "barplot"):
             self._initFigure()
             
             finaldata = []
-            labels = []
+            #labels = []
             colors = []
             stdev = []
 
@@ -8113,14 +8124,14 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             avg = 0
                         stdev.append(0)
                     finaldata.append( avg )
-                    labels.append(state)
+                    #labels.append(state)
                     colors.append(self._colors[state])
             else:
                 for state in sorted(self._initialState.keys(), key=str):
                     if (state == 'time'): continue
                     finaldata.append( currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1])
                     stdev.append(0)
-                    labels.append(state)
+                    #labels.append(state)
                     colors.append(self._colors[state])
              
 #             plt.pie(finaldata, labels=labels, autopct=_make_autopct(piedata), colors=colors) #shadow=True, startangle=90,
@@ -8129,7 +8140,11 @@ class MuMoTstochasticSimulationView(MuMoTview):
             plt.bar(xpos, finaldata, width, color=colors, yerr=stdev, ecolor='black')
             ax = plt.gca()
             ax.set_xticks(xpos)  # for matplotlib < 2 ---> ax.set_xticks(xpos - (width/2) )
-            ax.set_xticklabels(sorted(self._initialState.keys(), key=str))
+            if self._plotProportions:
+                stateNamesLabel = [r'$'+latex(Symbol('Phi_'+str(state))) +'$' for state in sorted(self._initialState.keys(), key=str)]
+            else:
+                stateNamesLabel = [r'$'+latex(Symbol(str(state)))+'$' for state in sorted(self._initialState.keys(), key=str)]
+            ax.set_xticklabels(stateNamesLabel)
             _fig_formatting_2D(figure=self._figure, xlab="Reactants", ylab="Population proportion" if self._plotProportions else "Population size", aspectRatioEqual=False)
         # update the figure
         if not self._silent:
@@ -8459,8 +8474,9 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                 nx.draw_networkx(self._graph, self._positionHistory, node_color=stateColors, with_labels=True)
                 plt.axis('off')
             # plot legend
-            markers = [plt.Line2D([0,0],[0,0],color=color, marker='o', linestyle='', markersize=10) for color in self._colors.values()]
-            plt.legend(markers, self._colors.keys(), bbox_to_anchor=(1, 1), loc=2, borderaxespad=0., numpoints=1)
+            stateNamesLabel = [r'$'+latex(Symbol(str(state)))+'$' for state in sorted(self._initialState.keys(), key=str)]
+            markers = [plt.Line2D([0,0],[0,0],color=self._colors[state], marker='o', linestyle='', markersize=10) for state in sorted(self._initialState.keys(), key=str)]
+            plt.legend(markers, stateNamesLabel, bbox_to_anchor=(1, 1), loc=2, borderaxespad=0., numpoints=1)
 
         super()._updateSimultationFigure(allResults, fullPlot, currentEvo) 
   
