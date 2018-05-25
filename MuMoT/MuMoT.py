@@ -975,7 +975,7 @@ class MuMoTmodel:
             print('Sorry, bifurcation diagrams are currently only supported for 1D and 2D systems (1 or 2 time-dependent variables in the ODE system)!')
             return None
         
-        conserved=conserved
+        conserved=kwargs.get('conserved',False)
         #check for substitutions of state variables in conserved systems
         stoich=self._stoichiometry
         for key1 in stoich:
@@ -3096,7 +3096,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
         #if model._systemSize == None and model._constantSystemSize == True:
         #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
         #    return
-        silent = kwargs.get('silent', False)
+        self._silent = kwargs.get('silent', False)
         super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
         #super().__init__(model, controller, figure, params, **kwargs)
         
@@ -3105,6 +3105,8 @@ class MuMoTtimeEvolutionView(MuMoTview):
         self._chooseYrange = kwargs.get('choose_yrange', None)
         
         with io.capture_output() as log:
+#         if True:
+#             log=''
 
             self._systemSize = self._getSystemSize()
              
@@ -3145,50 +3147,46 @@ class MuMoTtimeEvolutionView(MuMoTview):
                             self._fixedParams[key] = self._initialState
                         else:
                             self._fixedParams[key] = value[0]
-                
+            
+            if 'fontsize' in kwargs:
+                self._chooseFontSize = kwargs['fontsize']
+            else:
+                self._chooseFontSize=None
+            self._xlab = kwargs.get('xlab', r'time t')
+            #self._ylab = kwargs.get('ylab', r'evolution of states')
+            
+            self._legend_loc = kwargs.get('legend_loc', 'upper left')
+            self._legend_fontsize = kwargs.get('legend_fontsize', None)
+            
+            self._stateVarList = []
+            for reactant in self._mumotModel._reactants:
+                if reactant not in self._mumotModel._constantReactants:
+                    self._stateVarList.append(reactant)
+                  
+            if showStateVars:
+                if type(showStateVars) == list:
+                    self._stateVarListDisplay = showStateVars
+                    for kk in range(len(self._stateVarListDisplay)):
+                        self._stateVarListDisplay[kk] = process_sympy(self._stateVarListDisplay[kk])
+                else:
+                    self._showErrorMessage('Check input: should be of type list!')
+            else:
+                self._stateVarListDisplay = copy.deepcopy(self._stateVarList)
+            self._stateVarListDisplay = sorted(self._stateVarListDisplay, key=str)
+            
+            self._stateVariable1 = self._stateVarList[0]
+            if len(self._stateVarList) == 2 or len(self._stateVarList) == 3:
+                self._stateVariable2 = self._stateVarList[1]
+            if len(self._stateVarList) == 3:
+                self._stateVariable3 = self._stateVarList[2]
+            
+            self._tstep = kwargs.get('tstep', 0.01)
+            
             self._constructorSpecificParams(tEParams)
-           
             
         self._logs.append(log)
         
-        if 'fontsize' in kwargs:
-            self._chooseFontSize = kwargs['fontsize']
-        else:
-            self._chooseFontSize=None
-        self._xlab = kwargs.get('xlab', r'time t')
-        #self._ylab = kwargs.get('ylab', r'evolution of states')
-        
-        self._legend_loc = kwargs.get('legend_loc', 'upper left')
-        self._legend_fontsize = kwargs.get('legend_fontsize', None)
-        
-        self._stateVarList = []
-        for reactant in self._mumotModel._reactants:
-            if reactant not in self._mumotModel._constantReactants:
-                self._stateVarList.append(reactant)
-              
-        if showStateVars:
-            if type(showStateVars) == list:
-                self._stateVarListDisplay = showStateVars
-                for kk in range(len(self._stateVarListDisplay)):
-                    self._stateVarListDisplay[kk] = process_sympy(self._stateVarListDisplay[kk])
-            else:
-                self._showErrorMessage('Check input: should be of type list!')
-        else:
-            self._stateVarListDisplay = copy.deepcopy(self._stateVarList)
-        self._stateVarListDisplay = sorted(self._stateVarListDisplay, key=str)
-        
-        self._stateVariable1 = self._stateVarList[0]
-        if len(self._stateVarList) == 2 or len(self._stateVarList) == 3:
-            self._stateVariable2 = self._stateVarList[1]
-        if len(self._stateVarList) == 3:
-            self._stateVariable3 = self._stateVarList[2]
-        
-
-        #self._tend = kwargs.get('tend', 100)
-        self._tstep = kwargs.get('tstep', 0.01)
-        
-        
-        if not(silent):
+        if not self._silent:
             self._plot_NumSolODE()
         
     
@@ -3677,18 +3675,18 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
     def _constructorSpecificParams(self, _):
         if self._controller is not None:
             self._generatingCommand = "integrate"
-    
+        
+        self._colors = []
+        for idx, state in enumerate(sorted(self._initialState.keys(), key=str)):
+            if state in self._stateVarListDisplay:
+                self._colors.append(LINE_COLOR_LIST[idx])
+        #print(self._colors) 
     
     def __init__(self, *args, **kwargs):
         #self._plotProportion = kwargs.get('plotProportion', True)
         self._ylab = kwargs.get('ylab', r'evolution of states')
         super().__init__(*args, **kwargs)
         #self._generatingCommand = "numSimStateVar"
-        
-        self._colors = []
-        for idx, state in enumerate(sorted(self._initialState.keys(), key=str)):
-            if state in self._stateVarListDisplay:
-                self._colors.append(LINE_COLOR_LIST[idx]) 
 
     def _plot_NumSolODE(self, _=None):
         super()._plot_NumSolODE()
@@ -4125,7 +4123,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
         self._maxTimeDS = kwargs.get('maxTimeDS', 100)
         self._tstepDS= kwargs.get('tstepDS', 0.01)
         self._ylab = kwargs.get('ylab', 'noise-noise correlation')
-        silent = kwargs.get('silent', False)
+        self._silent = kwargs.get('silent', False)
         super().__init__(model=model, controller=controller, tEParams=NCParams, showStateVars = None, figure=figure, params=params, **kwargs)
         #super().__init__(model, controller, None, figure, params, **kwargs)
         
