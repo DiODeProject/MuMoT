@@ -3203,7 +3203,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
                 self._chooseFontSize = kwargs['fontsize']
             else:
                 self._chooseFontSize=None
-            self._xlab = kwargs.get('xlab', r'time t')
+            self._xlab = kwargs.get('xlab', 'time t')
             #self._ylab = kwargs.get('ylab', r'evolution of states')
             
             self._legend_loc = kwargs.get('legend_loc', 'upper left')
@@ -3344,7 +3344,7 @@ class MuMoTtimeEvolutionViewOld(MuMoTview):
             self._chooseFontSize = kwargs['fontsize']
         else:
             self._chooseFontSize=None
-        self._xlab = kwargs.get('xlab', r'time t')
+        self._xlab = kwargs.get('xlab', 'time t')
         #self._ylab = kwargs.get('ylab', r'evolution of states')
         
         self._legend_loc = kwargs.get('legend_loc', 'upper left')
@@ -3735,7 +3735,7 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
     
     def __init__(self, *args, **kwargs):
         #self._plotProportion = kwargs.get('plotProportion', True)
-        self._ylab = kwargs.get('ylab', r'evolution of states')
+        self._ylab = kwargs.get('ylab', 'evolution of reactants')
         super().__init__(*args, **kwargs)
         #self._generatingCommand = "numSimStateVar"
 
@@ -3966,7 +3966,7 @@ class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionViewOld):
     
     def __init__(self, *args, **kwargs):
         self._plotProportion = kwargs.get('plotProportion', True)
-        self._ylab = kwargs.get('ylab', r'evolution of states')
+        self._ylab = kwargs.get('ylab', 'evolution of reactants')
         super().__init__(*args, **kwargs)
         self._generatingCommand = "numSimStateVar"
 
@@ -7718,6 +7718,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
     _initialState = None
     ## variable to link a color to each reactant
     _colors = None
+    ## list of colors to pass to the _fig_formatting method (that does not include constant reactants)
+    _colors_list = None
     ## random seed
     _randomSeed = None
     ## simulation length (in the same time unit of the rates)
@@ -7815,10 +7817,11 @@ class MuMoTstochasticSimulationView(MuMoTview):
             # map colouts to each reactant
             #colors = cm.rainbow(np.linspace(0, 1, len(self._mumotModel._reactants) ))  # @UndefinedVariable
             self._colors = {}
-            i = 0
-            for state in sorted(self._initialState.keys(), key=str): #sorted(self._mumotModel._reactants, key=str):
-                self._colors[state] = LINE_COLOR_LIST[i] 
-                i += 1
+            self._colors_list = []
+            for idx, state in enumerate(sorted(self._initialState.keys(), key=str)):
+                self._colors[state] = LINE_COLOR_LIST[idx] 
+                if state not in self._mumotModel._constantReactants:
+                    self._colors_list.append(LINE_COLOR_LIST[idx])
             
         self._logs.append(log)
         if not self._silent:
@@ -7923,6 +7926,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
              
             # log step
             for state,pop in self._currentState.items():
+                if state in self._mumotModel._constantReactants: continue
                 self._evo[state].append(pop)
             self._evo['time'].append(self._t)
             
@@ -7956,13 +7960,14 @@ class MuMoTstochasticSimulationView(MuMoTview):
                         timesteps.append(self._maxTime)
                     
                     for state in sorted(self._initialState.keys(), key=str):
-                        if (state == 'time'): continue
+                        if state == 'time': continue
+                        if state in self._mumotModel._constantReactants: continue
                         boxesData = []
                         avgs=[]
                         for timestep in timesteps:
                             boxData = []
                             for results in allResults:
-                                idx = max(0, bisect_left(results['time'], timestep)-1)
+                                idx = max(0, bisect_left(results['time'], timestep))
                                 if self._plotProportions:
                                     boxData.append( results[state][idx]/self._systemSize )
                                 else:
@@ -8001,6 +8006,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 else:
                     for state in sorted(self._initialState.keys(), key=str):
                         if (state == 'time'): continue
+                        if state in self._mumotModel._constantReactants: continue
                         #xdata = []
                         #xdata.append( results['time'] )
                         for results in allResults:
@@ -8008,10 +8014,10 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             if self._plotProportions:
                                 ydata = [y/self._systemSize for y in results[state]]
                                 #ydata.append(ytmp)
-                                y_max = max(1.0, max(ydata))
+                                y_max = max(y_max, max(ydata))
                             else:
                                 ydata = results[state]
-                                y_max = max(self._systemSize, max(results[state]))
+                                y_max = max(y_max, max(results[state]))
                             #xdata=[list(np.arange(len(list(evo.values())[0])))]*len(evo.values()), ydata=list(evo.values()), curvelab=list(evo.keys())
                             plt.plot(results['time'], ydata, color=self._colors[state], lw=2)
                     #_fig_formatting_2D(xdata=xdata, ydata=ydata, curvelab=labels, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max) )
@@ -8020,27 +8026,26 @@ class MuMoTstochasticSimulationView(MuMoTview):
 
                 # plot legend
                 if self._plotProportions:
-                    stateNamesLabel = [r'$'+latex(Symbol('Phi_'+str(state))) +'$' for state in sorted(self._initialState.keys(), key=str)]
+                    stateNamesLabel = [r'$'+latex(Symbol('Phi_'+str(state))) +'$' for state in sorted(self._initialState.keys(), key=str) if state not in self._mumotModel._constantReactants]
                 else:
-                    stateNamesLabel = [r'$'+latex(Symbol(str(state)))+'$' for state in sorted(self._initialState.keys(), key=str)]
-                markers = [plt.Line2D([0,0],[0,0],color=self._colors[state], marker='s', linestyle='', markersize=10) for state in sorted(self._initialState.keys(), key=str)]
+                    stateNamesLabel = [r'$'+latex(Symbol(str(state)))+'$' for state in sorted(self._initialState.keys(), key=str) if state not in self._mumotModel._constantReactants]
+                markers = [plt.Line2D([0,0],[0,0],color=self._colors[state], marker='s', linestyle='', markersize=10) for state in sorted(self._initialState.keys(), key=str) if state not in self._mumotModel._constantReactants]
                 plt.legend(markers, stateNamesLabel, loc='upper right', borderaxespad=0., numpoints=1) #bbox_to_anchor=(0.885, 1),
-                
-                _fig_formatting_2D(figure=self._figure, xlab="Time", ylab="Reactants", choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False )
+                _fig_formatting_2D(figure=self._figure, xlab='time t', ylab='evolution of reactants', choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False, grid = True )
                  
             if not fullPlot: # If realtime-plot mode, draw only the last timestep rather than overlay all
                 xdata = []
                 ydata = []
+                y_max = 1.0 if self._plotProportions else self._systemSize
                 for state in sorted(self._initialState.keys(), key=str):
                     if (state == 'time'): continue
+                    if state in self._mumotModel._constantReactants: continue
                     xdata.append( currentEvo['time'][-2:] )
                     # modify if plotProportions
                     ytmp = [y / self._systemSize for y in currentEvo[state][-2:] ] if self._plotProportions else currentEvo[state][-2:]
-                    y_max = 1.0 if self._plotProportions else self._systemSize
-                     
                     y_max = max(y_max, max(ytmp))
                     ydata.append(ytmp)
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max), aspectRatioEqual=False, LineThickness=2 )
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max), aspectRatioEqual=False, LineThickness=2, grid = True, line_color_list=self._colors_list )
                 
 #                 y_max = 1.0 if self._plotProportions else self._systemSize
 #                 for state in sorted(self._initialState.keys(), key=str):
@@ -8104,13 +8109,14 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._initFigure()
             
             finaldata = []
-            #labels = []
             colors = []
             stdev = []
+            y_max = 1.0 if self._plotProportions else self._systemSize
 
             if fullPlot:
                 for state in sorted(self._initialState.keys(), key=str):
-                    if (state == 'time'): continue
+                    if state == 'time': continue
+                    if state in self._mumotModel._constantReactants: continue
                     if self._aggregateResults and len(allResults) > 0:
                         points = []
                         for results in allResults:
@@ -8128,24 +8134,30 @@ class MuMoTstochasticSimulationView(MuMoTview):
                     colors.append(self._colors[state])
             else:
                 for state in sorted(self._initialState.keys(), key=str):
-                    if (state == 'time'): continue
+                    if state == 'time': continue
+                    if state in self._mumotModel._constantReactants: continue
                     finaldata.append( currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1])
                     stdev.append(0)
                     #labels.append(state)
                     colors.append(self._colors[state])
              
 #             plt.pie(finaldata, labels=labels, autopct=_make_autopct(piedata), colors=colors) #shadow=True, startangle=90,
-            xpos = np.arange(len( self._initialState.keys() ))  # the x locations for the bars
+            xpos = np.arange(len( finaldata ))  # the x locations for the bars
             width = 1       # the width of the bars
             plt.bar(xpos, finaldata, width, color=colors, yerr=stdev, ecolor='black')
+            # set axes
             ax = plt.gca()
             ax.set_xticks(xpos)  # for matplotlib < 2 ---> ax.set_xticks(xpos - (width/2) )
+            y_max = max(y_max, max(finaldata))
+            padding_y = y_max/100.0 if self._runs <=1 else y_max/20.0 
+            # set lables
             if self._plotProportions:
                 stateNamesLabel = [r'$'+latex(Symbol('Phi_'+str(state))) +'$' for state in sorted(self._initialState.keys(), key=str)]
             else:
                 stateNamesLabel = [r'$'+latex(Symbol(str(state)))+'$' for state in sorted(self._initialState.keys(), key=str)]
             ax.set_xticklabels(stateNamesLabel)
-            _fig_formatting_2D(figure=self._figure, xlab="Reactants", ylab="Population proportion" if self._plotProportions else "Population size", aspectRatioEqual=False)
+            _fig_formatting_2D(figure=self._figure, xlab="reactants", ylab="population proportion" if self._plotProportions else "population size", aspectRatioEqual=False)
+            plt.ylim((0, y_max+padding_y)) #@todo: to fix the choose_yrange of _fig_formatting_2D (issue #104) 
         # update the figure
         if not self._silent:
             self._figure.canvas.draw()
@@ -8163,15 +8175,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             plt.clf()
 
         if (self._visualisationType == 'evo'):
-            #plt.axes().set_aspect('auto')
-            pass
-            # create the frame
-            #self._plot.axis([0, self._maxTime, 0, totAgents])
-            #plt.xlim((0, self._maxTime))
-            #plt.ylim((0, self._systemSize))
-            #self._figure.show()
-            #y_max = 1.0 if self._plotProportions else self._systemSize
-            #_fig_formatting_2D(self._figure, xlab="Time", ylab="Reactants", curve_replot=(not self._silent), choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max) )
+            pass 
         elif (self._visualisationType == "final"):
             #plt.axes().set_aspect('equal')
             if self._plotProportions:           
@@ -8185,10 +8189,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
         elif (self._visualisationType == "barplot"):
             #plt.axes().set_aspect('equal') #for piechart
             #plt.axes().set_aspect('auto') # for barchart
-            if self._plotProportions:                
-                plt.ylim((0, 1.0))
-            else:
-                plt.ylim((0, self._systemSize))
+            pass
 
 ## agent on networks view on model 
 class MuMoTmultiagentView(MuMoTstochasticSimulationView):
@@ -8679,7 +8680,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             del self._positions[dead]
             del self._positionHistory[dead]
             
-        currentState = {state : self._agents.count(state) for state in self._initialState.keys()} #self._mumotModel._reactants | self._mumotModel._constantReactants}
+        currentState = {state : self._agents.count(state) for state in self._initialState.keys()} # if state not in self._mumotModel._constantReactants} #self._mumotModel._reactants | self._mumotModel._constantReactants}
         return (self._timestepSize, currentState)
 
     ## one timestep for one agent
@@ -8992,7 +8993,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
                 print("ERROR! Population size became negative: " + str(self._currentState) + "; Error in the algorithm execution.")
                 sys.exit()
         #print(self._currentState)
-                
+        
         return (timeInterval, self._currentState)
     
 
@@ -10846,8 +10847,8 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                      
                 plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=9, 
                          c=FPcolor, fillstyle=FPfill, mew=3, mec=FPcolor)
-    if kwargs.get('grid', False) == True:
-        plt.grid()
+                
+    plt.grid(kwargs.get('grid', False))
         
     if curvelab != None or showLegend == True:
         #if 'legend_loc' in kwargs:
