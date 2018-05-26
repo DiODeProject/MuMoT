@@ -8359,6 +8359,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
     def _update_view_specific_params(self, freeParamDict = {}):
         """read the new parameters (in case they changed in the controller) specific to multiagent(). This function should only update local parameters and not compute data"""
         super()._update_view_specific_params(freeParamDict)
+        self._adjust_barabasi_network_range()
         if self._controller != None:
             if self._fixedParams.get('netType') is not None:
                 self._netType = self._fixedParams['netType']
@@ -8851,6 +8852,27 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         if toLinkPlotFunction:
             self._controller._widgetsExtraParams['netParam'].observe(self._controller._replotFunction, 'value')
 
+    def _adjust_barabasi_network_range(self):
+        """function to adjust the widget of the number of edges of the Barabasi-Albert network when the system size slider is changed"""
+        if self._controller is None or not self._netType == NetworkType.BARABASI_ALBERT: return
+        maxVal = self._systemSize-1
+        if self._controller._widgetsExtraParams['netParam'].max == maxVal:
+            # the value is correct and no action is necessary
+            return
+
+        toLinkPlotFunction = False
+        if self._controller._replotFunction:
+            try:
+                self._controller._widgetsExtraParams['netParam'].unobserve(self._controller._replotFunction, 'value')
+                toLinkPlotFunction = True
+            except ValueError:
+                pass
+
+        self._controller._widgetsExtraParams['netParam'].max = maxVal
+        
+        if toLinkPlotFunction:
+            self._controller._widgetsExtraParams['netParam'].observe(self._controller._replotFunction, 'value')
+        
 ## agent on networks view on model 
 class MuMoTSSAView(MuMoTstochasticSimulationView): 
     ## a matrix form of the left-handside of the rules
