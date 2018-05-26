@@ -422,6 +422,7 @@ class MuMoTmodel:
 #            display(Math(self._ratesLaTeX[rate]))
 
     def showSingleAgentRules(self):
+        """show the probabilistic transition of the agents in each reactant-state"""
         if not self._agentProbabilities:
             self._getSingleAgentRules()
         for agent,probs in self._agentProbabilities.items():
@@ -817,7 +818,7 @@ class MuMoTmodel:
             `stateVariable2` - state variable to be plotted on the y-axis
             `stateVariable3 = None` - state variable to be plotted on the z-axis (not currently supported; use `vector` instead for 3-dimensional systems)
             `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
-            `initWidgets = {} - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+            `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
 
         Keywords:
             `showFixedPoints = False` - plot fixed points
@@ -858,7 +859,7 @@ class MuMoTmodel:
             `stateVariable2` - state variable to be plotted on the y-axis
             `stateVariable3 = None` - state variable to be plotted on the z-axis (not currently supported; use `vector` instead for 3-dimensional systems)
             `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
-            `initWidgets = {} - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+            `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
 
         Keywords:
             `showFixedPoints = False` - plot fixed points
@@ -1095,28 +1096,31 @@ class MuMoTmodel:
 #         return viewController
 #     
     
-    
-    
-    ## construct interactive multiagent plot (simulation of agents locally interacting with each other)
-    ## @param[in] initialState initial proportions of the reactants (type: float in range [0,1])
-    ## @param[in] maxTime simulation time (type: float larger than 0)
-    ## @param[in] randomSeed random seed (type: int in range [0, MAX_RANDOM_SEED])
-    ## @param[in] plotProportions flag to plot proportions or full populations (type: boolean)
-    ## @param[in] realtimePlot flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation) (type: boolean)
-    ## @param[in] visualisationType type of visualisation (type: string in {'evo','graph','final','barplot'})
-    ## @param[in] final_x which reactant is shown on x-axis when visualisation type is final
-    ## @param[in] final_y which reactant is shown on x-axis when visualisation type is final
-    ## @param[in] runs number of simulation runs to be executed
-    ## @param[in] aggregateResults flag to aggregate or not the results from several runs
-    ## @param[in] netType type of network (type: string in {'full','erdos-renyi','barabasi-albert','dynamic'})
-    ## @param[in] netParam property of the network ralated to connectivity. It varies depending on the netType (type: float)
-    ## @param[in] motionCorrelatedness (active only for netType='dynamic') level of inertia in the random walk (type: float in [0,1]) with 0 completely uncorrelated random walk and 1 straight trajectories
-    ## @param[in] particleSpeed (active only for netType='dynamic') speed of the moving particle, i.e. displacement in one timestep (type: float in [0,1])
-    ## @param[in] timestepSize length of one timestep, the maximum size is determined by the rates (type: float > 0)
-    ## @param[in] showTrace (active only for netType='dynamic') flag to plot the part trajectory of each particle (type: boolean)
-    ## @param[in] showInteractions (active only for netType='dynamic') flag to plot the interaction range between particles (type: boolean)
-    ## @param[in] initWidgets dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]  
     def multiagent(self, initWidgets = {}, **kwargs):
+        """construct interactive multiagent plot (simulation of agents locally interacting with each other)
+        
+        :Arguments:
+            `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+        
+        :Keyword Arguments:
+            `initialState` - initial proportions of the reactants (type: float in range [0,1])
+            `maxTime` - simulation time (type: float larger than 0)
+            `randomSeed` - random seed (type: int in range [0, MAX_RANDOM_SEED])
+            `plotProportions` - flag to plot proportions or full populations (type: boolean)
+            `realtimePlot` - flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation) (type: boolean)
+            `visualisationType` - type of visualisation (type: string in {'evo','graph','final','barplot'})
+            `final_x` - which reactant is shown on x-axis when visualisation type is final
+            `final_y` - which reactant is shown on x-axis when visualisation type is final
+            `runs` - number of simulation runs to be executed
+            `aggregateResults` - flag to aggregate or not the results from several runs
+            `netType` - type of network (type: string in {'full','erdos-renyi','barabasi-albert','dynamic'})
+            `netParam` - property of the network ralated to connectivity. It varies depending on the netType (type: float)
+            `motionCorrelatedness` - (active only for netType='dynamic') level of inertia in the random walk (type: float in [0,1]) with 0 completely uncorrelated random walk and 1 straight trajectories
+            `particleSpeed` - (active only for netType='dynamic') speed of the moving particle, i.e. displacement in one timestep (type: float in [0,1])
+            `timestepSize` - length of one timestep, the maximum size is determined by the rates (type: float > 0)
+            `showTrace` - (active only for netType='dynamic') flag to plot the part trajectory of each particle (type: boolean)
+            `showInteractions` - (active only for netType='dynamic') flag to plot the interaction range between particles (type: boolean)
+        """
         paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False )
         
         MAParams = {} 
@@ -1162,19 +1166,25 @@ class MuMoTmodel:
 
         return viewController
 
-    ## construct interactive SSA plot (simulation run of the Gillespie algorithm)
-    ## @param[in] initialState initial proportions of the reactants (type: float in range [0,1])
-    ## @param[in] maxTime simulation time (type: float larger than 0)
-    ## @param[in] randomSeed random seed (type: int in range [0, MAX_RANDOM_SEED])
-    ## @param[in] plotProportions flag to plot proportions or full populations (type: boolean)
-    ## @param[in] realtimePlot flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation) (type: boolean)
-    ## @param[in] visualisationType type of visualisation (type: string in {'evo','final','barplot'})
-    ## @param[in] final_x which reactant is shown on x-axis when visualisation type is final
-    ## @param[in] final_y which reactant is shown on x-axis when visualisation type is final
-    ## @param[in] runs number of simulation runs to be executed
-    ## @param[in] aggregateResults flag to aggregate or not the results from several runs
-    ## @param[in] initWidgets dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
     def SSA(self, initWidgets = {}, **kwargs):
+        """construct interactive SSA plot (simulation run of the Gillespie algorithm to approximate the Master Equation solution)
+        
+        :Arguments:
+            `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+        
+        :Keyword Arguments:
+            `initialState` - initial proportions of the reactants (type: float in range [0,1])
+            `maxTime` - simulation time (type: float larger than 0)
+            `randomSeed` - random seed (type: int in range [0, MAX_RANDOM_SEED])
+            `plotProportions` - flag to plot proportions or full populations (type: boolean)
+            `realtimePlot` - flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation) (type: boolean)
+            `visualisationType` - type of visualisation (type: string in {'evo','graph','final','barplot'})
+            `final_x` - which reactant is shown on x-axis when visualisation type is final
+            `final_y` - which reactant is shown on x-axis when visualisation type is final
+            `runs` - number of simulation runs to be executed
+            `aggregateResults` - flag to aggregate or not the results from several runs
+        """
+        
         paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False )
         
         ssaParams = {}
@@ -7712,8 +7722,8 @@ class MuMoTbifurcationViewOLD(MuMoTview):
 #         
 #         return logStr
 
-## stochastic-simulations-view view (for views that allow for multiple runs with different random-seeds)
 class MuMoTstochasticSimulationView(MuMoTview):
+    """stochastic-simulations-view view (for views that allow for multiple runs with different random-seeds)"""
     ## the system state at the start of the simulation (timestep zero) described as proportion of _systemSize
     _initialState = None
     ## variable to link a color to each reactant
@@ -8191,8 +8201,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
             #plt.axes().set_aspect('auto') # for barchart
             pass
 
-## agent on networks view on model 
 class MuMoTmultiagentView(MuMoTstochasticSimulationView):
+    """agent on networks view on model""" 
     ## structure to store the communication network
     _graph = None
     ## type of network used in the M-A simulation
@@ -8873,8 +8883,8 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         if toLinkPlotFunction:
             self._controller._widgetsExtraParams['netParam'].observe(self._controller._replotFunction, 'value')
         
-## agent on networks view on model 
 class MuMoTSSAView(MuMoTstochasticSimulationView): 
+    """view for computational simulations of the Gillespie algorithm to approximate the Master Equation solution""" 
     ## a matrix form of the left-handside of the rules
     _reactantsMatrix = None 
     ## the effect of each rule
