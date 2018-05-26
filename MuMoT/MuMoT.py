@@ -1825,7 +1825,7 @@ class MuMoTcontroller:
                     self._widgetsExtraParams['init'+str(state)].unobserve(self._view._controller._replotFunction, 'value')
 #                     self._widgetsExtraParams['init'+str(state)].unobserve(self._replotFunction, 'value')
                     toLinkPlotFunction = True
-                except MuMoTValueError:
+                except ValueError:
                     pass
                 
 
@@ -6435,13 +6435,13 @@ class MuMoTBifurcationView(MuMoTview):
             self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('-')+1:]
             self._SVoperation = '-'
   
-        except MuMoTValueError:
+        except ValueError:
             try:
                 stateVarExpr1.index('+')
                 self._stateVarBif1 = stateVarExpr1[:stateVarExpr1.index('+')]
                 self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('+')+1:] 
                 self._SVoperation = '+'
-            except MuMoTValueError:
+            except ValueError:
                 self._stateVarBif1 = stateVarExpr1
                 self._stateVarBif2 = stateVarExpr2
         
@@ -6987,13 +6987,13 @@ class MuMoTbifurcationViewOLD(MuMoTview):
             self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('-')+1:]
             self._SVoperation = '-'
   
-        except MuMoTValueError:
+        except ValueError:
             try:
                 stateVarExpr1.index('+')
                 self._stateVarBif1 = stateVarExpr1[:stateVarExpr1.index('+')]
                 self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('+')+1:] 
                 self._SVoperation = '+'
-            except MuMoTValueError:
+            except ValueError:
                 self._stateVarBif1 = stateVarExpr1
                 self._stateVarBif2 = stateVarExpr2
         
@@ -7475,7 +7475,7 @@ class MuMoTbifurcationViewOLD(MuMoTview):
 #                 self._stateVariable1 = stateVariable1[:stateVariable1.index('-')]
 #                 self._stateVariable2 = stateVariable1[stateVariable1.index('-')+1:]
 #                 self._LabelY = self._stateVariable1+'-'+self._stateVariable2 if self._ylab == None else self._ylab
-#             except MuMoTValueError:
+#             except ValueError:
 #                 self._stateVariable1 = stateVariable1
 #                 self._stateVariable2 = stateVariable2
 #                 self._LabelY = self._stateVariable1 if self._ylab == None else self._ylab
@@ -8778,7 +8778,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             try:
                 self._controller._widgetsExtraParams['netParam'].unobserve(self._controller._replotFunction, 'value')
                 toLinkPlotFunction = True
-            except MuMoTValueError:
+            except ValueError:
                 pass
         if resetValueAndRange:
             self._controller._widgetsExtraParams['netParam'].max = float("inf") # temp to avoid min > max exception
