@@ -1549,8 +1549,10 @@ class MuMoTmodel:
             elif arg == self._systemSize:
                 argList.append(1) ## @todo: system size set to 1
             else:
-                argList.append(argDict[arg])
-            
+                try:
+                    argList.append(argDict[arg])
+                except KeyError:
+                    raise MuMoTValueError('Unexpected reactant: system size > 2?')
         return tuple(argList)
 
     ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
@@ -1566,7 +1568,10 @@ class MuMoTmodel:
             elif arg == self._systemSize:
                 argList.append(1) ## @todo: system size set to 1
             else:
-                argList.append(argDict[arg])
+                try:
+                    argList.append(argDict[arg])
+                except KeyError:
+                    raise MuMoTValueError('Unexpected reactant: system size > 3?')
             
         return tuple(argList)
 
