@@ -827,6 +827,10 @@ class MuMoTmodel:
             
         Returns:
             MuMoTcontroller"""
+        if self._systemSize == None and self._constantSystemSize == True: # duplicate check in view and controller required for speedy error reporting, plus flexibility to instantiate view independent of controller
+            print("Cannot construct field-based plot until system size is set, using substitute()")
+            return None
+
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             if stateVariable3 == None:
                 SOL_2ndOrdMomDict = self._check2ndOrderMom(showNoise=kwargs.get('showNoise', False))
@@ -868,6 +872,10 @@ class MuMoTmodel:
             
         Returns:
             MuMoTcontroller"""
+        if self._systemSize == None and self._constantSystemSize == True: # duplicate check in view and controller required for speedy error reporting, plus flexibility to instantiate view independent of controller
+            print("Cannot construct field-based plot until system size is set, using substitute()")
+            return None
+
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
             if stateVariable3 == None:
                 SOL_2ndOrdMomDict = self._check2ndOrderMom(showNoise=kwargs.get('showNoise', False))
