@@ -9066,6 +9066,7 @@ def parseModel(modelDescription):
         if (len(rule) > 0):
             tokens = rule.split()
             reactantCount = 0
+            constantReactantCount = 0
             rate = ""
             state = 'A'
             newRule = _Rule()
@@ -9093,7 +9094,6 @@ def parseModel(modelDescription):
                             token = token.replace(')','')
                         if token == '\emptyset':
                             constantReactant = True
-                            model._constantSystemSize = False
                             token = '1'
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
@@ -9102,6 +9102,7 @@ def parseModel(modelDescription):
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
                         if constantReactant:
+                            constantReactantCount += 1
                             if reactant not in constantReactants and token != '1':
                                 constantReactants.add(reactant)                            
                         else:
@@ -9130,7 +9131,6 @@ def parseModel(modelDescription):
                             token = token.replace('(','')
                             token = token.replace(')','')
                         if token == '\emptyset':
-                            model._constantSystemSize = False
                             constantReactant = True
                             token = '1'
                         expr = process_sympy(token)
@@ -9140,6 +9140,7 @@ def parseModel(modelDescription):
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
                         if constantReactant:
+                            constantReactantCount -= 1
                             if reactant not in constantReactants and token != '1':
                                 constantReactants.add(reactant)                            
                         else:
@@ -9175,6 +9176,8 @@ def parseModel(modelDescription):
             else:
                 raise MuMoTSyntaxError("Unequal number of reactants on lhs and rhs of rule " + rule)
 
+            if constantReactantCount != 0:
+                model._constantSystemSize = False
             
     model._rules = rules
     model._reactants = reactants
