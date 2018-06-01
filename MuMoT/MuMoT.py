@@ -448,11 +448,31 @@ class MuMoTmodel:
                 print("does not initiate any reaction." ) 
     
     ## show a LaTeX representation of the model system of ODEs
-    def showODEs(self):
-        for reactant in self._reactants:
-            out = "\\displaystyle \\frac{\\textrm{d}" + latex(reactant) + "}{\\textrm{d}t} := " + latex(self._equations[reactant])
-            out = _doubleUnderscorify(_greekPrependify(out))
-            display(Math(out))
+    def showODEs(self, method='massAction'):
+        if method == 'massAction':
+            for reactant in self._reactants:
+                out = "\\displaystyle \\frac{\\textrm{d}" + latex(reactant) + "}{\\textrm{d}t} := " + latex(self._equations[reactant])
+                out = _doubleUnderscorify(_greekPrependify(out))
+                display(Math(out))
+        elif method == 'vanKampen':
+            ODEdict = _getODEs_vKE(_get_orderedLists_vKE, self._stoichiometry)
+            for ode in ODEdict:
+                out = latex(ode) + " := " + latex(ODEdict[ode])
+                out = _doubleUnderscorify(_greekPrependify(out))
+                display(Math(out))
+        else:
+            print('Invalid input for method. Choose either method = \'massAction\' or method = \'vanKampen\'. Default is \'massAction\'.')
+            
+#     
+#     ## shows ODEs derived from the leading term in van Kampen expansion
+#     def showODEs_vKE(self):
+#         ODEdict = _getODEs_vKE(_get_orderedLists_vKE, self._stoichiometry)
+#         for ode in ODEdict:
+#             out = latex(ode) + " := " + latex(ODEdict[ode])
+#             out = _doubleUnderscorify(_greekPrependify(out))
+#             display(Math(out))
+#     
+    
     
     ## displays stoichiometry as a dictionary with keys ReactionNr,
     # ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry
@@ -528,14 +548,6 @@ class MuMoTmodel:
             for sub in substring:
                 sub = _doubleUnderscorify(_greekPrependify(sub))
                 display(Math("With \; substitution:\;" + latex(sub) + ":= " + latex(substring[sub])))
-    
-    ## shows ODEs derived from the leading term in van Kampen expansion
-    def showODEs_vKE(self):
-        ODEdict = _getODEs_vKE(_get_orderedLists_vKE, self._stoichiometry)
-        for ode in ODEdict:
-            out = latex(ode) + " := " + latex(ODEdict[ode])
-            out = _doubleUnderscorify(_greekPrependify(out))
-            display(Math(out))
         
     ## shows Fokker-Planck equation derived from term ~ O(1) in van Kampen expansion
     # this is the linear noise approximation
@@ -551,7 +563,7 @@ class MuMoTmodel:
                     display(Math("With \; substitution:\;" + latex(sub) + ":= " + latex(substring[sub])))
     
     ## displays equations of motion of first and second order moments of noise                
-    def showNoiseEOM(self):
+    def showNoiseEquations(self):
         EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         for eom1 in EOM_1stOrderMom:
             out = "\\displaystyle \\frac{\\textrm{d}" + latex(eom1.subs(NoiseSubs1stOrder)) + "}{\\textrm{d}t} := " + latex(EOM_1stOrderMom[eom1].subs(NoiseSubs1stOrder))
@@ -566,7 +578,7 @@ class MuMoTmodel:
     
     
     ## displays noise in the stationary state
-    def showNoiseStationarySol(self):
+    def showNoiseSolutions(self):
         SOL_1stOrderMom, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         print('Stationary solutions of first and second order moments of noise:')
         if SOL_1stOrderMom == None:
@@ -646,7 +658,7 @@ class MuMoTmodel:
         #if showStateVars:
         #    showStateVars = [r'' + showStateVars[kk] for kk in range(len(showStateVars))]
         
-        modelView = MuMoTIntegrateView(self, viewController, IntParams, showStateVars, **kwargs)
+        modelView = MuMoTintegrateView(self, viewController, IntParams, showStateVars, **kwargs)
         viewController.setView(modelView)
         
         viewController._setReplotFunction(modelView._plot_NumSolODE, modelView._redrawOnly)
@@ -672,7 +684,7 @@ class MuMoTmodel:
         # construct controller
         viewController = MuMoTtimeEvolutionController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=NCParams, showSystemSize=True, **kwargs)
         
-        modelView = MuMoTNoiseCorrelationsView(self, viewController, NCParams, EOM_1stOrderMom, EOM_2ndOrderMom, **kwargs)
+        modelView = MuMoTnoiseCorrelationsView(self, viewController, NCParams, EOM_1stOrderMom, EOM_2ndOrderMom, **kwargs)
         
         viewController.setView(modelView)
         
@@ -681,106 +693,60 @@ class MuMoTmodel:
         return viewController;
     
     
-
-    ## construct interactive time evolution plot for state variables      
-    def numSimStateVar(self, showStateVars = None, params = None, **kwargs):
-    #def numSimStateVar(self, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, params = None, **kwargs):
-        try:
-            kwargs['showInitSV'] = kwargs.get('showInitSV', True)
-            
-            #if params:
-            #    for param in params:
-            #        if param[0] == 'systemSize':
-            #            kwargs['plotProportion'] = False
-            
-            # construct controller
-            viewController = self._controller(False, params = params, **kwargs)
-            
-            # construct view
-            modelView = MuMoTtimeEvoStateVarView(self, viewController, showStateVars, params = params, **kwargs)
-             
-            viewController.setView(modelView)
-            viewController._setReplotFunction(modelView._plot_NumSolODE)         
-            
-            return viewController
-        
-        except:
-            return None
-    
-    ## construct interactive time evolution plot for noise around fixed points         
-    #def numSimNoiseCorrelations(self, showStateVars = None, params = None, **kwargs):
-    def numSimNoiseCorrelations(self, params = None, **kwargs):
-        try:
-            kwargs['showInitSV'] = kwargs.get('showInitSV', True)
-            kwargs['showNoise'] = True
-            
-            EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
-            #SOL_1stOrderMom, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
-            
-            
-            # construct controller
-            viewController = self._controller(False, params = params, **kwargs)
-            
-            # construct view
-            modelView = MuMoTtimeEvoNoiseCorrView(self, viewController, EOM_1stOrderMom, EOM_2ndOrderMom, params = params, **kwargs)
-                  
-            viewController.setView(modelView)
-            viewController._setReplotFunction(modelView._plot_NumSolODE)         
-            
-            return viewController
-        
-        except:
-            return None
-
-    
-#     ## construct interactive plot of noise around fixed points        
-#     def fixedPointNoise(self, stateVariable1, stateVariable2, stateVariable3=None, params = None, **kwargs):
-#         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
+# 
+#     ## construct interactive time evolution plot for state variables      
+#     def numSimStateVar(self, showStateVars = None, params = None, **kwargs):
+#     #def numSimStateVar(self, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, params = None, **kwargs):
+#         try:
+#             kwargs['showInitSV'] = kwargs.get('showInitSV', True)
 #             
+#             #if params:
+#             #    for param in params:
+#             #        if param[0] == 'systemSize':
+#             #            kwargs['plotProportion'] = False
+#             
+#             # construct controller
+#             viewController = self._controller(False, params = params, **kwargs)
+#             
+#             # construct view
+#             modelView = MuMoTtimeEvoStateVarView(self, viewController, showStateVars, params = params, **kwargs)
+#              
+#             viewController.setView(modelView)
+#             viewController._setReplotFunction(modelView._plot_NumSolODE)         
+#             
+#             return viewController
+#         
+#         except:
+#             return None
+#
+
+
+#     
+#     ## construct interactive time evolution plot for noise around fixed points         
+#     #def numSimNoiseCorrelations(self, showStateVars = None, params = None, **kwargs):
+#     def numSimNoiseCorrelations(self, params = None, **kwargs):
+#         try:
+#             kwargs['showInitSV'] = kwargs.get('showInitSV', True)
 #             kwargs['showNoise'] = True
-#             n1, n2, n3, n4 = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
-#             # n3 is second order solution and will be used by MuMoTnoiseView
 #             
+#             EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+#             #SOL_1stOrderMom, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
 #             
-#             # get stationary solution of moments of noise variables <eta_i> and <eta_i eta_j>
-#             #noiseStatSol = (n1,n2,n3,n4)#_getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
 #             
 #             # construct controller
-#             viewController = self._controller(False, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
-#             #viewController = self._controller(True, plotLimitsSlider = True, **kwargs)
+#             viewController = self._controller(False, params = params, **kwargs)
 #             
 #             # construct view
-#             modelView = MuMoTnoiseView(self, viewController, n3, stateVariable1, stateVariable2, params = params, **kwargs)
-#                     
+#             modelView = MuMoTtimeEvoNoiseCorrView(self, viewController, EOM_1stOrderMom, EOM_2ndOrderMom, params = params, **kwargs)
+#                   
 #             viewController.setView(modelView)
-#             viewController._setReplotFunction(modelView._plot_field)         
+#             viewController._setReplotFunction(modelView._plot_NumSolODE)         
 #             
 #             return viewController
-#         else:
+#         
+#         except:
 #             return None
-# 
-# 
-# 
-#     ## construct interactive stream plot        
-#     def stream(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
-#         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
-#             if stateVariable3 != None:
-#                 print("3d stream plots not currently supported")
-#                 
-#                 return None
-#             # construct controller
-#             viewController = self._controller(True, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
-#             
-#             # construct view
-#             modelView = MuMoTstreamView(self, viewController, stateVariable1, stateVariable2, params = params, **kwargs)
-#                     
-#             viewController.setView(modelView)
-#             viewController._setReplotFunction(modelView._plot_field)         
-#             
-#             return viewController
-#         else:
-#             return None
-    
+#   
     
     def _check2ndOrderMom(self, showNoise=False):
         if showNoise == True:
@@ -896,103 +862,103 @@ class MuMoTmodel:
         else:
             return None
     
-    
-    ## construct interactive stream plot with the option to show noise around fixed points
-    def streamOLD(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
-        """Display interactive stream plot of `stateVariable1` (x-axis), `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis; not currently supported - see below)
+#     
+#     ## construct interactive stream plot with the option to show noise around fixed points
+#     def streamOLD(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
+#         """Display interactive stream plot of `stateVariable1` (x-axis), `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis; not currently supported - see below)
+# 
+#         Arguments:
+#             `stateVariable1` - state variable to be plotted on the x-axis
+#             `stateVariable2` - state variable to be plotted on the y-axis
+#             `stateVariable3 = None` - state variable to be plotted on the z-axis (not currently supported; use `vector` instead for 3-dimensional systems)
+#             `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
+# 
+#         Keywords:
+#             `showFixedPoints = False` - plot fixed points
+#             `showNoise = False` - plot noise around fixed points
+#             plotting keywords as described in the user manual: https://diodeproject.github.io/MuMoT/
+#             
+#         Returns:
+#             MuMoTcontroller"""
+#         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
+#             if stateVariable3 != None:
+#                 print("3d stream plots not currently supported")
+#                 return None
+#             
+#             if kwargs.get('showNoise', False) == True:
+#                 #check for substitutions in conserved systems for which stream plot only works WITHOUT noise in case of reducing number of state variables from 3 to 2
+#                 substitutions = False
+#                 for reaction in self._stoichiometry:
+#                     for key in self._stoichiometry[reaction]:
+#                         if key != 'rate':
+#                             if self._stoichiometry[reaction][key] != 'const':
+#                                 if len(self._stoichiometry[reaction][key]) > 2:
+#                                     substitutions = True
+#                 
+#                 if substitutions == False:
+#                     SOL_1stOrderMomDict, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder  = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+#                     # SOL_2ndOrdMomDict is second order solution and will be used by MuMoTnoiseView
+#                 else:
+#                     SOL_2ndOrdMomDict = None
+#                 
+# #                 if SOL_2ndOrdMomDict == None:
+# #                     if substitutions == True:
+# #                         print('Noise in stream plots is only available for systems with exactly two time dependent reactants. Stream plot only works WITHOUT noise in case of reducing number of state variables from 3 to 2 via substitute() - method.')
+# #                     print('Warning: Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
+# #                     kwargs['showNoise'] = False
+#             else:
+#                 SOL_2ndOrdMomDict = None
+#             
+#             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
+#             # construct controller
+#             viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
+#             
+#             # construct view
+#             modelView = MuMoTstreamViewOLD(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, params = params, **kwargs)
+#                     
+#             viewController.setView(modelView)
+#             viewController._setReplotFunction(modelView._plot_field)         
+#             
+#             return viewController
+#         else:
+#             return None   
+#     
+#     ## construct interactive vector plot        
+#     def vectorOLD(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
+#         """Display interactive vector plot of `stateVariable1` (x-axis) and `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis)
+# 
+#        Arguments:
+#             `stateVariable1` - state variable to be plotted on the x-axis
+#             `stateVariable2` - state variable to be plotted on the y-axis
+#             `stateVariable3 = None` - state variable to be plotted on the z-axis
+#             `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
+# 
+#         Keywords:
+#             `showFixedPoints = False` - plot fixed points
+#             `showNoise = False` - plot noise around fixed points
+#             plotting keywords as described in the user manual: https://diodeproject.github.io/MuMoT/
+# 
+#         Returns:
+#             MuMoTcontroller"""
+#         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
+# 
+#             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
+# 
+#             # construct controller
+#             viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
+#             
+#             # construct view
+#             modelView = MuMoTvectorViewOLD(self, viewController, stateVariable1, stateVariable2, stateVariable3, params = params, **kwargs)
+#                     
+#             viewController.setView(modelView)
+#             viewController._setReplotFunction(modelView._plot_field)         
+#                         
+#             return viewController
+#         else:
+#             return None
+#     
 
-        Arguments:
-            `stateVariable1` - state variable to be plotted on the x-axis
-            `stateVariable2` - state variable to be plotted on the y-axis
-            `stateVariable3 = None` - state variable to be plotted on the z-axis (not currently supported; use `vector` instead for 3-dimensional systems)
-            `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
 
-        Keywords:
-            `showFixedPoints = False` - plot fixed points
-            `showNoise = False` - plot noise around fixed points
-            plotting keywords as described in the user manual: https://diodeproject.github.io/MuMoT/
-            
-        Returns:
-            MuMoTcontroller"""
-        if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
-            if stateVariable3 != None:
-                print("3d stream plots not currently supported")
-                return None
-            
-            if kwargs.get('showNoise', False) == True:
-                #check for substitutions in conserved systems for which stream plot only works WITHOUT noise in case of reducing number of state variables from 3 to 2
-                substitutions = False
-                for reaction in self._stoichiometry:
-                    for key in self._stoichiometry[reaction]:
-                        if key != 'rate':
-                            if self._stoichiometry[reaction][key] != 'const':
-                                if len(self._stoichiometry[reaction][key]) > 2:
-                                    substitutions = True
-                
-                if substitutions == False:
-                    SOL_1stOrderMomDict, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder  = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
-                    # SOL_2ndOrdMomDict is second order solution and will be used by MuMoTnoiseView
-                else:
-                    SOL_2ndOrdMomDict = None
-                
-#                 if SOL_2ndOrdMomDict == None:
-#                     if substitutions == True:
-#                         print('Noise in stream plots is only available for systems with exactly two time dependent reactants. Stream plot only works WITHOUT noise in case of reducing number of state variables from 3 to 2 via substitute() - method.')
-#                     print('Warning: Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
-#                     kwargs['showNoise'] = False
-            else:
-                SOL_2ndOrdMomDict = None
-            
-            continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
-            # construct controller
-            viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
-            
-            # construct view
-            modelView = MuMoTstreamViewOLD(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, params = params, **kwargs)
-                    
-            viewController.setView(modelView)
-            viewController._setReplotFunction(modelView._plot_field)         
-            
-            return viewController
-        else:
-            return None
-    
-    
-    
-    ## construct interactive vector plot        
-    def vectorOLD(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, **kwargs):
-        """Display interactive vector plot of `stateVariable1` (x-axis) and `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis)
-
-       Arguments:
-            `stateVariable1` - state variable to be plotted on the x-axis
-            `stateVariable2` - state variable to be plotted on the y-axis
-            `stateVariable3 = None` - state variable to be plotted on the z-axis
-            `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
-
-        Keywords:
-            `showFixedPoints = False` - plot fixed points
-            `showNoise = False` - plot noise around fixed points
-            plotting keywords as described in the user manual: https://diodeproject.github.io/MuMoT/
-
-        Returns:
-            MuMoTcontroller"""
-        if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
-
-            continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
-
-            # construct controller
-            viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, **kwargs)
-            
-            # construct view
-            modelView = MuMoTvectorViewOLD(self, viewController, stateVariable1, stateVariable2, stateVariable3, params = params, **kwargs)
-                    
-            viewController.setView(modelView)
-            viewController._setReplotFunction(modelView._plot_field)         
-                        
-            return viewController
-        else:
-            return None
-    
     ## construct interactive time evolution plot for state variables 
     def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, initWidgets = {}, **kwargs):
         
@@ -1039,70 +1005,40 @@ class MuMoTmodel:
         #if showStateVars:
         #    showStateVars = [r'' + showStateVars[kk] for kk in range(len(showStateVars))]
         
-        modelView = MuMoTBifurcationView(self, viewController, BfcParams, bifurcationParameter, stateVariable1, stateVariable2, **kwargs)
+        modelView = MuMoTbifurcationView(self, viewController, BfcParams, bifurcationParameter, stateVariable1, stateVariable2, **kwargs)
         viewController.setView(modelView)
         
         viewController._setReplotFunction(modelView._plot_bifurcation)
         
         return viewController
     
-        
-    ## construct interactive PyDSTool plot
-    def bifurcationOLD(self, bifurcationParameter, stateVariable1, stateVariable2 = None, params=None, **kwargs):
-        try:
-            kwargs['showInitSV'] = kwargs.get('showInitSV', True)
-            
-            if bifurcationParameter[0]=='\\':
-                bifPar = bifurcationParameter[1:]
-            else:
-                bifPar = bifurcationParameter
-            
-            kwargs['chooseBifParam'] = kwargs.get('showBifInitSlider', bifPar)
-            
-    
-            # construct controller
-            viewController = self._controller(False, params = params, **kwargs)
-           
-            # construct view
-            modelView = MuMoTbifurcationViewOLD(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, params = params, **kwargs)
-            
-            viewController.setView(modelView)
-            viewController._setReplotFunction(modelView._plot_bifurcation)
-        
-            return viewController
-        except:
-            return None
-    
-#     
-#     def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, params = None, **kwargs):
-#         if self._systemSize != None:
-#             pass
-#         else:
-#             print('Cannot construct bifurcation plot until system size is set, using substitute()')
-#             return    
-# 
-#         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-#         rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
-#         rateStep = RATE_STEP ## @todo choose rate step sensibly                
-# 
-# 
-#         # construct controller
-#         paramValues = []
-#         paramNames = []        
-#         for rate in self._rates:
-#             if str(rate) != bifurcationParameter:
-#                 paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-#                 paramNames.append(str(rate))
-#         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, False, params = params, **kwargs)
-# 
-#         # construct view
-#         modelView = MuMoTbifurcationView(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, params = params, **kwargs)
 #         
-#         viewController.setView(modelView)
-#         viewController._setReplotFunction(modelView._replot_bifurcation)
-#         
-#         return viewController
+#     ## construct interactive PyDSTool plot
+#     def bifurcationOLD(self, bifurcationParameter, stateVariable1, stateVariable2 = None, params=None, **kwargs):
+#         try:
+#             kwargs['showInitSV'] = kwargs.get('showInitSV', True)
+#             
+#             if bifurcationParameter[0]=='\\':
+#                 bifPar = bifurcationParameter[1:]
+#             else:
+#                 bifPar = bifurcationParameter
+#             
+#             kwargs['chooseBifParam'] = kwargs.get('showBifInitSlider', bifPar)
+#             
 #     
+#             # construct controller
+#             viewController = self._controller(False, params = params, **kwargs)
+#            
+#             # construct view
+#             modelView = MuMoTbifurcationViewOLD(self, viewController, bifurcationParameter, stateVariable1, stateVariable2, params = params, **kwargs)
+#             
+#             viewController.setView(modelView)
+#             viewController._setReplotFunction(modelView._plot_bifurcation)
+#         
+#             return viewController
+#         except:
+#             return None
+#       
     
     def multiagent(self, initWidgets = {}, **kwargs):
         """construct interactive multiagent plot (simulation of agents locally interacting with each other)
@@ -1343,97 +1279,103 @@ class MuMoTmodel:
             systemSizeSlider = False
         
         paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=params if params is not None else [], initWidgets=initWidgets, showSystemSize=systemSizeSlider, showPlotLimits=plotLimitsSlider )
-        
-        ############################################################################################################################################           
-        ## @todo: to be removed  ###################################################################################################################
-        ############################################################################################################################################           
-        bifParam = kwargs.get('chooseBifParam', False)    
-        bifParInitVal = kwargs.get('BifParInit', None) 
-        
-        if bifParam != False:
-            del paramValuesDict[str(bifParam)]
-            paramValuesDict[latex(Symbol(str(bifParam)+'_init'))] = (bifParInitVal,0,1,0.1)
 
-        if kwargs.get('showInitSV', False) == True:
-            initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
-            initCondsSV = kwargs.get('initCondsSV', False)
-            for reactant in self._reactants:
-                if reactant not in self._constantReactants:
-                    if initCondsSV != False:
-                        # check input of initCondsSV
-                        if str(reactant) not in initCondsSV:
-                            initialInitCondValue = INITIAL_COND_INIT_VAL
-                        else:
-                            initialInitCondValue = initCondsSV[str(reactant)]
-                    else:
-                        initialInitCondValue = INITIAL_COND_INIT_VAL   
-                    paramValuesDict[latex(Symbol('Phi^0_'+str(reactant)))] = (initialInitCondValue, initialCondLimits[0], initialCondLimits[1], MuMoTdefault._rateStep) 
-        ############################################################################################################################################           
+#         
+#         ############################################################################################################################################           
+#         ## @todo: to be removed  ###################################################################################################################
+#         ############################################################################################################################################           
+#         bifParam = kwargs.get('chooseBifParam', False)    
+#         bifParInitVal = kwargs.get('BifParInit', None) 
+#         
+#         if bifParam != False:
+#             del paramValuesDict[str(bifParam)]
+#             paramValuesDict[latex(Symbol(str(bifParam)+'_init'))] = (bifParInitVal,0,1,0.1)
+# 
+#         if kwargs.get('showInitSV', False) == True:
+#             initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
+#             initCondsSV = kwargs.get('initCondsSV', False)
+#             for reactant in self._reactants:
+#                 if reactant not in self._constantReactants:
+#                     if initCondsSV != False:
+#                         # check input of initCondsSV
+#                         if str(reactant) not in initCondsSV:
+#                             initialInitCondValue = INITIAL_COND_INIT_VAL
+#                         else:
+#                             initialInitCondValue = initCondsSV[str(reactant)]
+#                     else:
+#                         initialInitCondValue = INITIAL_COND_INIT_VAL   
+#                     paramValuesDict[latex(Symbol('Phi^0_'+str(reactant)))] = (initialInitCondValue, initialCondLimits[0], initialCondLimits[1], MuMoTdefault._rateStep) 
+#         ############################################################################################################################################           
+#
+
          
 #         print("ParamNames: " + str(paramNames))
 #         print("paramValues: " + str(paramValues))
         viewController = MuMoTcontroller(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=contRefresh, showPlotLimits=plotLimitsSlider, showSystemSize=systemSizeSlider, **kwargs)
 
         return viewController
-    
-    ## general controller constructor with all rates as free parameters
-    def _controller_deprecated(self, contRefresh, displayController = True, plotLimitsSlider = False, params = None, **kwargs):
-        initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-        rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
-        rateStep = RATE_STEP ## @todo choose rate step sensibly                
 
-        # construct controller
-        paramValues = []
-        paramNames = []  
-        bifParam = kwargs.get('chooseBifParam', False)    
-        bifParInitVal = kwargs.get('BifParInit', None) 
-        
-        for rate in self._rates:
-            if str(rate) != bifParam:
-                paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-                paramNames.append(str(rate))
-            else:
-                if bifParInitVal:
-                    paramValues.append((bifParInitVal, rateLimits[0], rateLimits[1], rateStep))
-                else:
-                    paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-                #paramNames.append(str(rate)+'_{init}')
-                paramNames.append(latex(Symbol(str(rate)+'_init')))
-        for reactant in self._constantReactants:
-            paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-#            paramNames.append('(' + latex(reactant) + ')')
-            paramNames.append(str(reactant))
+#     
+#     ## general controller constructor with all rates as free parameters
+#     def _controller_deprecated(self, contRefresh, displayController = True, plotLimitsSlider = False, params = None, **kwargs):
+#         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
+#         rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
+#         rateStep = RATE_STEP ## @todo choose rate step sensibly                
+# 
+#         # construct controller
+#         paramValues = []
+#         paramNames = []  
+#         bifParam = kwargs.get('chooseBifParam', False)    
+#         bifParInitVal = kwargs.get('BifParInit', None) 
+#         
+#         for rate in self._rates:
+#             if str(rate) != bifParam:
+#                 paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+#                 paramNames.append(str(rate))
+#             else:
+#                 if bifParInitVal:
+#                     paramValues.append((bifParInitVal, rateLimits[0], rateLimits[1], rateStep))
+#                 else:
+#                     paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+#                 #paramNames.append(str(rate)+'_{init}')
+#                 paramNames.append(latex(Symbol(str(rate)+'_init')))
+#         for reactant in self._constantReactants:
+#             paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
+# #            paramNames.append('(' + latex(reactant) + ')')
+#             paramNames.append(str(reactant))
+# #         if kwargs.get('showInitSV', False) == True:
+# #             initialInitCondValue = INITIAL_COND_INIT_VAL
+# #             initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
+# #             for reactant in self._reactants:
+# #                 if reactant not in self._constantReactants:
+# #                     paramNames.append(latex(Symbol('Phi^0_'+str(reactant))))
+# #                     paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
+# 
 #         if kwargs.get('showInitSV', False) == True:
-#             initialInitCondValue = INITIAL_COND_INIT_VAL
 #             initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
+#             initCondsSV = kwargs.get('initCondsSV', False)
 #             for reactant in self._reactants:
 #                 if reactant not in self._constantReactants:
 #                     paramNames.append(latex(Symbol('Phi^0_'+str(reactant))))
+#                     if initCondsSV != False:
+#                         # check input of initCondsSV
+#                         if str(reactant) not in initCondsSV:
+#                             initialInitCondValue = INITIAL_COND_INIT_VAL
+#                         else:
+#                             initialInitCondValue = initCondsSV[str(reactant)]
+#                     else:
+#                         initialInitCondValue = INITIAL_COND_INIT_VAL   
 #                     paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
+#         
+#         if kwargs.get('showNoise', False) == True or kwargs.get('plotProportion', True) == False:                 
+#             systemSizeSlider = True
+#         else:
+#             systemSizeSlider = False
+#         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, plotLimitsSlider, systemSizeSlider, params, **kwargs)
+# 
+#         return viewController
 
-        if kwargs.get('showInitSV', False) == True:
-            initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
-            initCondsSV = kwargs.get('initCondsSV', False)
-            for reactant in self._reactants:
-                if reactant not in self._constantReactants:
-                    paramNames.append(latex(Symbol('Phi^0_'+str(reactant))))
-                    if initCondsSV != False:
-                        # check input of initCondsSV
-                        if str(reactant) not in initCondsSV:
-                            initialInitCondValue = INITIAL_COND_INIT_VAL
-                        else:
-                            initialInitCondValue = initCondsSV[str(reactant)]
-                    else:
-                        initialInitCondValue = INITIAL_COND_INIT_VAL   
-                    paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
-        
-        if kwargs.get('showNoise', False) == True or kwargs.get('plotProportion', True) == False:                 
-            systemSizeSlider = True
-        else:
-            systemSizeSlider = False
-        viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, plotLimitsSlider, systemSizeSlider, params, **kwargs)
 
-        return viewController
 
     ## derive the single-agent rules from reaction rules
     def _getSingleAgentRules(self):
@@ -2659,40 +2601,9 @@ class MuMoTview:
     
 
     def _get_fixedPoints2d(self):
-#         #plotLimits = self._controller._getPlotLimits()
-#         paramNames = []
-#         paramValues = []
-#         if self._controller is not None:
-#             for name, value in self._controller._widgetsFreeParams.items():
-#                 # throw away formatting for constant reactants
-# #                 name = name.replace('(','')
-# #                 name = name.replace(')','')
-#                 paramNames.append(name)
-#                 paramValues.append(value.value)
-#         if self._paramNames is not None:
-#             paramNames += map(str, self._paramNames)
-#             paramValues += self._paramValues            
-#         funcs = self._mumotModel._getFuncs()
-#         argNamesSymb = list(map(Symbol, paramNames))
-#         argDict = dict(zip(argNamesSymb, paramValues))
-#         argDict[self._mumotModel._systemSize] = 1
        
         argDict = self._get_argDict()
         
-#         
-#         for arg in argDict:
-#             if '_{init}' in str(arg):
-#                 if str(arg)[0] == '\\':
-#                     arg1 = str(arg)[1:]
-#                     argReplace = Symbol(arg1.replace('_{init}', ''))
-#                     argDict[argReplace] = argDict.pop(arg)
-#                 else:
-#                     argReplace = Symbol(str(arg).replace('_{init}', ''))
-#                     argDict[argReplace] = argDict.pop(arg)
-#             #if arg[0] == '\\':
-#             #    argDict[arg[1:]] = argDict.pop(arg)
-#         
-
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
        
@@ -2710,10 +2621,6 @@ class MuMoTview:
         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
         
         eigList = []
-        #for nn in range(len(realEQsol)): 
-        #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
-        #    evSet = JACsub.eigenvals()
-        #    eigList.append(evSet)
         for nn in range(len(realEQsol)): 
             evSet = {}
             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
@@ -2726,23 +2633,6 @@ class MuMoTview:
     
     ## calculates stationary states of 3d system
     def _get_fixedPoints3d(self):
-#         #plotLimits = self._controller._getPlotLimits()
-#         paramNames = []
-#         paramValues = []
-#         if self._controller is not None:
-#             for name, value in self._controller._widgetsFreeParams.items():
-#                 # throw away formatting for constant reactants
-# #                 name = name.replace('(','')
-# #                 name = name.replace(')','')
-#                 paramNames.append(name)
-#                 paramValues.append(value.value)
-#         if self._paramNames is not None:
-#             paramNames += map(str, self._paramNames)
-#             paramValues += self._paramValues            
-#         funcs = self._mumotModel._getFuncs()
-#         argNamesSymb = list(map(Symbol, paramNames))
-#         argDict = dict(zip(argNamesSymb, paramValues))
-#         argDict[self._mumotModel._systemSize] = 1
         
         argDict = self._get_argDict()
         
@@ -2764,10 +2654,6 @@ class MuMoTview:
         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
         
         eigList = []
-        #for nn in range(len(realEQsol)): 
-        #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
-        #    evSet = JACsub.eigenvals()
-        #    eigList.append(evSet)
         for nn in range(len(realEQsol)): 
             evSet = {}
             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
@@ -3126,7 +3012,7 @@ class MuMoTmultiController(MuMoTcontroller):
 
 
 
-## time evolution view on model including state variables and noise (specialised by MuMoTIntegrateView and MuMoTNoiseCorrelationView)
+## time evolution view on model including state variables and noise (specialised by MuMoTintegrateView and MuMoTNoiseCorrelationView)
 class MuMoTtimeEvolutionView(MuMoTview):
     ## list of all state variables
     _stateVarList = None
@@ -3329,417 +3215,11 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #         return initialState
 #             
 
-## time evolution view on model including state variables and noise (specialised by MuMoTtimeEvoStateVarView and ...)
-class MuMoTtimeEvolutionViewOld(MuMoTview):
-    ## list of all state variables
-    _stateVarList = None
-    ## list of all state variables displayed in figure
-    _stateVarListDisplay = None
-    ## 1st state variable
-    _stateVariable1 = None
-    ## 2nd state variable 
-    _stateVariable2 = None
-    ## 3rd state variable 
-    _stateVariable3 = None
-#     ## 4th state variable 
-#     _stateVariable4 = None
-    ## initial conditions of state variables for numerical solution of ODE system
-    _initCondsSV = None
-    ## end time of numerical simulation of ODE system of the state variables
-    _tend = None
-    ## time step of numerical simulation of ODE system of the state variables
-    _tstep = None
-    ## defines fontsize on the axes
-    _chooseFontSize = None
-    ## string that defines the x-label
-    _xlab = None
-    ## legend location: combinations like 'upper left', lower right, or 'center center' are allowed (9 options in total)
-    _legend_loc = None
-
-    #def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, figure = None, params = None, **kwargs):
-    def __init__(self, model, controller, showStateVars = None, figure = None, params = None, **kwargs):
-        #if model._systemSize == None and model._constantSystemSize == True:
-        #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
-        #    return
-        silent = kwargs.get('silent', False)
-        
-        super().__init__(model, controller, figure, params, **kwargs)
-        
-        if 'fontsize' in kwargs:
-            self._chooseFontSize = kwargs['fontsize']
-        else:
-            self._chooseFontSize=None
-        self._xlab = kwargs.get('xlab', 'time t')
-        #self._ylab = kwargs.get('ylab', r'evolution of states')
-        
-        self._legend_loc = kwargs.get('legend_loc', 'upper left')
-        self._legend_fontsize = kwargs.get('legend_fontsize', 18)
-        
-        self._stateVarList = []
-        for reactant in self._mumotModel._reactants:
-            if reactant not in self._mumotModel._constantReactants:
-                self._stateVarList.append(reactant)
-              
-        if showStateVars:
-            if type(showStateVars) == list:
-                self._stateVarListDisplay = showStateVars    
-                for kk in range(len(self._stateVarListDisplay)):
-                    self._stateVarListDisplay[kk] = process_sympy(self._stateVarListDisplay[kk])
-            else:
-                self._showErrorMessage('Check input: should be of type list!')
-        else:
-            self._stateVarListDisplay = copy.deepcopy(self._stateVarList)
-        
-        self._stateVariable1 = self._stateVarList[0]
-        self._stateVariable2 = self._stateVarList[1]
-        if len(self._stateVarList) == 3:
-            self._stateVariable3 = self._stateVarList[2]
-        
-#         
-#         self._stateVariable1 = process_sympy(stateVariable1)
-#         self._stateVariable2 = process_sympy(stateVariable2)
-#         if stateVariable3 != None:
-#             self._stateVariable3 = process_sympy(stateVariable3)
-#         if stateVariable4 != None:
-#             self._stateVariable4 = process_sympy(stateVariable4)
-#             
-
-        self._tend = kwargs.get('tend', 100)
-        self._tstep = kwargs.get('tstep', 0.01)
-        
-        self._initCondsSV = kwargs.get('initCondsSV', False)
-        
-        # check input of initCondsSV
-        if self._initCondsSV != False:
-            for reactIC in self._initCondsSV:
-                if process_sympy(reactIC) not in self._stateVarList:
-                    print('Warning: symbol for reactant  '+str(reactIC)+'  is not a time-dependent model reactant. Check that symbols for the initial conditions are the same as the ones introduced when creating the model, and that it is not a constant reactant.')
-                #elif str(reactIC) in self._mumotModel._constantReactants:
-                #    print('Warning: Reactant  '+str(reactIC)+'  is a constant reactant. Give initial conditions only for time-dependent reactants.')
-
-        if not(silent):
-            self._plot_NumSolODE()
-
-    
-    ## calculates right-hand side of ODE system
-    def _get_eqsODE(self, y_old, time):
-        SVsub = {}
-        
-        for kk in range(len(self._stateVarList)):
-            SVsub[self._stateVarList[kk]] = y_old[kk]
-            
-        argDict = self._get_argDict()
-        ode_sys = []
-        for kk in range(len(self._stateVarList)):
-            EQ = self._mumotModel._equations[self._stateVarList[kk]].subs(argDict)
-            EQ = EQ.subs(SVsub)
-            ode_sys.append(EQ)
-            
-        return ode_sys
-#         
-#         SVsub[self._stateVariable1] = y_old[0]
-#         SVsub[self._stateVariable2] = y_old[1]
-#         if self._stateVariable3:
-#             SVsub[self._stateVariable3] = y_old[2]
-#         if self._stateVariable4:
-#             SVsub[self._stateVariable4] = y_old[3]
-#             
-
-
-#         #plotLimits = self._controller._getPlotLimits()
-#         paramNames = []
-#         paramValues = []
-#         if self._controller is not None:
-#             for name, value in self._controller._widgetsFreeParams.items():
-#                 # throw away formatting for constant reactants
-# #                 name = name.replace('(','')
-# #                 name = name.replace(')','')
-#                 paramNames.append(name)
-#                 paramValues.append(value.value)
-#         if self._paramNames is not None:
-#             paramNames += map(str, self._paramNames)
-#             paramValues += self._paramValues            
-#         #funcs = self._mumotModel._getFuncs()
-#         argNamesSymb = list(map(Symbol, paramNames))
-#         argDict = dict(zip(argNamesSymb, paramValues))
-# #         argDict[self._mumotModel._systemSize] = 1
-            
-#             
-#         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
-#         EQ1 = EQ1.subs(SVsub)
-#         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
-#         EQ2 = EQ2.subs(SVsub)
-#         ode_sys = [EQ1, EQ2]
-#         if self._stateVariable3:
-#             EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
-#             EQ3 = EQ3.subs(SVsub)
-#             ode_sys.append(EQ3)
-#         if self._stateVariable4:
-#             EQ4 = self._mumotModel._equations[self._stateVariable4].subs(argDict)
-#             EQ4 = EQ4.subs(SVsub)
-#             ode_sys.append(EQ4)
-#                
-    def _constructorSpecificParams(self, _):
-        pass
-    
-    def _plot_NumSolODE(self):
-        if not(self._silent): ## @todo is this necessary?
-            plt.figure(self._figureNum)
-            plt.clf()
-            self._resetErrorMessage()
-        self._showErrorMessage(str(self))
-        
-#         
-#     def _numericSol2ndOrdMoment(self, EOM_2ndOrdMomDict, steadyStateDict, argDict):
-#         for sol in EOM_2ndOrdMomDict:
-#             EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(steadyStateDict)
-#             EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(argDict)
-# #         
-# #         eta_SV1 = Symbol('eta_'+str(self._stateVarList[0]))
-# #         eta_SV2 = Symbol('eta_'+str(self._stateVarList[1]))
-# #         M_1, M_2 = symbols('M_1 M_2')
-# #         if len(self._stateVarList) == 3:
-# #             eta_SV3 = Symbol('eta_'+str(self._stateVarList[2]))
-# #             
-#              
-#         eta_SV1 = Symbol('eta_'+str(self._stateVariable1))
-#         eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
-#         M_1, M_2 = symbols('M_1 M_2')
-#         if self._stateVariable3:
-#             eta_SV3 = Symbol('eta_'+str(self._stateVariable3))
-#              
-# 
-#         SOL_2ndOrdMomDict = {} 
-#         EQsys2ndOrdMom = []
-#         if self._stateVariable3:
-#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
-#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
-#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)])
-#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
-#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)])
-#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)])
-#             SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
-#                                                              M_2(eta_SV2*eta_SV2), 
-#                                                              M_2(eta_SV3*eta_SV3), 
-#                                                              M_2(eta_SV1*eta_SV2), 
-#                                                              M_2(eta_SV1*eta_SV3), 
-#                                                              M_2(eta_SV2*eta_SV3)]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
-#             
-#             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
-#             SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
-#             SOL_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)] = SOL_2ndOrderMom[2]
-#             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[3]
-#             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)] = SOL_2ndOrderMom[4]
-#             SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)] = SOL_2ndOrderMom[5]
-#         
-#         else:
-#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
-#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
-#             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
-#             SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
-#                                                              M_2(eta_SV2*eta_SV2), 
-#                                                              M_2(eta_SV1*eta_SV2)]))[0] #only one set of solutions (if any) in linear system of equations
-#             
-#             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
-#             SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
-#             SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[2]
-#             
-#         return SOL_2ndOrdMomDict
-#     
-
-# 
-#     def _build_bookmark(self, includeParams = True):
-#         if not self._silent:
-#             logStr = "bookmark = "
-#         else:
-#             logStr = ""
-#         
-#         logStr += "<modelName>." + self._generatingCommand + "(["
-#         for nn in range(len(self._stateVarListDisplay)):
-#             if nn == len(self._stateVarListDisplay)-1:
-#                 logStr += "'" + str(self._stateVarListDisplay[nn]) + "'], "
-#             else:
-#                 logStr += "'" + str(self._stateVarListDisplay[nn]) + "', "
-#         
-# #         
-# #         logStr += "<modelName>." + self._generatingCommand + "('" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
-# #         if self._stateVariable3 != None:
-# #             logStr += "'" + str(self._stateVariable3) + "', "
-# #         if self._stateVariable4 != None:
-# #             logStr += "'" + str(self._stateVariable4) + "', "
-# #         
-#      
-#         if includeParams:
-#             logStr += self._get_bookmarks_params() + ", "
-#         if len(self._generatingKwargs) > 0:
-#             for key in self._generatingKwargs:
-#                 if type(self._generatingKwargs[key]) == str:
-#                     logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
-#                 else:
-#                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-#         logStr += "bookmark = False"
-#         logStr += ")"
-#         logStr = logStr.replace('\\', '\\\\')
-#         
-#         return logStr
-#     
-
-
-# class MuMoTtimeEvolutionView(MuMoTview):
-#     ## 1st state variable
-#     _stateVariable1 = None
-#     ## 2nd state variable 
-#     _stateVariable2 = None
-#     ## 3rd state variable 
-#     _stateVariable3 = None
-#     ## 4th state variable 
-#     _stateVariable4 = None
-#     ## end time of numerical simulation
-#     _tend = None
-#     ## time step of numerical simulation
-#     _tstep = None
-#     
-#   
-#     def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, tend = 100, tstep = 0.01, figure = None, params = None, **kwargs):
-#         #if model._systemSize == None and model._constantSystemSize == True:
-#         #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
-#         #    return
-#         silent = kwargs.get('silent', False)
-#         super().__init__(model, controller, figure, params, **kwargs)
-#         
-#         if 'fontsize' in kwargs:
-#             self._chooseFontSize = kwargs['fontsize']
-#         else:
-#             self._chooseFontSize=None
-#         self._xlab = kwargs.get('xlab', r'time t')
-#         self._ylab = kwargs.get('ylab', r'evolution of states')
-#         
-#         self._legend_loc = kwargs.get('legend_loc', 'upper left')
-#         
-#         self._stateVariable1 = process_sympy(stateVariable1)
-#         self._stateVariable2 = process_sympy(stateVariable2)
-#         if stateVariable3 != None:
-#             self._stateVariable3 = process_sympy(stateVariable3)
-#         if stateVariable4 != None:
-#             self._stateVariable4 = process_sympy(stateVariable4)
-#             
-#         self._tend = tend
-#         self._tstep = tstep
-#         if not(silent):
-#             self._plot_NumSolODE()           
-# 
-#  
-#    ## calculates stationary states of 2d system
-#     def _get_fixedPoints2d(self):
-#         #plotLimits = self._controller._getPlotLimits()
-#         paramNames = []
-#         paramValues = []
-#         if self._controller is not None:
-#             for name, value in self._controller._widgetsFreeParams.items():
-#                 # throw away formatting for constant reactants
-# #                 name = name.replace('(','')
-# #                 name = name.replace(')','')
-#                 paramNames.append(name)
-#                 paramValues.append(value.value)
-#         if self._paramNames is not None:
-#             paramNames += map(str, self._paramNames)
-#             paramValues += self._paramValues            
-#         funcs = self._mumotModel._getFuncs()
-#         argNamesSymb = list(map(Symbol, paramNames))
-#         argDict = dict(zip(argNamesSymb, paramValues))
-#         argDict[self._mumotModel._systemSize] = 1
-#         
-#         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
-#         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
-#         eps=1e-8
-#         EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
-#         realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
-#         
-#         MAT = Matrix([EQ1, EQ2])
-#         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
-#         
-#         eigList = []
-#         for nn in range(len(realEQsol)): 
-#             evSet = {}
-#             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
-#             #evSet = JACsub.eigenvals()
-#             eigVects = JACsub.eigenvects()
-#             for kk in range(len(eigVects)):
-#                 evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
-#             eigList.append(evSet)
-#         return realEQsol, eigList #returns two lists of dictionaries
-#     
-#     ## calculates stationary states of 3d system
-#     def _get_fixedPoints3d(self):
-#         #plotLimits = self._controller._getPlotLimits()
-#         paramNames = []
-#         paramValues = []
-#         if self._controller != None:
-#             for name, value in self._controller._widgetsFreeParams.items():
-#                 # throw away formatting for constant reactants
-# #                 name = name.replace('(','')
-# #                 name = name.replace(')','')
-#                 paramNames.append(name)
-#                 paramValues.append(value.value)
-#         if self._paramNames is not None:
-#             paramNames += map(str, self._paramNames)
-#             paramValues += self._paramValues            
-#         funcs = self._mumotModel._getFuncs()
-#         argNamesSymb = list(map(Symbol, paramNames))
-#         argDict = dict(zip(argNamesSymb, paramValues))
-#         argDict[self._mumotModel._systemSize] = 1
-#         
-#         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
-#         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
-#         EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
-#         eps=1e-8
-#         EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
-#         realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps and Abs(im(EQsol[kk][self._stateVariable3]))<=eps)]
-#         
-#         MAT = Matrix([EQ1, EQ2, EQ3])
-#         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
-#         
-#         eigList = []
-#         for nn in range(len(realEQsol)): 
-#             evSet = {}
-#             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
-#             #evSet = JACsub.eigenvals()
-#             eigVects = JACsub.eigenvects()
-#             for kk in range(len(eigVects)):
-#                 evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
-#             eigList.append(evSet)
-#         return realEQsol, eigList #returns two lists of dictionaries
-#     
-#
-#     def _print_standalone_view_cmd(self):
-#         with io.capture_output() as log:
-#             print('Bookmark feature for standalone view not implemented for time-dependent soultion of ODE.')
-# #             logStr = self._generatingCommand + "(<modelName>, None, '" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
-# #             if self._stateVariable3 != None:
-# #                 logStr += "'" + str(self._stateVariable3) + "', "
-# #             logStr += "params = ["
-# #             for name, value in self._controller._widgetsFreeParams.items():
-# # #                name = name.replace('\\', '\\\\')
-# #                 name = name.replace('(', '')
-# #                 name = name.replace(')', '')
-# #                 logStr += "('" + name + "', " + str(value.value) + "), "
-# #             if len(self._controller._widgetsFreeParams.items()) > 0:
-# #                 logStr = logStr[:-2] # throw away last ", "
-# #             logStr += "]"
-# #             if self._generatingKwargs != None:
-# #                 logStr += ", "
-# #                 for key in self._generatingKwargs:
-# #                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-# #                 if len(self._generatingKwargs) > 0:
-# #                     logStr = logStr[:-2]  # throw away last ", "
-# #             logStr += ")"
-# #             print(logStr)    
-#         self._logs.append(log)
  
 ## numerical solution of state variables plot view on model
-class MuMoTIntegrateView(MuMoTtimeEvolutionView):
+class MuMoTintegrateView(MuMoTtimeEvolutionView):
     
-    ## y-label with default specific to this MuMoTIntegrateView class (can be set via keyword)
+    ## y-label with default specific to this MuMoTintegrateView class (can be set via keyword)
     _ylab = None
     ## initial conditions used for proportion plot
     _y0 = None
@@ -3978,205 +3458,10 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
         logStr = logStr.replace('\\\\\\\\', '\\\\')
         
         return logStr
-        
-       
-
-
-## numerical solution of state variables plot view on model
-class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionViewOld):
-    ## y-label with default specific to this MuMoTtimeEvoStateVarViewOld class (can be set via keyword)
-    _ylab = None
-    ## if True: plots proportion; if False plots absolute numbers
-    _plotProportion = None
-    
-    def __init__(self, *args, **kwargs):
-        self._plotProportion = kwargs.get('plotProportion', True)
-        self._ylab = kwargs.get('ylab', 'evolution of reactants')
-        super().__init__(*args, **kwargs)
-        self._generatingCommand = "numSimStateVar"
-
-    def _plot_NumSolODE(self, _=None):
-        super()._plot_NumSolODE()
-        
-        # check input
-        for nn in range(len(self._stateVarListDisplay)):
-            if self._stateVarListDisplay[nn] not in self._stateVarList:
-                self._showErrorMessage('Warning:  '+str(self._stateVarListDisplay[nn])+'  is no reactant in the current model.')
-                return None
-      
-#         
-#         if self._stateVariable1 not in self._mumotModel._reactants:
-#             self._showErrorMessage('Warning:  '+str(self._stateVariable1)+'  is no reactant in the current model.')
-#         if self._stateVariable2 not in self._mumotModel._reactants:
-#             self._showErrorMessage('Warning:  '+str(self._stateVariable2)+'  is no reactant in the current model.')
-#         if self._stateVariable3:
-#             if self._stateVariable3 not in self._mumotModel._reactants:
-#                 self._showErrorMessage('Warning:  '+str(self._stateVariable3)+'  is no reactant in the current model.')
-#         if self._stateVariable4:
-#             if self._stateVariable4 not in self._mumotModel._reactants:
-#                 self._showErrorMessage('Warning:  '+str(self._stateVariable4)+'  is no reactant in the current model.')
-#         
-        
-        NrDP = int(self._tend/self._tstep) + 1
-        time = np.linspace(0, self._tend, NrDP)
-        
-        initDict = self._getInitCondsFromSlider()
-        if len(initDict) == 0:
-            if self._initCondsSV:
-                for SV in self._initCondsSV:
-                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = self._initCondsSV[SV]
-            for SV in self._stateVarList:
-                if Symbol(latex(Symbol('Phi^0_'+str(SV)))) not in initDict:
-                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = INITIAL_COND_INIT_VAL   
-                
-            
-            
-        #if len(initDict) < 2 or len(initDict) > 4:
-        #    self._showErrorMessage("Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!")
-
-        y0 = []
-        for nn in range(len(self._stateVarList)):
-            SVi0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVarList[nn]))))]
-            y0.append(SVi0)
-#             
-#         SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
-#         SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
-#         y0 = [SV1_0, SV2_0]
-#         if len(initDict) > 2:
-#             SV3_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable3))))]
-#             y0.append(SV3_0)
-#         if len(initDict) > 3:
-#             SV4_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable4))))]
-#             y0.append(SV4_0)
-#         
-
-        sol_ODE = odeint(self._get_eqsODE, y0, time)  
-        
-        sol_ODE_dict = {}
-        for nn in range(len(self._stateVarList)):
-            sol_ODE_dict[str(self._stateVarList[nn])] = sol_ODE[:, nn]
-          
-        #x_data = [time for kk in range(len(self._get_eqsODE(y0, time)))]
-        x_data = [time for kk in range(len(self._stateVarListDisplay))]
-        #y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
-        y_data = [sol_ODE_dict[str(self._stateVarListDisplay[kk])] for kk in range(len(self._stateVarListDisplay))]
-        
-        if self._plotProportion == False:
-            syst_Size = Symbol('systemSize')
-            sysS = syst_Size.subs(self._get_argDict())
-            #sysS = syst_Size.subs(self._getSystemSize())
-            sysS = sympy.N(sysS)
-            y_scaling = np.sum(np.asarray(y0))
-            if y_scaling > 0:
-                sysS = sysS/y_scaling
-            for nn in range(len(y_data)):
-                y_temp=np.copy(y_data[nn])
-                for kk in range(len(y_temp)):
-                    y_temp[kk] = y_temp[kk]*sysS
-                y_data[nn] = y_temp
-            c_labels = [r'$'+str(self._stateVarListDisplay[nn])+'$' for nn in range(len(self._stateVarListDisplay))]
-        else:
-            c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
-        
-#         
-#         c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
-#         if self._stateVariable3:
-#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable3)))+'$')
-#         if self._stateVariable4:
-#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
-#         
-        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
-                           fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
-                           legend_fontsize=self._legend_fontsize)
-        
-        with io.capture_output() as log:
-            print('Last point on curve:')  
-            if self._plotProportion == False:
-                for nn in range(len(self._stateVarListDisplay)):
-                    out = latex(str(self._stateVarListDisplay[nn])) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
-                    display(Math(out))
-            else:
-                for nn in range(len(self._stateVarListDisplay)):
-                    out = latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) + '(t =' + str(x_data[nn][-1]) + ') = ' + str(str(y_data[nn][-1]))
-                    display(Math(out))
-        self._logs.append(log)
-        
-#        plt.set_aspect('equal') ## @todo
-
-
-    def _build_bookmark(self, includeParams = True):
-        if not self._silent:
-            logStr = "bookmark = "
-        else:
-            logStr = ""
-        
-        logStr += "<modelName>." + self._generatingCommand + "(["
-        for nn in range(len(self._stateVarListDisplay)):
-            if nn == len(self._stateVarListDisplay)-1:
-                logStr += "'" + str(self._stateVarListDisplay[nn]) + "'], "
-            else:
-                logStr += "'" + str(self._stateVarListDisplay[nn]) + "', "
-     
-        if includeParams:
-            logStr += self._get_bookmarks_params() + ", "
-        if len(self._generatingKwargs) > 0:
-            for key in self._generatingKwargs:
-                if type(self._generatingKwargs[key]) == str:
-                    logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
-                elif key == 'showInitSV':
-                    logStr += key + " = False, "
-                else:
-                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-        logStr += "bookmark = False"
-        logStr += ")"
-        logStr = logStr.replace('\\', '\\\\')
-        
-        return logStr
-
-
-
-# class MuMoTtimeEvoStateVarView(MuMoTtimeEvolutionView):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self._generatingCommand = "mmt.MuMoTtimeEvoStateVarView"
-#     def _plot_NumSolODE(self):
-#         super()._plot_NumSolODE()
-#         NrDP = int(self._tend/self._tstep) + 1
-#         time = np.linspace(0, self._tend, NrDP)
-#         initDict = self._getInitCondsFromSlider()
-#         assert (2 <= len(initDict) <= 4),"Not implemented: This feature is available only for systems with 2, 3 or 4 time-dependent reactants!"
-# 
-#         
-#         SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
-#         SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
-#         y0 = [SV1_0, SV2_0]
-#         if len(initDict) > 2:
-#             SV3_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable3))))]
-#             y0.append(SV3_0)
-#         if len(initDict) > 3:
-#             SV4_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable4))))]
-#             y0.append(SV4_0)
-#         
-#         sol_ODE = odeint(self._get_eqsODE, y0, time)  
-#           
-#         x_data = [time for kk in range(len(self._get_eqsODE(y0, time)))]
-#         y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
-#         
-#         c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVariable1)))+'$', r'$'+latex(Symbol('Phi_'+str(self._stateVariable2)))+'$'] 
-#         if self._stateVariable3:
-#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable3)))+'$')
-#         if self._stateVariable4:
-#             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
-#         
-#         _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
-#                            fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True)
-# #        plt.set_aspect('equal') ## @todo
-
-
 
 
 ## numerical solution of noise correlations around fixed points plot view on model
-class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
+class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
     
     ## equations of motion for first order moments of noise variables
     _EOM_1stOrdMomDict = None
@@ -4186,7 +3471,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
     _maxTimeDS = None
     ## time step of simulation for dynamical system to reach equilibrium (can be set via keyword)
     _tstepDS = None
-    ## y-label with default specific to this MuMoTNoiseCorrelationsView class (can be set via keyword)
+    ## y-label with default specific to this MuMoTnoiseCorrelationsView class (can be set via keyword)
     _ylab = None
     
     def _constructorSpecificParams(self, _):
@@ -4550,340 +3835,6 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
         logStr = _greekPrependify(logStr)
         logStr = logStr.replace('\\', '\\\\')
         logStr = logStr.replace('\\\\\\\\', '\\\\')
-        
-        return logStr
-    
-
-class MuMoTtimeEvoNoiseCorrView(MuMoTtimeEvolutionViewOld):
-    ## equations of motion for first order moments of noise variables
-    _EOM_1stOrdMomDict = None
-    ## equations of motion for second order moments of noise variables
-    _EOM_2ndOrdMomDict = None
-    ## upper bound of simulation time for noise-noise correlation functions (can be set via keyword)
-    _tendNoise = None
-    ## time step of simulation for noise-noise correlation functions (can be set via keyword)
-    _tstepNoise = None
-    ## y-label with default specific to this MuMoTtimeEvoNoiseCorrView class (can be set via keyword)
-    _ylab = None
-
-#    def __init__(self, model, controller, EOM_1stOrdMom, EOM_2ndOrdMom, stateVariable1, stateVariable2, stateVariable3=None, stateVariable4=None, figure = None, params = None, **kwargs):
-    def __init__(self, model, controller, EOM_1stOrdMom, EOM_2ndOrdMom, figure = None, params = None, **kwargs):
-        self._EOM_1stOrdMomDict = EOM_1stOrdMom
-        self._EOM_2ndOrdMomDict = EOM_2ndOrdMom
-        self._tendNoise = kwargs.get('tendNoise', 50)
-        self._tstepNoise= kwargs.get('tstepNoise', 0.01)
-        self._ylab = kwargs.get('ylab', 'noise-noise correlation')
-        silent = kwargs.get('silent', False)
-        super().__init__(model, controller, None, figure, params, **kwargs)
-        #super().__init__(*args, **kwargs)
-        
-        if len(self._stateVarList) < 2 or len(self._stateVarList) > 3:
-            self._showErrorMessage("Not implemented: This feature is available only for systems with 2 or 3 time-dependent reactants!")
-            return None
-        
-        self._generatingCommand = "numSimNoiseCorrelations"
-    
-        
-        
-    def _plot_NumSolODE(self, _=None):
-        super()._plot_NumSolODE()
-        
-        # check input
-        for nn in range(len(self._stateVarListDisplay)):
-            if self._stateVarListDisplay[nn] not in self._stateVarList:
-                self._showErrorMessage('Warning:  '+str(self._stateVarListDisplay[nn])+'  is no reactant in the current model.')
-                return None
-
-#         
-#         # check input
-#         if self._stateVariable1 not in self._mumotModel._reactants:
-#             self._showErrorMessage('Warning:  '+str(self._stateVariable1)+'  is no reactant in the current model.')
-#         if self._stateVariable2 not in self._mumotModel._reactants:
-#             self._showErrorMessage('Warning:  '+str(self._stateVariable2)+'  is no reactant in the current model.')
-#         if self._stateVariable3:
-#             if self._stateVariable3 not in self._mumotModel._reactants:
-#                 self._showErrorMessage('Warning:  '+str(self._stateVariable3)+'  is no reactant in the current model.')
-#         if self._stateVariable4:
-#             if self._stateVariable4 not in self._mumotModel._reactants:
-#                 self._showErrorMessage('Warning:  '+str(self._stateVariable4)+'  is no reactant in the current model.')
-
-        eps = 5e-3
-        systemSize = Symbol('systemSize')
-        
-        NrDP = int(self._tend/self._tstep) + 1
-        time = np.linspace(0, self._tend, NrDP)
-        
-        initDict = self._getInitCondsFromSlider()
-        if len(initDict) == 0:
-            if self._initCondsSV:
-                for SV in self._initCondsSV:
-                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = self._initCondsSV[SV]
-            for SV in self._stateVarList:
-                if Symbol(latex(Symbol('Phi^0_'+str(SV)))) not in initDict:
-                    initDict[Symbol(latex(Symbol('Phi^0_'+str(SV))))] = INITIAL_COND_INIT_VAL 
-                    
-        
-        SV1_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable1))))]
-        SV2_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable2))))]
-        y0 = [SV1_0, SV2_0]
-        if self._stateVariable3:
-            SV3_0 = initDict[Symbol(latex(Symbol('Phi^0_'+str(self._stateVariable3))))]
-            y0.append(SV3_0)
-            
-        sol_ODE = odeint(self._get_eqsODE, y0, time)
-        
-        if self._stateVariable3:
-            realEQsol, eigList = self._get_fixedPoints3d()
-        else:
-            realEQsol, eigList = self._get_fixedPoints2d()
-   
-        y_stationary = [sol_ODE[-1, kk] for kk in range(len(y0))]
-        
-        if realEQsol != [] and realEQsol != None:
-            steadyStateReached = False
-            for kk in range(len(realEQsol)):
-                if self._stateVariable3:
-                    if abs(realEQsol[kk][self._stateVariable1] - y_stationary[0]) <= eps and abs(realEQsol[kk][self._stateVariable2] - y_stationary[1]) <= eps and abs(realEQsol[kk][self._stateVariable3] - y_stationary[2]) <= eps:
-                        if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
-                            steadyStateReached = True
-                            steadyStateDict = {self._stateVariable1: realEQsol[kk][self._stateVariable1], self._stateVariable2: realEQsol[kk][self._stateVariable2], self._stateVariable3: realEQsol[kk][self._stateVariable3]}
-    
-                else:
-                    if abs(realEQsol[kk][self._stateVariable1] - y_stationary[0]) <= eps and abs(realEQsol[kk][self._stateVariable2] - y_stationary[1]) <= eps:
-                        if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
-                            steadyStateReached = True
-                            steadyStateDict = {self._stateVariable1: realEQsol[kk][self._stateVariable1], self._stateVariable2: realEQsol[kk][self._stateVariable2]}
-            
-            if steadyStateReached == False:
-                self._showErrorMessage('Stable steady state has not been reached: Try changing the initial conditions or model parameters using the sliders provided, increase simulation time, or decrease timestep tstep.') 
-                return None
-        else:
-            steadyStateReached = 'uncertain'
-            self._showErrorMessage('Warning: steady state may have not been reached. Substituted values of state variables at t=tend (tend can be set via keyword \'tend = <number>\').')
-            if self._stateVariable3:
-                steadyStateDict = {self._stateVariable1: y_stationary[0], self._stateVariable2: y_stationary[1], self._stateVariable3: y_stationary[2]}
-            else:
-                steadyStateDict = {self._stateVariable1: y_stationary[0], self._stateVariable2: y_stationary[1]}    
-        
-        with io.capture_output() as log:
-            if steadyStateReached == 'uncertain':
-                print('This plot depicts the noise-noise auto-correlation and cross-correlation functions around the following state (this might NOT be a steady state).')  
-            else:  
-                print('This plot depicts the noise-noise auto-correlation and cross-correlation functions around the following stable steady state:')
-            for reactant in steadyStateDict:
-                out = latex(Symbol('Phi^s_'+str(reactant))) + '=' + latex(steadyStateDict[reactant])
-                display(Math(out))
-        self._logs.append(log)
-        
-        argDict = self._get_argDict()
-        for key in argDict:
-            if key in self._mumotModel._constantReactants:
-                argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
-        for key in steadyStateDict:
-            if key in self._mumotModel._reactants:
-                steadyStateDict[Symbol('Phi_'+str(key))] = steadyStateDict.pop(key)
-        
-        EOM_1stOrdMomDict = copy.deepcopy(self._EOM_1stOrdMomDict)
-        for sol in EOM_1stOrdMomDict:
-            EOM_1stOrdMomDict[sol] = EOM_1stOrdMomDict[sol].subs(steadyStateDict)
-            EOM_1stOrdMomDict[sol] = EOM_1stOrdMomDict[sol].subs(argDict)
-        
-        EOM_2ndOrdMomDict = copy.deepcopy(self._EOM_2ndOrdMomDict)
-        
-        SOL_2ndOrdMomDict = self._numericSol2ndOrdMoment(EOM_2ndOrdMomDict, steadyStateDict, argDict)
-        
-        time_depend_noise=[]
-        for reactant in self._mumotModel._reactants:
-            if reactant not in self._mumotModel._constantReactants:
-                time_depend_noise.append(Symbol('eta_'+str(reactant)))
-        
-        noiseCorrEOM = []
-        noiseCorrEOMdict = {}
-        for sym in time_depend_noise:
-            for key in EOM_1stOrdMomDict:
-                noiseCorrEOMdict[sym*key] = expand(sym*EOM_1stOrdMomDict[key])
-        
-        eta_SV1 = Symbol('eta_'+str(self._stateVariable1))
-        eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
-        M_1, M_2 = symbols('M_1 M_2')
-        cVar1, cVar2, cVar3, cVar4 = symbols('cVar1 cVar2 cVar3 cVar4')
-        if self._stateVariable3:
-            eta_SV3 = Symbol('eta_'+str(self._stateVariable3))
-            cVar5, cVar6, cVar7, cVar8, cVar9 = symbols('cVar5 cVar6 cVar7 cVar8 cVar9')
-        
-        cVarSubdict = {}    
-        if len(time_depend_noise) == 2:
-            cVarSubdict[eta_SV1*M_1(eta_SV1)] = cVar1
-            cVarSubdict[eta_SV2*M_1(eta_SV2)] = cVar2
-            cVarSubdict[eta_SV1*M_1(eta_SV2)] = cVar3
-            cVarSubdict[eta_SV2*M_1(eta_SV1)] = cVar4
-            #auto-correlation
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV1*M_1(eta_SV1)])
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV2*M_1(eta_SV2)])
-            # cross-correlation
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV1*M_1(eta_SV2)])
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV2*M_1(eta_SV1)])
-        elif len(time_depend_noise) == 3:
-            cVarSubdict[eta_SV1*M_1(eta_SV1)] = cVar1
-            cVarSubdict[eta_SV2*M_1(eta_SV2)] = cVar2
-            cVarSubdict[eta_SV3*M_1(eta_SV3)] = cVar3
-            cVarSubdict[eta_SV1*M_1(eta_SV2)] = cVar4
-            cVarSubdict[eta_SV2*M_1(eta_SV1)] = cVar5
-            cVarSubdict[eta_SV1*M_1(eta_SV3)] = cVar6
-            cVarSubdict[eta_SV3*M_1(eta_SV1)] = cVar7
-            cVarSubdict[eta_SV2*M_1(eta_SV3)] = cVar8
-            cVarSubdict[eta_SV3*M_1(eta_SV2)] = cVar9
-            #auto-correlation
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV1*M_1(eta_SV1)])
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV2*M_1(eta_SV2)])
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV3*M_1(eta_SV3)])
-            # cross-correlation
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV1*M_1(eta_SV2)])
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV2*M_1(eta_SV1)])
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV1*M_1(eta_SV3)])
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV3*M_1(eta_SV1)])
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV2*M_1(eta_SV3)])
-            noiseCorrEOM.append(noiseCorrEOMdict[eta_SV3*M_1(eta_SV2)])
-        else:
-            self._showErrorMessage('Only implemented for 2 or 3 time-dependent noise variables.')
-         
-        for kk in range(len(noiseCorrEOM)):
-            noiseCorrEOM[kk] = noiseCorrEOM[kk].subs(cVarSubdict)
-        
-        def noiseODEsys(yin, t):
-            dydt = copy.deepcopy(noiseCorrEOM)
-            for kk in range(len(dydt)):
-                if self._stateVariable3:
-                    dydt[kk] = dydt[kk].subs({cVar1: yin[0], cVar2: yin[1], cVar3: yin[2], cVar4: yin[3],
-                                              cVar5: yin[4], cVar6: yin[5], cVar7: yin[6], cVar8: yin[7], cVar9: yin[8]})
-                else:
-                    dydt[kk] = dydt[kk].subs({cVar1: yin[0], cVar2: yin[1], cVar3: yin[2], cVar4: yin[3]})
-                dydt[kk] = dydt[kk].evalf()
-            return dydt
-        
-        NrDP = int(self._tendNoise/self._tstepNoise) + 1
-        time = np.linspace(0, self._tendNoise, NrDP)
-        if self._stateVariable3:
-            y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)], SOL_2ndOrdMomDict[M_2(eta_SV2**2)], SOL_2ndOrdMomDict[M_2(eta_SV3**2)], 
-                  SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)],
-                  SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)],
-                  SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)], SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)]]
-        else:
-            y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)], SOL_2ndOrdMomDict[M_2(eta_SV2**2)], 
-                  SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)]]
-        sol_ODE = odeint(noiseODEsys, y0, time) # sol_ODE overwritten
-        
-        x_data = [time for kk in range(len(y0))]  
-        y_data = [sol_ODE[:, kk] for kk in range(len(y0))]
-        noiseNorm = systemSize.subs(argDict)
-        noiseNorm = sympy.N(noiseNorm)
-        for nn in range(len(y_data)):
-            y_temp=np.copy(y_data[nn])
-            for kk in range(len(y_temp)):
-                y_temp[kk] = y_temp[kk]/noiseNorm
-            y_data[nn] = y_temp
-            
-        if self._stateVariable3:
-            c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV2)+'(0)'+ '>$',
-                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV3)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV2)+'(0)'+ '>$',
-                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV3)+'(0)'+ '>$',
-                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV2)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV3)+'(0)'+ '>$']
-            
-        else:
-            c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV2)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV2)+'(0)'+ '>$']
-       
-        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, 
-                           fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True, 
-                           legend_fontsize=self._legend_fontsize)
-#        plt.set_aspect('equal') ## @todo
-        
-        
-    def _numericSol2ndOrdMoment(self, EOM_2ndOrdMomDict, steadyStateDict, argDict):
-        for sol in EOM_2ndOrdMomDict:
-            EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(steadyStateDict)
-            EOM_2ndOrdMomDict[sol] = EOM_2ndOrdMomDict[sol].subs(argDict)
-#         
-#         eta_SV1 = Symbol('eta_'+str(self._stateVarList[0]))
-#         eta_SV2 = Symbol('eta_'+str(self._stateVarList[1]))
-#         M_1, M_2 = symbols('M_1 M_2')
-#         if len(self._stateVarList) == 3:
-#             eta_SV3 = Symbol('eta_'+str(self._stateVarList[2]))
-#             
-             
-        eta_SV1 = Symbol('eta_'+str(self._stateVariable1))
-        eta_SV2 = Symbol('eta_'+str(self._stateVariable2))
-        M_1, M_2 = symbols('M_1 M_2')
-        if self._stateVariable3:
-            eta_SV3 = Symbol('eta_'+str(self._stateVariable3))
-             
-
-        SOL_2ndOrdMomDict = {} 
-        EQsys2ndOrdMom = []
-        if self._stateVariable3:
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)])
-            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
-                                                             M_2(eta_SV2*eta_SV2), 
-                                                             M_2(eta_SV3*eta_SV3), 
-                                                             M_2(eta_SV1*eta_SV2), 
-                                                             M_2(eta_SV1*eta_SV3), 
-                                                             M_2(eta_SV2*eta_SV3)]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
-            
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
-            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
-            SOL_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)] = SOL_2ndOrderMom[2]
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[3]
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)] = SOL_2ndOrderMom[4]
-            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)] = SOL_2ndOrderMom[5]
-        
-        else:
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
-            EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
-            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
-                                                             M_2(eta_SV2*eta_SV2), 
-                                                             M_2(eta_SV1*eta_SV2)]))[0] #only one set of solutions (if any) in linear system of equations
-            
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
-            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[2]
-            
-        return SOL_2ndOrdMomDict
-
-
-    def _build_bookmark(self, includeParams = True):
-        if not self._silent:
-            logStr = "bookmark = "
-        else:
-            logStr = ""
-        
-        logStr += "<modelName>." + self._generatingCommand + "("
-     
-        if includeParams:
-            logStr += self._get_bookmarks_params() + ", "
-        if len(self._generatingKwargs) > 0:
-            for key in self._generatingKwargs:
-                if type(self._generatingKwargs[key]) == str:
-                    logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
-                elif key == 'showInitSV':
-                    logStr += key + " = False, "
-                else:
-                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-        logStr += "bookmark = False"
-        logStr += ")"
-        logStr = logStr.replace('\\', '\\\\')
         
         return logStr
 
@@ -5322,561 +4273,6 @@ class MuMoTfieldView(MuMoTview):
         self._logs.append(log)
 
 
-
-
-
-## field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
-class MuMoTfieldViewOLD(MuMoTview):
-    ## 1st state variable (x-dimension)
-    _stateVariable1 = None
-    ## 2nd state variable (y-dimension)
-    _stateVariable2 = None
-    ## 3rd state variable (z-dimension) 
-    _stateVariable3 = None
-    ## X ordinates array
-    _X = None
-    ## Y ordinates array
-    _Y = None 
-    ## Z ordinates array
-    _Z = None
-    ## X derivatives array 
-    _X = None
-    ## Y derivatives array
-    _Y = None
-    ## Z derivatives array
-    _Z = None 
-    ## speed array
-    _speed = None 
-    ## class-global dictionary of memoised masks with (mesh size, dimension) as key
-    _mask = {} 
-    ##x-label
-    _xlab = None
-    ## y-label
-    _ylab = None
-    
-    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
-        if model._systemSize == None and model._constantSystemSize == True:
-            print("Cannot construct field-based plot until system size is set, using substitute()")
-            return
-        silent = kwargs.get('silent', False)
-        super().__init__(model, controller, figure, params, **kwargs)
-        
-        if 'fontsize' in kwargs:
-            self._chooseFontSize = kwargs['fontsize']
-        else:
-            self._chooseFontSize=None
-        self._showFixedPoints = kwargs.get('showFixedPoints', False)
-        self._xlab = kwargs.get('xlab', r'$'+ '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable1)))+'}$')
-        self._ylab = kwargs.get('ylab', r'$'+ '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable2)))+'}$')
-        if stateVariable3:
-            self._zlab = kwargs.get('zlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable3))) + '}$') 
-        
-        self._stateVariable1 = process_sympy(stateVariable1)
-        self._stateVariable2 = process_sympy(stateVariable2)
-        if stateVariable3 != None:
-            self._axes3d = True
-            self._stateVariable3 = process_sympy(stateVariable3)
-        _mask = {}
-
-        if not(silent):
-            self._plot_field()
-
-    
-
-
-#    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
-
-    def _build_bookmark(self, includeParams = True):
-        if not self._silent:
-            logStr = "bookmark = "
-        else:
-            logStr = ""
-        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
-        if self._stateVariable3 != None:
-            logStr += "'" + str(self._stateVariable3) + "', "
-        if includeParams:
-            logStr += self._get_bookmarks_params() + ", "
-        if len(self._generatingKwargs) > 0:
-            for key in self._generatingKwargs:
-                logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-        logStr += "bookmark = False"
-        logStr += ")"
-        logStr = _greekPrependify(logStr)
-        logStr = logStr.replace('\\', '\\\\')
-        logStr = logStr.replace('\\\\\\\\', '\\\\')
-        
-        return logStr
-
-            
-    ## calculates stationary states of 2d system
-#     def _get_fixedPoints2d(self):
-#         #plotLimits = self._controller._getPlotLimits()
-#         if self._controller != None:
-#             paramNames = []
-#             paramValues = []
-#             for name, value in self._controller._widgetsFreeParams.items():
-#                 # throw away formatting for constant reactants
-# #                 name = name.replace('(','')
-# #                 name = name.replace(')','')
-#                 paramNames.append(name)
-#                 paramValues.append(value.value)
-#         else:
-#             paramNames = map(str, self._paramNames)
-#             paramValues = self._paramValues            
-#         funcs = self._mumotModel._getFuncs()
-#         argNamesSymb = list(map(Symbol, paramNames))
-#         argDict = dict(zip(argNamesSymb, paramValues))
-#         argDict[self._mumotModel._systemSize] = 1
-#        
-# #         if self._controller != None:
-# #             paramNames = []
-# #             paramValues = []
-# #             for name, value in self._controller._widgetsFreeParams.items():
-# #                 paramNames.append(name)
-# #                 paramValues.append(value.value)          
-# #         else:
-# #             paramNames = map(str, self._paramNames)
-# #             paramValues = self._paramValues           
-# #             
-# #         argNamesSymb = list(map(Symbol, paramNames))
-# #         argDict = dict(zip(argNamesSymb, paramValues))
-# #         argDict[self._mumotModel._systemSize] = 1
-#         
-#         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
-#         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
-#         eps=1e-8
-#         EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
-#         #for kk in range(len(EQsol)):
-#         #    print(EQsol[kk])
-#         realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps)]
-#         
-#         MAT = Matrix([EQ1, EQ2])
-#         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2])
-#         
-#         eigList = []
-#         #for nn in range(len(realEQsol)): 
-#         #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
-#         #    evSet = JACsub.eigenvals()
-#         #    eigList.append(evSet)
-#         for nn in range(len(realEQsol)): 
-#             evSet = {}
-#             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
-#             #evSet = JACsub.eigenvals()
-#             eigVects = JACsub.eigenvects()
-#             for kk in range(len(eigVects)):
-#                 evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
-#             eigList.append(evSet)
-#         return realEQsol, eigList #returns two lists of dictionaries
-#     
-#     ## calculates stationary states of 3d system
-#     def _get_fixedPoints3d(self):
-#         #plotLimits = self._controller._getPlotLimits()
-#         if self._controller != None:
-#             paramNames = []
-#             paramValues = []
-#             for name, value in self._controller._widgetsFreeParams.items():
-#                 # throw away formatting for constant reactants
-# #                 name = name.replace('(','')
-# #                 name = name.replace(')','')
-#                 paramNames.append(name)
-#                 paramValues.append(value.value)
-#         else:
-#             paramNames = map(str, self._paramNames)
-#             paramValues = self._paramValues            
-#         funcs = self._mumotModel._getFuncs()
-#         argNamesSymb = list(map(Symbol, paramNames))
-#         argDict = dict(zip(argNamesSymb, paramValues))
-#         argDict[self._mumotModel._systemSize] = 1
-#         
-# #         if self._controller != None:
-# #             paramNames = []
-# #             paramValues = []
-# #             for name, value in self._controller._widgetsFreeParams.items():
-# #                 paramNames.append(name)
-# #                 paramValues.append(value.value)          
-# #         else:
-# #             paramNames = map(str, self._paramNames)
-# #             paramValues = self._paramValues           
-# #             
-# #         argNamesSymb = list(map(Symbol, paramNames))
-# #         argDict = dict(zip(argNamesSymb, paramValues))
-# #         argDict[self._mumotModel._systemSize] = 1
-#         
-#         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
-#         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
-#         EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
-#         eps=1e-8
-#         EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
-#         realEQsol = [{self._stateVariable1: re(EQsol[kk][self._stateVariable1]), self._stateVariable2: re(EQsol[kk][self._stateVariable2]), self._stateVariable3: re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (Abs(im(EQsol[kk][self._stateVariable1]))<=eps and Abs(im(EQsol[kk][self._stateVariable2]))<=eps and Abs(im(EQsol[kk][self._stateVariable3]))<=eps)]
-#         
-#         MAT = Matrix([EQ1, EQ2, EQ3])
-#         JAC = MAT.jacobian([self._stateVariable1,self._stateVariable2,self._stateVariable3])
-#         
-#         eigList = []
-#         #for nn in range(len(realEQsol)): 
-#         #    JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
-#         #    evSet = JACsub.eigenvals()
-#         #    eigList.append(evSet)
-#         for nn in range(len(realEQsol)): 
-#             evSet = {}
-#             JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
-#             #evSet = JACsub.eigenvals()
-#             eigVects = JACsub.eigenvects()
-#             for kk in range(len(eigVects)):
-#                 evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
-#             eigList.append(evSet)
-#         return realEQsol, eigList #returns two lists of dictionaries
-    
-    
-    def _plot_field(self):
-        if not(self._silent): ## @todo is this necessary?
-            plt.figure(self._figureNum)
-            plt.clf()
-            self._resetErrorMessage()
-        self._showErrorMessage(str(self))
-
-    ## helper for _get_field_2d() and _get_field_3d()
-    def _get_field(self):
-        plotLimits = self._getPlotLimits()
-#         paramNames = []
-#         paramValues = []
-#         if self._controller is not None:
-#             for name, value in self._controller._widgetsFreeParams.items():
-#                 # throw away formatting for constant reactants
-# #                 name = name.replace('(','')
-# #                 name = name.replace(')','')
-#                 paramNames.append(name)
-#                 paramValues.append(value.value)
-#         if self._paramNames is not None:
-#             paramNames += map(str, self._paramNames)
-#             paramValues += self._paramValues           
-#         argNamesSymb = list(map(Symbol, paramNames))
-#         argDict = dict(zip(argNamesSymb, paramValues))
-        argDict = self._get_argDict()
-        funcs = self._mumotModel._getFuncs()
-        
-        return (funcs, argDict, plotLimits)
-
-    ## get 2-dimensional field for plotting
-    def _get_field2d(self, kind, meshPoints, plotLimits = 1):
-        with io.capture_output() as log:
-            self._log(kind)
-            (funcs, argDict, plotLimits) = self._get_field()
-            self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
-            if self._mumotModel._constantSystemSize:
-                mask = self._mask.get((meshPoints, 2))
-                if mask is None:
-                    mask = np.zeros(self._X.shape, dtype=bool)
-                    upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
-                    mask[upperright] = True
-                    np.fill_diagonal(mask, False)
-                    mask = np.flipud(mask)
-                    self._mask[(meshPoints, 2)] = mask
-            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple2d(argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
-            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple2d(argDict, self._stateVariable1, self._stateVariable2, self._X, self._Y))
-            try:
-                self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2))
-            except:
-#                self._speed = np.ones(self._X.shape, dtype=float)
-                self._speed = None
-            if self._mumotModel._constantSystemSize:
-                self._Xdot = np.ma.array(self._Xdot, mask=mask)
-                self._Ydot = np.ma.array(self._Ydot, mask=mask)        
-        self._logs.append(log)
-
-    ## get 3-dimensional field for plotting        
-    def _get_field3d(self, kind, meshPoints, plotLimits = 1):
-        with io.capture_output() as log:
-            self._log(kind)
-            (funcs, argDict, plotLimits) = self._get_field()
-            self._Z, self._Y, self._X = np.mgrid[0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints), 0:plotLimits:complex(0, meshPoints)]
-            if self._mumotModel._constantSystemSize:
-                mask = self._mask.get((meshPoints, 3))
-                if mask is None:
-    #                mask = np.zeros(self._X.shape, dtype=bool)
-    #                 upperright = np.triu_indices(meshPoints) ## @todo: allow user to set mesh points with keyword 
-    #                 mask[upperright] = True
-    #                 np.fill_diagonal(mask, False)
-    #                 mask = np.flipud(mask)
-                    mask = self._X + self._Y + self._Z >= 1
-    #                mask = mask.astype(int)
-                    self._mask[(meshPoints, 3)] = mask
-            self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple3d(argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            self._Ydot = funcs[self._stateVariable2](*self._mumotModel._getArgTuple3d(argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            self._Zdot = funcs[self._stateVariable3](*self._mumotModel._getArgTuple3d(argDict, self._stateVariable1, self._stateVariable2, self._stateVariable3, self._X, self._Y, self._Z))
-            try:
-                self._speed = np.log(np.sqrt(self._Xdot ** 2 + self._Ydot ** 2 + self._Zdot ** 2))
-            except:
-                self._speed = None
-#            self._Xdot = self._Xdot * mask
-#            self._Ydot = self._Ydot * mask
-#            self._Zdot = self._Zdot * mask
-            if self._mumotModel._constantSystemSize:
-                self._Xdot = np.ma.array(self._Xdot, mask=mask)
-                self._Ydot = np.ma.array(self._Ydot, mask=mask)        
-                self._Zdot = np.ma.array(self._Zdot, mask=mask)
-        self._logs.append(log)
-
-
-# ## stream plot with noise ellipses view on model
-# class MuMoTnoiseView(MuMoTfieldView):
-#     ## solution 1st order moments (noise in vKE)
-#     _SOL_1stOrderMomDict = None
-#     ## replacement dictionary for symbols of 1st order moments
-#     _NoiseSubs1stOrder = None
-#     ## solution 2nd order moments (noise in vKE)
-#     _SOL_2ndOrdMomDict = None
-#     ## replacement dictionary for symbols of 2nd order moments
-#     _NoiseSubs2ndOrder = None
-#     ## set for checking number of time-dependent reactants
-#     _checkReactants = None
-#     ## set for checking constant reactants
-#     _checkConstReactants = None
-#     
-#     _noiseStatSol = None
-#  
-#     def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure = None, params = None, **kwargs):
-#         if model._systemSize == None and model._constantSystemSize == True:
-#             print("Cannot construct field-based plot until system size is set, using substitute()")
-#             return
-#         #self._noiseStatSol = noiseStatSol
-#         #self._SOL_1stOrderMomDict, self._NoiseSubs1stOrder, self._SOL_2ndOrdMomDict, self._NoiseSubs2ndOrder = self._noiseStatSol
-#         self._SOL_2ndOrdMomDict = SOL_2ndOrd
-#         self._checkReactants = model._reactants
-#         if model._constantReactants:
-#             self._checkConstReactants = model._constantReactants
-#         silent = kwargs.get('silent', False)
-#         super().__init__(model, controller, stateVariable1, stateVariable2, stateVariable3, figure, params, **kwargs) 
-#         self._generatingCommand = "mmt.MuMoTnoiseView"
-#         
-#     def _plot_field(self):
-#         super()._plot_field()
-#         
-#         Phi_stateVar1 = Symbol('Phi_'+str(self._stateVariable1)) 
-#         Phi_stateVar2 = Symbol('Phi_'+str(self._stateVariable2))
-#         eta_stateVar1 = Symbol('eta_'+str(self._stateVariable1)) 
-#         eta_stateVar2 = Symbol('eta_'+str(self._stateVariable2))
-#         M_2 = Symbol('M_2')
-#         
-#         eta_cross = eta_stateVar1*eta_stateVar2
-#         for key in self._SOL_2ndOrdMomDict:
-#             if key == self._SOL_2ndOrdMomDict[key] or key in self._SOL_2ndOrdMomDict[key].args:
-#                 for key2 in self._SOL_2ndOrdMomDict:
-#                     if key2 != key and key2 != M_2(eta_cross):
-#                         self._SOL_2ndOrdMomDict[key] = self._SOL_2ndOrdMomDict[key].subs(key, self._SOL_2ndOrdMomDict[key2])
-#                    
-#         checkReactants = copy.deepcopy(self._checkReactants)
-#         if self._checkConstReactants:
-#             checkConstReactants = copy.deepcopy(self._checkConstReactants)
-#             for reactant in checkReactants:
-#                 if reactant in checkConstReactants:
-#                     checkReactants.remove(reactant)
-#         assert (len(checkReactants) == 2),"Not implemented: This feature is available only for systems with exactly 2 time-dependent reactants!"
-#         realEQsol, eigList = self._get_fixedPoints2d()
-#         systemSize = Symbol('systemSize')
-#         argDict = self._get_argDict()
-#         for key in argDict:
-#             if key in self._mumotModel._constantReactants:
-#                 argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
-#         
-#         PhiSubList = []
-#         for kk in range(len(realEQsol)):
-#             PhiSubDict={}
-#             for solXi in realEQsol[kk]:
-#                 PhiSubDict[Symbol('Phi_'+str(solXi))] = realEQsol[kk][solXi]
-#             PhiSubList.append(PhiSubDict)
-#         
-#         SOL_2ndOrdMomDictList = []
-#         for nn in range(len(PhiSubList)):
-#             SOL_2ndOrdMomDict = copy.deepcopy(self._SOL_2ndOrdMomDict)
-#             for sol in SOL_2ndOrdMomDict:
-#                 SOL_2ndOrdMomDict[sol] = SOL_2ndOrdMomDict[sol].subs(PhiSubList[nn])
-#                 SOL_2ndOrdMomDict[sol] = SOL_2ndOrdMomDict[sol].subs(argDict)
-#             SOL_2ndOrdMomDictList.append(SOL_2ndOrdMomDict)
-#             
-#         Evects = []
-#         EvectsPlot = []
-#         EV = []
-#         EVplot = []
-#         for kk in range(len(eigList)):
-#             EVsub = []
-#             EvectsSub = []
-#             for key in eigList[kk]:
-#                 for jj in range(len(eigList[kk][key][1])):
-#                     EvectsSub.append(eigList[kk][key][1][jj].evalf())
-#                 if eigList[kk][key][0] >1:
-#                     for jj in range(eigList[kk][key][0]):
-#                         EVsub.append(key.evalf())
-#                 else:
-#                     EVsub.append(key.evalf())
-#                     
-#             EV.append(EVsub)
-#             Evects.append(EvectsSub)
-#             if self._mumotModel._constantSystemSize == True:
-#                 if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
-#                     EVplot.append(EVsub)
-#                     EvectsPlot.append(EvectsSub)
-#             else:
-#                 EVplot.append(EVsub)
-#                 EvectsPlot.append(EvectsSub)
-# 
-#         angle_ell_list = []
-#         projection_angle_list = []
-#         vec1 = Matrix([ [0], [1] ])
-#         for nn in range(len(EvectsPlot)):
-#             vec2 = EvectsPlot[nn][0]
-#             vec2norm = vec2.norm()
-#             vec2 = vec2/vec2norm
-#             vec3 = EvectsPlot[nn][0]
-#             vec3norm = vec3.norm()
-#             vec3 = vec3/vec3norm
-#             if vec2norm >= vec3norm:
-#                 angle_ell = acos(vec1.dot(vec2)/(vec1.norm()*vec2.norm())).evalf()
-#             else:
-#                 angle_ell = acos(vec1.dot(vec3)/(vec1.norm()*vec3.norm())).evalf()
-#             angle_ell = angle_ell.evalf()
-#             projection_angle_list.append(angle_ell)
-#             angle_ell_deg = 180*angle_ell/pi.evalf()
-#             angle_ell_list.append(round(angle_ell_deg,5))
-#         projection_angle_list = [abs(projection_angle_list[kk]) if abs(projection_angle_list[kk]) <= N(pi/2) else N(pi)-abs(projection_angle_list[kk]) for kk in range(len(projection_angle_list))]
-#         
-#         if self._mumotModel._constantSystemSize == True:
-#             FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)], 
-#                          [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)]]
-#             Ell_width = [re(cos(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)]
-#             Ell_height = [re(cos(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= re(PhiSubList[kk][Phi_stateVar2]) <= 1)]
-#             #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)], 
-#             #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
-#         else:
-#             FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList))], 
-#                          [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList))]]
-#             Ell_width = [re(cos(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(N(pi/2)-projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList))]
-#             Ell_height = [re(cos(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sin(projection_angle_list[kk])*sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList))]
-#             #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
-#             #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
-#             #Ell_width = [SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)] for kk in range(len(SOL_2ndOrdMomDictList))]
-#             #Ell_height = [SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)] for kk in range(len(SOL_2ndOrdMomDictList))] 
-#         
-#         # swap width and height of ellipse if width > height
-#         for kk in range(len(Ell_width)):
-#             ell_width_temp = Ell_width[kk]
-#             ell_height_temp = Ell_height[kk]
-#             if ell_width_temp > ell_height_temp:
-#                 Ell_height[kk] = ell_width_temp
-#                 Ell_width[kk] = ell_height_temp    
-#         
-#         FixedPoints.append(EVplot) 
-#         
-#         self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
-#         
-#         if self._speed is not None:
-#             fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
-#         else:
-#             fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = 'k') ## @todo: define colormap by user keyword
-#         ells = [mpatch.Ellipse(xy=[FixedPoints[0][nn],FixedPoints[1][nn]], width=Ell_width[nn]/systemSize.subs(argDict), height=Ell_height[nn]/systemSize.subs(argDict), angle= round(angle_ell_list[nn],5)) for nn in range(len(FixedPoints[0]))]
-#         ax = plt.gca()
-#         for kk in range(len(ells)):
-#             ax.add_artist(ells[kk])
-#             ells[kk].set_alpha(0.25)
-#             if re(EVplot[kk][0]) < 0 and re(EVplot[kk][1]) < 0:
-#                 Fcolor = line_color_list[1]
-#             elif re(EVplot[kk][0]) > 0 and re(EVplot[kk][1]) > 0:
-#                 Fcolor = line_color_list[2]
-#             else:
-#                 Fcolor = line_color_list[0]
-#             ells[kk].set_facecolor(Fcolor)
-#         if self._mumotModel._constantSystemSize == True:
-#             plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')            
-#             plt.xlim(0,1)
-#             plt.ylim(0,1)
-#         else:
-#             plt.xlim(0,self._X.max())
-#             plt.ylim(0,self._Y.max())
-#         
-#         _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=True, 
-#                            ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize)
-# #        plt.set_aspect('equal') ## @todo
-# 
-#         if self._showFixedPoints==True:
-#             with io.capture_output() as log:
-#                 for kk in range(len(realEQsol)):
-#                     print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]),
-#                           'and eigenvectors:', str(Evects[kk]))
-#             self._logs.append(log)
-# 
-# ## stream plot view on model
-# class MuMoTstreamView(MuMoTfieldView):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self._generatingCommand = "stream"
-# 
-#     def _plot_field(self):
-#         super()._plot_field()
-#         if self._showFixedPoints==True:
-#             realEQsol, eigList = self._get_fixedPoints2d()
-#             
-#             EV = []
-#             EVplot = []
-#             for kk in range(len(eigList)):
-#                 EVsub = []
-#                 for key in eigList[kk]:
-#                     if eigList[kk][key][0] >1:
-#                         for jj in range(eigList[kk][key][0]):
-#                             EVsub.append(key.evalf())
-#                     else:
-#                         EVsub.append(key.evalf())
-#                         
-#                 EV.append(EVsub)
-#                 if self._mumotModel._constantSystemSize == True:
-#                     if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
-#                         EVplot.append(EVsub)
-#                 else:
-#                     EVplot.append(EVsub)
-#             
-#             #EV = []
-#             #EVplot = []
-#             #for kk in range(len(eigList)):
-#             #    EVsub = []
-#             #    for key in eigList[kk]:
-#             #        EVsub.append(key.evalf())
-#             #    EV.append(EVsub)
-#             #    if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1):
-#             #        EVplot.append(EVsub)
-# 
-#             if self._mumotModel._constantSystemSize == True:
-#                 FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)], 
-#                              [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= re(realEQsol[kk][self._stateVariable2]) <= 1)]]
-#             else:
-#                 FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
-#                              [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
-#             FixedPoints.append(EVplot)
-#         else:
-#             FixedPoints = None
-#             
-#         self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
-#         if self._speed is not None:
-#             fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
-#         else:
-#             fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = 'k') ## @todo: define colormap by user keyword
-#         if self._mumotModel._constantSystemSize == True:
-#             plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')            
-#             plt.xlim(0,1)
-#             plt.ylim(0,1)
-#         else:
-#             plt.xlim(0,self._X.max())
-#             plt.ylim(0,self._Y.max())
-#         
-#         _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
-#                    ylab = self._ylab, fontsize=self._chooseFontSize)
-# #        plt.set_aspect('equal') ## @todo
-# 
-#         if self._showFixedPoints==True:
-#             with io.capture_output() as log:
-#                 for kk in range(len(realEQsol)):
-#                     print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]))
-#             self._logs.append(log)
-
-
 ## vector plot view on model
 class MuMoTvectorView(MuMoTfieldView):
     ## dictionary containing the solutions of the second order noise moments in the stationary state
@@ -6016,367 +4412,7 @@ class MuMoTstreamView(MuMoTfieldView):
             print('3d stream plot not yet implemented.')
 
 
-## stream plot view on model
-class MuMoTstreamViewOLD(MuMoTfieldViewOLD):
-    ## dictionary containing the solutions of the second order noise moments in the stationary state
-    _SOL_2ndOrdMomDict = None
-    ## set of all reactants
-    _checkReactants = None
-    ## flag to run SSA simulations to compute noise ellipse
-    _showSSANoise = None
-    ## set of all constant reactants to get intersection with _checkReactants
-    _checkConstReactants = None
-    
-    def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure = None, params = None, **kwargs):
-        #if model._systemSize == None and model._constantSystemSize == True:
-        #    self._showErrorMessage("Cannot construct field-based plot until system size is set, using substitute()")
-        #    return
-        self._SOL_2ndOrdMomDict = SOL_2ndOrd
-        if kwargs.get('showNoise',False) == True and self._SOL_2ndOrdMomDict is None:
-            self._showSSANoise = True
-        else:
-            self._showSSANoise = False
-        #if self._SOL_2ndOrdMomDict == None:
-        #    self._showErrorMessage('Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
-
-        self._checkReactants = model._reactants
-        if model._constantReactants:
-            self._checkConstReactants = model._constantReactants
-        else:
-            self._checkConstReactants = None
-        silent = kwargs.get('silent', False)
-        super().__init__(model, controller, stateVariable1, stateVariable2, stateVariable3, figure, params, **kwargs) 
-        self._generatingCommand = "stream"
-
-    def _plot_field(self, _=None):
-        super()._plot_field()
-        
-        # check number of time-dependent reactants
-        checkReactants = copy.deepcopy(self._checkReactants)
-        if self._checkConstReactants:
-            checkConstReactants = copy.deepcopy(self._checkConstReactants)
-            for reactant in checkReactants:
-                if reactant in checkConstReactants:
-                    checkReactants.remove(reactant)
-        if len(checkReactants) != 2:
-            self._showErrorMessage("Not implemented: This feature is available only for systems with exactly 2 time-dependent reactants!")
-                        
-        if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None or self._showSSANoise:
-            Phi_stateVar1 = Symbol('Phi_'+str(self._stateVariable1)) 
-            Phi_stateVar2 = Symbol('Phi_'+str(self._stateVariable2))
-            eta_stateVar1 = Symbol('eta_'+str(self._stateVariable1)) 
-            eta_stateVar2 = Symbol('eta_'+str(self._stateVariable2))
-            M_2 = Symbol('M_2')
-            
-            systemSize = Symbol('systemSize')
-            argDict = self._get_argDict()
-            for key in argDict:
-                if key in self._mumotModel._constantReactants:
-                    argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
-         
-            realEQsol, eigList = self._get_fixedPoints2d()
-        
-            PhiSubList = []
-            for kk in range(len(realEQsol)):
-                PhiSubDict={}
-                for solXi in realEQsol[kk]:
-                    PhiSubDict[Symbol('Phi_'+str(solXi))] = realEQsol[kk][solXi]
-                PhiSubList.append(PhiSubDict)
-            
-            Evects = []
-            EvectsPlot = []
-            EV = []
-            EVplot = []
-            for kk in range(len(eigList)):
-                EVsub = []
-                EvectsSub = []
-                for key in eigList[kk]:
-                    for jj in range(len(eigList[kk][key][1])):
-                        EvectsSub.append(eigList[kk][key][1][jj].evalf())
-                    if eigList[kk][key][0] >1:
-                        for jj in range(eigList[kk][key][0]):
-                            EVsub.append(key.evalf())
-                    else:
-                        EVsub.append(key.evalf())
-                        
-                EV.append(EVsub)
-                Evects.append(EvectsSub)
-                if self._mumotModel._constantSystemSize == True:
-                    if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1):
-                        EVplot.append(EVsub)
-                        EvectsPlot.append(EvectsSub)
-                else:
-                    EVplot.append(EVsub)
-                    EvectsPlot.append(EvectsSub)
-        
-        if self._SOL_2ndOrdMomDict:
-            eta_cross = eta_stateVar1*eta_stateVar2
-            for key in self._SOL_2ndOrdMomDict:
-                if key == self._SOL_2ndOrdMomDict[key] or key in self._SOL_2ndOrdMomDict[key].args:
-                    for key2 in self._SOL_2ndOrdMomDict:
-                        if key2 != key and key2 != M_2(eta_cross):
-                            self._SOL_2ndOrdMomDict[key] = self._SOL_2ndOrdMomDict[key].subs(key, self._SOL_2ndOrdMomDict[key2])
-            
-            SOL_2ndOrdMomDictList = []
-            for nn in range(len(PhiSubList)):
-                SOL_2ndOrdMomDict = copy.deepcopy(self._SOL_2ndOrdMomDict)
-                for sol in SOL_2ndOrdMomDict:
-                    SOL_2ndOrdMomDict[sol] = SOL_2ndOrdMomDict[sol].subs(PhiSubList[nn])
-                    SOL_2ndOrdMomDict[sol] = SOL_2ndOrdMomDict[sol].subs(argDict)
-                SOL_2ndOrdMomDictList.append(SOL_2ndOrdMomDict)
-        
-            angle_ell_list = []
-            projection_angle_list = []
-            vec1 = Matrix([ [0], [1] ])
-            for nn in range(len(EvectsPlot)):
-                vec2 = EvectsPlot[nn][0]
-                vec2norm = vec2.norm()
-                vec2 = vec2/vec2norm
-                vec3 = EvectsPlot[nn][0]
-                vec3norm = vec3.norm()
-                vec3 = vec3/vec3norm
-                if vec2norm >= vec3norm:
-                    angle_ell = sympy.acos(vec1.dot(vec2)/(vec1.norm()*vec2.norm())).evalf()
-                else:
-                    angle_ell = sympy.acos(vec1.dot(vec3)/(vec1.norm()*vec3.norm())).evalf()
-                angle_ell = angle_ell.evalf()
-                projection_angle_list.append(angle_ell)
-                angle_ell_deg = 180*angle_ell/(sympy.pi).evalf()
-                angle_ell_list.append(round(angle_ell_deg,5))
-            projection_angle_list = [abs(projection_angle_list[kk]) if abs(projection_angle_list[kk]) <= sympy.N(sympy.pi/2) else sympy.N(sympy.pi)-abs(projection_angle_list[kk]) for kk in range(len(projection_angle_list))]
-        
-        if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None or self._showSSANoise:
-            if self._mumotModel._constantSystemSize == True:
-                FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)], 
-                             [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)]]
-                if self._SOL_2ndOrdMomDict:
-                    Ell_width = [sympy.re(sympy.cos(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sympy.sin(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)]
-                    Ell_height = [sympy.re(sympy.cos(projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sympy.sin(projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)]
-                #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)], 
-                #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)]]
-            else:
-                FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList))], 
-                             [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList))]]
-                if self._SOL_2ndOrdMomDict:
-                    Ell_width = [sympy.re(sympy.cos(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sympy.sin(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList))]
-                    Ell_height = [sympy.re(sympy.cos(projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sympy.sin(projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList))]
-                #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
-                #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
-                #Ell_width = [SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)] for kk in range(len(SOL_2ndOrdMomDictList))]
-                #Ell_height = [SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)] for kk in range(len(SOL_2ndOrdMomDictList))] 
-           
-            FixedPoints.append(EVplot)
-        
-        else:
-            FixedPoints=None   
-            
-        self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
-        
-        if self._speed is not None:
-            fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
-        else:
-            fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = 'k') ## @todo: define colormap by user keyword
-        
-        if self._SOL_2ndOrdMomDict:
-            # swap width and height of ellipse if width > height
-            for kk in range(len(Ell_width)):
-                ell_width_temp = Ell_width[kk]
-                ell_height_temp = Ell_height[kk]
-                if ell_width_temp > ell_height_temp:
-                    Ell_height[kk] = ell_width_temp
-                    Ell_width[kk] = ell_height_temp
-                    
-            ells = [mpatch.Ellipse(xy=[FixedPoints[0][nn],FixedPoints[1][nn]], width=Ell_width[nn]/systemSize.subs(argDict), height=Ell_height[nn]/systemSize.subs(argDict), angle= round(angle_ell_list[nn],5)) for nn in range(len(FixedPoints[0]))]
-            ax = plt.gca()
-            for kk in range(len(ells)):
-                ax.add_artist(ells[kk])
-                ells[kk].set_alpha(0.5)
-                if sympy.re(EVplot[kk][0]) < 0 and sympy.re(EVplot[kk][1]) < 0:
-                    Fcolor = LINE_COLOR_LIST[1]
-                elif sympy.re(EVplot[kk][0]) > 0 and sympy.re(EVplot[kk][1]) > 0:
-                    Fcolor = LINE_COLOR_LIST[2]
-                else:
-                    Fcolor = LINE_COLOR_LIST[0]
-                ells[kk].set_facecolor(Fcolor)
-        if self._mumotModel._constantSystemSize == True:
-            plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')            
-            plt.xlim(0,1)
-            plt.ylim(0,1)
-        else:
-            plt.xlim(0,self._X.max())
-            plt.ylim(0,self._Y.max())
-        
-        if self._showSSANoise:
-#             print(FixedPoints)
-#             print(self._stateVariable1)
-#             print(self._stateVariable2)
-#             print(realEQsol)
-            for kk in range(len(realEQsol)):
-                #print("printing ellipse for point " + str(realEQsol[kk]) )
-                # skip values out of range [0,1] and unstable equilibria
-                skip = False
-                for p in realEQsol[kk].values():
-                    if p < 0 or p > 1:
-                        skip = True
-                        #print("Skipping for out range")
-                        break
-                    for eigenV in EV[kk]:
-                        if sympy.re(eigenV) > 0:
-                            skip = True
-                            #print("Skipping for positive eigenvalue")
-                            break
-                    if skip: break
-                if skip: continue
-                # generate proper init reactant list
-                initState = copy.deepcopy(realEQsol[kk])
-                for reactant in self._mumotModel._getAllReactants()[0]:
-                    if reactant not in initState.keys():
-                        #initState[reactant] = 1 - sum(initState.values())
-                        iniSum = 0
-                        for val in initState.values(): iniSum += np.real(val)
-                        initState[reactant] = 1 - iniSum
-                #print(initState)
-                #print("Using params: " + str(self._get_params()))
-                SSAView = MuMoTSSAView(self._mumotModel, None,
-                                 params = self._get_params(),
-                                 SSParams = {'maxTime': 2, 'runs': 20, 'realtimePlot': False, 'plotProportions': True, 'aggregateResults': True, 'visualisationType': 'final',
-                                             'final_x':latex(self._stateVariable1), 'final_y':latex(self._stateVariable2), 
-                                             'initialState': initState, 'randomSeed': np.random.randint(MAX_RANDOM_SEED)}, silent=True )
-                #print(SSAView._printStandaloneViewCmd())
-                SSAView._figure = self._figure
-                SSAView._computeAndPlotSimulation()
-        
-        _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, 
-                           ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatioEqual=True)
-#        plt.set_aspect('equal') ## @todo
-
-        if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None:
-            with io.capture_output() as log:
-                for kk in range(len(realEQsol)):
-                    print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]),
-                          'and eigenvectors:', str(Evects[kk]))
-            self._logs.append(log)
-
-
-
-## vector plot view on model
-class MuMoTvectorViewOLD(MuMoTfieldViewOLD):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._generatingCommand = "vector"
-
-    def _plot_field(self, _=None):
-        super()._plot_field()
-        if self._stateVariable3 == None:
-            if self._showFixedPoints==True:
-                realEQsol, eigList = self._get_fixedPoints2d()
-                
-                EV = []
-                EVplot = []
-                for kk in range(len(eigList)):
-                    EVsub = []
-                    for key in eigList[kk]:
-                        if eigList[kk][key][0] >1:
-                            for jj in range(eigList[kk][key][0]):
-                                EVsub.append(key.evalf())
-                        else:
-                            EVsub.append(key.evalf())
-                            
-                    EV.append(EVsub)
-                    if self._mumotModel._constantSystemSize == True:
-                        if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1):
-                            EVplot.append(EVsub)
-                    else:
-                        EVplot.append(EVsub)
-
-                #EV = []
-                #EVplot = []
-                #for kk in range(len(eigList)):
-                #    EVsub = []
-                #    for key in eigList[kk]:
-                #        EVsub.append(key.evalf())
-                #    EV.append(EVsub)
-                #    if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1):
-                #        EVplot.append(EVsub)
-                
-                if self._mumotModel._constantSystemSize == True:
-                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)], 
-                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)]]
-                else:
-                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
-                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
-                FixedPoints.append(EVplot)
-            else:
-                FixedPoints = None
-            
-            self._get_field2d("2d vector plot", 10) ## @todo: allow user to set mesh points with keyword
-            fig_vector=plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') ## @todo: define colormap by user keyword
-
-            if self._mumotModel._constantSystemSize == True:
-                plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
-            else:
-                plt.xlim(0,self._X.max())
-                plt.ylim(0,self._Y.max())
-            _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, specialPoints=FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
-                   ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatioEqual=True)
-    #        plt.set_aspect('equal') ## @todo
-            if self._showFixedPoints==True:
-                with io.capture_output() as log:
-                    for kk in range(len(realEQsol)):
-                        print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]))
-                self._logs.append(log)
-        
-        else:
-            if self._showFixedPoints==True:
-                realEQsol, eigList = self._get_fixedPoints3d()
-                EV = []
-                EVplot = []
-                for kk in range(len(eigList)):
-                    EVsub = []
-                    for key in eigList[kk]:
-                        if eigList[kk][key][0] >1:
-                            for jj in range(eigList[kk][key][0]):
-                                EVsub.append(key.evalf())
-                        else:
-                            EVsub.append(key.evalf())
-                            
-                    EV.append(EVsub)
-                    if self._mumotModel._constantSystemSize == True:
-                        if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1):
-                            EVplot.append(EVsub)
-                    else:
-                        EVplot.append(EVsub)
-                    
-                if self._mumotModel._constantSystemSize == True:
-                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)], 
-                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)],
-                                 [realEQsol[kk][self._stateVariable3] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)]]
-                else:
-                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
-                                 [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))],
-                                 [realEQsol[kk][self._stateVariable3] for kk in range(len(realEQsol))]]
-                FixedPoints.append(EVplot)
-            else:
-                FixedPoints = None
-                
-            self._get_field3d("3d vector plot", 10)
-            ax = self._figure.gca(projection = '3d')
-            fig_vec3d=ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length = 0.01, color = 'black') ## @todo: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
-            _fig_formatting_3D(figure=fig_vec3d, xlab= self._xlab, ylab= self._ylab, zlab= self._zlab, specialPoints=FixedPoints,
-                               showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=self._mumotModel._constantSystemSize)
-#           plt.set_aspect('equal') ## @todo
-
-            if self._showFixedPoints==True:
-                with io.capture_output() as log:
-                    for kk in range(len(realEQsol)):
-                        print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]))
-                self._logs.append(log)
-
-
-
-
-
-class MuMoTBifurcationView(MuMoTview):
+class MuMoTbifurcationView(MuMoTview):
     ## model for bifurcation analysis
     _pyDSmodel = None
     ## critical parameter for bifurcation analysis
@@ -6409,7 +4445,7 @@ class MuMoTBifurcationView(MuMoTview):
     ## initial conditions specified on corresponding sliders, will be used when calculation of fixed points fails
     _pyDSmodel_ics = None
     
-    ## Parameters for controller specific to this MuMoTBifurcationView
+    ## Parameters for controller specific to this MuMoTbifurcationView
     _BfcParams = None
     ## bifurcation parameter prepared for use in _get_argDict function in MuMoTView
     _bifurcationParameter_for_get_argDict = None
@@ -6549,17 +4585,22 @@ class MuMoTBifurcationView(MuMoTview):
                     self._stateVarBif2 = self._pydstoolify(self._stateVariable2)
                 elif self._stateVarBif1 == self._pydstoolify(self._stateVariable2):
                     self._stateVarBif2 = self._pydstoolify(self._stateVariable1)
-        
+                stateVarBif2Print = self._stateVarBif2
+                if self._stateVarBif2[0].islower():
+                    self._stateVarBif2 = 'A'+self._stateVarBif2
+        else:
+            stateVarBif2Print = self._stateVarBif2
+            if self._stateVarBif2[0].islower():
+                self._stateVarBif2 = 'A'+self._stateVarBif2
         stateVarBif1Print = self._stateVarBif1
-        stateVarBif2Print = self._stateVarBif2
-        
         if self._stateVarBif1[0].islower():
             self._stateVarBif1 = 'A'+self._stateVarBif1
-        if self._stateVarBif2[0].islower():
-            self._stateVarBif2 = 'A'+self._stateVarBif2
         
         with io.capture_output() as log:
-            print('Bifurcation diagram with state variables: ', stateVarBif1Print, 'and ', stateVarBif2Print, '.')
+            if self._stateVariable2:
+                print('Bifurcation diagram with state variables: ', stateVarBif1Print, 'and ', stateVarBif2Print, '.')
+            else:
+                print('Bifurcation diagram with state variable: ', stateVarBif1Print, '.')
             print('The bifurcation parameter chosen is: ', self._bifurcationParameter, '.')
         self._logs.append(log)
         
@@ -6576,9 +4617,8 @@ class MuMoTBifurcationView(MuMoTview):
             if arg in self._mumotModel._rates or arg in self._mumotModel._constantReactants or arg == self._mumotModel._systemSize:
                 paramDict[self._pydstoolify(arg)] = argDict[arg]
         
-        #with io.capture_output() as log:
-        if 1>0:
-            
+        with io.capture_output() as log:
+        
             self._pyDSmodel.pars = paramDict 
             
             XDATA = [] # list of arrays containing the bifurcation-parameter data for bifurcation diagram data 
@@ -6899,7 +4939,7 @@ class MuMoTBifurcationView(MuMoTview):
 
         self._show_computation_stop()
 
-        #self._logs.append(log)
+        self._logs.append(log)
         
         
         
@@ -6967,802 +5007,6 @@ class MuMoTBifurcationView(MuMoTview):
             
             self._initBifParam = self._fixedParams['initBifParam'] if self._fixedParams.get('initBifParam') is not None else self._controller._widgetsExtraParams['initBifParam'].value
 
-
-## bifurcation view on model 
-class MuMoTbifurcationViewOLD(MuMoTview):
-    ## model for bifurcation analysis
-    _pyDSmodel = None
-    ## critical parameter for bifurcation analysis
-    _bifurcationParameter = None
-    ## first state variable of 2D system
-    _stateVariable1 = None
-    ## second state variable of 2D system
-    _stateVariable2 = None
-    ## state variable of 2D system used for bifurcation analysis, can either be _stateVariable1 or _stateVariable2
-    _stateVarBif1 = None
-    ## state variable of 2D system used for bifurcation analysis, can either be _stateVariable1 or _stateVariable2
-    _stateVarBif2 = None
-    
-    ## generates command for bookmark functionality
-    _generatingCommand = None
-    ## fontsize on figure axes
-    _chooseFontSize = None
-    ## label for vertical axis
-    _LabelY = None
-    ## label for horizontal axis
-    _LabelX = None
-    ## displayed range for vertical axis
-    _chooseXrange = None
-    ## displayed range for horizontal axis
-    _chooseYrange = None
-    ## maximum number of points in one continuation calculation 
-    _MaxNumPoints = None
-    ## information about the mathematical expression displayed on vertical axis; can be 'None', '+' or '-'
-    _SVoperation = None
-    ## initial conditions specified on corresponding sliders, will be used when calculation of fixed points fails
-    _pyDSmodel_ics = None
-    
-    
-    #_bifInit = None   
-    # Plotting method to use
-    #_plottingMethod = None
-    
-    def __init__(self, model, controller, bifurcationParameter, stateVarExpr1, stateVarExpr2 = None, 
-                 figure = None, params = None, **kwargs):
-        
-        silent = kwargs.get('silent', False)
-        super().__init__(model, controller, figure, params, **kwargs)
-        self._generatingCommand = "bifurcation"
-
-        self._chooseFontSize = kwargs.get('fontsize', None)
-        #self._LabelY =  kwargs.get('ylab', r'$' + _doubleUnderscorify(_greekPrependify(stateVarExpr1)) +'$') 
-        self._LabelY =  kwargs.get('ylab', r'$' + stateVarExpr1 +'$') 
-        #self._LabelX = kwargs.get('xlab', r'$' + _doubleUnderscorify(_greekPrependify(bifurcationParameter)) +'$')
-        self._LabelX = kwargs.get('xlab', r'$' + bifurcationParameter +'$')
-        self._chooseXrange = kwargs.get('choose_xrange', None)
-        self._chooseYrange = kwargs.get('choose_yrange', None)
-        
-        self._MaxNumPoints = kwargs.get('ContMaxNumPoints',100)
-        
-        self._bifurcationParameter = self._pydstoolify(bifurcationParameter)
-        self._stateVarExpr1 = stateVarExpr1
-        stateVarExpr1 = self._pydstoolify(stateVarExpr1)
-        #print(stateVarExpr1)
-        
-        if stateVarExpr2:
-            stateVarExpr2 = self._pydstoolify(stateVarExpr2)
-        
-        self._SVoperation = None
-        try:
-            stateVarExpr1.index('-')
-            self._stateVarBif1 = stateVarExpr1[:stateVarExpr1.index('-')]
-            self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('-')+1:]
-            self._SVoperation = '-'
-  
-        except ValueError:
-            try:
-                stateVarExpr1.index('+')
-                self._stateVarBif1 = stateVarExpr1[:stateVarExpr1.index('+')]
-                self._stateVarBif2 = stateVarExpr1[stateVarExpr1.index('+')+1:] 
-                self._SVoperation = '+'
-            except ValueError:
-                self._stateVarBif1 = stateVarExpr1
-                self._stateVarBif2 = stateVarExpr2
-        
-        #print(self._stateVarBif1) 
-        #print(self._stateVarBif2) 
-                
-        #self._bifInit = kwargs.get('BifParInit', None)
-                  
-        self._pyDSmodel = dst.args(name = 'MuMoT Model' + str(id(self)))
-        #self._bifurcationParameter = bifurcationParameter
-        varspecs = {}
-        stateVariableList = []
-        for reactant in self._mumotModel._reactants:
-            if reactant not in self._mumotModel._constantReactants:
-                stateVariableList.append(reactant)
-                varspecs[self._pydstoolify(reactant)] = self._pydstoolify(self._mumotModel._equations[reactant])
-        self._pyDSmodel.varspecs = varspecs
-        if len(stateVariableList) != 2:
-            self._showErrorMessage('Bifurcation diagrams are currently only supported for 2D systems (2 time-dependent variables in the ODE system)!')
-            return None
-        self._stateVariable1 = stateVariableList[0]
-        self._stateVariable2 = stateVariableList[1]
-        
-        #print(self._stateVariable1)
-        #print(self._pydstoolify(self._stateVariable1))
-        #print(self._stateVariable2)
-        #print(self._pydstoolify(self._stateVariable2))
-        
-        
-        if self._stateVarBif2 == None:
-            if self._stateVarBif1 == self._pydstoolify(self._stateVariable1):
-                self._stateVarBif2 = self._pydstoolify(self._stateVariable2)
-            elif self._stateVarBif1 == self._pydstoolify(self._stateVariable2):
-                self._stateVarBif2 = self._pydstoolify(self._stateVariable1)
-        with io.capture_output() as log:
-            print('Bifurcation diagram with state variables: ', self._stateVarBif1, 'and ', self._stateVarBif2, '.')
-            print('The bifurcation parameter chosen is: ', self._bifurcationParameter, '.')
-        self._logs.append(log)
-        
-        #self._plottingMethod = kwargs.get('plottingMethod', 'mumot')
-        if not self._silent:
-            self._plot_bifurcation()     
-
-    def _plot_bifurcation(self, _=None):
-        self._initFigure()
-        
-        #if not(self._silent): ## @todo is this necessary?
-        #    plt.figure(self._figureNum)
-        #    plt.clf()
-        #    self._resetErrorMessage()
-        #self._showErrorMessage(str(self))
-        
-        
-#         if not(self._silent): ## @todo is this necessary?
-#             #plt.close()
-#             #plt.clf()
-#             #plt.gcf()
-#             plt.figure(self._figureNum)
-#             plt.clf()
-#             self._resetErrorMessage()
-
-        #self._showErrorMessage(str(self))
-        #self._resetErrorMessage()
-        #plt.figure(self._figureNum)
-        argDict = self._get_argDict()
-        paramDict = {}
-        for arg in argDict:
-            if self._pydstoolify(arg) == self._bifurcationParameter+'init':
-                paramDict[self._bifurcationParameter] = argDict[arg]
-            else:
-                if 'Phi0' not in self._pydstoolify(arg):
-                    paramDict[self._pydstoolify(arg)] = argDict[arg]
-        #print(self._getBifParInitCondFromSlider())
-        #print(self._bifurcationParameter)
-        #print(paramDict)
-        
-        with io.capture_output() as log:
-            self._pyDSmodel.pars = paramDict #len(self._mumotModel._reactants)}
-            
-            XDATA = [] # list of arrays containing the bifurcation-parameter data for bifurcation diagram data 
-            YDATA = [] # list of arrays containing the state variable data (either one variable, or the sum or difference of the two SVs) for bifurcation diagram data
-            
-            initDictList = []
-            #print(initDictList)
-            self._pyDSmodel_ics   = self._getInitCondsFromSlider()
-            #print(self._pyDSmodel_ics)
-            for ic in self._pyDSmodel_ics:
-                if 'Phi0' in self._pydstoolify(ic):
-                    self._pyDSmodel_ics[self._pydstoolify(ic)[self._pydstoolify(ic).index('0')+1:]] = self._pyDSmodel_ics.pop(ic)  #{'A': 0.1, 'B': 0.9 }  
-                
-            realEQsol, eigList = self._get_fixedPoints2d()
-            if realEQsol != [] and realEQsol != None:
-                for kk in range(len(realEQsol)):
-                    if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
-                        initDictList.append(realEQsol[kk])
-                print(len(initDictList), 'stable steady state(s) detected and continuated. Initial conditions for state variables specified on sliders were not used.')
-            else:
-                initDictList.append(self._pyDSmodel_ics)
-                print('Stationary states could not be calculated; used initial conditions specified on sliders instead: ', self._pyDSmodel_ics, '. This means only one branch was continuated and the starting point might not have been a stationary state.')   
-            #print(initDictList)                                   
-            #if self._plottingMethod.lower() == 'mumot':
-            specialPoints=[]  # list of special points: LP and BP
-            sPoints_X=[] #bifurcation parameter
-            sPoints_Y=[] #stateVarBif1
-            sPoints_Labels=[]
-            EIGENVALUES = []
-            sPoints_Z=[] #stateVarBif2
-            k_iter_BPlabel = 0
-            k_iter_LPlabel = 0
-            #print(initDictList)
-            for nn in range(len(initDictList)):
-# # The following few lines that are commented out prevent continuation of branches where the initial condition
-# # will lead to a copy of a curve that has already been computed.                
-#                 skip_init = False
-#                 if nn > 0:
-#                     for kk in range(nn):
-#                         skip_init_count = 0
-#                         for item1 in initDictList[nn]:
-#                             for item2 in initDictList[kk]:
-#                                 if item1 != item2:
-#                                     if round(initDictList[nn][item1], 8) == round(initDictList[kk][item2], 8):
-#                                         skip_init_count += 1
-#                             if skip_init_count == len(initDictList[nn]):
-#                                 skip_init = True
-#                 print(skip_init)        
-#                         
-#                 if skip_init == False:      
-                 
-                #self._pyDSmodel.ics = initDictList[nn]
-                pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
-                pyDSode.set(ics =  initDictList[nn] )
-                pyDSode.set(pars = self._getBifParInitCondFromSlider())   
-                #print(self._getBifParInitCondFromSlider())  
-                pyDScont = dst.ContClass(pyDSode)
-                EQ_iter = 1+nn
-                k_iter_BP = 1
-                k_iter_LP = 1
-                pyDScontArgs = dst.args(name='EQ'+str(EQ_iter), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
-                pyDScontArgs.freepars     = [self._bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
-                #print(self._bifurcationParameter)
-                pyDScontArgs.MaxNumPoints = self._MaxNumPoints    # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
-                pyDScontArgs.MaxStepSize  = 1e-1
-                pyDScontArgs.MinStepSize  = 1e-5
-                pyDScontArgs.StepSize     = 2e-3
-                pyDScontArgs.LocBifPoints = ['LP', 'BP']       # 'Limit Points' and 'Branch Points may be detected'
-                pyDScontArgs.SaveEigen    = True            # to tell unstable from stable branches
-                
-                pyDScont.newCurve(pyDScontArgs)   
-                
-                try:
-                    try:
-                        pyDScont['EQ'+str(EQ_iter)].backward()
-                    except:
-                        self._showErrorMessage('Continuation failure (backward) on initial branch<br>')
-                    try:
-                        pyDScont['EQ'+str(EQ_iter)].forward()              
-                    except:
-                        self._showErrorMessage('Continuation failure (forward) on initial branch<br>')
-                except ZeroDivisionError:
-                    self._showErrorMessage('Division by zero<br>')  
-                #pyDScont['EQ'+str(EQ_iter)].info()
-                if self._stateVarBif2 != None:
-                    try:
-                        XDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._bifurcationParameter])
-                        if self._SVoperation:
-                            if self._SVoperation == '-':
-                                YDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1] -
-                                             pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif2])
-                            elif self._SVoperation == '+':
-                                YDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1] +
-                                             pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif2])  
-                            else:
-                                self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')  
-                        else:
-                            YDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1])
-                        
-                        EIGENVALUES.append(np.array([pyDScont['EQ'+str(EQ_iter)].sol[kk].labels['EP']['data'].evals 
-                                                     for kk in range(len(pyDScont['EQ'+str(EQ_iter)].sol[self._stateVarBif1]))]))
-                        
-                        while pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP)):
-                            if (round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
-                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
-                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):
-                                sPoints_X.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._bifurcationParameter])
-                                sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif1])
-                                sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif2])
-                                k_iter_LPlabel += 1
-                                sPoints_Labels.append('LP'+str(k_iter_LPlabel))
-                            k_iter_LP+=1
-                        
-                        
-                        k_iter_BPlabel_previous = k_iter_BPlabel
-                        while pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP)):
-                            if (round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
-                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
-                                and round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):
-                                sPoints_X.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._bifurcationParameter])
-                                sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif1])
-                                sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif2])
-                                k_iter_BPlabel += 1
-                                sPoints_Labels.append('BP'+str(k_iter_BPlabel))
-                            k_iter_BP+=1
-                        for jj in range(1,k_iter_BP):
-                            if 'BP'+str(jj+k_iter_BPlabel_previous) in sPoints_Labels:
-                                EQ_iter_BP = jj
-                                print(EQ_iter_BP)
-                                k_iter_next = 1
-                                pyDScontArgs = dst.args(name='EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
-                                pyDScontArgs.freepars     = [self._bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
-                                pyDScontArgs.MaxNumPoints = self._MaxNumPoints    # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
-                                pyDScontArgs.MaxStepSize  = 1e-1
-                                pyDScontArgs.MinStepSize  = 1e-5
-                                pyDScontArgs.StepSize     = 5e-3
-                                pyDScontArgs.LocBifPoints = ['LP', 'BP']        # 'Limit Points' and 'Branch Points may be detected'
-                                pyDScontArgs.SaveEigen    = True             # to tell unstable from stable branches
-                                pyDScontArgs.initpoint = 'EQ'+str(EQ_iter)+':BP'+str(jj)
-                                pyDScont.newCurve(pyDScontArgs)
-                                
-                                try:
-                                    try:
-                                        pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].backward()
-                                    except:
-                                        self._showErrorMessage('Continuation failure (backward) starting from branch point<br>')
-                                    try:
-                                        pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].forward()              
-                                    except:
-                                        self._showErrorMessage('Continuation failure (forward) starting from branch point<br>')
-                                except ZeroDivisionError:
-                                    self._showErrorMessage('Division by zero<br>')
-                                
-                                XDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._bifurcationParameter])
-                                if self._SVoperation:
-                                    if self._SVoperation == '-':
-                                        YDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1] -
-                                                     pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif2])
-                                    elif self._SVoperation == '+':
-                                        YDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1] +
-                                                     pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif2])
-                                    else:
-                                        self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')
-                                else:
-                                    YDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1])
-                                    
-                                EIGENVALUES.append(np.array([pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[kk].labels['EP']['data'].evals 
-                                                             for kk in range(len(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._stateVarBif1]))]))
-                                while pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next)):
-                                    if (round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
-                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
-                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):    
-                                        sPoints_X.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._bifurcationParameter])
-                                        sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif1])
-                                        sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('BP'+str(k_iter_next))[self._stateVarBif2])
-                                        sPoints_Labels.append('EQ_BP_BP'+str(k_iter_next))
-                                    k_iter_next += 1
-                                k_iter_next = 1
-                                while pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next)):
-                                    if (round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
-                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif1], 4) not in [round(kk ,4) for kk in sPoints_Y]
-                                        and round(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif2], 4) not in [round(kk ,4) for kk in sPoints_Z]):
-                                        sPoints_X.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._bifurcationParameter])
-                                        sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif1])
-                                        sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].getSpecialPoint('LP'+str(k_iter_next))[self._stateVarBif2])
-                                        sPoints_Labels.append('EQ_BP_LP'+str(k_iter_next))
-                                    k_iter_next += 1
-    
-                    except TypeError:
-                        print('Continuation failed; try with different parameters - use sliders. If that does not work, try changing maximum number of continuation points using the keyword ContMaxNumPoints. If not set, default value is ContMaxNumPoints=100.')       
-                
-                
-                del(pyDScontArgs)
-                del(pyDScont)
-                del(pyDSode)
-            if self._SVoperation:
-                if self._SVoperation == '-':    
-                    specialPoints=[sPoints_X, np.asarray(sPoints_Y)-np.asarray(sPoints_Z), sPoints_Labels]
-                elif self._SVoperation == '+':    
-                    specialPoints=[sPoints_X, np.asarray(sPoints_Y)+np.asarray(sPoints_Z), sPoints_Labels]
-                else:
-                    self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')
-            else:
-                specialPoints=[sPoints_X, np.asarray(sPoints_Y), sPoints_Labels]
-                
-            #print('Special Points on curve: ', specialPoints)
-            print('Special Points on curve:')
-            for kk in range(len(specialPoints[0])):
-                print(specialPoints[2][kk], ': ', self._bifurcationParameter, '=', str(round(specialPoints[0][kk], 3)), ',',
-                      self._stateVarExpr1, '=', str(round(specialPoints[1][kk], 3)) )
-            
-            if self._chooseYrange == None:
-                if self._mumotModel._systemSize:
-                    self._chooseYrange = [-self._getSystemSize(), self._getSystemSize()]
-                          
-            if XDATA != [] and self._chooseXrange == None:
-                xmaxbif = np.max([np.max(XDATA[kk]) for kk in range(len(XDATA))])
-                self._chooseXrange = [0, xmaxbif]
-                
-            if XDATA !=[] and YDATA != []:
-                #plt.clf()
-                _fig_formatting_2D(xdata=XDATA, 
-                                ydata=YDATA,
-                                xlab = self._LabelX, 
-                                ylab = self._LabelY,
-                                specialPoints=specialPoints, 
-                                eigenvalues=EIGENVALUES, 
-                                choose_xrange=self._chooseXrange, choose_yrange=self._chooseYrange,
-                                ax_reformat=False, curve_replot=False, fontsize=self._chooseFontSize)
-            else:
-                self._showErrorMessage('Bifurcation diagram could not be computed. Try changing parameter values on the sliders')
-                return None
-
-        self._logs.append(log)
-        
-        
-        
-    def _initFigure(self):
-        if not self._silent:
-            plt.figure(self._figureNum)
-            plt.clf()
-            self._resetErrorMessage()
-        self._showErrorMessage(str(self))
-        
-        
-
-    ## utility function to mangle variable names in equations so they are accepted by PyDStool
-    def _pydstoolify(self, equation):
-        equation = str(equation)
-        equation = equation.replace('{', '')
-        equation = equation.replace('}', '')
-        equation = equation.replace('_', '')
-        equation = equation.replace('\\', '')
-        equation = equation.replace('^', '')
-        
-        return equation
-    
-    
-    def _build_bookmark(self, includeParams = True):
-        if not self._silent:
-            logStr = "bookmark = "
-        else:
-            logStr = ""
-        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._bifurcationParameter) + "', '" + str(self._stateVarExpr1) +"', "
-        #if self._stateVarBif2 != None:
-        #    logStr += "'" + str(self._stateVarBif2) + "', "
-        if includeParams:
-            logStr += self._get_bookmarks_params() + ", "
-        if str(self._bifurcationParameter)+'_{init}' in logStr:
-            logStr = logStr.replace(str(self._bifurcationParameter)+'_{init}', str(self._bifurcationParameter), 1)
-            
-        if len(self._generatingKwargs) > 0:
-            for key in self._generatingKwargs:
-                if key == 'initCondsSV':
-                    logStr += key + " = " + str(self._pyDSmodel_ics) + ", "
-                elif key == 'showInitSV':
-                    logStr += key + " = False, "
-                else:
-                    if key != 'chooseBifParam' and key != 'BifParInit':
-                        logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-
-                        
-        logStr += "showBifInitSlider = False, "        
-        logStr += "bookmark = False"
-        logStr += ")"
-        logStr = logStr.replace('\\', '\\\\')
-        
-        return logStr    
-
-    ## gets initial value of bifurcation parameter from corresponding slider. This determines the staring points for the numerical continuation.
-    def _getBifParInitCondFromSlider(self):
-        #if self._controller != None:
-        
-        if self._bifurcationParameter[0]=='\\':
-            bifPar = self._bifurcationParameter[1:]
-        elif self._bifurcationParameter[0]=='\\' and self._bifurcationParameter[1]=='\\':
-            bifPar = self._bifurcationParameter[2:]
-        else:
-            bifPar = self._bifurcationParameter
-            
-        paramName = []
-        paramValue = []
-        for name, value in self._controller._widgetsFreeParams.items():
-            if name == latex(Symbol(str(bifPar)+'_init')):
-                #paramName.append(self._pydstoolify(self._bifurcationParameter))
-                paramName.append(self._bifurcationParameter)
-                paramValue.append(value.value)
-                
-        argNameSymb = list(map(Symbol, paramName))
-        argDict = dict(zip(argNameSymb, paramValue))
-        
-        return argDict
-
-# 
-# ## bifurcation view on model 
-# class MuMoTbifurcationView(MuMoTview):
-#     _pyDSmodel = None
-#     _bifurcationParameter = None
-#     _stateVariable1 = None
-#     _stateVariable2 = None
-#     
-#     ## Plotting method to use
-#     _plottingMethod = None
-#     
-#     def __init__(self, model, controller, bifurcationParameter, stateVariable1, stateVariable2 = None, 
-#                  figure = None, params = None, **kwargs):
-#         super().__init__(model, controller, figure, params, **kwargs)
-#         self._generatingCommand = "bifurcation"
-#         bifurcationParameter = self._pydstoolify(bifurcationParameter)
-#         stateVariable1 = self._pydstoolify(stateVariable1)
-#         stateVariable2 = self._pydstoolify(stateVariable2)
-# 
-#         paramDict = {}
-#         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-#         rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
-#         rateStep = RATE_STEP ## @todo choose rate step sensibly
-#         for rate in self._mumotModel._rates:
-#             paramDict[self._pydstoolify(rate)] = initialRateValue ## @todo choose initial values sensibly
-#         paramDict[self._pydstoolify(self._mumotModel._systemSize)] = 1 ## @todo choose system size sensibly
-#         
-#         if 'fontsize' in kwargs:
-#             self._chooseFontSize = kwargs['fontsize']
-#         else:
-#             self._chooseFontSize=None
-#             
-#         if 'xlab' in kwargs:
-#             self._xlab = kwargs['xlab']
-#         else:
-#             self._xlab=None
-#             
-#         if 'ylab' in kwargs:
-#             self._ylab = kwargs['ylab']
-#         else:
-#             self._ylab=None
-#             
-#         self._bifInit = kwargs.get('BifParInit', 5)
-#         
-#         tmpInitSV = kwargs.get('initSV', [])
-#         self._initSV= []
-#         if tmpInitSV != []:
-#             assert (len(tmpInitSV) == len(self._mumotModel._reactants)),"Number of state variables and initial conditions must coincide!"
-#             for pair in tmpInitSV:
-#                 self._initSV.append([self._pydstoolify(pair[0]), pair[1]])
-#         else:
-#             if kwargs.get('initRandom', False) == True:
-#                 for reactant in self._mumotModel._reactants:
-#                     self._initSV.append([self._pydstoolify(reactant), round(np.random.rand(), 2)])
-#             else:
-#                 for reactant in self._mumotModel._reactants:
-#                     self._initSV.append([self._pydstoolify(reactant), 0.0])
-#                 
-#         with io.capture_output() as log:      
-#             name = 'MuMoT Model' + str(id(self))
-#             self._pyDSmodel = dst.args(name = name)
-#             self._pyDSmodel.pars = paramDict
-#             varspecs = {}
-#             for reactant in self._mumotModel._reactants:
-#                 varspecs[self._pydstoolify(reactant)] = self._pydstoolify(self._mumotModel._equations[reactant])
-#             self._pyDSmodel.varspecs = varspecs
-#     
-#             if model._systemSize != None:
-#                 ## @todo: shouldn't allow system size to be varied?
-#                 pass
-#     #                self._paramValues.append(1)
-#     #                self._paramNames.append(str(self._systemSize))
-#     #                widget = widgets.FloatSlider(value = 1, min = _rateLimits[0], max = _rateLimits[1], step = _rateStep, description = str(self._systemSize), continuous_update = False)
-#     #                widget.on_trait_change(self._replot_bifurcation2D, 'value')
-#     #                display(widget)
-#             else:
-#                 print('Cannot attempt bifurcation plot until system size is set, using substitute()')
-#                 return
-#             
-#             if stateVariable2 != None:
-#                 ## 3-d bifurcation diagram (@todo: currently unsupported)
-#                 assert True #was 'false' before. @todo: Specify assertion rule.
-#                 
-#             # Prepare the system to start close to a steady state
-#             self._bifurcationParameter = bifurcationParameter
-#             self._LabelX = self._bifurcationParameter if self._xlab == None else self._xlab
-#             try:
-#                 stateVariable1.index('-')
-#                 self._stateVariable1 = stateVariable1[:stateVariable1.index('-')]
-#                 self._stateVariable2 = stateVariable1[stateVariable1.index('-')+1:]
-#                 self._LabelY = self._stateVariable1+'-'+self._stateVariable2 if self._ylab == None else self._ylab
-#             except ValueError:
-#                 self._stateVariable1 = stateVariable1
-#                 self._stateVariable2 = stateVariable2
-#                 self._LabelY = self._stateVariable1 if self._ylab == None else self._ylab
-#     #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
-#     #            self._pyDSode.set(pars = self._pyDSmodel.pars )       ## Lower bound of the bifurcation parameter (@todo: set dynamically)
-#     #            self._pyDSode.pars = {bifurcationParameter: 0}             ## Lower bound of the bifurcation parameter (@todo: set dynamically?)
-#             initconds = {stateVariable1: self._pyDSmodel.pars[self._pydstoolify(self._mumotModel._systemSize)] / len(self._mumotModel._reactants)} ## @todo: guess where steady states are?
-#             
-#             self._pyDSmodel.ics   = {}
-#             for kk in range(len(self._initSV)):
-#                 self._pyDSmodel.ics[self._initSV[kk][0]] = self._initSV[kk][1]  #{'A': 0.1, 'B': 0.9 }  
-#             print('Initial conditions chosen for state variables: ',self._pyDSmodel.ics)   
-#     #            self._pyDSode.set(ics = initconds)
-#             self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
-#             self._pyDSode.set(pars = {bifurcationParameter: self._bifInit})      ## @@todo remove magic number
-#             self._pyDScont = dst.ContClass(self._pyDSode)              # Set up continuation class 
-#             ## @todo: add self._pyDScontArgs to __init__()
-#             self._pyDScontArgs = dst.args(name='EQ1', type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labeled 'EQ1'.
-#             self._pyDScontArgs.freepars     = [bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
-#             self._pyDScontArgs.MaxNumPoints = kwargs.get('ContMaxNumPoints',450)    ## The following 3 parameters are set after trial-and-error @todo: how to automate this?
-#             self._pyDScontArgs.MaxStepSize  = 1e-1
-#             self._pyDScontArgs.MinStepSize  = 1e-5
-#             self._pyDScontArgs.StepSize     = 2e-3
-#             self._pyDScontArgs.LocBifPoints = ['LP', 'BP']        ## @todo WAS 'LP' (detect limit points / saddle-node bifurcations)
-#             self._pyDScontArgs.SaveEigen    = True             # to tell unstable from stable branches
-# #            self._pyDScontArgs.CalcStab     = True
-#         self._logs.append(log)
-#         
-# #            self._bifurcation2Dfig = plt.figure(1)                    
-# 
-#         #if kwargs != None:
-#         #    self._plottingMethod = kwargs.get('plottingMethod', 'pyDS')
-#         #else:
-#         #    self._plottingMethod = 'pyDS'
-#         
-#         self._plottingMethod = kwargs.get('plottingMethod', 'mumot')
-#         self._plot_bifurcation()
-#             
-# 
-#     def _plot_bifurcation(self):
-#         self._resetErrorMessage()
-#         with io.capture_output() as log:
-#             self._log("bifurcation analysis")
-#             self._pyDScont.newCurve(self._pyDScontArgs)
-#             try:
-#                 try:
-#                     self._pyDScont['EQ1'].backward()
-#                 except:
-#                     self._showErrorMessage('Continuation failure (backward)<br>')
-#                 try:
-#                     self._pyDScont['EQ1'].forward()              ## @todo: how to choose direction?
-#                 except:
-#                     self._showErrorMessage('Continuation failure (forward)<br>')
-#             except ZeroDivisionError:
-#                 self._showErrorMessage('Division by zero<br>')                
-#     #            self._pyDScont['EQ1'].info()
-#         
-#             if self._plottingMethod.lower() == 'mumot':
-#                 ## use internal plotting routines: now supported!   
-#                 #self._stateVariable2 == None:
-#                 # 2-d bifurcation diagram
-#                 self._specialPoints=[]  #todo: modify to include several equations not only EQ1
-#                 k_iter=1
-#                 self.sPoints_X=[] #bifurcation parameter
-#                 self.sPoints_Y=[] #state variable 1
-#                 self.sPoints_Labels=[]
-#                 
-#                 #while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
-#                 #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[2])
-#                 #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[0])
-#                 #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[1])
-#                 #    self.sPoints_Labels.append('BP'+str(k_iter))
-#                 #    k_iter+=1
-#                 #k_iter=1
-#                 #while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
-#                 #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[2])
-#                 #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[0])
-#                 #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[1])
-#                 #    self.sPoints_Labels.append('LP'+str(k_iter))
-#                 #    k_iter+=1
-#     
-#                 
-#                 
-#                 if self._stateVariable2 != None:
-#                     try:
-#                         self.sPoints_Z=[] #state variable 2
-#                         self._YDATA = (self._pyDScont['EQ1'].sol[self._stateVariable1] -
-#                                   self._pyDScont['EQ1'].sol[self._stateVariable2])
-#                         while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
-#                             self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
-#                             self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
-#                             self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable2])
-#                             self.sPoints_Labels.append('BP'+str(k_iter))
-#                             k_iter+=1
-#                         k_iter=1
-#                         while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
-#                             self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
-#                             self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
-#                             self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable2])
-#                             self.sPoints_Labels.append('LP'+str(k_iter))
-#                             k_iter+=1
-#                         self._specialPoints=[self.sPoints_X, 
-#                                              np.asarray(self.sPoints_Y)-np.asarray(self.sPoints_Z), 
-#                                              self.sPoints_Labels]
-#                     except TypeError:
-#                         print('Continuation failed; try with different parameters.')
-#                     
-#                 else:
-#                     try:
-#                         self._YDATA = self._pyDScont['EQ1'].sol[self._stateVariable1]
-#                         while self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter)):
-#                             self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._bifurcationParameter])
-#                             self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[self._stateVariable1])
-#                             self.sPoints_Labels.append('BP'+str(k_iter))
-#                             k_iter+=1
-#                         k_iter=1
-#                         while self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter)):
-#                             self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._bifurcationParameter])
-#                             self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[self._stateVariable1])
-#                             self.sPoints_Labels.append('LP'+str(k_iter))
-#                             k_iter+=1
-#                         
-#                         self._specialPoints=[self.sPoints_X, self.sPoints_Y, self.sPoints_Labels]    
-#                     except TypeError:
-#                         print('Continuation failed; try with different parameters.')
-#                 
-#                 #The following was an attempt to include also EQ2 if a BP or LP was found using EQ1    
-#                 #if self._pyDScont['EQ1'].getSpecialPoint('BP1'):
-#                 #    self._pyDSode.set(pars = {self._bifurcationParameter: 5} )
-#                 #    self._pyDScontArgs.freepars     = [self._bifurcationParameter]
-#                 #    self._pyDScontArgs = dst.args(name='EQ2', type='EP-C')
-#                 #    self._pyDScontArgs.initpoint    = 'EQ1:BP1'
-#                 #    
-#                 #   self._pyDScont.newCurve(self._pyDScontArgs)
-#                 #   try:
-#                 #        try:
-#                 #            self._pyDScont['EQ2'].backward()
-#                 #        except:
-#                 #            self._showErrorMessage('Continuation failure (backward)<br>')
-#                 #        try:
-#                 #            self._pyDScont['EQ2'].forward()
-#                 #        except:
-#                 #            self._showErrorMessage('Continuation failure (forward)<br>')
-#                 #    except ZeroDivisionError:
-#                 #        self._showErrorMessage('Division by zero<br>')  
-#                 
-#                 
-#                 #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[2])
-#                 #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[0])
-#                 #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('BP'+str(k_iter))[1])
-#                 #    self.sPoints_Labels.append('BP'+str(k_iter))
-#                 
-#                 #elif self._pyDScont['EQ2'].getSpecialPoint('LP1'):
-#                 #    self.sPoints_X.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[2])
-#                 #    self.sPoints_Y.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[0])
-#                 #    self.sPoints_Z.append(self._pyDScont['EQ1'].getSpecialPoint('LP'+str(k_iter))[1])
-#                 #    self.sPoints_Labels.append('LP'+str(k_iter))
-#                 #    k_iter+=1
-#                 
-#                 print('Special Points on curve: ', self._specialPoints)
-#                 
-#                 plt.clf()
-#                 _fig_formatting_2D(xdata=[self._pyDScont['EQ1'].sol[self._bifurcationParameter]], 
-#                                 ydata=[self._YDATA],
-#                                 xlab = self._LabelX, 
-#                                 ylab = self._LabelY,
-#                                 specialPoints=self._specialPoints, 
-#                                 eigenvalues=[np.array([self._pyDScont['EQ1'].sol[kk].labels['EP']['data'].evals for kk in range(len(self._pyDScont['EQ1'].sol[self._stateVariable1]))])], 
-#                                 ax_reformat=False, curve_replot=False, fontsize=self._chooseFontSize)
-# 
-# #                self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
-#                 #else:
-#                 #    pass
-#                 #assert false
-#             else:
-#                 if self._plottingMethod.lower() != 'pyds':
-#                     self._showErrorMessage('Unknown plotType argument: using default pyDS tool plotting<br>')    
-#                 if self._stateVariable2 == None:
-#                     # 2-d bifurcation diagram
-#                     if self._silent == True:
-#                         #assert false ## @todo: enable when Thomas implements in-housse plotting routines
-#                         self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], axes = None, stability = True)
-#                     else:
-#                         self._pyDScont.display([self._bifurcationParameter, self._stateVariable1], stability = True, figure = self._figureNum)
-#     #                self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
-#                 else:
-#                     pass
-#         self._logs.append(log)
-# 
-#     def _replot_bifurcation(self):
-#         for name, value in self._controller._widgetsFreeParams.items():
-#             self._pyDSmodel.pars[name] = value.value
-#  
-#         self._pyDScont.plot.clearall()
-#         
-# #        self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    ## @todo: replace           
-#         self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  ## @todo: add to __init__()
-#         self._pyDSode.set(pars = {self._bifurcationParameter: self._bifInit} )                       ## @todo remove magic number
-#         self._pyDScont = dst.ContClass(self._pyDSode)              ## Set up continuation class (@todo: add to __init__())
-# ##        self._pyDScont.newCurve(self._pyDScontArgs)
-# #        self._pyDScont['EQ1'].reset(self._pyDSmodel.pars)
-# #        self._pyDSode.set(pars = self._pyDSmodel.pars)
-# #        self._pyDScont['EQ1'].reset()
-# #        self._pyDScont.update(self._pyDScontArgs)                         ## @todo: what does this do?
-#         self._plot_bifurcation()
-# 
-#     # utility function to mangle variable names in equations so they are accepted by PyDStool
-#     def _pydstoolify(self, equation):
-#         equation = str(equation)
-#         equation = equation.replace('{', '')
-#         equation = equation.replace('}', '')
-#         equation = equation.replace('_', '')
-#         equation = equation.replace('\\', '')
-#         
-#         return equation
-#     
-#     
-#     def _build_bookmark(self, includeParams = True):
-#         if not self._silent:
-#             logStr = "bookmark = "
-#         else:
-#             logStr = ""
-#         logStr += "<modelName>." + self._generatingCommand + "('" + str(self._bifurcationParameter) + "', '" + str(self._stateVariable1) +"', "
-#         if self._stateVariable2 != None:
-#             logStr += "'" + str(self._stateVariable2) + "', "
-#         if includeParams:
-#             logStr += self._get_bookmarks_params() + ", "
-#         if len(self._generatingKwargs) > 0:
-#             for key in self._generatingKwargs:
-#                 logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-#         logStr += "bookmark = False"
-#         logStr += ")"
-#         logStr = logStr.replace('\\', '\\\\')
-#         
-#         return logStr
 
 class MuMoTstochasticSimulationView(MuMoTview):
     """stochastic-simulations-view view (for views that allow for multiple runs with different random-seeds)"""
