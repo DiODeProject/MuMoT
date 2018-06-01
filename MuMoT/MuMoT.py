@@ -3758,7 +3758,7 @@ class MuMoTIntegrateView(MuMoTtimeEvolutionView):
     
     def __init__(self, *args, **kwargs):
         #self._plotProportion = kwargs.get('plotProportion', True)
-        self._ylab = kwargs.get('ylab', 'evolution of reactants')
+        self._ylab = kwargs.get('ylab', 'reactants')
         super().__init__(*args, **kwargs)
         #self._generatingCommand = "numSimStateVar"
 
@@ -4196,7 +4196,7 @@ class MuMoTNoiseCorrelationsView(MuMoTtimeEvolutionView):
         self._EOM_2ndOrdMomDict = EOM_2ndOrdMom
         self._maxTimeDS = kwargs.get('maxTimeDS', 100)
         self._tstepDS= kwargs.get('tstepDS', 0.01)
-        self._ylab = kwargs.get('ylab', 'noise-noise correlation')
+        self._ylab = kwargs.get('ylab', 'noise correlation')
         self._silent = kwargs.get('silent', False)
         super().__init__(model=model, controller=controller, tEParams=NCParams, showStateVars = None, figure=figure, params=params, **kwargs)
         #super().__init__(model, controller, None, figure, params, **kwargs)
@@ -6577,12 +6577,12 @@ class MuMoTBifurcationView(MuMoTview):
                 for kk in range(len(realEQsol)):
                     if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
                         initDictList.append(realEQsol[kk])
-                self._showErrorMessage('Stationary state(s) detected and continuated. Initial conditions for state variables specified on sliders were not used. (Those are only used in case the calculation of fixed points fails.) ')
-                print(len(initDictList), 'stable steady state(s) detected and continuated. Initial conditions for state variables specified on sliders were not used.')
+                self._showErrorMessage('Stationary state(s) detected and continuated. Initial conditions for state variables specified on sliders in Advanced options tab were not used. (Those are only used in case the calculation of fixed points fails.) ')
+                print(len(initDictList), 'stable steady state(s) detected and continuated. Initial conditions for state variables specified on sliders in Advanced options tab were not used.')
             else:
                 initDictList.append(self._pyDSmodel_ics)
-                self._showErrorMessage('Stationary states could not be calculated; used initial conditions specified on sliders instead. This means only one branch was attempted to be continuated and the starting point might not have been a stationary state. ')
-                print('Stationary states could not be calculated; used initial conditions specified on sliders instead: ', self._pyDSmodel_ics, '. This means only one branch was continuated and the starting point might not have been a stationary state.')   
+                self._showErrorMessage('Stationary states could not be calculated; used initial conditions specified on sliders in Advanced options tab instead. This means only one branch was attempted to be continuated and the starting point might not have been a stationary state. ')
+                print('Stationary states could not be calculated; used initial conditions specified on sliders in Advanced options tab instead: ', self._pyDSmodel_ics, '. This means only one branch was continuated and the starting point might not have been a stationary state.')   
             
             specialPoints=[]  # list of special points: LP and BP
             sPoints_X=[] #bifurcation parameter
@@ -8054,7 +8054,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                     stateNamesLabel = [r'$'+latex(Symbol(str(state)))+'$' for state in sorted(self._initialState.keys(), key=str) if state not in self._mumotModel._constantReactants]
                 markers = [plt.Line2D([0,0],[0,0],color=self._colors[state], marker='s', linestyle='', markersize=10) for state in sorted(self._initialState.keys(), key=str) if state not in self._mumotModel._constantReactants]
                 plt.legend(markers, stateNamesLabel, loc='upper right', borderaxespad=0., numpoints=1) #bbox_to_anchor=(0.885, 1),
-                _fig_formatting_2D(figure=self._figure, xlab='time t', ylab='evolution of reactants', choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False, grid = True )
+                _fig_formatting_2D(figure=self._figure, xlab='time t', ylab='reactants', choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False, grid = True )
                  
             if not fullPlot: # If realtime-plot mode, draw only the last timestep rather than overlay all
                 xdata = []
