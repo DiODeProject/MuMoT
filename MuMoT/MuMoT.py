@@ -1917,7 +1917,9 @@ class MuMoTbifurcationController(MuMoTcontroller):
                                              max = pop[2],
                                              step = pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
-                                             description = "Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + r'\)' + " at t=0: ",
+                                             #r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVarExpr1))) +'}$'
+                                             description = r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + '}$' + " at t=0: ",
+                                             #description = r'\(' + _doubleUnderscorify(_greekPrependify('Phi_'+self._paramLabelDict.get(state,str(state)))) + r'\)' + " at t=0: ",
                                              style = {'description_width': 'initial'},
                                              continuous_update = continuousReplot)
                 
@@ -6434,8 +6436,13 @@ class MuMoTBifurcationView(MuMoTview):
         super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
         
         self._chooseFontSize = kwargs.get('fontsize', None)
-        #self._LabelY =  kwargs.get('ylab', r'$' + _doubleUnderscorify(_greekPrependify(stateVarExpr1)) +'$') 
-        self._LabelY =  kwargs.get('ylab', r'$' + stateVarExpr1 +'$') 
+        if '-' in str(stateVarExpr1):
+            self._LabelY =  kwargs.get('ylab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVarExpr1)[:str(stateVarExpr1).index('-')]))+'}' + '-' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVarExpr1)[str(stateVarExpr1).index('-')+1:]))+'}' + '$') 
+        elif '+' in str(stateVarExpr1):
+            self._LabelY =  kwargs.get('ylab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVarExpr1)[:str(stateVarExpr1).index('-')]))+'}' + '+' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVarExpr1)[str(stateVarExpr1).index('-')+1:]))+'}' + '$') 
+        else:
+            self._LabelY =  kwargs.get('ylab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVarExpr1))) +'}$') 
+        #self._LabelY =  kwargs.get('ylab', r'$' + stateVarExpr1 +'$') 
         #self._LabelX = kwargs.get('xlab', r'$' + _doubleUnderscorify(_greekPrependify(bifurcationParameter)) +'$')
         self._LabelX = kwargs.get('xlab', r'$' + bifurcationParameter +'$')
         self._chooseXrange = kwargs.get('choose_xrange', None)
@@ -6446,7 +6453,6 @@ class MuMoTBifurcationView(MuMoTview):
         self._bifurcationParameter = self._pydstoolify(bifurcationParameter)
         self._stateVarExpr1 = stateVarExpr1
         stateVarExpr1 = self._pydstoolify(stateVarExpr1)
-        #print(stateVarExpr1)
         
         if stateVarExpr2:
             stateVarExpr2 = self._pydstoolify(stateVarExpr2)
@@ -6510,11 +6516,24 @@ class MuMoTBifurcationView(MuMoTview):
         self._pyDSmodel = dst.args(name = 'MuMoT Model' + str(id(self)))
         varspecs = {}
         stateVariableList = []
+        replaceSV = {}
         for reactant in self._mumotModel._reactants:
             if reactant not in self._mumotModel._constantReactants:
                 stateVariableList.append(reactant)
-                varspecs[self._pydstoolify(reactant)] = self._pydstoolify(self._mumotModel._equations[reactant])
+                reactantString = self._pydstoolify(reactant)
+                if reactantString[0].islower():
+                    replaceSV[reactantString] = 'A'+reactantString
+                    varspecs['A'+reactantString] = self._pydstoolify(self._mumotModel._equations[reactant])
+                else:
+                    varspecs[reactantString] = self._pydstoolify(self._mumotModel._equations[reactant])
+        
+        for key, equation in varspecs.items():
+            for replKey, replVal in replaceSV.items():
+                equationNew = equation.replace(replKey, replVal)
+                varspecs[key] = equationNew
+        
         self._pyDSmodel.varspecs = varspecs
+        
         if len(stateVariableList) > 2:
             self._showErrorMessage('Bifurcation diagrams are currently only supported for 1D and 2D systems (1 or 2 time-dependent variables in the ODE system)!')
             return None
@@ -6530,8 +6549,17 @@ class MuMoTBifurcationView(MuMoTview):
                     self._stateVarBif2 = self._pydstoolify(self._stateVariable2)
                 elif self._stateVarBif1 == self._pydstoolify(self._stateVariable2):
                     self._stateVarBif2 = self._pydstoolify(self._stateVariable1)
+        
+        stateVarBif1Print = self._stateVarBif1
+        stateVarBif2Print = self._stateVarBif2
+        
+        if self._stateVarBif1[0].islower():
+            self._stateVarBif1 = 'A'+self._stateVarBif1
+        if self._stateVarBif2[0].islower():
+            self._stateVarBif2 = 'A'+self._stateVarBif2
+        
         with io.capture_output() as log:
-            print('Bifurcation diagram with state variables: ', self._stateVarBif1, 'and ', self._stateVarBif2, '.')
+            print('Bifurcation diagram with state variables: ', stateVarBif1Print, 'and ', stateVarBif2Print, '.')
             print('The bifurcation parameter chosen is: ', self._bifurcationParameter, '.')
         self._logs.append(log)
         
@@ -6548,7 +6576,8 @@ class MuMoTBifurcationView(MuMoTview):
             if arg in self._mumotModel._rates or arg in self._mumotModel._constantReactants or arg == self._mumotModel._systemSize:
                 paramDict[self._pydstoolify(arg)] = argDict[arg]
         
-        with io.capture_output() as log:
+        #with io.capture_output() as log:
+        if 1>0:
             
             self._pyDSmodel.pars = paramDict 
             
@@ -6556,14 +6585,13 @@ class MuMoTBifurcationView(MuMoTview):
             YDATA = [] # list of arrays containing the state variable data (either one variable, or the sum or difference of the two SVs) for bifurcation diagram data
             
             initDictList = []
-            #print(initDictList)
             self._pyDSmodel_ics = {}
             for inState in self._initialState:
                 if inState in self._stateVariableList: 
                     self._pyDSmodel_ics[inState] = self._initialState[inState]
             #self._pyDSmodel_ics   = self._initialState #self._getInitCondsFromSlider()
             
-            #print(self._pyDSmodel_ics)
+            #print(self._pyDSmodel_ics
             #for ic in self._pyDSmodel_ics:
             #    if 'Phi0' in self._pydstoolify(ic):
             #        self._pyDSmodel_ics[self._pydstoolify(ic)[self._pydstoolify(ic).index('0')+1:]] = self._pyDSmodel_ics.pop(ic)  #{'A': 0.1, 'B': 0.9 }  
@@ -6598,10 +6626,12 @@ class MuMoTBifurcationView(MuMoTview):
                 for key in initDictList[nn]:
                     old_key = key
                     new_key = self._pydstoolify(key)
+                    if new_key[0].islower():
+                        new_key = 'A'+new_key
                     initDictList[nn][new_key] = initDictList[nn].pop(old_key)
-                     
+                    
                 #self._pyDSmodel.ics = initDictList[nn]
-                pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  
+                pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)
                 pyDSode.set(ics =  initDictList[nn] )
                 #pyDSode.set(pars = self._getBifParInitCondFromSlider()) 
                 pyDSode.set(pars = {self._bifurcationParameter: self._initBifParam})   
@@ -6663,8 +6693,7 @@ class MuMoTBifurcationView(MuMoTview):
                                 k_iter_LPlabel += 1
                                 sPoints_Labels.append('LP'+str(k_iter_LPlabel))
                             k_iter_LP+=1
-                        
-                        
+                                               
                         k_iter_BPlabel_previous = k_iter_BPlabel
                         while pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP)):
                             if (round(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._bifurcationParameter], 4) not in [round(kk ,4) for kk in sPoints_X] 
@@ -6679,7 +6708,7 @@ class MuMoTBifurcationView(MuMoTview):
                         for jj in range(1,k_iter_BP):
                             if 'BP'+str(jj+k_iter_BPlabel_previous) in sPoints_Labels:
                                 EQ_iter_BP = jj
-                                print(EQ_iter_BP)
+                                #print(EQ_iter_BP)
                                 k_iter_next = 1
                                 pyDScontArgs = dst.args(name='EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
                                 pyDScontArgs.freepars     = [self._bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
@@ -6870,7 +6899,7 @@ class MuMoTBifurcationView(MuMoTview):
 
         self._show_computation_stop()
 
-        self._logs.append(log)
+        #self._logs.append(log)
         
         
         
