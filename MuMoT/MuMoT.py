@@ -4692,7 +4692,9 @@ class MuMoTbifurcationView(MuMoTview):
                     except:
                         self._showErrorMessage('Continuation failure (forward) on initial branch<br>')
                 except ZeroDivisionError:
-                    self._showErrorMessage('Division by zero<br>')  
+                    self._show_computation_stop()
+                    self._showErrorMessage('Division by zero<br>')
+                     
                 #pyDScont['EQ'+str(EQ_iter)].info()
                 if self._stateVarBif2 != None:
                     try:
@@ -4760,6 +4762,7 @@ class MuMoTbifurcationView(MuMoTview):
                                     except:
                                         self._showErrorMessage('Continuation failure (forward) starting from branch point<br>')
                                 except ZeroDivisionError:
+                                    self._show_computation_stop()
                                     self._showErrorMessage('Division by zero<br>')
                                 
                                 XDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._bifurcationParameterPyDS])
@@ -4798,6 +4801,7 @@ class MuMoTbifurcationView(MuMoTview):
                                     k_iter_next += 1
     
                     except TypeError:
+                        self._show_computation_stop()
                         print('Continuation failed; try with different parameters - use sliders. If that does not work, try changing maximum number of continuation points using the keyword contMaxNumPoints. If not set, default value is contMaxNumPoints=100.')       
                 
                 # bifurcation routine fr 1D system
@@ -4854,6 +4858,7 @@ class MuMoTbifurcationView(MuMoTview):
                                     except:
                                         self._showErrorMessage('Continuation failure (forward) starting from branch point<br>')
                                 except ZeroDivisionError:
+                                    self._show_computation_stop()
                                     self._showErrorMessage('Division by zero<br>')
                                 
                                 XDATA.append(pyDScont['EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP)].sol[self._bifurcationParameterPyDS])
@@ -4878,6 +4883,7 @@ class MuMoTbifurcationView(MuMoTview):
                                     k_iter_next += 1
     
                     except TypeError:
+                        self._show_computation_stop()
                         print('Continuation failed; try with different parameters - use sliders. If that does not work, try changing maximum number of continuation points using the keyword contMaxNumPoints. If not set, default value is contMaxNumPoints=100.')       
                 
                 
