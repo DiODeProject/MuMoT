@@ -6155,7 +6155,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
 
     def _adjust_barabasi_network_range(self):
         """function to adjust the widget of the number of edges of the Barabasi-Albert network when the system size slider is changed"""
-        if self._controller is None or not self._netType == NetworkType.BARABASI_ALBERT: return
+        if self._controller is None or not self._netType == NetworkType.BARABASI_ALBERT or self._controller._widgetsExtraParams.get('netParam') is None: return
         maxVal = self._systemSize-1
         if self._controller._widgetsExtraParams['netParam'].max == maxVal:
             # the value is correct and no action is necessary
