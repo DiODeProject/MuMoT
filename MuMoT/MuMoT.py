@@ -533,11 +533,12 @@ class MuMoTmodel:
         out = _doubleUnderscorify(out)
         out = _greekPrependify(out)
         display(Math(out))
+        #substring is a dictionary
         if not substring == None:
-            for sub in substring:
-                sub = _doubleUnderscorify(sub)
-                sub = _greekPrependify(sub)
-                display(Math("With \; substitution:\;" + latex(sub) + ":= " + latex(substring[sub])))
+            for subKey,subVal in substring.items():
+                subK = _greekPrependify(_doubleUnderscorify(str(subKey)))
+                subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
+                display(Math("With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
         
         
     def showVanKampenExpansion(self):
@@ -547,10 +548,12 @@ class MuMoTmodel:
         out = latex(lhs_vke) + " := \n" + latex(rhs_vke)
         out = _doubleUnderscorify(_greekPrependify(out))
         display(Math(out))
+        #substring is a dictionary
         if not substring == None:
-            for sub in substring:
-                sub = _doubleUnderscorify(_greekPrependify(sub))
-                display(Math("With \; substitution:\;" + latex(sub) + ":= " + latex(substring[sub])))
+            for subKey,subVal in substring.items():
+                subK = _greekPrependify(_doubleUnderscorify(str(subKey)))
+                subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
+                display(Math("With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
         
     
     def showFokkerPlanckEquation(self):
@@ -561,10 +564,12 @@ class MuMoTmodel:
             out = latex(fpe) + " := " + latex(FPEdict[fpe])
             out = _doubleUnderscorify(_greekPrependify(out))
             display(Math(out))
-            if not substring == None:
-                for sub in substring:
-                    sub = _doubleUnderscorify(_greekPrependify(sub))
-                    display(Math("With \; substitution:\;" + latex(sub) + ":= " + latex(substring[sub])))
+        #substring is a dictionary
+        if not substring == None:
+            for subKey,subVal in substring.items():
+                subK = _greekPrependify(_doubleUnderscorify(str(subKey)))
+                subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
+                display(Math("With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
     
                 
     def showNoiseEquations(self):
