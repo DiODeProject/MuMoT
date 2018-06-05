@@ -3424,6 +3424,7 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
             
                 
             if steadyStateReached == False:
+                self._show_computation_stop()
                 self._showErrorMessage('Stable steady state has not been reached: Try changing the initial conditions or model parameters using the sliders provided, increase simulation time, or decrease timestep tstep.') 
                 return None
         else:
