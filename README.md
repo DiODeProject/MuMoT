@@ -28,6 +28,7 @@ Given subfolders are used for demo and for test notebooks, the `PYTHONPATH` envi
 * to enable tables of contents, **especially if running a server providing access to** `MuMoTuserManual.ipynb`, enable TOC2 as follows:
     * in the command line run `jupyter nbextensions_configurator enable --user`
     * after the notebook server is running (*e.g.* next step), enable TOC2 via the *nbextensions* tab
+    * within a notebook, toggle the TOC by clicking on the appropriate button in the toolbar
 * start Jupyter notebook: `jupyter notebook` and run MuMoTtest.ipynb notebook
 * FYI: environments can be deactivated using: `source deactivate` (on macOS/Linux) or `deactivate` (on Windows)
 
