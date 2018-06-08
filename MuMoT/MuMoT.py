@@ -2282,6 +2282,9 @@ class MuMoTview:
         else:
             return logStr
 
+    def _set_fixedParams(self, paramDict):
+        self._fixedParams = paramDict
+
 
     def _get_params(self, refModel = None):
         if refModel is not None:
@@ -2657,6 +2660,10 @@ class MuMoTmultiView(MuMoTview):
         self._logs.append(log)
 
 
+    def _set_fixedParams(self, paramDict):
+        for view in self._views:
+            view._set_fixedParams(paramDict)
+
 
 ## multi-view controller
 class MuMoTmultiController(MuMoTcontroller):
@@ -2685,7 +2692,8 @@ class MuMoTmultiController(MuMoTcontroller):
             view = controller._view
             if params is not None:
 #                 view._fixedParams = dict(zip(fixedParamNames, fixedParamValues))
-                view._fixedParams = {**dict(zip(fixedParamNames, fixedParamValues)), **view._fixedParams} # this operation merge the two dictionaries with the second overriding the values of the first
+#                view._fixedParams = {**dict(zip(fixedParamNames, fixedParamValues)), **view._fixedParams} # this operation merge the two dictionaries with the second overriding the values of the first
+                view._set_fixedParams({**dict(zip(fixedParamNames, fixedParamValues)), **view._fixedParams}) # this operation merge the two dictionaries with the second overriding the values of the first
             for name, value in controller._widgetsFreeParams.items():
                 #if params is None or name not in fixedParamNames:
                 #    paramValueDict[name] = (value.value, value.min, value.max, value.step)
@@ -2717,7 +2725,8 @@ class MuMoTmultiController(MuMoTcontroller):
             paramLabelDict.update(controller._paramLabelDict)
 #             for name, value in controller._widgetsExtraParams.items():
 #                 widgetsExtraParamsTmp[name] = value
-            if controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
+            if type(controller) is MuMoTmultiController:
+#            if controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
                 for view in controller._view._views:
                     views.append(view)         
                                
@@ -2873,7 +2882,8 @@ class MuMoTmultiController(MuMoTcontroller):
 
         self._view = MuMoTmultiView(self, views, subPlotNum - 1, **kwargs)
         if fixedParamNames is not None:
-            self._view._fixedParams = dict(zip(fixedParamNames, fixedParamValues)) 
+#            self._view._fixedParams = dict(zip(fixedParamNames, fixedParamValues))
+            self._view._set_fixedParams(dict(zip(fixedParamNames, fixedParamValues))) 
                 
         for controller in controllers:
             controller._setErrorWidget(self._errorMessage)
