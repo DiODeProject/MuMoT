@@ -2589,8 +2589,8 @@ class MuMoTmultiView(MuMoTview):
     ## use common axes for all plots (False = use subplots)
     _shareAxes = None
 
-    def __init__(self, controller, views, subPlotNum, **kwargs):
-        super().__init__(None, controller, **kwargs)
+    def __init__(self, controller, model, views, subPlotNum, **kwargs):
+        super().__init__(model, controller, **kwargs)
         self._generatingCommand = "mmt.MuMoTmultiController"
         self._views = views
         self._subPlotNum = subPlotNum
@@ -2661,6 +2661,7 @@ class MuMoTmultiView(MuMoTview):
 
 
     def _set_fixedParams(self, paramDict):
+        self._fixedParams = paramDict
         for view in self._views:
             view._set_fixedParams(paramDict)
 
@@ -2682,6 +2683,7 @@ class MuMoTmultiController(MuMoTcontroller):
         showSystemSize = False
         views = []
         subPlotNum = 1
+        model = None
         ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
         #paramValuesDict = controllers[0]._view._mumotModel._create_free_param_dictionary_for_controller(inputParams=params if params is not None else [], initWidgets=initWidgets, showSystemSize=True, showPlotLimits=True )
         
@@ -2743,7 +2745,13 @@ class MuMoTmultiController(MuMoTcontroller):
 #                 else:
                 self._replotFunctions.append((controller._replotFunction, subPlotNum, controller._view._axes3d))                    
             subPlotNum += 1
+            # check if all views refer to same model
+            if model == None:
+                model = view._mumotModel
+            elif model != view._mumotModel:
+                raise MuMoTValueError('Multicontroller views do not all refer to same model')
             
+
 #         for view in self._views:
 #             if view._controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
 #                 for func in view._controller._replotFunctions:
@@ -2880,7 +2888,7 @@ class MuMoTmultiController(MuMoTcontroller):
             if not self._silent:
                 display(self._progressBar)
 
-        self._view = MuMoTmultiView(self, views, subPlotNum - 1, **kwargs)
+        self._view = MuMoTmultiView(self, model, views, subPlotNum - 1, **kwargs)
         if fixedParamNames is not None:
 #            self._view._fixedParams = dict(zip(fixedParamNames, fixedParamValues))
             self._view._set_fixedParams(dict(zip(fixedParamNames, fixedParamValues))) 
@@ -7780,7 +7788,6 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
                        xlab=None, ylab=None, curvelab=None, aspectRatioEqual=False, line_color_list=LINE_COLOR_LIST, 
                        **kwargs):
-    #print(kwargs)
     
     showLegend = kwargs.get('showLegend', False)
     
