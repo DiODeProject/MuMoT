@@ -651,19 +651,19 @@ class MuMoTmodel:
             `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values, e.g. 'parameter':[initial-value, min-value, max-value, step-size]
         
         :Keyword arguments:
-            `maxTime` - simulation time (type: float larger than 0)
-            `tstep` - time step of numerical integration of ODE system (type: float, default is 0.01)
-            `plotProportions` - flag to plot proportions or full populations (type: boolean)
-            `initialState` - initial proportions of the reactants (type: float in range [0,1])
-            `conserved` - specify if a system is conserved to make proportions of state variables (at time t=0) sum up to 1, or not; type: boolean (takes True or False (default))
-            `legend_fontsize` - specify fontsize of legend (type: integer)
-            `legend_loc` - specify legend location: combinations like 'upper left', lower right, or 'center center' are allowed (9 options in total)
-            `fontsize` - specify fontsize (type: integer) for axis-labels
-            `xlab` - specify label on x-axis (type: str), if not given uses default label 'time t'
-            `ylab` - specify label on y-axis (type: str), if not given uses default label 'reactants'
-            `choose_xrange` - specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float
-            `choose_yrange` - specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float
-            `silent` - switch on/off widgets and plot (type: boolean), accepts True or False (default); important for use with multi-controllers
+            `maxTime = 3.0`: simulation time for noise correlations (type: float larger than 0)
+            `tstep = 0.01`: time step of numerical integration of reactants (type: float)
+            `plotProportions = False`: flag to plot proportions or full populations (type: boolean)
+            `initialState = {}`: initial proportions of the reactants (type: float in range [0,1]), can also be set via `initWidgets` argument
+            `conserved = False`: specify if a system is conserved to make proportions of state variables (at time t=0) sum up to 1, or not; type: boolean (takes True or False)
+            `legend_fontsize = 14`: specify fontsize of legend (type: integer)
+            `legend_loc = 'upper left'`: specify legend location: combinations like 'upper left', 'lower right', or 'center center' are allowed (9 options in total)
+            `fontsize = None`: specify fontsize for axis-labels, accepts integer, if not given fontsize is automatically derived from length of axis label
+            `xlab = 'time t'`: specify label on x-axis (type: str)
+            `ylab = 'reactants'`: specify label on y-axis (type: str)
+            `choose_xrange = None`: specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float, if not given uses data values to set axis limits
+            `choose_yrange = None`: specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float, if not given uses data values to set axis limits
+            `silent = False`: switch on/off widgets and plot (type: boolean), accepts True or False; important for use with multi controllers
             Note: plotting keywords are also described in the user manual: https://diodeproject.github.io/MuMoT/
             
         :Returns:
@@ -700,25 +700,25 @@ class MuMoTmodel:
         """Construct interactive time evolution plot for noise correlations around fixed points.
         
         :Arguments:
-            `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values, e.g. 'parameter':[initial-value, min-value, max-value, step-size]
+            `initWidgets = {}`: dictionary where keys are the free-parameter or any other specific parameter, and values are four values, e.g. 'parameter':[initial-value, min-value, max-value, step-size]
         
         :Keyword arguments:
-            `maxTime` - simulation time for noise correlations (type: float larger than 0)
-            `tstep` - time step of numerical integration of noise correlations (type: float, default is 0.01)
-            `maxTimeDS` - simulation time for ODE system (type: float larger than 0, default is 50)
-            `tstepDS` - time step of numerical integration of ODE system (type: float, default is 0.01)
-            `initialState` - initial proportions of the reactants (type: float in range [0,1])
-            `conserved` - specify if a system is conserved to make proportions of state variables (at time t=0) sum up to 1, or not; type: boolean (takes True or False (default))
-            `legend_fontsize` - specify fontsize of legend (type: integer)
-            `legend_loc` - specify legend location: combinations like 'upper left', lower right, or 'center center' are allowed (9 options in total)
-            `fontsize` - specify fontsize (type: integer) for axis-labels
-            `xlab` - specify label on x-axis (type: str), if not given uses default label 'time t'
-            `ylab` - specify label on y-axis (type: str), if not given uses default label 'noise Correlations'
-            `choose_xrange` - specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float
-            `choose_yrange` - specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float
-            `silent` - switch on/off widgets and plot (type: boolean), accepts True or False (default); important for use with multi-controllers
+            `maxTime = 3.0`: simulation time for noise correlations (type: float larger than 0)
+            `tstep = 0.01`: time step of numerical integration of noise correlations (type: float)
+            `maxTimeDS = 50`: simulation time for ODE system (type: float larger than 0)
+            `tstepDS = 0.01`: time step of numerical integration of ODE system (type: float)
+            `initialState = {}`: initial proportions of the reactants (type: float in range [0,1]), can also be set via `initWidgets` argument
+            `conserved = False`: specify if a system is conserved to make proportions of state variables (at time t=0) sum up to 1, or not; type: boolean (takes True or False)
+            `legend_fontsize = 14`: specify fontsize of legend (type: integer)
+            `legend_loc = 'upper left'`: specify legend location: combinations like 'upper left', 'lower right', or 'center center' are allowed (9 options in total)
+            `fontsize = None`: specify fontsize for axis-labels, accepts integer, if not given fontsize is automatically derived from length of axis label
+            `xlab = 'time t'`: specify label on x-axis (type: str)
+            `ylab = 'noise correlations'`: specify label on y-axis (type: str)
+            `choose_xrange = None`: specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float, if not given uses data values to set axis limits
+            `choose_yrange = None`: specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float, if not given uses data values to set axis limits
+            `silent = False`: switch on/off widgets and plot (type: boolean), accepts True or False; important for use with multi controllers
             Note: plotting keywords are also described in the user manual: https://diodeproject.github.io/MuMoT/
-            
+        
         :Returns:
             MuMoTtimeEvolutionController
         """
@@ -782,24 +782,23 @@ class MuMoTmodel:
         """Display interactive stream plot of `stateVariable1` (x-axis), `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis; not currently supported - see below)
 
         :Arguments:
-            `stateVariable1` - state variable to be plotted on the x-axis
-            `stateVariable2` - state variable to be plotted on the y-axis
-            `stateVariable3 = None` - state variable to be plotted on the z-axis (not currently supported; use `vector` instead for 3-dimensional systems)
-            `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
-            `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
-
+            `stateVariable1` : state variable to be plotted on the x-axis
+            `stateVariable2`: state variable to be plotted on the y-axis
+            `stateVariable3 = None`: state variable to be plotted on the z-axis (not currently supported; use `vector` instead for 3-dimensional systems)
+            `params = None`: parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
+            `initWidgets = {}`: dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+        
         :Keyword arguments:
-            `showFixedPoints = False` - plot fixed points
-            `showNoise = False` - plot noise around fixed points
-            `fontsize` - specify fontsize (type: integer) for axis-labels
-            `xlab` - specify label on x-axis (type: str), if not given uses `stateVariable1` as default label
-            `ylab` - specify label on y-axis (type: str), if not given uses `stateVariable2` as default label
-            `zlab` - specify label on z-axis (type: str), if not given uses `stateVariable3` as default label (3D plots only)
-            `choose_xrange` - specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float
-            `choose_yrange` - specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float
-            `silent` - switch on/off widgets and plot (type: boolean), accepts True or False (default); important for use with multi controllers
+            `showFixedPoints = False`: plot fixed points, accepts True or False
+            `showNoise = False`: plot noise around fixed points, accepts True or False
+            `fontsize = None`: specify fontsize (type: integer) for axis-labels
+            `xlab = 'stateVariable1'`: specify label on x-axis (type: str)
+            `ylab = 'stateVariable2'`: specify label on y-axis (type: str)
+            `choose_xrange = None`: specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float, if not given uses data values to set axis limits
+            `choose_yrange = None`: specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float, if not given uses data values to set axis limits
+            `silent = False`: switch on/off widgets and plot (type: boolean), accepts True or False; important for use with multi controllers
             Note: plotting keywords are also described in the user manual: https://diodeproject.github.io/MuMoT/
-            
+        
         :Returns:
             MuMoTcontroller"""
         if self._systemSize == None and self._constantSystemSize == True: # duplicate check in view and controller required for speedy error reporting, plus flexibility to instantiate view independent of controller
@@ -834,21 +833,22 @@ class MuMoTmodel:
         """Display interactive stream plot of `stateVariable1` (x-axis), `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis; not currently supported - see below)
 
         :Arguments:
-            `stateVariable1` - state variable to be plotted on the x-axis
-            `stateVariable2` - state variable to be plotted on the y-axis
-            `stateVariable3 = None` - state variable to be plotted on the z-axis 
-            `params = None` - parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
-            `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+            `stateVariable1`: state variable to be plotted on the x-axis
+            `stateVariable2`: state variable to be plotted on the y-axis
+            `stateVariable3 = None`: state variable to be plotted on the z-axis 
+            `params = None`: parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
+            `initWidgets = {}`: dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
 
         :Keyword arguments:
-            `showFixedPoints = False` - plot fixed points
-            `showNoise = False` - plot noise around fixed points
-            `fontsize` - specify fontsize (type: integer) for axis-labels
-            `xlab` - specify label on x-axis (type: str), if not given uses `stateVariable1` as default label
-            `ylab` - specify label on y-axis (type: str), if not given uses `stateVariable2` as default label
-            `choose_xrange` - specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float
-            `choose_yrange` - specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float
-            `silent` - switch on/off widgets and plot (type: boolean), accepts True or False (default); important for use with multi controllers
+            `showFixedPoints = False`: plot fixed points, accepts True or False
+            `showNoise = False`: plot noise around fixed points, accepts True or False
+            `fontsize = None`: specify fontsize (type: integer) for axis-labels
+            `xlab = 'stateVariable1'`: specify label on x-axis (type: str)
+            `ylab = 'stateVariable2'`: specify label on y-axis (type: str)
+            `zlab = 'stateVariable3'`: specify label on z-axis (type: str), 3D plots only
+            `choose_xrange = None`: specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float, if not given uses data values to set axis limits
+            `choose_yrange = None`: specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float, if not given uses data values to set axis limits
+            `silent = False`: switch on/off widgets and plot (type: boolean), accepts True or False; important for use with multi controllers
             Note: plotting keywords are also described in the user manual: https://diodeproject.github.io/MuMoT/
             
         :Returns:
@@ -884,22 +884,22 @@ class MuMoTmodel:
         1D and 2D systems are currently supported, only limit points and branch points can be detected
         
         :Arguments:
-            `bifurcationParameter` - critical parameter plotted on x-axis
-            `stateVariable1` - state variable expression to be plotted on the y-axis, allowed are: reactant1, reactant1-reactant2, or reactant1+reactant2
-            `stateVariable2 = None` - state variable if system is larger than 2D (not currently supported)
-            `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values, e.g. 'parameter':[initial-value, min-value, max-value, step-size]
+            `bifurcationParameter`: critical parameter plotted on x-axis
+            `stateVariable1`: state variable expression to be plotted on the y-axis, allowed are: reactant1, reactant1-reactant2, or reactant1+reactant2
+            `stateVariable2 = None`: state variable if system is larger than 2D (not currently supported)
+            `initWidgets = {}`: dictionary where keys are the free-parameter or any other specific parameter, and values are four values, e.g. 'parameter':[initial-value, min-value, max-value, step-size]
         
         :Keyword arguments:
-            `initialState` - initial proportions of the reactants (type: float in range [0,1]), will be used ONLY if calculation of stationary states fails
-            `initBifParam` - initial value of bifurcation parameter, can also be set via `initWidgets` argument
-            `conserved` - specify if a system is conserved to make proportions of state variables (at time t=0) sum up to 1, or not; type: boolean (takes True or False (default))
-            `contMaxNumPoints` - choose maximum number of continuation points, accepts integers, default is 100
-            `fontsize` - specify fontsize (type: integer) for axis-labels
-            `xlab` - specify label on x-axis (type: str), if not given uses symbol for `bifurcationParameter` in arguments as default label
-            `ylab` - specify label on y-axis (type: str), if not given uses expression given as `stateVariable1` in arguments as default label
-            `choose_xrange` - specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float
-            `choose_yrange` - specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float
-            `silent` - switch on/off widgets and plot (type: boolean), accepts True or False (default); important for use with multi controllers
+            `initialState = {}`: initial proportions of the reactants (type: float in range [0,1]), will be used ONLY if calculation of stationary states fails, can also be set via `initWidgets` argument
+            `initBifParam = 2.0`: initial value of bifurcation parameter, can also be set via `initWidgets` argument
+            `conserved = False`: specify if a system is conserved to make proportions of state variables (at time t=0) sum up to 1, or not; type: boolean (takes True or False)
+            `contMaxNumPoints = 100`: choose maximum number of continuation points, accepts integers
+            `fontsize = None`: specify fontsize for axis-labels, accepts integer, if not given fontsize is automatically derived from length of axis label
+            `xlab = 'bifurcationParameter'`: specify label on x-axis (type: str), if not given uses symbol for `bifurcationParameter` in arguments as default label
+            `ylab = '\Phi_{stateVariable1}'`: specify label on y-axis (type: str), if not given uses expression given as `stateVariable1` in arguments as index, if `stateVariable1` is a sum/difference of the form 'Reactant1 +/- Reactant2' the default label is \Phi_{Reactant1} - \Phi_{Reactant2}
+            `choose_xrange = None`: specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float, if not given uses data values to set axis limits
+            `choose_yrange = None`: specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float, if not given uses data values to set axis limits
+            `silent = False`: switch on/off widgets and plot (type: boolean), accepts True or False; important for use with multi controllers
             Note: plotting keywords are also described in the user manual: https://diodeproject.github.io/MuMoT/
             
         :Returns:
