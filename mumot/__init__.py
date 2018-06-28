@@ -29,7 +29,7 @@ import sympy
 import math
 import PyDSTool as dst
 from graphviz import Digraph
-from process_latex.process_latex import process_sympy # was `from process_latex import process_sympy` before packaging for pip
+from mumot.process_latex.process_latex import process_sympy # was `from process_latex import process_sympy` before packaging for pip
 import tempfile
 import os
 import copy
