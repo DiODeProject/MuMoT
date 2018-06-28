@@ -55,17 +55,22 @@ from math import log10, floor
 #from numpy.oldnumeric.fix_default_axis import _args3
 #from matplotlib.offsetbox import kwargs
 
-ipython = get_ipython()
-ipython.magic('alias_magic model latex')
-ipython.magic('matplotlib nbagg')
+try:
+    # Try to get the currently-running IPython instance
+    ipython = get_ipython()
+    ipython.magic('alias_magic model latex')
+    ipython.magic('matplotlib nbagg')
 
-def _hide_traceback(exc_tuple=None, filename=None, tb_offset=None,
-                   exception_only=False, running_compiled_code=False):
-    etype, value, tb = sys.exc_info()
-    return ipython._showtraceback(etype, value, ipython.InteractiveTB.get_exception_only(etype, value))
+    def _hide_traceback(exc_tuple=None, filename=None, tb_offset=None,
+                       exception_only=False, running_compiled_code=False):
+        etype, value, tb = sys.exc_info()
+        return ipython._showtraceback(etype, value, ipython.InteractiveTB.get_exception_only(etype, value))
 
-_show_traceback = ipython.showtraceback
-ipython.showtraceback = _hide_traceback
+    _show_traceback = ipython.showtraceback
+    ipython.showtraceback = _hide_traceback
+except NameError as e:
+    # There is no currently-running IPython instance
+    pass
 
 class MuMoTError(Exception):
     pass
