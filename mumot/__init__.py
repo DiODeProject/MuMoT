@@ -20,6 +20,7 @@ from IPython.display import display, Math, Javascript #, clear_output, Latex
 import ipywidgets.widgets as widgets
 #import ipywidgets.trait_types.traitlets.TraitError
 from matplotlib import pyplot as plt
+
 #import matplotlib.cm as cm
 import matplotlib.patches as mpatch
 import numpy as np
@@ -2596,7 +2597,7 @@ class MuMoTmultiView(MuMoTview):
 
     def __init__(self, controller, model, views, subPlotNum, **kwargs):
         super().__init__(model, controller, **kwargs)
-        self._generatingCommand = "mmt.MuMoTmultiController"
+        self._generatingCommand = "mumot.MuMoTmultiController"
         self._views = views
         self._subPlotNum = subPlotNum
         for view in self._views:
@@ -5677,7 +5678,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
 #         for key,value in sorted(MAParams.items()):
 #             sortedDict += "'" + key + "': " + str(value) + ", "
 #         sortedDict += "}"
-        print( "mmt.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params().replace('\\','\\\\') + ", SSParams = " + str(MAParams) + " )")
+        print( "mumot.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params().replace('\\','\\\\') + ", SSParams = " + str(MAParams) + " )")
     
     def _update_view_specific_params(self, freeParamDict = {}):
         """read the new parameters (in case they changed in the controller) specific to multiagent(). This function should only update local parameters and not compute data"""
@@ -6265,7 +6266,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
         ssaParams['runs']  = self._runs
         ssaParams['aggregateResults']  = self._aggregateResults
         #str( list(self._ratesDict.items()) )
-        print( "mmt.MuMoTSSAView(<modelName>, None, " + str( self._get_bookmarks_params().replace('\\','\\\\') ) + ", SSParams = " + str(ssaParams) + " )")
+        print( "mumot.MuMoTSSAView(<modelName>, None, " + str( self._get_bookmarks_params().replace('\\','\\\\') ) + ", SSParams = " + str(ssaParams) + " )")
             
     def _simulationStep(self): 
         # update transition probabilities accounting for the current state
