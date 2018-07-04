@@ -19,6 +19,7 @@ setup(
     package_data={'mumot.gen': ['PS.tokens', 'PSLexer.tokens']},
     license='GPL-3.0',
     install_requires=[
+        'antlr4-python3-runtime==4.5.3',
         'graphviz',
         'ipython',
         'ipywidgets',
