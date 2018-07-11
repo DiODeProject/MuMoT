@@ -2428,13 +2428,13 @@ class MuMoTview:
                 paramNames.append(name)
                 paramValues.append(value.value)
         
-            if self._controller._widgetsExtraParams and 'initBifParam' in self._controller._widgetsExtraParams:     
-                paramNames.append(self._bifurcationParameter_for_get_argDict)
-                paramValues.append(self._controller._widgetsExtraParams['initBifParam'].value)
-
-        if self._fixedParams and 'initBifParam' in self._fixedParams:
-            paramNames.append(self._bifurcationParameter_for_get_argDict)
-            paramValues.append(self._fixedParams['initBifParam'])
+#             if self._controller._widgetsExtraParams and 'initBifParam' in self._controller._widgetsExtraParams:     
+#                 paramNames.append(self._bifurcationParameter_for_get_argDict)
+#                 paramValues.append(self._controller._widgetsExtraParams['initBifParam'].value)
+# 
+#         if self._fixedParams and 'initBifParam' in self._fixedParams:
+#             paramNames.append(self._bifurcationParameter_for_get_argDict)
+#             paramValues.append(self._fixedParams['initBifParam'])
 
         if self._fixedParams is not None:
             for key, item in self._fixedParams.items():
@@ -5030,6 +5030,43 @@ class MuMoTbifurcationView(MuMoTview):
                     self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
             
             self._initBifParam = self._fixedParams['initBifParam'] if self._fixedParams.get('initBifParam') is not None else self._controller._widgetsExtraParams['initBifParam'].value
+
+
+    ## gets and returns names and values from widgets, overrides method defined in parent class MuMoTview
+    def _get_argDict(self):
+        paramNames = []
+        paramValues = []
+        if self._controller is not None:
+            for name, value in self._controller._widgetsFreeParams.items():
+                #print("wdg-name: " + str(name) + " wdg-val: " + str(value.value))
+                paramNames.append(name)
+                paramValues.append(value.value)
+        
+            if self._controller._widgetsExtraParams and 'initBifParam' in self._controller._widgetsExtraParams:     
+                paramNames.append(self._bifurcationParameter_for_get_argDict)
+                paramValues.append(self._controller._widgetsExtraParams['initBifParam'].value)
+
+        if self._fixedParams and 'initBifParam' in self._fixedParams:
+            paramNames.append(self._bifurcationParameter_for_get_argDict)
+            paramValues.append(self._fixedParams['initBifParam'])
+
+        if self._fixedParams is not None:
+            for key, item in self._fixedParams.items():
+                #print("fix-name: " + str(key) + " fix-val: " + str(item))
+                paramNames.append(str(key))
+                paramValues.append(item)
+        
+        argNamesSymb = list(map(Symbol, paramNames))
+        argDict = dict(zip(argNamesSymb, paramValues))
+
+        if self._mumotModel._systemSize:
+            argDict[self._mumotModel._systemSize] = 1
+
+        #@todo: is this necessary? for which view?
+        systemSize = Symbol('systemSize')
+        argDict[systemSize] = self._getSystemSize()
+        
+        return argDict
 
 
 class MuMoTstochasticSimulationView(MuMoTview):
