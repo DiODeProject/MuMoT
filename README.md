@@ -1,23 +1,27 @@
 # MuMoT
 Multiscale Modelling Tool
 ---
+
 Repository should contain following files/folders:
+
 * `mumot/__init__.py` (main functionality)
 * `process_latex/process_latex.py` (LaTeX parser, imported from [latex2sympy](https://github.com/augustt198/latex2sympy) project and updated for Python 3)
 * `gen` (includes submodules used by MuMoT, important: there must be an empty file called `__init__.py` (with 2 underscores before and after init in the filename) in that folder, so Python can recognise the modules)
 * `MuMoTtest.py` and other demo files
 
 ## Dependencies
+
 You need to install the following supporting software:
 
 * a LaTeX compiler
 
 ### Path
+
 Given subfolders are used for demo and for test notebooks, the `PYTHONPATH` environment variable needs to be set appropriately, *e.g.* `export PYTHONPATH=$PYTHONPATH:<your MuMoT repository directoty` (Mac). Ideally, add this somewhere where it will be set during every session, *e.g.* in your `.bashrc` file
 
 ### Creating a conda environment for MuMoT named "MumotEnv" (this name is specified in environment.yml)
 
-#### The following has been tested on macOS Sierra Version 10.12.6 and Ubuntu 16.04 (Windows test to follow)
+*The following has been tested on macOS Sierra Version 10.12.6 and Ubuntu 16.04; Windows test to follow*.
 
 * upgrade to at least conda 4.4
 * get the environment.yml file from the MuMoT repository, go to the folder containing the environment.yml file and type in terminal: `conda env create -f environment.yml`
@@ -34,34 +38,69 @@ Given subfolders are used for demo and for test notebooks, the `PYTHONPATH` envi
 
 jupyter nbextension enable --py widgetsnbextension --sys-prefix
 
-## Test
-To test your installation run the `MuMoTuserManual.ipynb` notebook (in the `docs` directory).
+## Testing
 
+At present, MuMoT is tested by running several Jupyter notebooks:
+
+* [docs/MuMoTuserManual.ipynb](docs/MuMoTuserManual.ipynb)
+* [TestNotebooks/MuMoTtest.ipynb](TestNotebooks/MuMoTtest.ipynb)
+* Further test notebooks in [TestNotebooks/MiscTests](TestNotebooks/MiscTests)
+
+To locally automate the running of all of the above Notebooks in an isolated Python environment containing just the necessary dependencies:
+
+ 1. Install the [tox](https://tox.readthedocs.io/en/latest/) automated testing tool
+ 2. Run 
+
+    ```sh
+    tox
+    ```
+
+This:
+ 
+ 1. Creates a new virtualenv (Python virtual environment) containing just 
+      * MuMoT's dependencies  (see `install_requires` in <setup.py>)
+      * the packages needed for testing (see `extras_require` in <setup.py>)
+ 1. Checks that all of the above Notebooks can be run without any unhandled Exceptions or Errors being generated 
+    (using [nbval](https://github.com/computationalmodelling/nbval)).
+    If an Exception/Error is encountered then a Jupyter tab is opened in the default web browser showing its location 
+    (using [nbdime](https://nbdime.readthedocs.io/en/stable/)).
+ 1. Checks that the [docs/MuMoTuserManual.ipynb](docs/MuMoTuserManual.ipynb) and [TestNotebooks/MuMoTtest.ipynb](TestNotebooks/MuMoTtest.ipynb) Notebooks 
+    generate the same output cell content as is saved in the Notebook files when re-run 
+    (again, using [nbval](https://github.com/computationalmodelling/nbval)).
+    If a discrepency is encountered then a Jupyter tab is opened in the default web browser showing details 
+    (again, using [nbdime](https://nbdime.readthedocs.io/en/stable/)).
+    
 ## Documentation
-The `MuMoTuserManual.ipynb` notebook in the `docs` directory provides the most accessible introduction to working with MuMoT.
+
+The [docs/MuMoTuserManual.ipynb](docs/MuMoTuserManual.ipynb) Notebook provides the most accessible introduction to working with MuMoT.
 
 For more technical information read the documentation at [https://diodeproject.github.io/MuMoT/](https://diodeproject.github.io/MuMoT/)
 
 ## House rules
-* include [Python docstrings](https://www.python.org/dev/peps/pep-0257/) at the very least for user-visible functions, but ideally also for classes, functions, etc. Include the sections `Arguments`, `Keywords` and `Returns`
-* use `@todo` for reminders
+
+* Include [Python docstrings](https://www.python.org/dev/peps/pep-0257/) at the very least for user-visible functions, but ideally also for classes, functions, etc. Include the sections `Arguments`, `Keywords` and `Returns`
+* Use `@todo` for reminders
 * Write code using Python [naming conventions](https://www.python.org/dev/peps/pep-0008/#naming-conventions)
 * Update `TestNotebooks/MuMoTtest.ipynb` to add tests for new functionality - always run this notebook before committing
 
 ## Contributors
 
 ### Core Development Team:
+
 * James A. R. Marshall
 * Andreagiovanni Reina
 * Thomas Bose
 
 ### Packaging, Documentation and Deployment:
-* Will Furnass
+
+* [Will Furnass](http://learningpatterns.me)
 
 ### Windows Compatibility
+
 * Renato Pagliara Vasquez
 
 *Contains code snippets (C) 2012 Free Software Foundation, under the MIT Licence*
 
 ## Funding
-MuMoT developed with funds from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement number 647704 - [DiODe](http://diode.group.shef.ac.uk)).
+
+MuMoT developed with funds from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation programme (grant agreement number 647704 - [DiODe](http://diode.group.shef.ac.uk)).
