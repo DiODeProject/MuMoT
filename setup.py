@@ -1,16 +1,25 @@
+import io
+import os
 from setuptools import setup, find_packages
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+
+with open("README.md", "r") as f:
+    long_description = f.read()
+
+pkgname = 'mumot'
+
+version_namespace = {}
+here = os.path.abspath(os.path.dirname(__file__))
+with io.open(os.path.join(here, pkgname, '_version.py'), encoding='utf8') as f:
+    exec(f.read(), {}, version_namespace)
+
 
 setup(
-    name='mumot',
-    # @todo: switch to using semantic versioning
-    # (https://packaging.python.org/tutorials/distributing-packages/#semantic-versioning-preferred)
-    version='0.0.0',
+    name=pkgname,
+    description='Multiscale Modelling Tool',
+    version=version_namespace['__version__'],
     author='James A. R. Marshall, Andreagiovanni Reina, Thomas Bose',
     author_email='james.marshall@shef.ac.uk',
-    description='Multiscale Modelling Tool',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/DiODeProject/MuMoT',
@@ -29,6 +38,20 @@ setup(
         'scipy<1.0.0',
         'sympy>=1.1.1',
         ],
+    extras_require={
+        'test': [
+            'pytest',
+            'pytest-cov',
+            'nbval' ,
+            'nbdime',
+            'jupyter',
+            ],
+        'docs': [
+            'sphinx',
+            'sphinx-rtd-theme',
+            'numpydoc'
+        ],
+    },
     classifiers=(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

@@ -1,6 +1,5 @@
 """
 Multiscale Modelling Tool (MuMoT)
-Version 0.0
 
 Help:
 https://diodeproject.github.io/MuMoT/
@@ -55,6 +54,8 @@ from math import log10, floor
 #from __builtin__ import None
 #from numpy.oldnumeric.fix_default_axis import _args3
 #from matplotlib.offsetbox import kwargs
+
+from ._version import __version__
 
 try:
     # Try to get the currently-running IPython instance
