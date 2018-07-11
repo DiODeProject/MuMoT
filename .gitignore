@@ -8,9 +8,11 @@ __pycache__/
 *.so
 *~
 .cache/
+__mumot_files__/
 
 # Test-related caches
 .tox/
+.pytest_cache/
 
 # Jupyter Notebooks checkpoints
 .ipynb_checkpoints/
