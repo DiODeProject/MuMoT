@@ -2,7 +2,7 @@
 Multiscale Modelling Tool
 ---
 Repository should contain following files/folders:
-* `MuMoT/MuMoT.py` (main functionality)
+* `mumot/__init__.py` (main functionality)
 * `process_latex/process_latex.py` (LaTeX parser, imported from [latex2sympy](https://github.com/augustt198/latex2sympy) project and updated for Python 3)
 * `gen` (includes submodules used by MuMoT, important: there must be an empty file called `__init__.py` (with 2 underscores before and after init in the filename) in that folder, so Python can recognise the modules)
 * `MuMoTtest.py` and other demo files
@@ -25,18 +25,20 @@ Given subfolders are used for demo and for test notebooks, the `PYTHONPATH` envi
 * activate the environment: `source activate MumotEnv` (on macOS/Linux) or `activate MumotEnv` (on Windows)
 * check that the environment was installed correctly (after it has been activated): `conda list` (all packages in the environment.yml file should be listed)
 * if installed on Linux system you need to delete the following line (on macOS you can skip this step): - appnope=0.1.0=py35_0 as it is macOS specific (this is the first line under dependencies in the environment.yml file). If you are using Ubuntu 16.04 or Mac osX the package graphviz is probably not working correctly (when installed via pip - this is done when creating the environment via the environment.yml file). This can be resolved by installing it again by typing: `sudo apt-get install graphviz` (Ubuntu) or `conda install graphviz` (Mac) in a terminal (you need to have root permissions, and make sure you have already run `activate MumotEnv`)
-* to enable tables of contents, **especially if running a server providing access to** `MuMoTuserManual.ipynb`, enable TOC2 as follows:
+* to enable tables of contents, **especially if running a server providing access to** `MuMoTuserManual.ipynb` (see the `docs` directory), enable TOC2 as follows:
     * in the command line run `jupyter nbextensions_configurator enable --user`
     * after the notebook server is running (*e.g.* next step), enable TOC2 via the *nbextensions* tab
     * within a notebook, toggle the TOC by clicking on the appropriate button in the toolbar
 * start Jupyter notebook: `jupyter notebook` and run MuMoTtest.ipynb notebook
 * FYI: environments can be deactivated using: `source deactivate` (on macOS/Linux) or `deactivate` (on Windows)
 
+jupyter nbextension enable --py widgetsnbextension --sys-prefix
+
 ## Test
-To test your installation run the `MuMoTuserManual.ipynb` notebook.
+To test your installation run the `MuMoTuserManual.ipynb` notebook (in the `docs` directory).
 
 ## Documentation
-The `MuMoTuserManual.ipynb` notebook provides the most accessible introduction to working with MuMoT.
+The `MuMoTuserManual.ipynb` notebook in the `docs` directory provides the most accessible introduction to working with MuMoT.
 
 For more technical information read the documentation at [https://diodeproject.github.io/MuMoT/](https://diodeproject.github.io/MuMoT/)
 

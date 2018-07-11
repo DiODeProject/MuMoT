@@ -7,10 +7,15 @@ dist/
 __pycache__/
 *.so
 *~
+.cache/
+__mumot_files__/
 
-# due to using tox and pytest
-.tox
-.cache
+# Test-related caches
+.tox/
+.pytest_cache/
 
-# due to having Jupyter Notebooks
+# Jupyter Notebooks checkpoints
 .ipynb_checkpoints/
+
+# PyCharm IDE files
+.idea/
