@@ -14,47 +14,38 @@ Windows Compatibility:
 Renato Pagliara Vasquez
 """
 
-import sys
-from IPython.display import display, Math, Javascript #, clear_output, Latex 
-import ipywidgets.widgets as widgets
-#import ipywidgets.trait_types.traitlets.TraitError
-from matplotlib import pyplot as plt
-
-#import matplotlib.cm as cm
-import matplotlib.patches as mpatch
-import numpy as np
-from scipy.integrate import odeint
-from sympy import Symbol, latex, solve, lambdify, Matrix, symbols, expand, preview, numbered_symbols, Derivative, default_sort_key, simplify, linsolve, collect, factorial
-import sympy
-import math
-import PyDSTool as dst
-from graphviz import Digraph
-from mumot.process_latex.process_latex import process_sympy # was `from process_latex import process_sympy` before packaging for pip
-import tempfile
-import os
 import copy
-from pyexpat import model #@UnresolvedImport
-#from idlelib.textView import view_file
-from IPython.utils import io
 import datetime
-import warnings
-from matplotlib.cbook import MatplotlibDeprecationWarning
-from mpl_toolkits.mplot3d import axes3d #@UnresolvedImport
-import networkx as nx #@UnresolvedImport
-from enum import Enum
-#import json
+import math
 import numbers
+import os
+import sys
+import tempfile
+import warnings
 from bisect import bisect_left
+from enum import Enum
+from math import floor, log10
 
+import ipywidgets.widgets as widgets
+import matplotlib.patches as mpatch
 import matplotlib.ticker as ticker
-from math import log10, floor
-#from matplotlib.pyplot import plot
+import networkx as nx  # @UnresolvedImport
+import numpy as np
+import PyDSTool as dst
+import sympy
+from graphviz import Digraph
+from IPython.display import Javascript, Math, display
+from IPython.utils import io
+from matplotlib import pyplot as plt
+from matplotlib.cbook import MatplotlibDeprecationWarning
+from mpl_toolkits.mplot3d import axes3d  # @UnresolvedImport
+from pyexpat import model  # @UnresolvedImport
+from scipy.integrate import odeint
+from sympy import (Derivative, Matrix, Symbol, collect, default_sort_key,
+                   expand, factorial, lambdify, latex, linsolve,
+                   numbered_symbols, preview, simplify, solve, symbols)
 
-#from matplotlib.offsetbox import kwargs
-#from __builtin__ import None
-#from numpy.oldnumeric.fix_default_axis import _args3
-#from matplotlib.offsetbox import kwargs
-
+from mumot.process_latex.process_latex import process_sympy
 from ._version import __version__
 
 try:
