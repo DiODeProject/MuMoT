@@ -44,7 +44,7 @@ At present, MuMoT is tested by running several Jupyter notebooks:
 
 * [docs/MuMoTuserManual.ipynb](docs/MuMoTuserManual.ipynb)
 * [TestNotebooks/MuMoTtest.ipynb](TestNotebooks/MuMoTtest.ipynb)
-* Further test notebooks in [TestNotebooks/MiscTests](TestNotebooks/MiscTests)
+* Further test notebooks in [TestNotebooks/MiscTests/](TestNotebooks/MiscTests)
 
 To locally automate the running of all of the above Notebooks in an isolated Python environment containing just the necessary dependencies:
 
@@ -76,12 +76,19 @@ The [docs/MuMoTuserManual.ipynb](docs/MuMoTuserManual.ipynb) Notebook provides t
 
 For more technical information read the documentation at [https://diodeproject.github.io/MuMoT/](https://diodeproject.github.io/MuMoT/)
 
-## House rules
+## Contributing
 
-* Include [Python docstrings](https://www.python.org/dev/peps/pep-0257/) at the very least for user-visible functions, but ideally also for classes, functions, etc. Include the sections `Arguments`, `Keywords` and `Returns`
-* Use `@todo` for reminders
-* Write code using Python [naming conventions](https://www.python.org/dev/peps/pep-0008/#naming-conventions)
-* Update `TestNotebooks/MuMoTtest.ipynb` to add tests for new functionality - always run this notebook before committing
+If you want to contribute a feature or fix a bug then
+
+* Fork this repository and create a [feature branch](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow)
+* Make commits to that branch
+    * Style: write code using Python [naming conventions](https://www.python.org/dev/peps/pep-0008/#naming-conventions)
+    * Testing: add new test functions to [TestNotebooks/MuMoTtest.ipynb](TestNotebooks/MuMoTtest.ipynb) or test notebooks to [TestNotebooks/MiscTests/](TestNotebooks/MiscTests) to test your new features or bug fixes. 
+    * Documentation: Include Python docstrings documentation in the [numpydoc](http://numpydoc.readthedocs.io/en/latest/format.html) format for all modules, functions, classes, methods and (if applicable) attributes
+    * Use `@todo` for reminders
+* When you are ready to merge that into the `master` branch of the 'upstream' repository:
+    * Testing: run all tests using `tox` (see [Testing](#testing)).
+
 
 ## Contributors
 
