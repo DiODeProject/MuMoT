@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'MuMoT'
-copyright = '2017, James A. R. Marshall, Andreagiovanni Reina, Thomas Bose\''
+copyright = '2018, James A. R. Marshall, Andreagiovanni Reina, Thomas Bose'
 author = 'James A. R. Marshall, Andreagiovanni Reina, Thomas Bose\''
 
 # The version info for the project you're documenting, acts as replacement for
