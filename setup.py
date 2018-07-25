@@ -42,7 +42,7 @@ setup(
         'test': [
             'pytest',
             'pytest-cov',
-            'nbval' ,
+            'nbval',
             'nbdime',
             'jupyter',
             ],
@@ -52,8 +52,14 @@ setup(
             'numpydoc'
         ],
     },
-    classifiers=(
-        "Programming Language :: Python :: 3",
+    classifiers=[
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
-    ),
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Chemistry",
+        "Topic :: Scientific/Engineering :: Mathematics",
+        "Topic :: Scientific/Engineering :: Physics",
+        ],
 )
