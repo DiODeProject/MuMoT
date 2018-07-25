@@ -425,17 +425,17 @@ class MuMoTmodel:
             self._getSingleAgentRules()
         for agent,probs in self._agentProbabilities.items():
             if agent == EMPTYSET_SYMBOL:
-                print("Spontaneous birth from EMPTYSET", end=' ' )
+                print("Spontaneous birth from EMPTYSET", end=' ')
             else:
                 print("Agent " + str(agent), end=' ')
             if probs:
-                print("reacts" )
+                print("reacts")
                 for prob in probs:
-                    print ("  at rate " + str(prob[1]), end=' ')
+                    print("  at rate " + str(prob[1]), end=' ')
                     if prob[0]:
-                        print ("when encounters " + str(prob[0]), end=' ' )
+                        print("when encounters " + str(prob[0]), end=' ')
                     else:
-                        print ("alone", end=' ') 
+                        print("alone", end=' ') 
                     print("and becomes " + str(prob[2]), end=', ')
                     if prob[0]:
                         print("while", end=' ')
@@ -443,7 +443,7 @@ class MuMoTmodel:
                             print("reagent " + str(prob[0][i]) + " becomes " + str(prob[3][i]), end=' ')
                     print("")
             else: 
-                print("does not initiate any reaction." ) 
+                print("does not initiate any reaction.") 
     
 
     def showODEs(self, method='massAction'):
@@ -690,7 +690,7 @@ class MuMoTmodel:
         if self._systemSize:
             kwargs['conserved'] = True
         
-        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False )
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False)
         
         IntParams = {}
         # read input parameters
@@ -743,7 +743,7 @@ class MuMoTmodel:
         if self._systemSize:
             kwargs['conserved'] = True
         
-        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False )
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False)
         
         NCParams = {}
         # read input parameters
@@ -949,7 +949,7 @@ class MuMoTmodel:
         #if self._systemSize:
         #    kwargs['conserved'] = True
                     
-        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=False, showPlotLimits=False )
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=False, showPlotLimits=False)
         
         if str(process_sympy(bifPar)) in paramValuesDict: 
             del paramValuesDict[str(process_sympy(bifPar))]
@@ -1001,7 +1001,7 @@ class MuMoTmodel:
             `showTrace` - (active only for netType='dynamic') flag to plot the part trajectory of each particle (type: boolean)
             `showInteractions` - (active only for netType='dynamic') flag to plot the interaction range between particles (type: boolean)
         """
-        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False )
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False)
         
         MAParams = {} 
         # read input parameters
@@ -1065,7 +1065,7 @@ class MuMoTmodel:
             `aggregateResults` - flag to aggregate or not the results from several runs
         """
         
-        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False )
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params',[]), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False)
         
         ssaParams = {}
         # read input parameters
@@ -1214,7 +1214,7 @@ class MuMoTmodel:
         else:
             systemSizeSlider = False
         
-        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=params if params is not None else [], initWidgets=initWidgets, showSystemSize=systemSizeSlider, showPlotLimits=plotLimitsSlider )
+        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=params if params is not None else [], initWidgets=initWidgets, showSystemSize=systemSizeSlider, showPlotLimits=plotLimitsSlider)
          
 #         print("ParamNames: " + str(paramNames))
 #         print("paramValues: " + str(paramValues))
@@ -1358,7 +1358,7 @@ class MuMoTmodel:
                 targetReact.append(rule.rhsReactants[idx])
             
             # create a new entry
-            self._agentProbabilities[reactant].append( [otherReact, rule.rate, targetReact, otherTargets] )
+            self._agentProbabilities[reactant].append([otherReact, rule.rate, targetReact, otherTargets])
         #print( self._agentProbabilities )
 
     def _check_state_variables(self, stateVariable1, stateVariable2, stateVariable3 = None):
@@ -1937,7 +1937,7 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
             opts = []
             for reactant in sorted(initialState.keys(), key=str):
                 #opts.append( ( "Reactant " + r'$'+ latex(Symbol(str(reactant)))+r'$', str(reactant) ) )
-                opts.append( ( "Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(str(reactant))) + r'\)', str(reactant) ) )
+                opts.append(("Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(str(reactant))) + r'\)', str(reactant)))
             dropdown = widgets.Dropdown( 
                 options=opts,
                 description='Final distribution (x axis):',
@@ -1954,7 +1954,7 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
 #                 print("the reactant is " + str(reactant))
 #                 print("the _greekPrependify(str(reactant) is " + str(_greekPrependify(str(reactant))) )
 #                 print("the _doubleUnderscorify(_greekPrependify(str(reactant))) is " + str(_doubleUnderscorify(_greekPrependify(str(reactant)))) )
-                opts.append( ( "Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(str(reactant))) + r'\)', str(reactant) ) )
+                opts.append(("Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(str(reactant))) + r'\)', str(reactant)))
             dropdown = widgets.Dropdown( 
                 options=opts,
                 description='Final distribution (y axis):',
@@ -2283,8 +2283,8 @@ class MuMoTview:
 #             paramValues += self._paramValues
             ## @todo: in soloView, this does not show the extra parameters (we should make clearer what the use of showLogs)
         for key,value in self._fixedParams.items():
-            paramNames.append( str(key) )
-            paramValues.append( value )
+            paramNames.append(str(key))
+            paramValues.append(value)
 
         for i in zip(paramNames, paramValues):
             print('(' + i[0] + '=' + repr(i[1]) + '), ', end='')
@@ -2326,7 +2326,7 @@ class MuMoTview:
                 name = name.replace(')', '')
                 if name not in paramInitCheck:
                     #logStr += "('" + latex(name) + "', " + str(value.value) + "), "
-                    params.append( ( latex(name) , value.value ) )
+                    params.append((latex(name) , value.value))
 #         if self._paramNames is not None:
 #             for name, value in zip(self._paramNames, self._paramValues):
 #                 if name == 'systemSize' or name == 'plotLimits': continue
@@ -2346,9 +2346,9 @@ class MuMoTview:
             name = name.replace('(', '')
             name = name.replace(')', '')
             #logStr += "('" + latex(name) + "', " + str(value) + "), "
-            params.append( ( latex(name) , value ) )
-        params.append( ( 'plotLimits' , self._getPlotLimits() ) )
-        params.append( ( 'systemSize' , self._getSystemSize() ) )
+            params.append((latex(name) , value))
+        params.append(('plotLimits' , self._getPlotLimits()))
+        params.append(('systemSize' , self._getSystemSize()))
                  
         return params
 
@@ -2723,7 +2723,7 @@ class MuMoTmultiController(MuMoTcontroller):
                                     initValueRangeStep=initWidgets.get(name), 
                                     validRange = (-float("inf"),float("inf")))
                 else:
-                    paramValuesDict[name] = (value.value, value.min, value.max, value.step, not(params is None or name not in map(str, view._fixedParams.keys())) )
+                    paramValuesDict[name] = (value.value, value.min, value.max, value.step, not(params is None or name not in map(str, view._fixedParams.keys())))
             if controller._plotLimitsWidget is not None:
                 showPlotLimits = True
                 if 'plotLimits' in initWidgets:
@@ -2827,7 +2827,7 @@ class MuMoTmultiController(MuMoTcontroller):
                 if key=='visualisationType': ep1="multicontroller"
                 if key=='final_x' or key=='final_y': ep1=views[0]._mumotModel._getAllReactants()[0] ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
                 if key=='netParam': 
-                    ep1= [kwargs.get('netType', self._widgetsExtraParams.get('netType') ), kwargs.get('netType') is not None] 
+                    ep1= [kwargs.get('netType', self._widgetsExtraParams.get('netType')), kwargs.get('netType') is not None] 
                     maxSysSize = 1
                     for view in views:
                         maxSysSize = max(maxSysSize,view._getSystemSize())
@@ -2915,7 +2915,7 @@ class MuMoTmultiController(MuMoTcontroller):
             controller._setErrorWidget(self._errorMessage)
         
         ## @todo handle correctly the re-draw only widgets and function
-        self._setReplotFunction( self._view._plot, self._view._plot)
+        self._setReplotFunction(self._view._plot, self._view._plot)
         
         #silent = kwargs.get('silent', False)
         if not self._silent:
@@ -3335,7 +3335,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
                 logStr += "'" + str(self._stateVarListDisplay[nn]) + "', "
         
         if "initialState" not in self._generatingKwargs.keys():
-            initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+            initState_str = {latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
             logStr += "initialState = " + str(initState_str) + ", "
         if "maxTime" not in self._generatingKwargs.keys():
             logStr += "maxTime = " + str(self._maxTime) + ", "
@@ -3707,7 +3707,7 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         
         logStr += "<modelName>." + self._generatingCommand + "("
         if "initialState" not in self._generatingKwargs.keys():
-            initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+            initState_str = {latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
             logStr += "initialState = " + str(initState_str) + ", "
         if "maxTime" not in self._generatingKwargs.keys():
             logStr += "maxTime = " + str(self._maxTime) + ", "
@@ -3928,7 +3928,7 @@ class MuMoTfieldView(MuMoTview):
             
                 angle_ell_list = []
                 projection_angle_list = []
-                vec1 = Matrix([ [0], [1] ])
+                vec1 = Matrix([[0], [1]])
                 for nn in range(len(EvectsPlot)):
                     vec2 = EvectsPlot[nn][0]
                     vec2norm = vec2.norm()
@@ -4062,7 +4062,7 @@ class MuMoTfieldView(MuMoTview):
                                      params = getParams,
                                      SSParams = {'maxTime': 2, 'runs': 20, 'realtimePlot': False, 'plotProportions': True, 'aggregateResults': True, 'visualisationType': 'final',
                                                  'final_x':_greekPrependify(latex(self._stateVariable1)), 'final_y':_greekPrependify(latex(self._stateVariable2)), 
-                                                 'initialState': initState, 'randomSeed': np.random.randint(MAX_RANDOM_SEED)}, silent=True )
+                                                 'initialState': initState, 'randomSeed': np.random.randint(MAX_RANDOM_SEED)}, silent=True)
                     #print(SSAView._printStandaloneViewCmd())
                     SSAView._figure = self._figure
                     SSAView._computeAndPlotSimulation()
@@ -4704,7 +4704,7 @@ class MuMoTbifurcationView(MuMoTview):
                     
                 #self._pyDSmodel.ics = initDictList[nn]
                 pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)
-                pyDSode.set(ics =  initDictList[nn] )
+                pyDSode.set(ics =  initDictList[nn])
                 #pyDSode.set(pars = self._getBifParInitCondFromSlider()) 
                 pyDSode.set(pars = {self._bifurcationParameterPyDS: self._initBifParam})   
                  
@@ -4949,7 +4949,7 @@ class MuMoTbifurcationView(MuMoTview):
             else:
                 for kk in range(len(specialPoints[0])):
                     print(specialPoints[2][kk], ': ', self._bifurcationParameter, '=', str(_roundNumLogsOut(specialPoints[0][kk])), ',',
-                          self._stateVarExpr1, '=', str(_roundNumLogsOut(specialPoints[1][kk])) )
+                          self._stateVarExpr1, '=', str(_roundNumLogsOut(specialPoints[1][kk])))
 
             if self._chooseYrange is None:
                 if self._mumotModel._systemSize:
@@ -5010,7 +5010,7 @@ class MuMoTbifurcationView(MuMoTview):
         #if self._stateVarBif2 is not None:
         #    logStr += "'" + str(self._stateVarBif2) + "', "
         if "initialState" not in self._generatingKwargs.keys():
-            initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+            initState_str = {latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
             logStr += "initialState = " + str(initState_str) + ", "
         if "initBifParam" not in self._generatingKwargs.keys():
             logStr += "initBifParam = " + str(self._initBifParam) + ", "
@@ -5152,9 +5152,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 self._maxTime = SSParams["maxTime"]
                 self._randomSeed = SSParams["randomSeed"]
                 self._visualisationType = SSParams["visualisationType"]
-                final_x = str( process_sympy( SSParams.get("final_x",latex(sorted(self._mumotModel._getAllReactants()[0],key=str)[0])) ) )
+                final_x = str(process_sympy(SSParams.get("final_x",latex(sorted(self._mumotModel._getAllReactants()[0],key=str)[0]))))
                 #if isinstance(final_x, str): final_x = process_sympy(final_x)
-                final_y = str( process_sympy( SSParams.get("final_y",latex(sorted(self._mumotModel._getAllReactants()[0],key=str)[0])) ) )
+                final_y = str(process_sympy(SSParams.get("final_y",latex(sorted(self._mumotModel._getAllReactants()[0],key=str)[0]))))
                 #if isinstance(final_y, str): final_y = process_sympy(final_y)
                 self._finalViewAxes = (final_x,final_y)
                 self._plotProportions = SSParams["plotProportions"]
@@ -5214,7 +5214,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._latestResults = []
             for r in range(self._runs):
                 runID = "[" + str(r+1) + "/" + str(self._runs) + "] " if self._runs > 1 else ''
-                self._latestResults.append( self._runSingleSimulation(self._randomSeed+r, runID=runID) )
+                self._latestResults.append(self._runSingleSimulation(self._randomSeed+r, runID=runID))
             
             ## Final Plot
             if not self._realtimePlot or self._aggregateResults:
@@ -5237,7 +5237,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._randomSeed = self._fixedParams['randomSeed'] if self._fixedParams.get('randomSeed') is not None else self._controller._widgetsExtraParams['randomSeed'].value
             self._visualisationType = self._fixedParams['visualisationType'] if self._fixedParams.get('visualisationType') is not None else self._controller._widgetsPlotOnly['visualisationType'].value
             if self._visualisationType == 'final':
-                self._finalViewAxes = ( self._fixedParams['final_x'] if self._fixedParams.get('final_x') is not None else self._controller._widgetsPlotOnly['final_x'].value, self._fixedParams['final_y'] if self._fixedParams.get('final_y') is not None else self._controller._widgetsPlotOnly['final_y'].value )
+                self._finalViewAxes = (self._fixedParams['final_x'] if self._fixedParams.get('final_x') is not None else self._controller._widgetsPlotOnly['final_x'].value, self._fixedParams['final_y'] if self._fixedParams.get('final_y') is not None else self._controller._widgetsPlotOnly['final_y'].value)
             self._plotProportions = self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
             self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
             self._realtimePlot = self._fixedParams['realtimePlot'] if self._fixedParams.get('realtimePlot') is not None else self._controller._widgetsExtraParams['realtimePlot'].value
@@ -5258,7 +5258,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 leftOvers[state] = pop - math.floor(pop)
             self._currentState[state] = math.floor(pop)
         # if approximations resulted in one agent less, it is added randomly (with probability proportional to the rounding quantities)
-        sumReactants = sum( [self._currentState[state] for state in self._currentState.keys() if state not in self._mumotModel._constantReactants])
+        sumReactants = sum([self._currentState[state] for state in self._currentState.keys() if state not in self._mumotModel._constantReactants])
         if sumReactants < self._systemSize:
             rnd = np.random.rand() * sum(leftOvers.values())
             bottom = 0.0
@@ -5338,16 +5338,16 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             for results in allResults:
                                 idx = max(0, bisect_left(results['time'], timestep))
                                 if self._plotProportions:
-                                    boxData.append( results[state][idx]/self._systemSize )
+                                    boxData.append(results[state][idx]/self._systemSize)
                                 else:
-                                    boxData.append( results[state][idx] )
+                                    boxData.append(results[state][idx])
                             y_max = max(y_max, max(boxData))
                             boxesData.append(boxData)
                             avgs.append(np.mean(boxData))
                             #bplot = plt.boxplot(boxData, patch_artist=True, positions=[timestep], manage_xticks=False, widths=self._maxTime/(steps*3) )
     #                         print("Plotting bxplt at positions " + str(timestep) + " generated from idx = " + str(idx))
                         plt.plot(timesteps, avgs, color=self._colors[state])
-                        bplots = plt.boxplot(boxesData, patch_artist=True, positions=timesteps, manage_xticks=False, widths=self._maxTime/(steps*3) )
+                        bplots = plt.boxplot(boxesData, patch_artist=True, positions=timesteps, manage_xticks=False, widths=self._maxTime/(steps*3))
     #                     for patch, color in zip(bplots['boxes'], [self._colors[state]]*len(timesteps)):
     #                         patch.set_facecolor(color)
     #                     bplot['boxes'].set_facecolor(self._colors[state])
@@ -5355,10 +5355,10 @@ class MuMoTstochasticSimulationView(MuMoTview):
                         wdt = 2
                         for box in bplots['boxes']:
                             # change outline color
-                            box.set( color=self._colors[state], linewidth=wdt)
+                            box.set(color=self._colors[state], linewidth=wdt)
                             #box.set( color='black', linewidth=2)
                             # change fill color
-                            box.set( facecolor = 'None' )
+                            box.set(facecolor = 'None')
                             #box.set( facecolor = self._colors[state] )
                         plt.setp(bplots['whiskers'], color=self._colors[state], linewidth=wdt)
                         plt.setp(bplots['caps'], color=self._colors[state], linewidth=wdt)
@@ -5402,7 +5402,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                     #stateNamesLabel = [r'$'+latex(Symbol(str(state)))+'$' for state in sorted(self._initialState.keys(), key=str) if state not in self._mumotModel._constantReactants]
                 markers = [plt.Line2D([0,0],[0,0],color=self._colors[state], marker='s', linestyle='', markersize=10) for state in sorted(self._initialState.keys(), key=str) if state not in self._mumotModel._constantReactants]
                 plt.legend(markers, stateNamesLabel, loc='upper right', borderaxespad=0., numpoints=1) #bbox_to_anchor=(0.885, 1),
-                _fig_formatting_2D(figure=self._figure, xlab='time t', ylab='reactants', choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False, grid = True )
+                _fig_formatting_2D(figure=self._figure, xlab='time t', ylab='reactants', choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False, grid = True)
                  
             if not fullPlot: # If realtime-plot mode, draw only the last timestep rather than overlay all
                 xdata = []
@@ -5411,12 +5411,12 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 for state in sorted(self._initialState.keys(), key=str):
                     if (state == 'time'): continue
                     if state in self._mumotModel._constantReactants: continue
-                    xdata.append( currentEvo['time'][-2:] )
+                    xdata.append(currentEvo['time'][-2:])
                     # modify if plotProportions
-                    ytmp = [y / self._systemSize for y in currentEvo[state][-2:] ] if self._plotProportions else currentEvo[state][-2:]
+                    ytmp = [y / self._systemSize for y in currentEvo[state][-2:]] if self._plotProportions else currentEvo[state][-2:]
                     y_max = max(y_max, max(ytmp))
                     ydata.append(ytmp)
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max), aspectRatioEqual=False, LineThickness=2, grid = True, line_color_list=self._colors_list )
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max), aspectRatioEqual=False, LineThickness=2, grid = True, line_color_list=self._colors_list)
                 
 #                 y_max = 1.0 if self._plotProportions else self._systemSize
 #                 for state in sorted(self._initialState.keys(), key=str):
@@ -5438,10 +5438,10 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 self._initFigure() # the figure must be cleared each timestep
                 for state in self._mumotModel._getAllReactants()[0]: # the current point added to the list of points
                     if str(state) == self._finalViewAxes[0]:
-                        points_x.append( currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1] )
+                        points_x.append(currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1])
                         trajectory_x = [x/self._systemSize for x in currentEvo[state]] if self._plotProportions else currentEvo[state]
                     if str(state) == self._finalViewAxes[1]:
-                        points_y.append( currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1] )
+                        points_y.append(currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1])
                         trajectory_y = [y/self._systemSize for y in currentEvo[state]] if self._plotProportions else currentEvo[state]
                  
             if self._aggregateResults and len(allResults) > 2: # plot in aggregate mode only if there's enough data
@@ -5451,23 +5451,23 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 for state in self._mumotModel._getAllReactants()[0]:
                     if str(state) == self._finalViewAxes[0]:
                         for results in allResults:
-                            samples_x.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
+                            samples_x.append(results[state][-1]/self._systemSize if self._plotProportions else results[state][-1])
                     if str(state) == self._finalViewAxes[1]:
                         for results in allResults:
-                            samples_y.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
+                            samples_y.append(results[state][-1]/self._systemSize if self._plotProportions else results[state][-1])
                 samples = np.column_stack((samples_x, samples_y))
                 _plot_point_cov(samples, nstd=1, alpha=0.5, color='green')
             else:
                 for state in self._mumotModel._getAllReactants()[0]:
                     if str(state) == self._finalViewAxes[0]:
                         for results in allResults:
-                            points_x.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
+                            points_x.append(results[state][-1]/self._systemSize if self._plotProportions else results[state][-1])
                     if str(state) == self._finalViewAxes[1]:
                         for results in allResults:
-                            points_y.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
+                            points_y.append(results[state][-1]/self._systemSize if self._plotProportions else results[state][-1])
 
             #_fig_formatting_2D(xdata=[xdata], ydata=[ydata], curve_replot=False, xlab=self._finalViewAxes[0], ylab=self._finalViewAxes[1])
-            if not fullPlot: plt.plot( trajectory_x, trajectory_y, '-', c='0.6')
+            if not fullPlot: plt.plot(trajectory_x, trajectory_y, '-', c='0.6')
             plt.plot(points_x, points_y, 'ro')
             if self._plotProportions:
                 xlab = r'$'+ '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[0])))+'}$'
@@ -5491,7 +5491,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                     if self._aggregateResults and len(allResults) > 0:
                         points = []
                         for results in allResults:
-                            points.append( results[state][-1]/self._systemSize if self._plotProportions else results[state][-1] )
+                            points.append(results[state][-1]/self._systemSize if self._plotProportions else results[state][-1])
                         avg = np.mean(points)
                         stdev.append(np.std(points))
                     else:
@@ -5500,20 +5500,20 @@ class MuMoTstochasticSimulationView(MuMoTview):
                         else:
                             avg = 0
                         stdev.append(0)
-                    finaldata.append( avg )
+                    finaldata.append(avg)
                     #labels.append(state)
                     colors.append(self._colors[state])
             else:
                 for state in sorted(self._initialState.keys(), key=str):
                     if state == 'time': continue
                     if state in self._mumotModel._constantReactants: continue
-                    finaldata.append( currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1])
+                    finaldata.append(currentEvo[state][-1]/self._systemSize if self._plotProportions else currentEvo[state][-1])
                     stdev.append(0)
                     #labels.append(state)
                     colors.append(self._colors[state])
              
 #             plt.pie(finaldata, labels=labels, autopct=_make_autopct(piedata), colors=colors) #shadow=True, startangle=90,
-            xpos = np.arange(len( finaldata ))  # the x locations for the bars
+            xpos = np.arange(len(finaldata))  # the x locations for the bars
             width = 1       # the width of the bars
             plt.bar(xpos, finaldata, width, color=colors, yerr=stdev, ecolor='black')
             # set axes
@@ -5659,7 +5659,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             logStr += ", "
         logStr = logStr.replace('\\', '\\\\')
         
-        initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+        initState_str = {latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
         logStr += "initialState = " + str(initState_str)
         logStr += ", maxTime = " + str(self._maxTime)
         logStr += ", timestepSize = " + str(self._timestepSize)
@@ -5701,7 +5701,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
     
     def _printStandaloneViewCmd(self):
         MAParams = {}
-        MAParams["initialState"] = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+        MAParams["initialState"] = {latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
         MAParams["maxTime"] = self._maxTime 
         MAParams['timestepSize'] = self._timestepSize
         MAParams["randomSeed"] = self._randomSeed
@@ -5727,7 +5727,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
 #         for key,value in sorted(MAParams.items()):
 #             sortedDict += "'" + key + "': " + str(value) + ", "
 #         sortedDict += "}"
-        print( "mumot.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params().replace('\\','\\\\') + ", SSParams = " + str(MAParams) + " )")
+        print("mumot.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params().replace('\\','\\\\') + ", SSParams = " + str(MAParams) + " )")
     
     def _update_view_specific_params(self, freeParamDict = {}):
         """read the new parameters (in case they changed in the controller) specific to multiagent(). This function should only update local parameters and not compute data"""
@@ -5782,13 +5782,13 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                     xs[state] = []
                     ys[state] = []
                 for a in np.arange(len(self._positions)):
-                    xs[self._agents[a]].append( self._positions[a][0] )
-                    ys[self._agents[a]].append( self._positions[a][1] )
+                    xs[self._agents[a]].append(self._positions[a][0])
+                    ys[self._agents[a]].append(self._positions[a][1])
                     
                     if self._showInteractions:
-                        agent_p = [self._positions[a][0] , self._positions[a][1] ]
+                        agent_p = [self._positions[a][0] , self._positions[a][1]]
                         for n in self._getNeighbours(a, self._positions, self._netParam):
-                            neigh_p = [self._positions[n][0], self._positions[n][1] ]
+                            neigh_p = [self._positions[n][0], self._positions[n][1]]
                             jump_boudaries = False
                             if abs(agent_p[0] - neigh_p[0]) > self._netParam:
                                 jump_boudaries = True
@@ -5808,44 +5808,44 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                     if self._showTrace:
                         trace_xs = []
                         trace_ys = []
-                        trace_xs.append( self._positions[a][0] )
-                        trace_ys.append( self._positions[a][1] )
+                        trace_xs.append(self._positions[a][0])
+                        trace_ys.append(self._positions[a][1])
                         for p in reversed(self._positionHistory[a]):
                             # check if the trace is making a jump from one side to the other of the screen
                             if abs(trace_xs[-1] - p[0]) > self._particleSpeed or abs(trace_ys[-1] - p[1]) > self._particleSpeed:
                                 tmp_start = [trace_xs[-1], trace_ys[-1]]
                                 if abs(trace_xs[-1] - p[0]) > self._particleSpeed:
                                     if trace_xs[-1] > p[0]:
-                                        trace_xs.append( self._arena_width )
+                                        trace_xs.append(self._arena_width)
                                         tmp_start[0] = 0
                                     else:
-                                        trace_xs.append( 0 )
+                                        trace_xs.append(0)
                                         tmp_start[0] = self._arena_width
                                 else:
-                                    trace_xs.append( p[0] )
+                                    trace_xs.append(p[0])
                                 if abs(trace_ys[-1] - p[1]) > self._particleSpeed:
                                     if trace_ys[-1] > p[1]:
-                                        trace_ys.append( self._arena_height )
+                                        trace_ys.append(self._arena_height)
                                         tmp_start[1] = 0
                                     else:
-                                        trace_ys.append( 0 )
+                                        trace_ys.append(0)
                                         tmp_start[1] = self._arena_height
                                 else:
-                                    trace_ys.append( p[1] )
-                                plt.plot( trace_xs, trace_ys, '-', c='0.6')
+                                    trace_ys.append(p[1])
+                                plt.plot(trace_xs, trace_ys, '-', c='0.6')
                                 trace_xs = []
                                 trace_ys = []
                                 trace_xs.append(tmp_start[0])
                                 trace_ys.append(tmp_start[1])
                             trace_xs.append(p[0])
                             trace_ys.append(p[1])
-                        plt.plot( trace_xs, trace_ys, '-', c='0.6') 
+                        plt.plot(trace_xs, trace_ys, '-', c='0.6') 
                 for state in self._initialState.keys():
-                    plt.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state] )
+                    plt.plot(xs.get(state,[]), ys.get(state,[]), 'o', c=self._colors[state])
             else:
                 stateColors=[]
                 for n in self._graph.nodes():
-                    stateColors.append( self._colors.get( self._agents[n], 'w') ) 
+                    stateColors.append(self._colors.get(self._agents[n], 'w')) 
                 nx.draw_networkx(self._graph, self._positionHistory, node_color=stateColors, with_labels=True)
                 plt.axis('off')
             # plot legend
@@ -5872,14 +5872,14 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         if maxRatesAll>0: maxTimestepSize = 1/maxRatesAll 
         else: maxTimestepSize = 1        
         # if the timestep size is too small (and generated a too large number of timesteps, it returns an error!)
-        if math.ceil( self._maxTime / maxTimestepSize ) > 10000000:
+        if math.ceil(self._maxTime / maxTimestepSize) > 10000000:
             errorMsg = "ERROR! Invalid rate values. The current rates limit the agent timestep to be too small and would correspond to more than 10 milions simulation timesteps.\n"\
                         "Please modify the free parameters value to allow quicker simulations."
             self._showErrorMessage(errorMsg)
             raise MuMoTValueError(errorMsg)
         if self._timestepSize > maxTimestepSize:
             self._timestepSize = maxTimestepSize
-        self._maxTimeSteps = math.ceil( self._maxTime / self._timestepSize )
+        self._maxTimeSteps = math.ceil(self._maxTime / self._timestepSize)
         if self._controller is not None and self._controller._widgetsExtraParams.get('timestepSize'):
             self._update_timestepSize_widget(self._timestepSize, maxTimestepSize, self._maxTimeSteps)
         else:
@@ -5921,7 +5921,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             if self._netParam is not None and self._netParam > 0 and self._netParam <= 1: 
                 self._graph = nx.erdos_renyi_graph(numNodes, self._netParam, np.random.randint(MAX_RANDOM_SEED))
                 i = 0
-                while ( not nx.is_connected( self._graph ) ):
+                while (not nx.is_connected(self._graph)):
                     if i > 100000:
                         errorMsg = "ERROR! Invalid network parameter (link probability="+str(self._netParam)+") for E-R networks. After "+str(i)+" attempts of network initialisation, the network is never connected.\n"\
                                "Please increase the network parameter value."
@@ -5954,14 +5954,14 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                 x = np.random.rand() * self._arena_width
                 y = np.random.rand() * self._arena_height
                 o = np.random.rand() * np.pi * 2.0
-                self._positions.append( (x,y,o) )
+                self._positions.append((x,y,o))
             return
 
     def _initMultiagent(self):
         # init the agents list
         self._agents = []
         for state, pop in self._currentState.items():
-            self._agents.extend( [state]*pop )
+            self._agents.extend([state]*pop)
         self._agents = np.random.permutation(self._agents).tolist() # random shuffling of elements (useful to avoid initial clusters in networks)
         
         # init the positionHistory lists
@@ -5969,7 +5969,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         if dynamicNetwork:
             self._positionHistory = []
             for _ in np.arange(sum(self._currentState.values())):
-                self._positionHistory.append( [] )
+                self._positionHistory.append([])
         else: # store the graph layout (only for 'graph' visualisation)
             self._positionHistory = nx.circular_layout(self._graph)
             
@@ -5981,7 +5981,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             communication_range = self._netParam
             # store the position history
             for idx, _ in enumerate(self._agents): # second element _ is the agent (unused)
-                self._positionHistory[idx].append( self._positions[idx] )
+                self._positionHistory[idx].append(self._positions[idx])
         children = []
         activeAgents = [True]*len(self._agents)
         #for idx, a in enumerate(self._agents):
@@ -5993,7 +5993,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             # if moving-particles the agent moves
             if dynamic:
 #                 print("Agent " + str(idx) + " moved from " + str(self._positions[idx]) )
-                self._positions[idx] = self._updatePosition( self._positions[idx][0], self._positions[idx][1], self._positions[idx][2], self._particleSpeed, self._motionCorrelatedness)
+                self._positions[idx] = self._updatePosition(self._positions[idx][0], self._positions[idx][1], self._positions[idx][2], self._particleSpeed, self._motionCorrelatedness)
 #                 print("to position " + str(self._positions[idx]) )
             
             # the step is executed only if the agent is active
@@ -6015,22 +6015,22 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             # check for new particles generated in the step
             if len(oneStepOutput[0]) >  1: # new particles must be created
                 for particle in oneStepOutput[0][1:]:
-                    children.append( (particle, tmp_positions[idx]) )
+                    children.append((particle, tmp_positions[idx]))
             for idx_c, neighChange in enumerate(oneStepOutput[1]):
                 if neighChange:
-                    activeAgents[ neighNodes[idx_c] ] = False
-                    self._agents[ neighNodes[idx_c] ] = neighChange
+                    activeAgents[neighNodes[idx_c]] = False
+                    self._agents[neighNodes[idx_c]] = neighChange
 
         # add the new agents coming from splitting (possible only for moving-particles view)
         for child in children: 
-            self._agents.append( child[0] )
-            self._positions.append( child[1] )
-            self._positionHistory.append( [] )
+            self._agents.append(child[0])
+            self._positions.append(child[1])
+            self._positionHistory.append([])
             idx = len(self._positions)-1
-            self._positionHistory[idx].append( self._positions[idx] )
-            self._positions[idx] = ( self._positions[idx][0], self._positions[idx][1], np.random.rand() * np.pi * 2.0) # set random orientation 
+            self._positionHistory[idx].append(self._positions[idx])
+            self._positions[idx] = (self._positions[idx][0], self._positions[idx][1], np.random.rand() * np.pi * 2.0) # set random orientation 
 #             self._positions[idx][2] = np.random.rand() * np.pi * 2.0 # set random orientation 
-            self._positions[idx] = self._updatePosition( self._positions[idx][0], self._positions[idx][1], self._positions[idx][2], self._particleSpeed, self._motionCorrelatedness)
+            self._positions[idx] = self._updatePosition(self._positions[idx][0], self._positions[idx][1], self._positions[idx][2], self._particleSpeed, self._motionCorrelatedness)
 
         # compute self birth (possible only for moving-particles view)
         for birth in self._mumotModel._agentProbabilities[EMPTYSET_SYMBOL]:
@@ -6042,10 +6042,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             #print ( "Birth rate " + str(birth[1]) + " triggers " + str(birthsNum) + " newborns")
             for _ in range(birthsNum):
                 for newborn in birth[2]:
-                    self._agents.append( newborn )
-                    self._positions.append( (np.random.rand() * self._arena_width, np.random.rand() * self._arena_height, np.random.rand() * np.pi * 2.0) )
-                    self._positionHistory.append( [] )
-                    self._positionHistory[len(self._positions)-1].append( self._positions[len(self._positions)-1] )
+                    self._agents.append(newborn)
+                    self._positions.append((np.random.rand() * self._arena_width, np.random.rand() * self._arena_height, np.random.rand() * np.pi * 2.0))
+                    self._positionHistory.append([])
+                    self._positionHistory[len(self._positions)-1].append(self._positions[len(self._positions)-1])
         
         # Remove from lists (_agents, _positions, and _positionHistory) the 'dead' agents (possible only for moving-particles view)
         deads = [idx for idx, a in enumerate(self._agents) if a == EMPTYSET_SYMBOL]
@@ -6137,7 +6137,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         return neighbour_list
     
     ## returns the minimum distance calucalted on the torus given by periodic boundary conditions
-    def _distance_on_torus( self, x_1, y_1, x_2, y_2 ):
+    def _distance_on_torus(self, x_1, y_1, x_2, y_2):
         return np.sqrt(min(abs(x_1 - x_2), self._arena_width - abs(x_1 - x_2))**2 + 
                     min(abs(y_1 - y_2), self._arena_height - abs(y_1 - y_2))**2)
     
@@ -6266,7 +6266,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
             logStr += ", "
         logStr = logStr.replace('\\', '\\\\')
         #initState_str = { self._mumotModel._reactantsLaTeX.get(str(state), str(state)): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
-        initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+        initState_str = {latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
         logStr += "initialState = " + str(initState_str)
         logStr += ", maxTime = " + str(self._maxTime)
         logStr += ", randomSeed = " + str(self._randomSeed)
@@ -6301,7 +6301,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
 #         initState_str = {}
 #         for state,pop in self._initialState.items():
 #             initState_str[str(state)] = pop
-        ssaParams["initialState"] = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
+        ssaParams["initialState"] = {latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
         ssaParams["maxTime"] = self._maxTime 
         ssaParams["randomSeed"] = self._randomSeed
         ssaParams["visualisationType"] = self._visualisationType
@@ -6315,7 +6315,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
         ssaParams['runs']  = self._runs
         ssaParams['aggregateResults']  = self._aggregateResults
         #str( list(self._ratesDict.items()) )
-        print( "mumot.MuMoTSSAView(<modelName>, None, " + str( self._get_bookmarks_params().replace('\\','\\\\') ) + ", SSParams = " + str(ssaParams) + " )")
+        print("mumot.MuMoTSSAView(<modelName>, None, " + str(self._get_bookmarks_params().replace('\\','\\\\')) + ", SSParams = " + str(ssaParams) + " )")
             
     def _simulationStep(self): 
         # update transition probabilities accounting for the current state
@@ -6333,7 +6333,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
                     prob *= self._currentState[reactant] * reactantOccurencies
                 numReagents += reactantOccurencies
             if prob > 0 and numReagents > 1:
-                prob /= sum(self._currentState.values())**( numReagents -1 ) 
+                prob /= sum(self._currentState.values())**(numReagents -1) 
             probabilitiesOfChange[reaction_id] = prob
 #         for rule in self._reactantsMatrix:
 #             prob = sum([a*b for a,b in zip(rule,currentState)])
@@ -6346,7 +6346,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
             infiniteTime = self._maxTime-self._t
             return (infiniteTime, self._currentState)
         # computing when is happening next reaction
-        timeInterval = np.random.exponential( 1/probSum );
+        timeInterval = np.random.exponential(1/probSum);
         
         # Selecting the occurred reaction at random, with probability proportional to each reaction probabilities
         bottom = 0.0
@@ -6724,7 +6724,7 @@ def _doVanKampenExpansion(rhs, stoich):
             func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]]})
             func = func1*func2
             #if len(op.args[0].args) ==0:
-            term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
+            term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0])})
             #    
             #else:
             #    term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sympy.sqrt(V)*Derivative(func, op.args[1].args[0]) 
@@ -6743,7 +6743,7 @@ def _doVanKampenExpansion(rhs, stoich):
             func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
             func = func1*func2
             if len(op.args[0].args) ==0:
-                term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
+                term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0])})
                 
             else:
                 term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sympy.sqrt(V)*Derivative(func, op.args[1].args[0]) 
@@ -6765,7 +6765,7 @@ def _doVanKampenExpansion(rhs, stoich):
             func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
             func = func1*func2
             if len(op.args[0].args) ==0:
-                term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
+                term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0])})
                 
             elif len(op.args) ==2:
                 term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sympy.sqrt(V)*Derivative(func, op.args[1].args[0]) 
@@ -6796,7 +6796,7 @@ def _doVanKampenExpansion(rhs, stoich):
             func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
             func = func1*func2
             if len(op.args[0].args) ==0:
-                term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0]) })
+                term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0])})
                 
             elif len(op.args) ==2:
                 term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sympy.sqrt(V)*Derivative(func, op.args[1].args[0]) 
@@ -8274,7 +8274,7 @@ def _decodeNetworkTypeFromString(netTypeStr):
                           'dynamic': NetworkType.DYNAMIC}
     
     if netTypeStr not in admissibleNetTypes:
-        print("ERROR! Invalid network type argument! Valid strings are: " + str(admissibleNetTypes) )
+        print("ERROR! Invalid network type argument! Valid strings are: " + str(admissibleNetTypes))
     return admissibleNetTypes.get(netTypeStr, None)
 
 def _encodeNetworkTypeToString(netType):
@@ -8285,7 +8285,7 @@ def _encodeNetworkTypeToString(netType):
                           NetworkType.DYNAMIC: 'dynamic'}
     
     if netType not in netTypeEncoding:
-        print("ERROR! Invalid netTypeEncoding table! Tryed to encode network type: " + str(netType) )
+        print("ERROR! Invalid netTypeEncoding table! Tryed to encode network type: " + str(netType))
     return netTypeEncoding.get(netType, 'none')
 
 def _make_autopct(values):
@@ -8526,7 +8526,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                 initialState[process_sympy(reactant)] = _parse_input_keyword_for_numeric_widgets(inputValue=pop,
                                     defaultValueRangeStep=[MuMoTdefault._agents, MuMoTdefault._agentsLimits[0],MuMoTdefault._agentsLimits[1],MuMoTdefault._agentsStep], 
                                     initValueRangeStep=initPop, 
-                                    validRange = (0.0, 1.0) )
+                                    validRange = (0.0, 1.0))
                 fixedBool = True
         else:
             first = True
@@ -8537,7 +8537,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                 initialState[reactant] = _parse_input_keyword_for_numeric_widgets(inputValue=None,
                                             defaultValueRangeStep=[defaultV, MuMoTdefault._agentsLimits[0],MuMoTdefault._agentsLimits[1],MuMoTdefault._agentsStep], 
                                             initValueRangeStep=initValuesSympy.get(reactant), 
-                                            validRange = (0.0, 1.0) )
+                                            validRange = (0.0, 1.0))
                 fixedBool = False
         
         ## check if the initialState values are valid
@@ -8590,22 +8590,22 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                     defaultValueRangeStep=[MuMoTdefault._maxTime,MuMoTdefault._timeLimits[0], MuMoTdefault._timeLimits[1], MuMoTdefault._timeStep], 
                                     initValueRangeStep=initValues, 
-                                    validRange = (0,float("inf")) )
+                                    validRange = (0,float("inf")))
     if (optionName == 'randomSeed'):
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                     defaultValueRangeStep=np.random.randint(MAX_RANDOM_SEED), 
                                     initValueRangeStep=initValues,
-                                    validRange = (1,MAX_RANDOM_SEED), onlyValue=True )
+                                    validRange = (1,MAX_RANDOM_SEED), onlyValue=True)
     if (optionName == 'motionCorrelatedness'):
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                 defaultValueRangeStep=[0.5, 0.0, 1.0, 0.05], 
                                 initValueRangeStep=initValues, 
-                                validRange = (0,1) ) 
+                                validRange = (0,1)) 
     if (optionName == 'particleSpeed'):
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                 defaultValueRangeStep=[0.01, 0.0, 0.1, 0.005], 
                                 initValueRangeStep=initValues, 
-                                validRange = (0, 1) ) 
+                                validRange = (0, 1)) 
     
     if (optionName == 'timestepSize'):
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
@@ -8646,25 +8646,25 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
             return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                         defaultValueRangeStep=[0.1, 0.1, 1, 0.1], 
                                         initValueRangeStep=initValues, 
-                                         validRange = (0.1, 1.0) )          
+                                         validRange = (0.1, 1.0))          
         elif _decodeNetworkTypeFromString(netType[0]) == NetworkType.BARABASI_ALBERT:
             maxEdges = systemSize - 1 
             return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                         defaultValueRangeStep=[min(maxEdges,3),1,maxEdges,1], 
                                         initValueRangeStep=initValues, 
-                                         validRange = (1,maxEdges) )  
+                                         validRange = (1,maxEdges))  
         elif _decodeNetworkTypeFromString(netType[0]) == NetworkType.SPACE:
             pass #method is not implemented
         elif _decodeNetworkTypeFromString(netType[0]) == NetworkType.DYNAMIC:
             return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                         defaultValueRangeStep=[0.1, 0.0, 1.0, 0.05], 
                                         initValueRangeStep=initValues, 
-                                         validRange = (0,1.0) ) 
+                                         validRange = (0,1.0)) 
         
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                 defaultValueRangeStep=[0.5,0,1,0.1], 
                                 initValueRangeStep=initValues, 
-                                validRange = (0,float("inf")) ) 
+                                validRange = (0,float("inf"))) 
     if (optionName == 'plotProportions'):
         return _parse_input_keyword_for_boolean_widgets(inputValue=inputValue,
                                                                            defaultValue=False,
@@ -8745,7 +8745,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                     defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
                                     initValueRangeStep=initValues, 
-                                    validRange = (0,float("inf")) )
+                                    validRange = (0,float("inf")))
         
     
     return [None,False] # default output for unknown optionName
