@@ -94,10 +94,6 @@ The visualisation of particular representations of models requires that you have
     jupyter nbextension enable --py widgetsnbextension --sys-prefix
     ```
 
-**STILL NEEDED?**
-* if installed on Linux system you need to delete the following line (on macOS you can skip this step): - appnope=0.1.0=py35_0 as it is macOS specific (this is the first line under dependencies in the environment.yml file). 
-* If you are using Ubuntu 16.04 or Mac osX the package graphviz is probably not working correctly (when installed via pip - this is done when creating the environment via the environment.yml file). This can be resolved by installing it again by typing: `sudo apt-get install graphviz` (Ubuntu) or `conda install graphviz` (Mac) in a terminal (you need to have root permissions, and make sure you have already run `activate MumotEnv`)
-
 ### (Optional) Enable tables of contents for individual Notebooks
 
 Hyperlinked tables of contents can be userful when viewing longer Notebooks such as the [MuMoT User Manual](docs/MuMoTuserManual.ipynb).
@@ -146,7 +142,7 @@ At present, MuMoT is tested by running several Jupyter notebooks:
 
 * [docs/MuMoTuserManual.ipynb](docs/MuMoTuserManual.ipynb)
 * [TestNotebooks/MuMoTtest.ipynb](TestNotebooks/MuMoTtest.ipynb)
-* Further test notebooks in [TestNotebooks/MiscTests/](TestNotebooks/MiscTests)
+<!-- * Further test notebooks in [TestNotebooks/MiscTests/](TestNotebooks/MiscTests) -->
 
 To locally automate the running of all of the above Notebooks in an isolated Python environment containing just the necessary dependencies:
 
@@ -166,11 +162,12 @@ This:
     (using [nbval](https://github.com/computationalmodelling/nbval)).
     If an Exception/Error is encountered then a Jupyter tab is opened in the default web browser showing its location 
     (using [nbdime](https://nbdime.readthedocs.io/en/stable/)).
- 1. Checks that the [docs/MuMoTuserManual.ipynb](docs/MuMoTuserManual.ipynb) and [TestNotebooks/MuMoTtest.ipynb](TestNotebooks/MuMoTtest.ipynb) Notebooks 
+
+<!--1. Checks that the [docs/MuMoTuserManual.ipynb](docs/MuMoTuserManual.ipynb) and [TestNotebooks/MuMoTtest.ipynb](TestNotebooks/MuMoTtest.ipynb) Notebooks 
     generate the same output cell content as is saved in the Notebook files when re-run 
     (again, using [nbval](https://github.com/computationalmodelling/nbval)).
     If a discrepency is encountered then a Jupyter tab is opened in the default web browser showing details 
-    (again, using [nbdime](https://nbdime.readthedocs.io/en/stable/)).
+    (again, using [nbdime](https://nbdime.readthedocs.io/en/stable/)).-->
     
 ## Documentation
 
