@@ -10,7 +10,7 @@ API
    COMMENTED OUT
 
 .. automodule:: mumot
-    :members:
+   :members:
 
 
    .. autoclass:: MuMoT.NetworkType MuMoTdefault MuMoTmodel,MuMoTcontroller,MuMoTSSAController,MuMoTmultiagentController,MuMoTview,MuMoTmultiView,MuMoTmultiController,MuMoTtimeEvolutionView,MuMoTtimeEvoStateVarView,MuMoTtimeEvoNoiseCorrView,MuMoTfieldView,MuMoTstreamView,MuMoTvectorView,MuMoTbifurcationView,MuMoTmultiagentView,MuMoTSSAView
