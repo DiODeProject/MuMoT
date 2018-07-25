@@ -51,6 +51,7 @@ The visualisation of particular representations of models requires that you have
  1. *Install* MuMoT and dependencies into this conda environment:
 
     ```sh
+    conda install graphviz
     python -m pip install mumot
     ```
 
