@@ -1,9 +1,16 @@
 sudo: false
 language: python
 python:
-  - "3.4"
-  - "3.5"
   - "3.6"
-  - "3.7"
-install: pip install tox-travis
-script: tox
+before_install:
+  - sudo apt-get install -y texlive graphviz dvipng
+install:
+  - pip install .[test,docs]
+before_script:
+  - jupyter nbextension enable --py --sys-prefix widgetsnbextension
+# Run unit tests then
+# Ensure the user manual and regression test Notebooks run *without errors* (do not check for regressions yet)
+script:
+  - pytest --cov mumot tests
+  - pytest --maxfail=1 --nbval-lax docs/MuMoTuserManual.ipynb
+  - pytest --maxfail=1 --nbval-lax TestNotebooks/MuMoTtest.ipynb
