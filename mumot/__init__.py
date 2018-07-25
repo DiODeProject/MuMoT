@@ -8453,7 +8453,7 @@ def _parse_input_keyword_for_numeric_widgets(inputValue, defaultValueRangeStep, 
                 outputValues[0] = inputValue
                 outputValues.append(True)
                 # it is not necessary to modify the values [min,max,step] because when last value is True, they should be ignored
-                return  outputValues
+                return outputValues
     
     if not initValueRangeStep is None:
         if onlyValue:
@@ -8671,7 +8671,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                                                                            initValue=initValues,
                                                                            paramNameForErrorMsg=optionName) 
     if (optionName == 'realtimePlot'):
-        return  _parse_input_keyword_for_boolean_widgets(inputValue=inputValue,
+        return _parse_input_keyword_for_boolean_widgets(inputValue=inputValue,
                                                                            defaultValue=False, 
                                                                            initValue=initValues,
                                                                            paramNameForErrorMsg=optionName)  
