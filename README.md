@@ -1,6 +1,6 @@
-# MuMoT
-Multiscale Modelling Tool
----
+# MuMoT: Multiscale Modelling Tool
+
+[![Build Status](https://travis-ci.com/DiODeProject/MuMoT.svg?token=6zhMFY3Y4Ems6GzwEDLn&branch=master)](https://travis-ci.com/DiODeProject/MuMoT)
 
 ## Introduction / overview
 
