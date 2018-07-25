@@ -247,7 +247,7 @@ class MuMoTmodel:
             if sub[0] in newModel._reactants or (sub[0] * -1) in newModel._reactants:
                 for atom in sub[1].atoms(Symbol):
                     if atom not in newModel._reactants and atom != self._systemSize:
-                        if newModel._systemSize == None:
+                        if newModel._systemSize is None:
                             newModel._systemSize = atom
                             sizeSet = True
                             sizeSetExpr = sub[1] - sub[0]
@@ -257,13 +257,13 @@ class MuMoTmodel:
                             raise MuMoTSyntaxError("More than one unknown reactant encountered when trying to set system size: " + str(sub[0]) + " = " + str(sub[1]))
                     else:
                         sizeSetrhs.append(atom)
-                if newModel._systemSize == None:
+                if newModel._systemSize is None:
                     raise MuMoTSyntaxError("Expected to find system size parameter but failed: " + str(sub[0]) + " = " + str(sub[1]))
                 ## @todo: more thorough error checking for valid system size expression
                 newModel._reactants.discard(sub[0])
                 if sizeSetKosher:
                     del newModel._equations[sub[0]]
-        if newModel._systemSize == None:
+        if newModel._systemSize is None:
             newModel._systemSize = self._systemSize
         for reactant in newModel._equations:
             rhs = newModel._equations[reactant]
@@ -303,7 +303,7 @@ class MuMoTmodel:
     #  `brew link libtool`
     def visualise(self):
         errorShown = False
-        if self._dot == None:
+        if self._dot is None:
             dot = Digraph(comment = "Model", engine = 'circo')
             if not self._constantSystemSize:
                 dot.node(str('1'), " ", image = self._localLaTeXimageFile(Symbol('\\emptyset'))) ## @todo: only display if used: for now, guess it is used if system size is non-constant                
@@ -346,14 +346,14 @@ class MuMoTmodel:
                         head = 'dot'
                         tail = 'none'
 
-                    if source == None:
+                    if source is None:
                         # 'reciprocal inhibition' motif A + B -> C + C/D
                         source = str(rule.lhsReactants[0])
                         target = str(rule.lhsReactants[1])
                         head = 'dot'
                         tail = 'dot'
 
-                    if source != None:
+                    if source is not None:
                         dot.edge(source, target, label = htmlLabel, arrowhead = head, arrowtail = tail, dir = 'both')
                 else:
                     if not errorShown:
@@ -372,7 +372,7 @@ class MuMoTmodel:
                 out = self._ratesLaTeX[repr(reactant)]
                 out = _doubleUnderscorify(_greekPrependify(out))
                 display(Math(out))
-#         if self._constantReactantsLaTeX == None:
+#         if self._constantReactantsLaTeX is None:
 #             self._constantReactantsLaTeX = []
 #             reactants = map(latex, list(self._constantReactants))
 #             for reactant in reactants:
@@ -391,7 +391,7 @@ class MuMoTmodel:
 
     ## show a sorted LaTeX representation of the model's reactants
     def showReactants(self):
-        if self._reactantsLaTeX == None:
+        if self._reactantsLaTeX is None:
             self._reactantsLaTeX = []
             reactants = map(latex, list(self._reactants))
             for reactant in reactants:
@@ -532,7 +532,7 @@ class MuMoTmodel:
         out = _greekPrependify(out)
         display(Math(out))
         #substring is a dictionary
-        if not substring == None:
+        if not substring is None:
             for subKey,subVal in substring.items():
                 subK = _greekPrependify(_doubleUnderscorify(str(subKey)))
                 subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
@@ -547,7 +547,7 @@ class MuMoTmodel:
         out = _doubleUnderscorify(_greekPrependify(out))
         display(Math(out))
         #substring is a dictionary
-        if not substring == None:
+        if not substring is None:
             for subKey,subVal in substring.items():
                 subK = _greekPrependify(_doubleUnderscorify(str(subKey)))
                 subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
@@ -563,7 +563,7 @@ class MuMoTmodel:
             out = _doubleUnderscorify(_greekPrependify(out))
             display(Math(out))
         #substring is a dictionary
-        if not substring == None:
+        if not substring is None:
             for subKey,subVal in substring.items():
                 subK = _greekPrependify(_doubleUnderscorify(str(subKey)))
                 subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
@@ -591,7 +591,7 @@ class MuMoTmodel:
         
         SOL_1stOrderMom, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         print('Stationary solutions of first and second order moments of noise:')
-        if SOL_1stOrderMom == None:
+        if SOL_1stOrderMom is None:
             print('Noise 1st-order moments could not be calculated analytically.')
             return None
         else:
@@ -599,7 +599,7 @@ class MuMoTmodel:
                 out = latex(sol1.subs(NoiseSubs1stOrder)) + latex(r'(t \to \infty)') + ":= " + latex(SOL_1stOrderMom[sol1].subs(NoiseSubs1stOrder))
                 out = _doubleUnderscorify(_greekPrependify(out))
                 display(Math(out))
-        if SOL_2ndOrdMomDict == None:
+        if SOL_2ndOrdMomDict is None:
             print('Noise 2nd-order moments could not be calculated analytically.')
             return None
         else:
@@ -784,7 +784,7 @@ class MuMoTmodel:
             else:
                 SOL_2ndOrdMomDict = None
             
-#                 if SOL_2ndOrdMomDict == None:
+#                 if SOL_2ndOrdMomDict is None:
 #                     if substitutions == True:
 #                         print('Noise in stream plots is only available for systems with exactly two time dependent reactants. Stream plot only works WITHOUT noise in case of reducing number of state variables from 3 to 2 via substitute() - method.')
 #                     print('Warning: Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
@@ -818,12 +818,12 @@ class MuMoTmodel:
         
         :Returns:
             MuMoTcontroller"""
-        if self._systemSize == None and self._constantSystemSize == True: # duplicate check in view and controller required for speedy error reporting, plus flexibility to instantiate view independent of controller
+        if self._systemSize is None and self._constantSystemSize == True: # duplicate check in view and controller required for speedy error reporting, plus flexibility to instantiate view independent of controller
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return None
 
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
-            if stateVariable3 == None:
+            if stateVariable3 is None:
                 SOL_2ndOrdMomDict = self._check2ndOrderMom(showNoise=kwargs.get('showNoise', False))
             else:
                 print('3D stream plot not yet implemented.')
@@ -870,12 +870,12 @@ class MuMoTmodel:
             
         :Returns:
             MuMoTcontroller"""
-        if self._systemSize == None and self._constantSystemSize == True: # duplicate check in view and controller required for speedy error reporting, plus flexibility to instantiate view independent of controller
+        if self._systemSize is None and self._constantSystemSize == True: # duplicate check in view and controller required for speedy error reporting, plus flexibility to instantiate view independent of controller
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return None
 
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
-            if stateVariable3 == None:
+            if stateVariable3 is None:
                 SOL_2ndOrdMomDict = self._check2ndOrderMom(showNoise=kwargs.get('showNoise', False))
             else:
                 SOL_2ndOrdMomDict = None
@@ -1090,11 +1090,11 @@ class MuMoTmodel:
         
         return viewController
 
-#         if stateVariable2 == None:
+#         if stateVariable2 is None:
 #             # 2-d bifurcation diagram
 #             # create widgets
 # 
-#             if self._systemSize != None:
+#             if self._systemSize is not None:
 #                 ## @todo: shouldn't allow system size to be varied?
 #                 pass
 # #                self._paramValues.append(1)
@@ -1181,7 +1181,7 @@ class MuMoTmodel:
         return (allReactants, allConstantReactants)
 
     def _get_solutions(self):
-        if self._solutions == None:
+        if self._solutions is None:
             self._solutions = solve(iter(self._equations.values()), self._reactants, force = False, positive = False, set = False)
         return self._solutions
 
@@ -1362,7 +1362,7 @@ class MuMoTmodel:
         #print( self._agentProbabilities )
 
     def _check_state_variables(self, stateVariable1, stateVariable2, stateVariable3 = None):
-        if process_sympy(stateVariable1) in self._reactants and process_sympy(stateVariable2) in self._reactants and (stateVariable3 == None or process_sympy(stateVariable3) in self._reactants):
+        if process_sympy(stateVariable1) in self._reactants and process_sympy(stateVariable2) in self._reactants and (stateVariable3 is None or process_sympy(stateVariable3) in self._reactants):
             if stateVariable1 != stateVariable2 and stateVariable1 != stateVariable3 and stateVariable2 != stateVariable3:
                 return True
             else:
@@ -1375,9 +1375,9 @@ class MuMoTmodel:
 
     ## lambdify sympy equations for numerical integration, plotting, etc.
     def _getFuncs(self):
-#         if self._systemSize == None:
+#         if self._systemSize is None:
 #             assert false ## @todo is this necessary?
-        if self._funcs == None:
+        if self._funcs is None:
             argList = []
             for reactant in self._reactants:
                 argList.append(reactant)
@@ -1385,7 +1385,7 @@ class MuMoTmodel:
                 argList.append(reactant)
             for rate in self._rates:
                 argList.append(rate)
-            if self._systemSize != None:
+            if self._systemSize is not None:
                 argList.append(self._systemSize)
             self._args = tuple(argList)
             self._funcs = {}
@@ -1638,11 +1638,11 @@ class MuMoTcontroller:
             widget.observe(recomputeFunction, 'value')
         for widget in self._widgetsExtraParams.values():
             widget.observe(recomputeFunction, 'value')
-        if self._plotLimitsWidget != None:
+        if self._plotLimitsWidget is not None:
             self._plotLimitsWidget.observe(recomputeFunction, 'value')
-        if self._systemSizeWidget != None:
+        if self._systemSizeWidget is not None:
             self._systemSizeWidget.observe(recomputeFunction, 'value')
-        if redrawFunction != None:
+        if redrawFunction is not None:
             for widget in self._widgetsPlotOnly.values():
                 widget.observe(redrawFunction, 'value')
 
@@ -2211,7 +2211,7 @@ class MuMoTview:
         self._plotLimits = 1
 
         self._generatingKwargs = kwargs
-        if params != None:
+        if params is not None:
             (paramNames, paramValues) = _process_params(params)
             self._fixedParams = dict(zip(paramNames, paramValues))
         
@@ -2231,12 +2231,12 @@ class MuMoTview:
     
 
     def _resetErrorMessage(self):
-        if self._controller != None:
+        if self._controller is not None:
             if not (self._silent):
                 self._controller._errorMessage.value= ''
 
     def _showErrorMessage(self, message):
-        if self._controller != None:
+        if self._controller is not None:
             self._controller._errorMessage.value = self._controller._errorMessage.value + message
         else:
             print(message)
@@ -2270,7 +2270,7 @@ class MuMoTview:
         print("Starting", analysis, "with parameters ", end='')
         paramNames = []
         paramValues = []
-        if self._controller != None:
+        if self._controller is not None:
             ## @todo: if the alphabetic order is not good, the view could store the desired order in (paramNames) when the controller is constructed
             for name in sorted(self._controller._widgetsFreeParams.keys()):
                 paramNames.append(name)
@@ -2327,7 +2327,7 @@ class MuMoTview:
                 if name not in paramInitCheck:
                     #logStr += "('" + latex(name) + "', " + str(value.value) + "), "
                     params.append( ( latex(name) , value.value ) )
-#         if self._paramNames != None:
+#         if self._paramNames is not None:
 #             for name, value in zip(self._paramNames, self._paramValues):
 #                 if name == 'systemSize' or name == 'plotLimits': continue
 #                 name= repr(name)
@@ -2373,7 +2373,7 @@ class MuMoTview:
                 name = name.replace(')', '')
                 if name not in paramInitCheck:
                     logStr += "('" + latex(name) + "', " + str(value.value) + "), "
-#         if self._paramNames != None:
+#         if self._paramNames is not None:
 #             for name, value in zip(self._paramNames, self._paramValues):
 #                 if name == 'systemSize' or name == 'plotLimits': continue
 #                 name= repr(name)
@@ -2564,7 +2564,7 @@ class MuMoTview:
     def _update_params(self):
         """method to update parameters from widgets, if the view requires view-specific params they can be updated implementing _update_view_specific_params()"""
         freeParamDict = self._get_argDict()
-        if self._controller != None:
+        if self._controller is not None:
             # getting the rates' value
             self._ratesDict = {}
             for rule in self._mumotModel._rules:
@@ -2746,32 +2746,32 @@ class MuMoTmultiController(MuMoTcontroller):
 #             for name, value in controller._widgetsExtraParams.items():
 #                 widgetsExtraParamsTmp[name] = value
             if type(controller) is MuMoTmultiController:
-#            if controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
+#            if controller._replotFunction is None: ## presume this controller is a multi controller (@todo check?)
                 for view in controller._view._views:
                     views.append(view)         
                                
-#                if view._controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
+#                if view._controller._replotFunction is None: ## presume this controller is a multi controller (@todo check?)
                 for func, _, axes3d in controller._replotFunctions:
                     self._replotFunctions.append((func, subPlotNum, axes3d))                    
 #                else:
 #                    self._replotFunctions.append((view._controller._replotFunction, subPlotNum, view._axes3d))                    
             else:
                 views.append(controller._view)
-#                 if controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
+#                 if controller._replotFunction is None: ## presume this controller is a multi controller (@todo check?)
 #                     for func, foo in controller._replotFunctions:
 #                         self._replotFunctions.append((func, subPlotNum))                    
 #                 else:
                 self._replotFunctions.append((controller._replotFunction, subPlotNum, controller._view._axes3d))                    
             subPlotNum += 1
             # check if all views refer to same model
-            if model == None:
+            if model is None:
                 model = view._mumotModel
             elif model != view._mumotModel:
                 raise MuMoTValueError('Multicontroller views do not all refer to same model')
             
 
 #         for view in self._views:
-#             if view._controller._replotFunction == None: ## presume this controller is a multi controller (@todo check?)
+#             if view._controller._replotFunction is None: ## presume this controller is a multi controller (@todo check?)
 #                 for func in view._controller._replotFunctions:
 #                     self._replotFunctions.append(func)                    
 #             else:
@@ -2967,7 +2967,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
     
     #def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, figure = None, params = None, **kwargs):
     def __init__(self, model, controller, tEParams, showStateVars = None, figure = None, params = None, **kwargs):
-        #if model._systemSize == None and model._constantSystemSize == True:
+        #if model._systemSize is None and model._constantSystemSize == True:
         #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
         #    return
         self._silent = kwargs.get('silent', False)
@@ -2984,7 +2984,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
 
             self._systemSize = self._getSystemSize()
              
-            if self._controller == None:
+            if self._controller is None:
                 # storing the initial state
                 self._initialState = {}
                 for state,pop in tEParams["initialState"].items():
@@ -3091,7 +3091,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
 
     def _update_view_specific_params(self, freeParamDict = {}):
         """getting other parameters specific to integrate"""
-        if self._controller != None:
+        if self._controller is not None:
             if self._fixedParams.get('initialState') is not None:
                 self._initialState = self._fixedParams['initialState']
             else:
@@ -3106,7 +3106,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #      
 #     def _get_tEParams(self):
 #         freeParamDict=self._get_argDict()
-#         if self._controller == None:  
+#         if self._controller is None:  
 #             # storing the initial state
 #             initialState = {}
 #             for state,pop in self._tEParams["initialState"].items():
@@ -3437,7 +3437,7 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         y_stationary = [sol_ODE[-1, kk] for kk in range(len(y0))]
         
         
-        if realEQsol != [] and realEQsol != None:
+        if realEQsol != [] and realEQsol is not None:
             steadyStateReached = False
             for kk in range(len(realEQsol)):
                 if self._stateVariable3:
@@ -3780,7 +3780,7 @@ class MuMoTfieldView(MuMoTview):
     _Evects = None
     
     def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
-        if model._systemSize == None and model._constantSystemSize == True:
+        if model._systemSize is None and model._constantSystemSize == True:
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return
         silent = kwargs.get('silent', False)
@@ -3798,7 +3798,7 @@ class MuMoTfieldView(MuMoTview):
         
         self._stateVariable1 = process_sympy(stateVariable1)
         self._stateVariable2 = process_sympy(stateVariable2)
-        if stateVariable3 != None:
+        if stateVariable3 is not None:
             self._axes3d = True
             self._stateVariable3 = process_sympy(stateVariable3)
         _mask = {}
@@ -3807,12 +3807,12 @@ class MuMoTfieldView(MuMoTview):
         
         self._showNoise = kwargs.get('showNoise',False)
         
-        if self._showNoise == True and self._SOL_2ndOrdMomDict is None and self._stateVariable3 == None:
+        if self._showNoise == True and self._SOL_2ndOrdMomDict is None and self._stateVariable3 is None:
             self._showSSANoise = True
         else:
             self._showSSANoise = False
         
-        if stateVariable3 == None:    
+        if stateVariable3 is None:    
             self._chooseXrange = kwargs.get('choose_xrange', None)
             self._chooseYrange = kwargs.get('choose_yrange', None)
         
@@ -3828,7 +3828,7 @@ class MuMoTfieldView(MuMoTview):
         else:
             logStr = ""
         logStr += "<modelName>." + self._generatingCommand + "('" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
-        if self._stateVariable3 != None:
+        if self._stateVariable3 is not None:
             logStr += "'" + str(self._stateVariable3) + "', "
         if includeParams:
             logStr += self._get_bookmarks_params() + ", "
@@ -3859,8 +3859,8 @@ class MuMoTfieldView(MuMoTview):
         EV = None
         Evects = None
         
-        if self._stateVariable3 == None:
-            if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None or self._showSSANoise:
+        if self._stateVariable3 is None:
+            if self._showFixedPoints==True or self._SOL_2ndOrdMomDict is not None or self._showSSANoise:
                 Phi_stateVar1 = Symbol('Phi_'+str(self._stateVariable1)) 
                 Phi_stateVar2 = Symbol('Phi_'+str(self._stateVariable2))
                 eta_stateVar1 = Symbol('eta_'+str(self._stateVariable1)) 
@@ -3946,7 +3946,7 @@ class MuMoTfieldView(MuMoTview):
                     angle_ell_list.append(round(angle_ell_deg,5))
                 projection_angle_list = [abs(projection_angle_list[kk]) if abs(projection_angle_list[kk]) <= sympy.N(sympy.pi/2) else sympy.N(sympy.pi)-abs(projection_angle_list[kk]) for kk in range(len(projection_angle_list))]
             
-            if self._showFixedPoints==True or self._SOL_2ndOrdMomDict != None or self._showSSANoise:
+            if self._showFixedPoints==True or self._SOL_2ndOrdMomDict is not None or self._showSSANoise:
                 if self._mumotModel._constantSystemSize == True:
                     FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)], 
                                  [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)]]
@@ -4208,7 +4208,7 @@ class MuMoTfieldView(MuMoTview):
         self._logs.append(log)
     
     def _appendFixedPointsToLogs(self, realEQsol, EV, Evects):
-        if realEQsol != None:
+        if realEQsol is not None:
             for kk in range(len(realEQsol)):
                 realEQsolStr = ""
                 for key, val in realEQsol[kk].items():
@@ -4216,7 +4216,7 @@ class MuMoTfieldView(MuMoTview):
                 evalString = ""
                 for val in EV[kk]:
                     evalString +=  str(_roundNumLogsOut(val)) + ', ' 
-                if Evects == None:
+                if Evects is None:
                     print('Fixed point'+str(kk+1)+': ', realEQsolStr, 'with eigenvalues: ', evalString)
                 else:
                     evecString = ""
@@ -4246,10 +4246,10 @@ class MuMoTvectorView(MuMoTfieldView):
     _checkConstReactants = None
     
     def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure = None, params = None, **kwargs):
-        #if model._systemSize == None and model._constantSystemSize == True:
+        #if model._systemSize is None and model._constantSystemSize == True:
         #    self._showErrorMessage("Cannot construct field-based plot until system size is set, using substitute()")
         #    return
-        #if self._SOL_2ndOrdMomDict == None:
+        #if self._SOL_2ndOrdMomDict is None:
         #    self._showErrorMessage('Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
         silent = kwargs.get('silent', False)
         super().__init__(model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3, figure, params, **kwargs) 
@@ -4259,7 +4259,7 @@ class MuMoTvectorView(MuMoTfieldView):
         
         super()._plot_field()                   
         
-        if self._stateVariable3 == None:   
+        if self._stateVariable3 is None:   
             self._get_field2d("2d vector plot", 10) ## @todo: allow user to set mesh points with keyword
             fig_vector=plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') ## @todo: define colormap by user keyword
             
@@ -4339,10 +4339,10 @@ class MuMoTstreamView(MuMoTfieldView):
     _checkConstReactants = None
     
     def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure = None, params = None, **kwargs):
-        #if model._systemSize == None and model._constantSystemSize == True:
+        #if model._systemSize is None and model._constantSystemSize == True:
         #    self._showErrorMessage("Cannot construct field-based plot until system size is set, using substitute()")
         #    return
-        #if self._SOL_2ndOrdMomDict == None:
+        #if self._SOL_2ndOrdMomDict is None:
         #    self._showErrorMessage('Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
 
         self._checkReactants = model._reactants
@@ -4369,7 +4369,7 @@ class MuMoTstreamView(MuMoTfieldView):
         
         super()._plot_field()                   
         
-        if self._stateVariable3 == None:   
+        if self._stateVariable3 is None:   
             self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
             
             if self._speed is not None:
@@ -4530,7 +4530,7 @@ class MuMoTbifurcationView(MuMoTview):
         
         self._BfcParams=BfcParams            
 
-        if self._controller == None:
+        if self._controller is None:
             # storing the initial state
             self._initialState = {}
             for state,pop in BfcParams["initialState"].items():
@@ -4598,7 +4598,7 @@ class MuMoTbifurcationView(MuMoTview):
         if len(stateVariableList) == 2:
             self._stateVariable2 = stateVariableList[1]
 
-        if self._stateVarBif2 == None:
+        if self._stateVarBif2 is None:
             if self._stateVariable2:
                 if self._stateVarBif1 == self._pydstoolify(self._stateVariable1):
                     self._stateVarBif2 = self._pydstoolify(self._stateVariable2)
@@ -4673,7 +4673,7 @@ class MuMoTbifurcationView(MuMoTview):
             elif len(self._stateVariableList) == 2:    
                 realEQsol, eigList = self._get_fixedPoints2d()
                 
-            if realEQsol != [] and realEQsol != None:
+            if realEQsol != [] and realEQsol is not None:
                 for kk in range(len(realEQsol)):
                     if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
                         initDictList.append(realEQsol[kk])
@@ -4738,7 +4738,7 @@ class MuMoTbifurcationView(MuMoTview):
                     self._showErrorMessage('Division by zero<br>')
                      
                 #pyDScont['EQ'+str(EQ_iter)].info()
-                if self._stateVarBif2 != None:
+                if self._stateVarBif2 is not None:
                     try:
                         XDATA.append(pyDScont['EQ'+str(EQ_iter)].sol[self._bifurcationParameterPyDS])
                         if self._SVoperation:
@@ -4951,11 +4951,11 @@ class MuMoTbifurcationView(MuMoTview):
                     print(specialPoints[2][kk], ': ', self._bifurcationParameter, '=', str(_roundNumLogsOut(specialPoints[0][kk])), ',',
                           self._stateVarExpr1, '=', str(_roundNumLogsOut(specialPoints[1][kk])) )
 
-            if self._chooseYrange == None:
+            if self._chooseYrange is None:
                 if self._mumotModel._systemSize:
                     self._chooseYrange = [-self._getSystemSize(), self._getSystemSize()]
                           
-            if XDATA != [] and self._chooseXrange == None:
+            if XDATA != [] and self._chooseXrange is None:
                 xmaxbif = np.max([np.max(XDATA[kk]) for kk in range(len(XDATA))])
                 self._chooseXrange = [0, xmaxbif]
                 
@@ -5007,7 +5007,7 @@ class MuMoTbifurcationView(MuMoTview):
         else:
             logStr = ""
         logStr += "<modelName>." + self._generatingCommand + "('" + str(self._bifurcationParameter_for_bookmark) + "', '" + str(self._stateVarExpr1) +"', "
-        #if self._stateVarBif2 != None:
+        #if self._stateVarBif2 is not None:
         #    logStr += "'" + str(self._stateVarBif2) + "', "
         if "initialState" not in self._generatingKwargs.keys():
             initState_str = { latex(state): pop for state,pop in self._initialState.items() if not state in self._mumotModel._constantReactants}
@@ -5033,7 +5033,7 @@ class MuMoTbifurcationView(MuMoTview):
 
     def _update_view_specific_params(self, freeParamDict = {}):
         """get other parameters specific to bifurcation()"""
-        if self._controller != None:
+        if self._controller is not None:
             if self._fixedParams.get('initialState') is not None:
                 self._initialState = self._fixedParams['initialState']
             else:
@@ -5137,7 +5137,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
 #         if True:
 
             freeParamDict = self._get_argDict()
-            if self._controller == None:
+            if self._controller is None:
                 # storing the initial state
                 self._initialState = {}
                 for state,pop in SSParams["initialState"].items():
@@ -5227,7 +5227,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
         
     def _update_view_specific_params(self, freeParamDict = {}):
         """getting other parameters specific to SSA"""
-        if self._controller != None:
+        if self._controller is not None:
             if self._fixedParams.get('initialState') is not None:
                 self._initialState = self._fixedParams['initialState']
             else:
@@ -5596,7 +5596,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
     _showInteractions = None
 
     def _constructorSpecificParams(self, MAParams):
-        if self._controller == None:
+        if self._controller is None:
             self._timestepSize = MAParams.get('timestepSize',1)
             self._netType = _decodeNetworkTypeFromString(MAParams['netType'])
             if self._netType != NetworkType.FULLY_CONNECTED: 
@@ -5733,7 +5733,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         """read the new parameters (in case they changed in the controller) specific to multiagent(). This function should only update local parameters and not compute data"""
         super()._update_view_specific_params(freeParamDict)
         self._adjust_barabasi_network_range()
-        if self._controller != None:
+        if self._controller is not None:
             if self._fixedParams.get('netType') is not None:
                 self._netType = self._fixedParams['netType']
             else:
@@ -6090,7 +6090,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                 # locking the other reagents involved in the reaction
                 for idx_r, reagent in enumerate(reaction[0]):
                     for idx_n, neigh in enumerate(neighs):
-                        if neigh == reagent and activeNeighs[idx_n] and neighChanges[idx_n] == None:
+                        if neigh == reagent and activeNeighs[idx_n] and neighChanges[idx_n] is None:
                             neighChanges[idx_n] = reaction[3][idx_r]
                             break
                 
@@ -6582,7 +6582,7 @@ def _deriveODEsFromRules(reactants, rules):
     for rule in rules:
         term = None
         for reactant in rule.lhsReactants:
-            if term == None:
+            if term is None:
                 term = reactant
             else:
                 term = term * reactant
@@ -6594,7 +6594,7 @@ def _deriveODEsFromRules(reactants, rules):
             # I love Python!
             factor = rule.rhsReactants.count(reactant) - rule.lhsReactants.count(reactant)
             if factor != 0:
-                if rhs == None:
+                if rhs is None:
                     rhs = factor * term
                 else:
                     rhs = rhs + factor * term
@@ -7432,7 +7432,7 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
         PhiDict[nvec[kk]] = Symbol('Phi_'+str(nvec[kk]))
         
     PhiSubDict = None    
-    if not substring == None:
+    if not substring is None:
         PhiSubDict = {}
         for sub in substring:
             PhiSubSym = Symbol('Phi_'+str(sub))
@@ -7649,7 +7649,7 @@ def _buildFig(object, figure = None):
         warnings.filterwarnings("ignore",category=MatplotlibDeprecationWarning)
         warnings.filterwarnings("ignore",category=UserWarning)
         plt.hold(True)  
-    if figure == None:
+    if figure is None:
         if figureCounter>2:
             plt.ion()
         object._figure = plt.figure(object._figureNum) 
@@ -7667,7 +7667,7 @@ def _buildFigOLD(object, figure = None):
         warnings.filterwarnings("ignore",category=MatplotlibDeprecationWarning)
         warnings.filterwarnings("ignore",category=UserWarning)
         plt.hold(True)  
-    if figure == None:
+    if figure is None:
         object._figure = plt.figure(object._figureNum) 
     else:
         object._figure = figure
@@ -7696,7 +7696,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
         #ax.plot_wireframe(Xdat, Ydat, Zdat, rstride=1, cstride=1, color='grey', alpha=0.5)
         ax.plot([1,0,0,1], [0,1,0,0], [0,0,1,0], linewidth=2, c='k')
         
-    if xlab==None:
+    if xlab is None:
         try:
             xlabelstr = ax.xaxis.get_label_text()
             if len(ax.xaxis.get_label_text())==0:
@@ -7706,7 +7706,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     else:
         xlabelstr = xlab
         
-    if ylab==None:
+    if ylab is None:
         try:
             ylabelstr = ax.yaxis.get_label_text()
             if len(ax.yaxis.get_label_text())==0:
@@ -7716,7 +7716,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     else:
         ylabelstr = ylab
         
-    if zlab==None:
+    if zlab is None:
         try:
             zlabelstr = ax.yaxis.get_label_text()
             if len(ax.zaxis.get_label_text())==0:
@@ -7804,7 +7804,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
                 ax.scatter([specialPoints[0][jj]], [specialPoints[1][jj]], [specialPoints[2][jj]], 
                            marker=FPmarker, s=100, c=FPcolor)
     
-    if kwargs.get('fontsize', None) != None:
+    if kwargs.get('fontsize', None) is not None:
         chooseFontSize = kwargs['fontsize']
     elif len(xlabelstr) > 40 or len(ylabelstr) > 40 or len(zlabelstr) > 40:
         chooseFontSize = 12
@@ -7871,7 +7871,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         print('Choose either figure or dataset(s)')
     #print(data_x)
     
-    if xlab==None:
+    if xlab is None:
         try:
             xlabelstr = ax.xaxis.get_label_text()
             if len(ax.xaxis.get_label_text())==0:
@@ -7881,7 +7881,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     else:
         xlabelstr = xlab
         
-    if ylab==None:
+    if ylab is None:
         try:
             ylabelstr = ax.yaxis.get_label_text()
             if len(ax.yaxis.get_label_text())==0:
@@ -7891,7 +7891,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     else:
         ylabelstr = ylab
     
-    if ax_reformat==False and figure!=None:
+    if ax_reformat==False and figure is not None:
         xmajortickslocs = ax.xaxis.get_majorticklocs()
         xminortickslocs = ax.xaxis.get_minorticklocs()
         ymajortickslocs = ax.yaxis.get_majorticklocs()
@@ -7905,7 +7905,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     if curve_replot==True:
         plt.cla()
     
-    if ax_reformat==False and figure!=None:
+    if ax_reformat==False and figure is not None:
         ax.set_xticks(xmajortickslocs)
         ax.set_xticks(xminortickslocs, minor = True)
         ax.set_yticks(ymajortickslocs)
@@ -7915,7 +7915,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         plt.xlim(x_lim_left,x_lim_right)
         plt.ylim(y_lim_bot,y_lim_top)
         
-    if figure==None or curve_replot==True:
+    if figure is None or curve_replot==True:
 
         if 'LineThickness' in kwargs:
             LineThickness = kwargs['LineThickness']
@@ -7968,7 +7968,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                                 #print('sign change')
                                 #sign_change+=1
                                 #print(sign_change)
-                                #if specialPoints !=None and specialPoints[0]!=[]:
+                                #if specialPoints is not None and specialPoints[0]!=[]:
                                 #    data_x_tmp.append(specialPoints[0][sign_change-1])
                                 #    data_y_tmp.append(specialPoints[1][sign_change-1])
                                 
@@ -7993,7 +7993,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                                 data_y_tmp=[]
                                 data_x_tmp.append(data_x_tmp_first)
                                 data_y_tmp.append(data_y_tmp_first)
-                                #if specialPoints !=None and specialPoints[0]!=[]:
+                                #if specialPoints is not None and specialPoints[0]!=[]:
                                 #    data_x_tmp.append(specialPoints[0][sign_change-1])
                                 #    data_y_tmp.append(specialPoints[1][sign_change-1])
                         elif len(eigenvalues[0][0]) == 2:
@@ -8002,7 +8002,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                                 #print('sign change')
                                 #sign_change+=1
                                 #print(sign_change)
-                                #if specialPoints !=None and specialPoints[0]!=[]:
+                                #if specialPoints is not None and specialPoints[0]!=[]:
                                 #    data_x_tmp.append(specialPoints[0][sign_change-1])
                                 #    data_y_tmp.append(specialPoints[1][sign_change-1])
                                 
@@ -8027,7 +8027,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                                 data_y_tmp=[]
                                 data_x_tmp.append(data_x_tmp_first)
                                 data_y_tmp.append(data_y_tmp_first)
-                                #if specialPoints !=None and specialPoints[0]!=[]:
+                                #if specialPoints is not None and specialPoints[0]!=[]:
                                 #    data_x_tmp.append(specialPoints[0][sign_change-1])
                                 #    data_y_tmp.append(specialPoints[1][sign_change-1])
                     
@@ -8147,7 +8147,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         chooseFontSize = 24 #30
         
     if 'fontsize' in kwargs:
-        if not kwargs['fontsize']==None:
+        if not kwargs['fontsize'] is None:
             chooseFontSize = kwargs['fontsize']
 
     plt.xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
@@ -8155,7 +8155,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     #ax.set_xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
     #ax.set_ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
      
-    if figure==None or ax_reformat==True or choose_xrange!=None or choose_yrange!=None:
+    if figure is None or ax_reformat==True or choose_xrange is not None or choose_yrange is not None:
         if choose_xrange:
             max_xrange = choose_xrange[1]-choose_xrange[0]
         else:
@@ -8247,7 +8247,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                 
     plt.grid(kwargs.get('grid', False))
         
-    if curvelab != None or showLegend == True:
+    if curvelab is not None or showLegend == True:
         #if 'legend_loc' in kwargs:
         #    legend_loc = kwargs['legend_loc']
         #else:
@@ -8435,7 +8435,7 @@ def _parse_input_keyword_for_numeric_widgets(inputValue, defaultValueRangeStep, 
                     "Please, correct the value and retry."
             print(errorMsg)
             raise MuMoTValueError(errorMsg)
-    if not inputValue == None:
+    if not inputValue is None:
         if not isinstance(inputValue, numbers.Number):
             errorMsg = "Input value '" + str(inputValue) + "' is not a numeric vaule and must be a number.\n" \
                     "Please, correct the value and retry."
@@ -8455,7 +8455,7 @@ def _parse_input_keyword_for_numeric_widgets(inputValue, defaultValueRangeStep, 
                 # it is not necessary to modify the values [min,max,step] because when last value is True, they should be ignored
                 return  outputValues
     
-    if not initValueRangeStep == None:
+    if not initValueRangeStep is None:
         if onlyValue:
             if validRange and (initValueRangeStep < validRange[0] or initValueRangeStep > validRange[1]):
                 errorMsg = "Invalid init value=" + str(initValueRangeStep) + ". has raised out-of-range exception. Valid range is " + str(validRange) + "\n" \
@@ -8617,7 +8617,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
         # check validity of the network type or init to default
         if inputValue is not None:
             decodedNetType = _decodeNetworkTypeFromString(inputValue)
-            if decodedNetType == None: # terminating the process if the input argument is wrong
+            if decodedNetType is None: # terminating the process if the input argument is wrong
                 errorMsg = "The specified value for netType =" + str(inputValue) + " is not valid. \n" \
                             "Accepted values are: 'full',  'erdos-renyi', 'barabasi-albert', and 'dynamic'."
                 print(errorMsg)
