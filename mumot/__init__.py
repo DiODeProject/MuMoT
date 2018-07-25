@@ -7002,7 +7002,7 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
                             if noise1 == noise2:
                                 NoiseSub2ndOrder[key3] = 2
                             else:
-                                 NoiseSub2ndOrder[key3] = 1
+                                NoiseSub2ndOrder[key3] = 1
                         elif noise1 == noise4 and noise2 == noise3:
                             if noise1 == noise2:
                                 NoiseSub2ndOrder[key3] = 2
