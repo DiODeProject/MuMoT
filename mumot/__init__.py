@@ -304,19 +304,19 @@ class MuMoTmodel:
     def visualise(self):
         errorShown = False
         if self._dot is None:
-            dot = Digraph(comment = "Model", engine = 'circo')
+            dot = Digraph(comment="Model", engine='circo')
             if not self._constantSystemSize:
-                dot.node(str('1'), " ", image = self._localLaTeXimageFile(Symbol('\\emptyset'))) ## @todo: only display if used: for now, guess it is used if system size is non-constant                
+                dot.node(str('1'), " ", image=self._localLaTeXimageFile(Symbol('\\emptyset'))) ## @todo: only display if used: for now, guess it is used if system size is non-constant                
             for reactant in self._reactants:
-                dot.node(str(reactant), " ", image = self._localLaTeXimageFile(reactant))
+                dot.node(str(reactant), " ", image=self._localLaTeXimageFile(reactant))
             for reactant in self._constantReactants:
-                dot.node(str(reactant), " ", image = self._localLaTeXimageFile(Symbol(self._ratesLaTeX[repr(reactant)])))                
+                dot.node(str(reactant), " ", image=self._localLaTeXimageFile(Symbol(self._ratesLaTeX[repr(reactant)])))                
             for rule in self._rules:
                 # render LaTeX representation of rule
                 localfilename = self._localLaTeXimageFile(rule.rate)
                 htmlLabel = r'<<TABLE BORDER="0"><TR><TD><IMG SRC="' + localfilename + r'"/></TD></TR></TABLE>>'
                 if len(rule.lhsReactants) == 1:
-                    dot.edge(str(rule.lhsReactants[0]), str(rule.rhsReactants[0]), label = htmlLabel)
+                    dot.edge(str(rule.lhsReactants[0]), str(rule.rhsReactants[0]), label=htmlLabel)
                 elif len(rule.lhsReactants) == 2:
                     # work out source and target of edge, and arrow syle
                     source = None
@@ -354,7 +354,7 @@ class MuMoTmodel:
                         tail = 'dot'
 
                     if source is not None:
-                        dot.edge(source, target, label = htmlLabel, arrowhead = head, arrowtail = tail, dir = 'both')
+                        dot.edge(source, target, label=htmlLabel, arrowhead=head, arrowtail=tail, dir='both')
                 else:
                     if not errorShown:
                         errorShown = True
@@ -713,7 +713,7 @@ class MuMoTmodel:
         return viewController
     
         
-    def noiseCorrelations(self, initWidgets = {}, **kwargs):
+    def noiseCorrelations(self, initWidgets={}, **kwargs):
         """Construct interactive time evolution plot for noise correlations around fixed points.
         
         :Arguments:
@@ -795,7 +795,7 @@ class MuMoTmodel:
         return SOL_2ndOrdMomDict
     
     ## construct interactive stream plot with the option to show noise around fixed points
-    def stream(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, initWidgets = {}, **kwargs):
+    def stream(self, stateVariable1, stateVariable2, stateVariable3=None, params=None, initWidgets={}, **kwargs):
         """Display interactive stream plot of `stateVariable1` (x-axis), `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis; not currently supported - see below)
 
         :Arguments:
@@ -832,10 +832,10 @@ class MuMoTmodel:
                     
             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
             # construct controller
-            viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, initWidgets=initWidgets, **kwargs)
+            viewController = self._controller(continuous_update, plotLimitsSlider=not(self._constantSystemSize), params=params, initWidgets=initWidgets, **kwargs)
             
             # construct view
-            modelView = MuMoTstreamView(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params = params, **kwargs)
+            modelView = MuMoTstreamView(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params=params, **kwargs)
                     
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_field)         
@@ -846,7 +846,7 @@ class MuMoTmodel:
     
     
     ## construct interactive vector plot with the option to show noise around fixed points
-    def vector(self, stateVariable1, stateVariable2, stateVariable3 = None, params = None, initWidgets = {}, **kwargs):
+    def vector(self, stateVariable1, stateVariable2, stateVariable3=None, params=None, initWidgets={}, **kwargs):
         """Display interactive stream plot of `stateVariable1` (x-axis), `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis; not currently supported - see below)
 
         :Arguments:
@@ -882,10 +882,10 @@ class MuMoTmodel:
                     
             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
             # construct controller
-            viewController = self._controller(continuous_update, plotLimitsSlider = not(self._constantSystemSize), params = params, initWidgets=initWidgets, **kwargs)
+            viewController = self._controller(continuous_update, plotLimitsSlider=not(self._constantSystemSize), params=params, initWidgets=initWidgets, **kwargs)
             
             # construct view
-            modelView = MuMoTvectorView(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params = params, **kwargs)
+            modelView = MuMoTvectorView(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params=params, **kwargs)
                     
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_field)         
@@ -895,7 +895,7 @@ class MuMoTmodel:
             return None
     
 
-    def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2 = None, initWidgets = {}, **kwargs):
+    def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2=None, initWidgets={}, **kwargs):
         """Construct and display bifurcation plot of `stateVariable1` (y-axis), or `stateVariable1` +/- `stateVariable2` (y-axis), depending on `bifurcationParameter` (x-axis).
         
         1D and 2D systems are currently supported, only limit points and branch points can be detected
@@ -976,7 +976,7 @@ class MuMoTmodel:
         return viewController
          
     
-    def multiagent(self, initWidgets = {}, **kwargs):
+    def multiagent(self, initWidgets={}, **kwargs):
         """construct interactive multiagent plot (simulation of agents locally interacting with each other)
         
         :Arguments:
@@ -1046,7 +1046,7 @@ class MuMoTmodel:
 
         return viewController
 
-    def SSA(self, initWidgets = {}, **kwargs):
+    def SSA(self, initWidgets={}, **kwargs):
         """construct interactive SSA plot (simulation run of the Gillespie algorithm to approximate the Master Equation solution)
         
         :Arguments:
@@ -1182,33 +1182,33 @@ class MuMoTmodel:
 
     def _get_solutions(self):
         if self._solutions is None:
-            self._solutions = solve(iter(self._equations.values()), self._reactants, force = False, positive = False, set = False)
+            self._solutions = solve(iter(self._equations.values()), self._reactants, force=False, positive=False, set=False)
         return self._solutions
 
 
-    def _create_free_param_dictionary_for_controller(self, inputParams, initWidgets = {}, showSystemSize = False, showPlotLimits = False):
+    def _create_free_param_dictionary_for_controller(self, inputParams, initWidgets={}, showSystemSize=False, showPlotLimits=False):
         paramValuesDict = {}        
         for freeParam in self._rates.union(self._constantReactants):
             paramValuesDict[str(freeParam)] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(inputParams, str(freeParam)),
                                     defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
                                     initValueRangeStep=initWidgets.get(str(freeParam)), 
-                                    validRange = (-float("inf"),float("inf")))
+                                    validRange=(-float("inf"),float("inf")))
             
         if showSystemSize:
             paramValuesDict['systemSize'] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(inputParams, 'systemSize'),
                                     defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
                                     initValueRangeStep=initWidgets.get('systemSize'), 
-                                    validRange = (1,float("inf"))) 
+                                    validRange=(1,float("inf"))) 
         if showPlotLimits:
             paramValuesDict['plotLimits'] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(inputParams, 'plotLimits'),
                                     defaultValueRangeStep=[MuMoTdefault._plotLimits, MuMoTdefault._plotLimitsLimits[0], MuMoTdefault._plotLimitsLimits[1], MuMoTdefault._plotLimitsStep], 
                                     initValueRangeStep=initWidgets.get('plotLimits'), 
-                                    validRange = (-float("inf"),float("inf"))) 
+                                    validRange=(-float("inf"),float("inf"))) 
         
         return paramValuesDict
 
     ## general controller constructor with all rates as free parameters
-    def _controller(self, contRefresh, plotLimitsSlider = False, params = None, initWidgets = {}, **kwargs):            
+    def _controller(self, contRefresh, plotLimitsSlider=False, params=None, initWidgets={}, **kwargs):            
         if kwargs.get('showNoise', False) == True or kwargs.get('plotProportion', True) == False:                 
             systemSizeSlider = True
         else:
@@ -1361,7 +1361,7 @@ class MuMoTmodel:
             self._agentProbabilities[reactant].append([otherReact, rule.rate, targetReact, otherTargets])
         #print( self._agentProbabilities )
 
-    def _check_state_variables(self, stateVariable1, stateVariable2, stateVariable3 = None):
+    def _check_state_variables(self, stateVariable1, stateVariable2, stateVariable3=None):
         if process_sympy(stateVariable1) in self._reactants and process_sympy(stateVariable2) in self._reactants and (stateVariable3 is None or process_sympy(stateVariable3) in self._reactants):
             if stateVariable1 != stateVariable2 and stateVariable1 != stateVariable3 and stateVariable2 != stateVariable3:
                 return True
@@ -1453,9 +1453,9 @@ class MuMoTmodel:
 
     ## render LaTeX source to local image file                                 
     def _localLaTeXimageFile(self, source):
-        tmpfile = tempfile.NamedTemporaryFile(dir = self._tmpdir.name, suffix = '.' + self._renderImageFormat, delete = False)
+        tmpfile = tempfile.NamedTemporaryFile(dir=self._tmpdir.name, suffix='.' + self._renderImageFormat, delete=False)
         self._tmpfiles.append(tmpfile)
-        preview(source, euler = False, output = self._renderImageFormat, viewer = 'file', filename = tmpfile.name)
+        preview(source, euler=False, output=self._renderImageFormat, viewer='file', filename=tmpfile.name)
 
         return tmpfile.name[tmpfile.name.find(self._tmpdirpath):]  
 
@@ -1507,7 +1507,7 @@ class MuMoTmodel:
             os.system('chmod' + self._tmpdirpath + 'u+rwx')
             os.system('chmod' + self._tmpdirpath + 'g-rwx')
             os.system('chmod' + self._tmpdirpath + 'o+rwx')
-        self._tmpdir = tempfile.TemporaryDirectory(dir = self._tmpdirpath)
+        self._tmpdir = tempfile.TemporaryDirectory(dir=self._tmpdirpath)
         self._tmpfiles = []
         
     def __del__(self):
@@ -1552,7 +1552,7 @@ class MuMoTcontroller:
     ## bookmark button widget
     _bookmarkWidget = None
 
-    def __init__(self, paramValuesDict, paramLabelDict = {}, continuousReplot = False, showPlotLimits = False, showSystemSize = False, advancedOpts=None, **kwargs):
+    def __init__(self, paramValuesDict, paramLabelDict={}, continuousReplot=False, showPlotLimits=False, showSystemSize=False, advancedOpts=None, **kwargs):
         self._silent = kwargs.get('silent', False)
         self._paramLabelDict = paramLabelDict
         self._widgetsFreeParams = {}
@@ -1564,24 +1564,24 @@ class MuMoTcontroller:
             if paramName == 'plotLimits' or paramName == 'systemSize': continue
             if not paramValuesDict[paramName][-1]:
                 paramValue = paramValuesDict[paramName]
-                widget = widgets.FloatSlider(value = paramValue[0], min = paramValue[1], 
-                                             max = paramValue[2], step = paramValue[3],
+                widget = widgets.FloatSlider(value=paramValue[0], min=paramValue[1], 
+                                             max=paramValue[2], step=paramValue[3],
                                              readout_format='.' + str(_count_sig_decimals(str(paramValue[3]))) + 'f',
-                                             description = r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(paramName,paramName))) + r'\)', 
-                                             style = {'description_width': 'initial'},
-                                             continuous_update = continuousReplot)
+                                             description=r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(paramName,paramName))) + r'\)', 
+                                             style={'description_width': 'initial'},
+                                             continuous_update=continuousReplot)
                 self._widgetsFreeParams[paramName] = widget
                 if not self._silent:
                     display(widget)
         if showPlotLimits:
             if not paramValuesDict['plotLimits'][-1]:
                 paramValue = paramValuesDict['plotLimits']
-                self._plotLimitsWidget = widgets.FloatSlider(value = paramValue[0], min = paramValue[1], 
-                                             max = paramValue[2], step = paramValue[3],
+                self._plotLimitsWidget = widgets.FloatSlider(value=paramValue[0], min=paramValue[1], 
+                                             max=paramValue[2], step=paramValue[3],
                                              readout_format='.' + str(_count_sig_decimals(str(paramValue[3]))) + 'f',
-                                             description = 'Plot limits', 
-                                             style = {'description_width': 'initial'},
-                                             continuous_update = continuousReplot)
+                                             description='Plot limits', 
+                                             style={'description_width': 'initial'},
+                                             continuous_update=continuousReplot)
                 #@todo: it would be better to remove self._plotLimitsWidget and use the self._widgetsExtraParams['plotLimits'] = widget
                 if not self._silent:
                     display(self._plotLimitsWidget)
@@ -1589,12 +1589,12 @@ class MuMoTcontroller:
         if showSystemSize:
             if not paramValuesDict['systemSize'][-1]:
                 paramValue = paramValuesDict['systemSize']
-                self._systemSizeWidget = widgets.FloatSlider(value = paramValue[0], min = paramValue[1], 
-                                             max = paramValue[2], step = paramValue[3],
+                self._systemSizeWidget = widgets.FloatSlider(value=paramValue[0], min=paramValue[1], 
+                                             max=paramValue[2], step=paramValue[3],
                                              readout_format='.' + str(_count_sig_decimals(str(paramValue[3]))) + 'f',
-                                             description = 'System size', 
-                                             style = {'description_width': 'initial'},
-                                             continuous_update = continuousReplot)
+                                             description='System size', 
+                                             style={'description_width': 'initial'},
+                                             continuous_update=continuousReplot)
                 if not self._silent:
                     display(self._systemSizeWidget)
         
@@ -1677,7 +1677,7 @@ class MuMoTcontroller:
     def setView(self, view):
         self._view = view
 
-    def showLogs(self, tail = False):
+    def showLogs(self, tail=False):
         self._view.showLogs(tail)
         
     def _updateInitialStateWidgets(self, _=None):
@@ -1761,16 +1761,16 @@ class MuMoTbifurcationController(MuMoTcontroller):
             #for state,pop in initialState.items():
             for i,state in enumerate(sorted(initialState.keys(), key=str)):
                 pop = initialState[state]
-                widget = widgets.FloatSlider(value = pop[0],
-                                             min = pop[1], 
-                                             max = pop[2],
-                                             step = pop[3],
+                widget = widgets.FloatSlider(value=pop[0],
+                                             min=pop[1], 
+                                             max=pop[2],
+                                             step=pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
                                              #r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVarExpr1))) +'}$'
-                                             description = r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + '}$' + " at t=0: ",
+                                             description=r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + '}$' + " at t=0: ",
                                              #description = r'\(' + _doubleUnderscorify(_greekPrependify('Phi_'+self._paramLabelDict.get(state,str(state)))) + r'\)' + " at t=0: ",
-                                             style = {'description_width': 'initial'},
-                                             continuous_update = continuousReplot)
+                                             style={'description_width': 'initial'},
+                                             continuous_update=continuousReplot)
                 
                 if BfcParams['conserved'][0]==True:
                     # disable last population widget (if there are more than 1)
@@ -1784,14 +1784,14 @@ class MuMoTbifurcationController(MuMoTcontroller):
         # init bifurcation paramter value slider
         if not BfcParams['initBifParam'][-1]:
             initBifParam = BfcParams['initBifParam']
-            widget = widgets.FloatSlider(value = initBifParam[0], min = initBifParam[1], 
-                                             max = initBifParam[2], step = initBifParam[3],
+            widget = widgets.FloatSlider(value=initBifParam[0], min=initBifParam[1], 
+                                             max=initBifParam[2], step=initBifParam[3],
                                              readout_format='.' + str(_count_sig_decimals(str(initBifParam[3]))) + 'f',
-                                             description = 'Initial ' + r'\(' + _doubleUnderscorify(_greekPrependify(str(BfcParams['bifurcationParameter'][0]))) + r'\) : ',
-                                             style = {'description_width': 'initial:'},
+                                             description='Initial ' + r'\(' + _doubleUnderscorify(_greekPrependify(str(BfcParams['bifurcationParameter'][0]))) + r'\) : ',
+                                             style={'description_width': 'initial:'},
                                              #layout=widgets.Layout(width='50%'),
                                              disabled=False,
-                                             continuous_update = continuousReplot) 
+                                             continuous_update=continuousReplot) 
             self._widgetsExtraParams['initBifParam'] = widget
         
         return initialState
@@ -1811,16 +1811,16 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
             #for state,pop in initialState.items():
             for i,state in enumerate(sorted(initialState.keys(), key=str)):
                 pop = initialState[state]
-                widget = widgets.FloatSlider(value = pop[0],
-                                             min = pop[1], 
-                                             max = pop[2],
-                                             step = pop[3],
+                widget = widgets.FloatSlider(value=pop[0],
+                                             min=pop[1], 
+                                             max=pop[2],
+                                             step=pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
                                              #description = "Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + r'\)' + " at t=0: ",
-                                             description = r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + '}$' + " at t=0: ",
+                                             description=r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(self._paramLabelDict.get(state,str(state)))) + '}$' + " at t=0: ",
                                              #description = r'\(' + latex(Symbol('Phi_'+str(state))) + r'\)' + " at t=0: ",
-                                             style = {'description_width': 'initial'},
-                                             continuous_update = continuousReplot)
+                                             style={'description_width': 'initial'},
+                                             continuous_update=continuousReplot)
                 
                 if tEParams['conserved'][0]==True:
                     # disable last population widget (if there are more than 1)
@@ -1834,14 +1834,14 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
         # Max time slider
         if not tEParams['maxTime'][-1]:
             maxTime = tEParams['maxTime']
-            widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
-                                             max = maxTime[2], step = maxTime[3],
+            widget = widgets.FloatSlider(value=maxTime[0], min=maxTime[1], 
+                                             max=maxTime[2], step=maxTime[3],
                                              readout_format='.' + str(_count_sig_decimals(str(maxTime[3]))) + 'f',
-                                             description = 'Simulation time:',
-                                             style = {'description_width': 'initial'},
+                                             description='Simulation time:',
+                                             style={'description_width': 'initial'},
                                              #layout=widgets.Layout(width='50%'),
                                              disabled=False,
-                                             continuous_update = continuousReplot) 
+                                             continuous_update=continuousReplot) 
             self._widgetsExtraParams['maxTime'] = widget
         
         
@@ -1849,9 +1849,9 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
         if 'plotProportions' in tEParams:
             if not tEParams['plotProportions'][-1]:
                 widget = widgets.Checkbox(
-                    value = tEParams['plotProportions'][0],
+                    value=tEParams['plotProportions'][0],
                     description='Plot population proportions',
-                    disabled = False
+                    disabled=False
                 )
                 self._widgetsPlotOnly['plotProportions'] = widget
         
@@ -1875,15 +1875,15 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
             #for state,pop in initialState.items():
             for i,state in enumerate(sorted(initialState.keys(), key=str)):
                 pop = initialState[state]
-                widget = widgets.FloatSlider(value = pop[0],
-                                             min = pop[1], 
-                                             max = pop[2],
-                                             step = pop[3],
+                widget = widgets.FloatSlider(value=pop[0],
+                                             min=pop[1], 
+                                             max=pop[2],
+                                             step=pop[3],
                                              readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f',
-                                             description = r'$' + _doubleUnderscorify(_greekPrependify(str(Symbol('Phi_{'+str(state)+'}')))) + '$' + " at t=0: ",
+                                             description=r'$' + _doubleUnderscorify(_greekPrependify(str(Symbol('Phi_{'+str(state)+'}')))) + '$' + " at t=0: ",
                                              #description = r'\(' + latex(Symbol('Phi_'+str(state))) + r'\)' + " at t=0: ",
-                                             style = {'description_width': 'initial'},
-                                             continuous_update = continuousReplot)
+                                             style={'description_width': 'initial'},
+                                             continuous_update=continuousReplot)
                 # disable last population widget (if there are more than 1)
                 if len(initialState) > 1 and i == 0:
                     widget.disabled = True
@@ -1895,14 +1895,14 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
         # Max time slider
         if not SSParams['maxTime'][-1]:
             maxTime = SSParams['maxTime']
-            widget = widgets.FloatSlider(value = maxTime[0], min = maxTime[1], 
-                                             max = maxTime[2], step = maxTime[3],
+            widget = widgets.FloatSlider(value=maxTime[0], min=maxTime[1], 
+                                             max=maxTime[2], step=maxTime[3],
                                              readout_format='.' + str(_count_sig_decimals(str(maxTime[3]))) + 'f',
-                                             description = 'Simulation time:',
-                                             style = {'description_width': 'initial'},
+                                             description='Simulation time:',
+                                             style={'description_width': 'initial'},
                                              #layout=widgets.Layout(width='50%'),
                                              disabled=False,
-                                             continuous_update = continuousReplot) 
+                                             continuous_update=continuousReplot) 
             self._widgetsExtraParams['maxTime'] = widget
         
         # Random seed input field
@@ -1910,7 +1910,7 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
             widget = widgets.IntText(
                 value=SSParams['randomSeed'][0],
                 description='Random seed:',
-                style = {'description_width': 'initial'},
+                style={'description_width': 'initial'},
                 disabled=False
             )
             self._widgetsExtraParams['randomSeed'] = widget
@@ -1920,7 +1920,7 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
             if not SSParams['visualisationType'][-1]:
                 plotToggle = widgets.ToggleButtons(
                     options=[('Temporal evolution', 'evo'), ('Final distribution', 'final'), ('Barplot', 'barplot')],
-                    value = SSParams['visualisationType'][0],
+                    value=SSParams['visualisationType'][0],
                     description='Plot:',
                     disabled=False,
                     button_style='', # 'success', 'info', 'warning', 'danger' or ''
@@ -1941,8 +1941,8 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
             dropdown = widgets.Dropdown( 
                 options=opts,
                 description='Final distribution (x axis):',
-                value = SSParams['final_x'][0], 
-                style = {'description_width': 'initial'}
+                value=SSParams['final_x'][0], 
+                style={'description_width': 'initial'}
             )
             if SSParams['visualisationType'][0] != 'final':
                 dropdown.layout.display = 'none'
@@ -1958,8 +1958,8 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
             dropdown = widgets.Dropdown( 
                 options=opts,
                 description='Final distribution (y axis):',
-                value = SSParams['final_y'][0], 
-                style = {'description_width': 'initial'}
+                value=SSParams['final_y'][0], 
+                style={'description_width': 'initial'}
             )
             if SSParams['visualisationType'][0] != 'final':
                 dropdown.layout.display = 'none'
@@ -1969,40 +1969,40 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
         ## Checkbox for proportions or full populations plot
         if not SSParams['plotProportions'][-1]:
             widget = widgets.Checkbox(
-                value = SSParams['plotProportions'][0],
+                value=SSParams['plotProportions'][0],
                 description='Plot population proportions',
-                disabled = False
+                disabled=False
             )
             self._widgetsPlotOnly['plotProportions'] = widget
         
         ## Checkbox for realtime plot update
         if not SSParams['realtimePlot'][-1]:
             widget = widgets.Checkbox(
-                value = SSParams['realtimePlot'][0],
+                value=SSParams['realtimePlot'][0],
                 description='Runtime plot update',
-                disabled = False
+                disabled=False
             )
             self._widgetsExtraParams['realtimePlot'] = widget
         
         # Number of runs slider
         if not SSParams['runs'][-1]:
             runs = SSParams['runs']
-            widget = widgets.IntSlider(value = runs[0], min = runs[1], 
-                                             max = runs[2], step = runs[3],
+            widget = widgets.IntSlider(value=runs[0], min=runs[1], 
+                                             max=runs[2], step=runs[3],
                                              readout_format='.' + str(_count_sig_decimals(str(runs[3]))) + 'f',
-                                             description = 'Number of runs:',
-                                             style = {'description_width': 'initial'},
+                                             description='Number of runs:',
+                                             style={'description_width': 'initial'},
                                              #layout=widgets.Layout(width='50%'),
                                              disabled=False,
-                                             continuous_update = continuousReplot) 
+                                             continuous_update=continuousReplot) 
             self._widgetsExtraParams['runs'] = widget
             
         ## Checkbox for realtime plot update
         if not SSParams['aggregateResults'][-1]:
             widget = widgets.Checkbox(
-                value = SSParams['aggregateResults'][0],
+                value=SSParams['aggregateResults'][0],
                 description='Aggregate results',
-                disabled = False
+                disabled=False
             )
             self._widgetsPlotOnly['aggregateResults'] = widget
         
@@ -2043,8 +2043,8 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
                          ('Moving particles', NetworkType.DYNAMIC)
                          ],
                 description='Network topology:',
-                value = _decodeNetworkTypeFromString(MAParams['netType'][0]), 
-                style = {'description_width': 'initial'},
+                value=_decodeNetworkTypeFromString(MAParams['netType'][0]), 
+                style={'description_width': 'initial'},
                 disabled=False
             )
             netDropdown.observe(self._update_net_params, 'value')
@@ -2053,15 +2053,15 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
         # Network connectivity slider
         if not MAParams['netParam'][-1]:
             netParam = MAParams['netParam']
-            widget = widgets.FloatSlider(value = netParam[0],
-                                        min = netParam[1], 
-                                        max = netParam[2],
-                                        step = netParam[3],
+            widget = widgets.FloatSlider(value=netParam[0],
+                                        min=netParam[1], 
+                                        max=netParam[2],
+                                        step=netParam[3],
                                 readout_format='.' + str(_count_sig_decimals(str(netParam[3]))) + 'f',
-                                description = 'Network connectivity parameter', 
-                                style = {'description_width': 'initial'},
+                                description='Network connectivity parameter', 
+                                style={'description_width': 'initial'},
                                 layout=widgets.Layout(width='50%'),
-                                continuous_update = continuousReplot,
+                                continuous_update=continuousReplot,
                                 disabled=False
             )
             self._widgetsExtraParams['netParam'] = widget
@@ -2069,13 +2069,13 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
         # Agent speed
         if not MAParams['particleSpeed'][-1]:
             particleSpeed = MAParams['particleSpeed']
-            widget = widgets.FloatSlider(value = particleSpeed[0],
-                                         min = particleSpeed[1], max = particleSpeed[2], step=particleSpeed[3],
+            widget = widgets.FloatSlider(value=particleSpeed[0],
+                                         min=particleSpeed[1], max=particleSpeed[2], step=particleSpeed[3],
                                 readout_format='.' + str(_count_sig_decimals(str(particleSpeed[3]))) + 'f',
-                                description = 'Particle speed', 
-                                style = {'description_width': 'initial'},
+                                description='Particle speed', 
+                                style={'description_width': 'initial'},
                                 layout=widgets.Layout(width='50%'),
-                                continuous_update = continuousReplot,
+                                continuous_update=continuousReplot,
                                 disabled=False
             )
             self._widgetsExtraParams['particleSpeed'] = widget
@@ -2083,15 +2083,15 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
         # Random walk correlatedness
         if not MAParams['motionCorrelatedness'][-1]:
             motionCorrelatedness = MAParams['motionCorrelatedness']
-            widget = widgets.FloatSlider(value = motionCorrelatedness[0],
-                                         min = motionCorrelatedness[1],
-                                         max = motionCorrelatedness[2],
+            widget = widgets.FloatSlider(value=motionCorrelatedness[0],
+                                         min=motionCorrelatedness[1],
+                                         max=motionCorrelatedness[2],
                                          step=motionCorrelatedness[3],
                                 readout_format='.' + str(_count_sig_decimals(str(motionCorrelatedness[3]))) + 'f',
-                                description = 'Correlatedness of the random walk',
+                                description='Correlatedness of the random walk',
                                 layout=widgets.Layout(width='50%'),
-                                style = {'description_width': 'initial'},
-                                continuous_update = continuousReplot,
+                                style={'description_width': 'initial'},
+                                continuous_update=continuousReplot,
                                 disabled=False
             )
             self._widgetsExtraParams['motionCorrelatedness'] = widget
@@ -2099,15 +2099,15 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
         # Time scaling slider
         if not MAParams['timestepSize'][-1]:
             timestepSize = MAParams['timestepSize']
-            widget =  widgets.FloatSlider(value = timestepSize[0],
-                                        min = timestepSize[1], 
-                                        max = timestepSize[2],
-                                        step = timestepSize[3],
+            widget =  widgets.FloatSlider(value=timestepSize[0],
+                                        min=timestepSize[1], 
+                                        max=timestepSize[2],
+                                        step=timestepSize[3],
                                 readout_format='.' + str(_count_sig_decimals(str(timestepSize[3]))) + 'f',
-                                description = 'Timestep size', 
-                                style = {'description_width': 'initial'},
+                                description='Timestep size', 
+                                style={'description_width': 'initial'},
                                 layout=widgets.Layout(width='50%'),
-                                continuous_update = continuousReplot
+                                continuous_update=continuousReplot
             )
             self._widgetsExtraParams['timestepSize'] = widget
         
@@ -2115,7 +2115,7 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
         if not MAParams['visualisationType'][-1]:
             plotToggle = widgets.ToggleButtons(
                 options=[('Temporal evolution','evo'), ('Network','graph'), ('Final distribution', 'final'), ('Barplot', 'barplot')],
-                value = MAParams['visualisationType'][0],
+                value=MAParams['visualisationType'][0],
                 description='Plot:',
                 disabled=False,
                 button_style='', # 'success', 'info', 'warning', 'danger' or ''
@@ -2127,16 +2127,16 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
         # Particle display checkboxes
         if not MAParams['showTrace'][-1]:
             widget = widgets.Checkbox(
-                value = MAParams['showTrace'][0],
+                value=MAParams['showTrace'][0],
                 description='Show particle trace',
-                disabled = False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
+                disabled=False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
             )
             self._widgetsPlotOnly['showTrace'] = widget
         if not MAParams['showInteractions'][-1]:
             widget = widgets.Checkbox(
-                value = MAParams['showInteractions'][0],
+                value=MAParams['showInteractions'][0],
                 description='Show communication links',
-                disabled = False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
+                disabled=False #not (self._widgetsExtraParams['netType'].value == NetworkType.DYNAMIC)
             )
             self._widgetsPlotOnly['showInteractions'] = widget
     
@@ -2201,7 +2201,7 @@ class MuMoTview:
     ## generating keyword arguments
     _generatingKwargs = None
     
-    def __init__(self, model, controller, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, figure=None, params=None, **kwargs):
         self._silent = kwargs.get('silent', False)
         self._mumotModel = model
         self._controller = controller
@@ -2291,7 +2291,7 @@ class MuMoTview:
         print("at", datetime.datetime.now())
 
 
-    def _print_standalone_view_cmd(self, includeParams = True):
+    def _print_standalone_view_cmd(self, includeParams=True):
         logStr = self._build_bookmark(includeParams)
         if not self._silent and logStr is not None:
             with io.capture_output() as log:
@@ -2304,7 +2304,7 @@ class MuMoTview:
         self._fixedParams = paramDict
 
 
-    def _get_params(self, refModel = None):
+    def _get_params(self, refModel=None):
         if refModel is not None:
             model = refModel
         else:
@@ -2352,7 +2352,7 @@ class MuMoTview:
                  
         return params
 
-    def _get_bookmarks_params(self, refModel = None):
+    def _get_bookmarks_params(self, refModel=None):
         if refModel is not None:
             model = refModel
         else:
@@ -2405,7 +2405,7 @@ class MuMoTview:
         return
 
 
-    def _getPlotLimits(self, defaultLimits = 1):
+    def _getPlotLimits(self, defaultLimits=1):
 #         if self._paramNames is not None and 'plotLimits' in self._paramNames:
         if self._fixedParams is not None and 'plotLimits' in self._fixedParams:
 #             systemSize = self._paramValues[self._paramNames.index('plotLimits')]
@@ -2418,7 +2418,7 @@ class MuMoTview:
         return plotLimits
 
 
-    def _getSystemSize(self, defaultSize = 1):
+    def _getSystemSize(self, defaultSize=1):
         # if self._paramNames is not None and 'systemSize' in self._paramNames:
         if self._fixedParams is not None and 'systemSize' in self._fixedParams:
 #             systemSize = self._paramValues[self._paramNames.index('systemSize')]
@@ -2577,11 +2577,11 @@ class MuMoTview:
             self._systemSize = self._getSystemSize()
         self._update_view_specific_params(freeParamDict)
         
-    def _update_view_specific_params(self, freeParamDict = {}):
+    def _update_view_specific_params(self, freeParamDict={}):
         """interface method to update view-specific params from widgets"""
         pass
                         
-    def showLogs(self, tail = False):
+    def showLogs(self, tail=False):
         if tail:
             tailLength = 5
             print("Showing last " + str(min(tailLength, len(self._logs))) + " of " + str(len(self._logs)) + " log entries:")
@@ -2636,7 +2636,7 @@ class MuMoTmultiView(MuMoTview):
             for func, subPlotNum, axes3d in self._controller._replotFunctions:
                 if axes3d:
 #                    self._figure.add_subplot(self._numRows, self._numColumns, subPlotNum, projection = '3d')
-                    plt.subplot(self._numRows, self._numColumns, subPlotNum, projection = '3d')
+                    plt.subplot(self._numRows, self._numColumns, subPlotNum, projection='3d')
                 else:
                     plt.subplot(self._numRows, self._numColumns, subPlotNum)
                 func()
@@ -2689,7 +2689,7 @@ class MuMoTmultiController(MuMoTcontroller):
     ## replot function list to invoke on views
     _replotFunctions = None
 
-    def __init__(self, controllers, params = None, initWidgets = {},  **kwargs):
+    def __init__(self, controllers, params=None, initWidgets={},  **kwargs):
         global figureCounter
 
         self._silent = kwargs.get('silent', False)
@@ -2721,7 +2721,7 @@ class MuMoTmultiController(MuMoTcontroller):
                     paramValuesDict[name] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(params if params is not None else [], name),
                                     defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
                                     initValueRangeStep=initWidgets.get(name), 
-                                    validRange = (-float("inf"),float("inf")))
+                                    validRange=(-float("inf"),float("inf")))
                 else:
                     paramValuesDict[name] = (value.value, value.min, value.max, value.step, not(params is None or name not in map(str, view._fixedParams.keys())))
             if controller._plotLimitsWidget is not None:
@@ -2730,7 +2730,7 @@ class MuMoTmultiController(MuMoTcontroller):
                     paramValuesDict['plotLimits'] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(params if params is not None else [], 'plotLimits'),
                                     defaultValueRangeStep=[MuMoTdefault._plotLimits, MuMoTdefault._plotLimitsLimits[0], MuMoTdefault._plotLimitsLimits[1], MuMoTdefault._plotLimitsStep], 
                                     initValueRangeStep=initWidgets.get('plotLimits'), 
-                                    validRange = (-float("inf"),float("inf"))) 
+                                    validRange=(-float("inf"),float("inf"))) 
                 else:
                     paramValuesDict['plotLimits'] = (controller._plotLimitsWidget.value, controller._plotLimitsWidget.min, controller._plotLimitsWidget.max, controller._plotLimitsWidget.step, not(params is None or 'plotLimits' not in map(str, view._fixedParams.keys())))
             if controller._systemSizeWidget is not None:
@@ -2739,7 +2739,7 @@ class MuMoTmultiController(MuMoTcontroller):
                     paramValuesDict['systemSize'] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(params if params is not None else [], 'systemSize'),
                                     defaultValueRangeStep=[MuMoTdefault._systemSize, MuMoTdefault._systemSizeLimits[0], MuMoTdefault._systemSizeLimits[1], MuMoTdefault._systemSizeStep], 
                                     initValueRangeStep=initWidgets.get('systemSize'), 
-                                    validRange = (1,float("inf")))
+                                    validRange=(1,float("inf")))
                 else:
                     paramValuesDict['systemSize'] = (controller._systemSizeWidget.value, controller._systemSizeWidget.min, controller._systemSizeWidget.max, controller._systemSizeWidget.step, not(params is None or 'systemSize' not in map(str, view._fixedParams.keys())))
             paramLabelDict.update(controller._paramLabelDict)
@@ -2777,7 +2777,7 @@ class MuMoTmultiController(MuMoTcontroller):
 #             else:
 #                 self._replotFunctions.append(view._controller._replotFunction)
 #             view._controller = self
-        super().__init__(paramValuesDict, paramLabelDict, False, showPlotLimits, showSystemSize, params = params, **kwargs)
+        super().__init__(paramValuesDict, paramLabelDict, False, showPlotLimits, showSystemSize, params=params, **kwargs)
         
         # handle Extra and PlotOnly params
         addProgressBar = False
@@ -2798,7 +2798,7 @@ class MuMoTmultiController(MuMoTcontroller):
                     ## Toggle buttons for plotting style 
                     widget = widgets.ToggleButtons(
                         options=[('Temporal evolution', 'evo'), ('Final distribution', 'final')],
-                        value = widget.value,
+                        value=widget.value,
                         description='Plot:',
                         disabled=False,
                         button_style='', # 'success', 'info', 'warning', 'danger' or ''
@@ -2900,7 +2900,7 @@ class MuMoTmultiController(MuMoTcontroller):
                 #step=1,
                 description='Loading:',
                 bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
-                style = {'description_width': 'initial'},
+                style={'description_width': 'initial'},
                 orientation='horizontal'
             )
             if not self._silent:
@@ -2966,7 +2966,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
     _chooseYrange = None
     
     #def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, stateVariable4 = None, figure = None, params = None, **kwargs):
-    def __init__(self, model, controller, tEParams, showStateVars = None, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, tEParams, showStateVars=None, figure=None, params=None, **kwargs):
         #if model._systemSize is None and model._constantSystemSize == True:
         #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
         #    return
@@ -3089,7 +3089,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
         self._showErrorMessage(str(self))
         self._update_params()
 
-    def _update_view_specific_params(self, freeParamDict = {}):
+    def _update_view_specific_params(self, freeParamDict={}):
         """getting other parameters specific to integrate"""
         if self._controller is not None:
             if self._fixedParams.get('initialState') is not None:
@@ -3242,8 +3242,8 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
             choose_xrange=self._chooseXrange
         else:
             choose_xrange=[0, self._maxTime]
-        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, choose_xrange=choose_xrange,
-                           choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
+        _fig_formatting_2D(xdata=x_data, ydata=y_data , xlab=self._xlab, ylab=self._ylab, choose_xrange=choose_xrange,
+                           choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid=True,
                            legend_fontsize=self._legend_fontsize, line_color_list=self._colors)
         
         
@@ -3303,8 +3303,8 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
             choose_xrange=self._chooseXrange
         else:
             choose_xrange=[0, self._maxTime]
-        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, choose_xrange=choose_xrange,
-                           choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True,
+        _fig_formatting_2D(xdata=x_data, ydata=y_data , xlab=self._xlab, ylab=self._ylab, choose_xrange=choose_xrange,
+                           choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid=True,
                            legend_fontsize=self._legend_fontsize)
         
         with io.capture_output() as log:
@@ -3321,7 +3321,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
                     display(Math(out))
         self._logs.append(log)
 
-    def _build_bookmark(self, includeParams = True):
+    def _build_bookmark(self, includeParams=True):
         if not self._silent:
             logStr = "bookmark = "
         else:
@@ -3376,14 +3376,14 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         if self._controller is not None:
             self._generatingCommand = "noiseCorrelations"
     
-    def __init__(self, model, controller, NCParams, EOM_1stOrdMom, EOM_2ndOrdMom, figure=None, params = None, **kwargs):
+    def __init__(self, model, controller, NCParams, EOM_1stOrdMom, EOM_2ndOrdMom, figure=None, params=None, **kwargs):
         self._EOM_1stOrdMomDict = EOM_1stOrdMom
         self._EOM_2ndOrdMomDict = EOM_2ndOrdMom
         self._maxTimeDS = kwargs.get('maxTimeDS', 50)
         self._tstepDS= kwargs.get('tstepDS', 0.01)
         self._ylab = kwargs.get('ylab', 'noise correlations')
         self._silent = kwargs.get('silent', False)
-        super().__init__(model=model, controller=controller, tEParams=NCParams, showStateVars = None, figure=figure, params=params, **kwargs)
+        super().__init__(model=model, controller=controller, tEParams=NCParams, showStateVars=None, figure=figure, params=params, **kwargs)
         #super().__init__(model, controller, None, figure, params, **kwargs)
         
         if len(self._stateVarList) < 1 or len(self._stateVarList) > 3:
@@ -3630,8 +3630,8 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
             choose_xrange=self._chooseXrange
         else:
             choose_xrange=[0, self._maxTime]
-        _fig_formatting_2D(xdata=x_data, ydata = y_data , xlab = self._xlab, ylab = self._ylab, choose_xrange=choose_xrange, 
-                           choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid = True, 
+        _fig_formatting_2D(xdata=x_data, ydata=y_data , xlab=self._xlab, ylab=self._ylab, choose_xrange=choose_xrange, 
+                           choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid=True, 
                            legend_fontsize=self._legend_fontsize)
         
         self._show_computation_stop()
@@ -3699,7 +3699,7 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         return SOL_2ndOrdMomDict
 
     
-    def _build_bookmark(self, includeParams = True):
+    def _build_bookmark(self, includeParams=True):
         if not self._silent:
             logStr = "bookmark = "
         else:
@@ -3779,7 +3779,7 @@ class MuMoTfieldView(MuMoTview):
     ## eigenvectors for logs 
     _Evects = None
     
-    def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
         if model._systemSize is None and model._constantSystemSize == True:
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return
@@ -3822,7 +3822,7 @@ class MuMoTfieldView(MuMoTview):
 
 #    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
 
-    def _build_bookmark(self, includeParams = True):
+    def _build_bookmark(self, includeParams=True):
         if not self._silent:
             logStr = "bookmark = "
         else:
@@ -4010,7 +4010,7 @@ class MuMoTfieldView(MuMoTview):
                         Ell_height[kk] = ell_width_temp
                         Ell_width[kk] = ell_height_temp
                         
-                ells = [mpatch.Ellipse(xy=[self._FixedPoints[0][nn],self._FixedPoints[1][nn]], width=Ell_width[nn]/systemSize.subs(argDict), height=Ell_height[nn]/systemSize.subs(argDict), angle= round(angle_ell_list[nn],5)) for nn in range(len(self._FixedPoints[0]))]
+                ells = [mpatch.Ellipse(xy=[self._FixedPoints[0][nn],self._FixedPoints[1][nn]], width=Ell_width[nn]/systemSize.subs(argDict), height=Ell_height[nn]/systemSize.subs(argDict), angle=round(angle_ell_list[nn],5)) for nn in range(len(self._FixedPoints[0]))]
                 ax = plt.gca()
                 for kk in range(len(ells)):
                     ax.add_artist(ells[kk])
@@ -4059,8 +4059,8 @@ class MuMoTfieldView(MuMoTview):
                     for set_item in self._get_params():
                         getParams.append((_greekPrependify(set_item[0].replace('{','').replace('}','')), set_item[1]))
                     SSAView = MuMoTSSAView(self._mumotModel, None,
-                                     params = getParams,
-                                     SSParams = {'maxTime': 2, 'runs': 20, 'realtimePlot': False, 'plotProportions': True, 'aggregateResults': True, 'visualisationType': 'final',
+                                     params=getParams,
+                                     SSParams={'maxTime': 2, 'runs': 20, 'realtimePlot': False, 'plotProportions': True, 'aggregateResults': True, 'visualisationType': 'final',
                                                  'final_x':_greekPrependify(latex(self._stateVariable1)), 'final_y':_greekPrependify(latex(self._stateVariable2)), 
                                                  'initialState': initState, 'randomSeed': np.random.randint(MAX_RANDOM_SEED)}, silent=True)
                     #print(SSAView._printStandaloneViewCmd())
@@ -4140,7 +4140,7 @@ class MuMoTfieldView(MuMoTview):
         return (funcs, argDict, plotLimits)
 
     ## get 2-dimensional field for plotting
-    def _get_field2d(self, kind, meshPoints, plotLimits = 1):
+    def _get_field2d(self, kind, meshPoints, plotLimits=1):
         with io.capture_output() as log:
             self._log(kind)
             (funcs, argDict, plotLimits) = self._get_field()
@@ -4172,7 +4172,7 @@ class MuMoTfieldView(MuMoTview):
         self._logs.append(log)
 
     ## get 3-dimensional field for plotting        
-    def _get_field3d(self, kind, meshPoints, plotLimits = 1):
+    def _get_field3d(self, kind, meshPoints, plotLimits=1):
         with io.capture_output() as log:
             self._log(kind)
             (funcs, argDict, plotLimits) = self._get_field()
@@ -4245,7 +4245,7 @@ class MuMoTvectorView(MuMoTfieldView):
     ## set of all constant reactants to get intersection with _checkReactants
     _checkConstReactants = None
     
-    def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
         #if model._systemSize is None and model._constantSystemSize == True:
         #    self._showErrorMessage("Cannot construct field-based plot until system size is set, using substitute()")
         #    return
@@ -4261,7 +4261,7 @@ class MuMoTvectorView(MuMoTfieldView):
         
         if self._stateVariable3 is None:   
             self._get_field2d("2d vector plot", 10) ## @todo: allow user to set mesh points with keyword
-            fig_vector=plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color = 'black') ## @todo: define colormap by user keyword
+            fig_vector=plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color='black') ## @todo: define colormap by user keyword
             
             if self._mumotModel._constantSystemSize == True:
                 plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
@@ -4285,15 +4285,15 @@ class MuMoTvectorView(MuMoTfieldView):
                 #plt.xlim(0,self._X.max())
                 #plt.ylim(0,self._Y.max())
             
-            _fig_formatting_2D(figure=fig_vector, xlab = self._xlab, specialPoints=self._FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
-                   ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatioEqual=True, choose_xrange=choose_xrange, choose_yrange=choose_yrange)
+            _fig_formatting_2D(figure=fig_vector, xlab=self._xlab, specialPoints=self._FixedPoints, showFixedPoints=self._showFixedPoints, ax_reformat=False, curve_replot=False,
+                   ylab=self._ylab, fontsize=self._chooseFontSize, aspectRatioEqual=True, choose_xrange=choose_xrange, choose_yrange=choose_yrange)
             
         else:
             self._get_field3d("3d vector plot", 10)
-            ax = self._figure.gca(projection = '3d')
-            fig_vec3d=ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length = 0.01, color = 'black') ## @todo: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
+            ax = self._figure.gca(projection='3d')
+            fig_vec3d=ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length=0.01, color='black') ## @todo: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
             
-            _fig_formatting_3D(figure=fig_vec3d, xlab= self._xlab, ylab= self._ylab, zlab= self._zlab, specialPoints=self._FixedPoints,
+            _fig_formatting_3D(figure=fig_vec3d, xlab=self._xlab, ylab=self._ylab, zlab=self._zlab, specialPoints=self._FixedPoints,
                                showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=self._mumotModel._constantSystemSize, fontsize=self._chooseFontSize)
         
         with io.capture_output() as log:
@@ -4338,7 +4338,7 @@ class MuMoTstreamView(MuMoTfieldView):
     ## set of all constant reactants to get intersection with _checkReactants
     _checkConstReactants = None
     
-    def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
         #if model._systemSize is None and model._constantSystemSize == True:
         #    self._showErrorMessage("Cannot construct field-based plot until system size is set, using substitute()")
         #    return
@@ -4373,9 +4373,9 @@ class MuMoTstreamView(MuMoTfieldView):
             self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
             
             if self._speed is not None:
-                fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = self._speed, cmap = 'gray') ## @todo: define colormap by user keyword
+                fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color=self._speed, cmap='gray') ## @todo: define colormap by user keyword
             else:
-                fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color = 'k') ## @todo: define colormap by user keyword
+                fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color='k') ## @todo: define colormap by user keyword
             
             if self._mumotModel._constantSystemSize == True:
                 plt.fill_between([0,1], [1,0], [1,1], color='grey', alpha='0.25')
@@ -4399,8 +4399,8 @@ class MuMoTstreamView(MuMoTfieldView):
                 #plt.xlim(0,self._X.max())
                 #plt.ylim(0,self._Y.max())
             
-            _fig_formatting_2D(figure=fig_stream, xlab = self._xlab, specialPoints=self._FixedPoints, showFixedPoints=self._showFixedPoints, 
-                               ax_reformat=False, curve_replot=False, ylab = self._ylab, fontsize=self._chooseFontSize, aspectRatioEqual=True,
+            _fig_formatting_2D(figure=fig_stream, xlab=self._xlab, specialPoints=self._FixedPoints, showFixedPoints=self._showFixedPoints, 
+                               ax_reformat=False, curve_replot=False, ylab=self._ylab, fontsize=self._chooseFontSize, aspectRatioEqual=True,
                                choose_xrange=choose_xrange, choose_yrange=choose_yrange)
             
             with io.capture_output() as log:
@@ -4468,8 +4468,8 @@ class MuMoTbifurcationView(MuMoTview):
         if self._controller is not None:
             self._generatingCommand = "bifurcation"
     
-    def __init__(self, model, controller, BfcParams, bifurcationParameter, stateVarExpr1, stateVarExpr2 = None, 
-                 figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, BfcParams, bifurcationParameter, stateVarExpr1, stateVarExpr2=None, 
+                 figure=None, params=None, **kwargs):
         
         self._silent = kwargs.get('silent', False)
         
@@ -4564,7 +4564,7 @@ class MuMoTbifurcationView(MuMoTview):
         
         #self._logs.append(log)
          
-        self._pyDSmodel = dst.args(name = 'MuMoT Model' + str(id(self)))
+        self._pyDSmodel = dst.args(name='MuMoT Model' + str(id(self)))
         varspecs = {}
         stateVariableList = []
         replaceSV = {}
@@ -4704,9 +4704,9 @@ class MuMoTbifurcationView(MuMoTview):
                     
                 #self._pyDSmodel.ics = initDictList[nn]
                 pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)
-                pyDSode.set(ics =  initDictList[nn])
+                pyDSode.set(ics=initDictList[nn])
                 #pyDSode.set(pars = self._getBifParInitCondFromSlider()) 
-                pyDSode.set(pars = {self._bifurcationParameterPyDS: self._initBifParam})   
+                pyDSode.set(pars={self._bifurcationParameterPyDS: self._initBifParam})   
                  
                 #print(self._getBifParInitCondFromSlider())  
                 pyDScont = dst.ContClass(pyDSode)
@@ -4963,8 +4963,8 @@ class MuMoTbifurcationView(MuMoTview):
                 #plt.clf()
                 _fig_formatting_2D(xdata=XDATA, 
                                 ydata=YDATA,
-                                xlab = self._LabelX, 
-                                ylab = self._LabelY,
+                                xlab=self._LabelX, 
+                                ylab=self._LabelY,
                                 specialPoints=specialPoints, 
                                 eigenvalues=EIGENVALUES, 
                                 choose_xrange=self._chooseXrange, choose_yrange=self._chooseYrange,
@@ -5001,7 +5001,7 @@ class MuMoTbifurcationView(MuMoTview):
         return equation
     
     
-    def _build_bookmark(self, includeParams = True):
+    def _build_bookmark(self, includeParams=True):
         if not self._silent:
             logStr = "bookmark = "
         else:
@@ -5031,7 +5031,7 @@ class MuMoTbifurcationView(MuMoTview):
         
         return logStr    
 
-    def _update_view_specific_params(self, freeParamDict = {}):
+    def _update_view_specific_params(self, freeParamDict={}):
         """get other parameters specific to bifurcation()"""
         if self._controller is not None:
             if self._fixedParams.get('initialState') is not None:
@@ -5116,7 +5116,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
     ## progress bar
     _progressBar = None
     
-    def __init__(self, model, controller, SSParams, figure = None, params = None, **kwargs):
+    def __init__(self, model, controller, SSParams, figure=None, params=None, **kwargs):
         # Loading bar (useful to give user progress status for long executions)
         self._progressBar = widgets.FloatProgress(
             value=0,
@@ -5124,7 +5124,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             max=1,
             description='Loading:',
             bar_style='success', # 'success', 'info', 'warning', 'danger' or ''
-            style = {'description_width': 'initial'},
+            style={'description_width': 'initial'},
             orientation='horizontal'
         )
         self._silent = kwargs.get('silent', False)
@@ -5225,7 +5225,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._show_computation_stop()
         self._logs.append(log)
         
-    def _update_view_specific_params(self, freeParamDict = {}):
+    def _update_view_specific_params(self, freeParamDict={}):
         """getting other parameters specific to SSA"""
         if self._controller is not None:
             if self._fixedParams.get('initialState') is not None:
@@ -5358,7 +5358,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             box.set(color=self._colors[state], linewidth=wdt)
                             #box.set( color='black', linewidth=2)
                             # change fill color
-                            box.set(facecolor = 'None')
+                            box.set(facecolor='None')
                             #box.set( facecolor = self._colors[state] )
                         plt.setp(bplots['whiskers'], color=self._colors[state], linewidth=wdt)
                         plt.setp(bplots['caps'], color=self._colors[state], linewidth=wdt)
@@ -5402,7 +5402,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                     #stateNamesLabel = [r'$'+latex(Symbol(str(state)))+'$' for state in sorted(self._initialState.keys(), key=str) if state not in self._mumotModel._constantReactants]
                 markers = [plt.Line2D([0,0],[0,0],color=self._colors[state], marker='s', linestyle='', markersize=10) for state in sorted(self._initialState.keys(), key=str) if state not in self._mumotModel._constantReactants]
                 plt.legend(markers, stateNamesLabel, loc='upper right', borderaxespad=0., numpoints=1) #bbox_to_anchor=(0.885, 1),
-                _fig_formatting_2D(figure=self._figure, xlab='time t', ylab='reactants', choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False, grid = True)
+                _fig_formatting_2D(figure=self._figure, xlab='time t', ylab='reactants', choose_xrange=(0-padding_x, self._maxTime+padding_x), choose_yrange=(0-padding_y, y_max+padding_y), aspectRatioEqual=False, grid=True)
                  
             if not fullPlot: # If realtime-plot mode, draw only the last timestep rather than overlay all
                 xdata = []
@@ -5416,7 +5416,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                     ytmp = [y / self._systemSize for y in currentEvo[state][-2:]] if self._plotProportions else currentEvo[state][-2:]
                     y_max = max(y_max, max(ytmp))
                     ydata.append(ytmp)
-                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max), aspectRatioEqual=False, LineThickness=2, grid = True, line_color_list=self._colors_list)
+                _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False, choose_xrange=(0, self._maxTime), choose_yrange=(0, y_max), aspectRatioEqual=False, LineThickness=2, grid=True, line_color_list=self._colors_list)
                 
 #                 y_max = 1.0 if self._plotProportions else self._systemSize
 #                 for state in sorted(self._initialState.keys(), key=str):
@@ -5729,7 +5729,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
 #         sortedDict += "}"
         print("mumot.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params().replace('\\','\\\\') + ", SSParams = " + str(MAParams) + " )")
     
-    def _update_view_specific_params(self, freeParamDict = {}):
+    def _update_view_specific_params(self, freeParamDict={}):
         """read the new parameters (in case they changed in the controller) specific to multiagent(). This function should only update local parameters and not compute data"""
         super()._update_view_specific_params(freeParamDict)
         self._adjust_barabasi_network_range()
@@ -6565,7 +6565,7 @@ def parseModel(modelDescription):
     
     return model
 
-def setVerboseExceptions(verbose = True):
+def setVerboseExceptions(verbose=True):
     """Set the verbosity of exception handling
     
     Parameters:
@@ -7637,7 +7637,7 @@ def _raiseModelError(expected, read, rule):
 
 
 ## generic method for constructing figures in MuMoTview and MuMoTmultiController classes
-def _buildFig(object, figure = None):
+def _buildFig(object, figure=None):
     global figureCounter
     object._figureNum = figureCounter
     if figureCounter==1:
@@ -7658,7 +7658,7 @@ def _buildFig(object, figure = None):
 
 
 ## generic method for constructing figures in MuMoTview and MuMoTmultiController classes
-def _buildFigOLD(object, figure = None):
+def _buildFigOLD(object, figure=None):
     global figureCounter
     object._figureNum = figureCounter
     figureCounter += 1
@@ -7818,12 +7818,12 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     ax.xaxis.labelpad = 20
     ax.yaxis.labelpad = 20
     ax.zaxis.labelpad = 20
-    ax.set_xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
-    ax.set_ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
+    ax.set_xlabel(r''+str(xlabelstr), fontsize=chooseFontSize)
+    ax.set_ylabel(r''+str(ylabelstr), fontsize=chooseFontSize)
     if len(str(zlabelstr))>1:
-        ax.set_zlabel(r''+str(zlabelstr), fontsize = chooseFontSize, rotation=90)
+        ax.set_zlabel(r''+str(zlabelstr), fontsize=chooseFontSize, rotation=90)
     else:
-        ax.set_zlabel(r''+str(zlabelstr), fontsize = chooseFontSize)
+        ax.set_zlabel(r''+str(zlabelstr), fontsize=chooseFontSize)
         
     for tick in ax.xaxis.get_major_ticks():
         tick.label.set_fontsize(18) 
@@ -7907,11 +7907,11 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     
     if ax_reformat==False and figure is not None:
         ax.set_xticks(xmajortickslocs)
-        ax.set_xticks(xminortickslocs, minor = True)
+        ax.set_xticks(xminortickslocs, minor=True)
         ax.set_yticks(ymajortickslocs)
-        ax.set_yticks(yminortickslocs, minor = True)
-        ax.tick_params(axis = 'both', which = 'major', length=5, width=2)
-        ax.tick_params(axis = 'both', which = 'minor', length=3, width=1)
+        ax.set_yticks(yminortickslocs, minor=True)
+        ax.tick_params(axis='both', which='major', length=5, width=2)
+        ax.tick_params(axis='both', which='minor', length=3, width=1)
         plt.xlim(x_lim_left,x_lim_right)
         plt.ylim(y_lim_bot,y_lim_top)
         
@@ -8080,8 +8080,8 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                             label_description = '_nolegend_'
                         plt.plot(solX_dict['solX_unst'][jj], 
                                  solY_dict['solY_unst'][jj], 
-                                 c = line_color_list[2], 
-                                 ls = linestyle_list[1], lw = LineThickness, label = label_description)
+                                 c=line_color_list[2], 
+                                 ls=linestyle_list[1], lw=LineThickness, label=label_description)
                 if not solX_dict['solX_stab'] == []:           
                     for jj in range(len(solX_dict['solX_stab'])):
                         if jj == 0 and Nr_stable ==0:
@@ -8091,8 +8091,8 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                             label_description = '_nolegend_'
                         plt.plot(solX_dict['solX_stab'][jj], 
                                  solY_dict['solY_stab'][jj], 
-                                 c = line_color_list[1], 
-                                 ls = linestyle_list[0], lw = LineThickness, label = label_description)
+                                 c=line_color_list[1], 
+                                 ls=linestyle_list[0], lw=LineThickness, label=label_description)
                 if not solX_dict['solX_saddle'] == []:           
                     for jj in range(len(solX_dict['solX_saddle'])):
                         if jj == 0 and Nr_saddle == 0:
@@ -8102,8 +8102,8 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                             label_description = '_nolegend_'
                         plt.plot(solX_dict['solX_saddle'][jj], 
                                  solY_dict['solY_saddle'][jj], 
-                                 c = line_color_list[0], 
-                                 ls = linestyle_list[3], lw = LineThickness, label = label_description)
+                                 c=line_color_list[0], 
+                                 ls=linestyle_list[3], lw=LineThickness, label=label_description)
                 
                 
                 
@@ -8130,11 +8130,11 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         else:
             for nn in range(len(data_x)):
                 try:
-                    plt.plot(data_x[nn], data_y[nn], c = line_color_list[nn], 
-                             ls = linestyle_list[nn], lw = LineThickness, label = r''+str(curvelab[nn]))
+                    plt.plot(data_x[nn], data_y[nn], c=line_color_list[nn], 
+                             ls=linestyle_list[nn], lw=LineThickness, label=r''+str(curvelab[nn]))
                 except:
-                    plt.plot(data_x[nn], data_y[nn], c = line_color_list[nn], 
-                             ls = linestyle_list[nn], lw = LineThickness)
+                    plt.plot(data_x[nn], data_y[nn], c=line_color_list[nn], 
+                             ls=linestyle_list[nn], lw=LineThickness)
         
         
     if len(xlabelstr) > 40 or len(ylabelstr) > 40:
@@ -8150,8 +8150,8 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         if not kwargs['fontsize'] is None:
             chooseFontSize = kwargs['fontsize']
 
-    plt.xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
-    plt.ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
+    plt.xlabel(r''+str(xlabelstr), fontsize=chooseFontSize)
+    plt.ylabel(r''+str(ylabelstr), fontsize=chooseFontSize)
     #ax.set_xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
     #ax.set_ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
      
@@ -8526,7 +8526,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                 initialState[process_sympy(reactant)] = _parse_input_keyword_for_numeric_widgets(inputValue=pop,
                                     defaultValueRangeStep=[MuMoTdefault._agents, MuMoTdefault._agentsLimits[0],MuMoTdefault._agentsLimits[1],MuMoTdefault._agentsStep], 
                                     initValueRangeStep=initPop, 
-                                    validRange = (0.0, 1.0))
+                                    validRange=(0.0, 1.0))
                 fixedBool = True
         else:
             first = True
@@ -8537,7 +8537,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                 initialState[reactant] = _parse_input_keyword_for_numeric_widgets(inputValue=None,
                                             defaultValueRangeStep=[defaultV, MuMoTdefault._agentsLimits[0],MuMoTdefault._agentsLimits[1],MuMoTdefault._agentsStep], 
                                             initValueRangeStep=initValuesSympy.get(reactant), 
-                                            validRange = (0.0, 1.0))
+                                            validRange=(0.0, 1.0))
                 fixedBool = False
         
         ## check if the initialState values are valid
@@ -8590,28 +8590,28 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                     defaultValueRangeStep=[MuMoTdefault._maxTime,MuMoTdefault._timeLimits[0], MuMoTdefault._timeLimits[1], MuMoTdefault._timeStep], 
                                     initValueRangeStep=initValues, 
-                                    validRange = (0,float("inf")))
+                                    validRange=(0,float("inf")))
     if (optionName == 'randomSeed'):
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                     defaultValueRangeStep=np.random.randint(MAX_RANDOM_SEED), 
                                     initValueRangeStep=initValues,
-                                    validRange = (1,MAX_RANDOM_SEED), onlyValue=True)
+                                    validRange=(1,MAX_RANDOM_SEED), onlyValue=True)
     if (optionName == 'motionCorrelatedness'):
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                 defaultValueRangeStep=[0.5, 0.0, 1.0, 0.05], 
                                 initValueRangeStep=initValues, 
-                                validRange = (0,1)) 
+                                validRange=(0,1)) 
     if (optionName == 'particleSpeed'):
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                 defaultValueRangeStep=[0.01, 0.0, 0.1, 0.005], 
                                 initValueRangeStep=initValues, 
-                                validRange = (0, 1)) 
+                                validRange=(0, 1)) 
     
     if (optionName == 'timestepSize'):
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                 defaultValueRangeStep=[1, 0.01, 1, 0.01], 
                                 initValueRangeStep=initValues, 
-                                validRange = (0,float("inf"))) 
+                                validRange=(0,float("inf"))) 
 
     if (optionName == 'netType'):
         # check validity of the network type or init to default
@@ -8646,25 +8646,25 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
             return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                         defaultValueRangeStep=[0.1, 0.1, 1, 0.1], 
                                         initValueRangeStep=initValues, 
-                                         validRange = (0.1, 1.0))          
+                                         validRange=(0.1, 1.0))          
         elif _decodeNetworkTypeFromString(netType[0]) == NetworkType.BARABASI_ALBERT:
             maxEdges = systemSize - 1 
             return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                         defaultValueRangeStep=[min(maxEdges,3),1,maxEdges,1], 
                                         initValueRangeStep=initValues, 
-                                         validRange = (1,maxEdges))  
+                                         validRange=(1,maxEdges))  
         elif _decodeNetworkTypeFromString(netType[0]) == NetworkType.SPACE:
             pass #method is not implemented
         elif _decodeNetworkTypeFromString(netType[0]) == NetworkType.DYNAMIC:
             return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                         defaultValueRangeStep=[0.1, 0.0, 1.0, 0.05], 
                                         initValueRangeStep=initValues, 
-                                         validRange = (0,1.0)) 
+                                         validRange=(0,1.0)) 
         
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                 defaultValueRangeStep=[0.5,0,1,0.1], 
                                 initValueRangeStep=initValues, 
-                                validRange = (0,float("inf"))) 
+                                validRange=(0,float("inf"))) 
     if (optionName == 'plotProportions'):
         return _parse_input_keyword_for_boolean_widgets(inputValue=inputValue,
                                                                            defaultValue=False,
@@ -8733,7 +8733,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                 defaultValueRangeStep=[1, 1, 20, 1], 
                                 initValueRangeStep=initValues,
-                                validRange = (1,float("inf"))) 
+                                validRange=(1,float("inf"))) 
     
     if (optionName == 'aggregateResults'):
         return _parse_input_keyword_for_boolean_widgets(inputValue=inputValue,
@@ -8745,7 +8745,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
                                     defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
                                     initValueRangeStep=initValues, 
-                                    validRange = (0,float("inf")))
+                                    validRange=(0,float("inf")))
         
     
     return [None,False] # default output for unknown optionName
