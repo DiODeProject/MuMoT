@@ -89,12 +89,12 @@ INITIAL_COND_INIT_BOUND = 1.0
 
 LINE_COLOR_LIST = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
 
-GREEK_LETT_LIST_1=['alpha', 'beta', 'gamma', 'Gamma', 'delta', 'Delta', 'epsilon',
+GREEK_LETT_LIST_1 = ['alpha', 'beta', 'gamma', 'Gamma', 'delta', 'Delta', 'epsilon',
                     'zeta', 'theta', 'Theta', 'iota', 'kappa', 'lambda', 'Lambda', 
                     'mu', 'xi', 'Xi', 'pi', 'Pi', 'rho', 'sigma', 'Sigma', 'tau', 
                     'upsilon', 'Upsilon', 'phi', 'Phi', 'chi', 'psi', 'Psi', 'omega', 'Omega', 'varrho', 'vartheta', 'varepsilon', 'varphi']
-GREEK_LETT_LIST_2=['\\'+ GreekLett for GreekLett in GREEK_LETT_LIST_1]
-GREEK_LETT_RESERVED_LIST=['\\eta', '\\nu', '\\Phi']
+GREEK_LETT_LIST_2 = ['\\' + GreekLett for GreekLett in GREEK_LETT_LIST_1]
+GREEK_LETT_RESERVED_LIST = ['\\eta', '\\nu', '\\Phi']
 # 
 # GREEK_LETT_LIST_2=['\\alpha', '\\beta', '\\gamma', '\\Gamma', '\\delta', '\\Delta', '\\epsilon',
 #                     '\\zeta', '\\theta', '\\Theta', '\\iota', '\\kappa', '\\lambda', '\\Lambda', 
@@ -490,7 +490,7 @@ class MuMoTmodel:
         """Displays Master equation expressed with step operators"""
         
         P, t = symbols('P t')
-        out_rhs=""
+        out_rhs = ""
         stoich = self._stoichiometry
         nvec = []
         for key1 in stoich:
@@ -514,14 +514,14 @@ class MuMoTmodel:
                 rhs_plus = ""
             else:
                 rhs_plus = " + "
-            out_rhs += rhs_plus + latex(rhs_dict[key][3]) + " ( " + latex((rhs_dict[key][0]-1)) + " ) " +  latex(rhs_dict[key][1]) + " " + latex(rhs_dict[key][2])
+            out_rhs += rhs_plus + latex(rhs_dict[key][3]) + " ( " + latex((rhs_dict[key][0]-1)) + " ) " + latex(rhs_dict[key][1]) + " " + latex(rhs_dict[key][2])
             term_count += 1
         
-        if len(nvec)==1:
+        if len(nvec) == 1:
             lhs_ME = Derivative(P(nvec[0], t), t)
-        elif len(nvec)==2:
+        elif len(nvec) == 2:
             lhs_ME = Derivative(P(nvec[0], nvec[1], t), t)
-        elif len(nvec)==3:
+        elif len(nvec) == 3:
             lhs_ME = Derivative(P(nvec[0], nvec[1], nvec[2], t), t)
         else:
             lhs_ME = Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), t)     
@@ -573,7 +573,7 @@ class MuMoTmodel:
     def showNoiseEquations(self):
         """Display equations of motion of first and second order moments of noise"""
         
-        EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+        EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         for eom1 in EOM_1stOrderMom:
             out = "\\displaystyle \\frac{\\textrm{d}" + latex(eom1.subs(NoiseSubs1stOrder)) + "}{\\textrm{d}t} := " + latex(EOM_1stOrderMom[eom1].subs(NoiseSubs1stOrder))
             out = _doubleUnderscorify(out)
@@ -752,7 +752,7 @@ class MuMoTmodel:
         #NCParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
         NCParams['conserved'] = [kwargs.get('conserved', False), True]
         
-        EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder= _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+        EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         
         # construct controller
         viewController = MuMoTtimeEvolutionController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=NCParams, showSystemSize=True, **kwargs)
@@ -779,7 +779,7 @@ class MuMoTmodel:
                                 substitutions = True
             
             if substitutions == False:
-                SOL_1stOrderMomDict, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder  = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+                SOL_1stOrderMomDict, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
                 # SOL_2ndOrdMomDict is second order solution and will be used by MuMoTnoiseView
             else:
                 SOL_2ndOrdMomDict = None
@@ -932,14 +932,14 @@ class MuMoTmodel:
             print('Sorry, bifurcation diagrams are currently only supported for 1D and 2D systems (1 or 2 time-dependent variables in the ODE system)!')
             return None
         
-        conserved=kwargs.get('conserved', False)
+        conserved = kwargs.get('conserved', False)
         #check for substitutions of state variables in conserved systems
-        stoich=self._stoichiometry
+        stoich = self._stoichiometry
         for key1 in stoich:
             for key2 in stoich[key1]:
                 if key2 != 'rate' and stoich[key1][key2] != 'const':
                     if len(stoich[key1][key2]) == 3:
-                        conserved=True
+                        conserved = True
         
         #if bifurcationParameter[0]=='\\':
         #        bifPar = bifurcationParameter[1:]
@@ -1016,7 +1016,7 @@ class MuMoTmodel:
         MAParams['netParam'] = _format_advanced_option(optionName='netParam', inputValue=kwargs.get('netParam'), initValues=initWidgets.get('netParam'), extraParam=MAParams['netType'], extraParam2=systemSize)
         MAParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
         MAParams['realtimePlot'] = _format_advanced_option(optionName='realtimePlot', inputValue=kwargs.get('realtimePlot'), initValues=initWidgets.get('realtimePlot'))
-        MAParams['showTrace'] = _format_advanced_option(optionName='showTrace', inputValue=kwargs.get('showTrace'), initValues=initWidgets.get('showTrace', MAParams['netType']==NetworkType.DYNAMIC))
+        MAParams['showTrace'] = _format_advanced_option(optionName='showTrace', inputValue=kwargs.get('showTrace'), initValues=initWidgets.get('showTrace', MAParams['netType'] == NetworkType.DYNAMIC))
         MAParams['showInteractions'] = _format_advanced_option(optionName='showInteractions', inputValue=kwargs.get('showInteractions'), initValues=initWidgets.get('showInteractions'))
         MAParams['visualisationType'] = _format_advanced_option(optionName='visualisationType', inputValue=kwargs.get('visualisationType'), initValues=initWidgets.get('visualisationType'), extraParam="multiagent")
         MAParams['final_x'] = _format_advanced_option(optionName='final_x', inputValue=kwargs.get('final_x'), initValues=initWidgets.get('final_x'), extraParam=self._getAllReactants()[0])
@@ -1318,7 +1318,7 @@ class MuMoTmodel:
             for reactant in rule.rhsReactants:
                 if reactant in allConstantReactants:
                     warningMsg = 'WARNING! Constant reactants appearing on the right-handside are ignored. Every constant reactant on the left-handside (implicitly) corresponds to the same constant reactant on the right-handside.\n'\
-                                'E.g., in rule ' + str(rule.lhsReactants) + ' -> '  + str(rule.rhsReactants) + ' constant reactants should not appear on the right-handside.'
+                                'E.g., in rule ' + str(rule.lhsReactants) + ' -> ' + str(rule.rhsReactants) + ' constant reactants should not appear on the right-handside.'
                     print(warningMsg)
                     break # print maximum one warning
             
@@ -1497,7 +1497,7 @@ class MuMoTmodel:
         self._constantSystemSize = True
         self._reactantsLaTeX = None
         self._rates = set()
-        self._ratesLaTeX= None
+        self._ratesLaTeX = None
         self._equations = {}
         self._stoichiometry = {}
         self._pyDSmodel = None
@@ -1772,7 +1772,7 @@ class MuMoTbifurcationController(MuMoTcontroller):
                                              style={'description_width': 'initial'},
                                              continuous_update=continuousReplot)
                 
-                if BfcParams['conserved'][0]==True:
+                if BfcParams['conserved'][0] == True:
                     # disable last population widget (if there are more than 1)
                     if len(initialState) > 1 and i == 0:
                         widget.disabled = True
@@ -1822,7 +1822,7 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
                                              style={'description_width': 'initial'},
                                              continuous_update=continuousReplot)
                 
-                if tEParams['conserved'][0]==True:
+                if tEParams['conserved'][0] == True:
                     # disable last population widget (if there are more than 1)
                     if len(initialState) > 1 and i == 0:
                         widget.disabled = True
@@ -1933,7 +1933,7 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
         except widgets.trait_types.traitlets.TraitError: # this widget could be redefined in a subclass and the init-value in SSParams['visualisationType'][0] might raise an exception
             pass
         
-        if not SSParams['final_x'][-1] and (SSParams['visualisationType'][-1]==False or SSParams['visualisationType'][0]=='final'):
+        if not SSParams['final_x'][-1] and (SSParams['visualisationType'][-1] == False or SSParams['visualisationType'][0] == 'final'):
             opts = []
             for reactant in sorted(initialState.keys(), key=str):
                 #opts.append( ( "Reactant " + r'$'+ latex(Symbol(str(reactant)))+r'$', str(reactant) ) )
@@ -1947,7 +1947,7 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
             if SSParams['visualisationType'][0] != 'final':
                 dropdown.layout.display = 'none'
             self._widgetsPlotOnly['final_x'] = dropdown
-        if not SSParams['final_y'][-1] and (SSParams['visualisationType'][-1]==False or SSParams['visualisationType'][0]=='final'):
+        if not SSParams['final_y'][-1] and (SSParams['visualisationType'][-1] == False or SSParams['visualisationType'][0] == 'final'):
             opts = []
             for reactant in sorted(initialState.keys(), key=str):
 #                 opts.append( ( r'$'+ _doubleUnderscorify(_greekPrependify(str(reactant))) +'$' , str(reactant) ) )
@@ -2099,7 +2099,7 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
         # Time scaling slider
         if not MAParams['timestepSize'][-1]:
             timestepSize = MAParams['timestepSize']
-            widget =  widgets.FloatSlider(value=timestepSize[0],
+            widget = widgets.FloatSlider(value=timestepSize[0],
                                         min=timestepSize[1], 
                                         max=timestepSize[2],
                                         step=timestepSize[3],
@@ -2233,7 +2233,7 @@ class MuMoTview:
     def _resetErrorMessage(self):
         if self._controller is not None:
             if not (self._silent):
-                self._controller._errorMessage.value= ''
+                self._controller._errorMessage.value = ''
 
     def _showErrorMessage(self, message):
         if self._controller is not None:
@@ -2340,7 +2340,7 @@ class MuMoTview:
 
         for name, value in self._fixedParams.items():
             if name == 'systemSize' or name == 'plotLimits': continue
-            name= repr(name)
+            name = repr(name)
             if name in model._ratesLaTeX:
                 name = model._ratesLaTeX[name]
             name = name.replace('(', '')
@@ -2385,7 +2385,7 @@ class MuMoTview:
         for name, value in self._fixedParams.items():
             #if name == 'systemSize' or name == 'plotLimits': continue
             if name not in self._mumotModel._rates and name not in self._mumotModel._constantReactants: continue
-            name= repr(name)
+            name = repr(name)
             if name in model._ratesLaTeX:
                 name = model._ratesLaTeX[name]
             name = name.replace('(', '')
@@ -2473,10 +2473,10 @@ class MuMoTview:
 
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
        
-        eps=1e-8
+        eps = 1e-8
         EQsol = solve((EQ1), (self._stateVariable1), dict=True)
         
-        realEQsol = [{self._stateVariable1: sympy.re(EQsol[kk][self._stateVariable1])} for kk in range(len(EQsol)) if sympy.Abs(sympy.im(EQsol[kk][self._stateVariable1]))<=eps]
+        realEQsol = [{self._stateVariable1: sympy.re(EQsol[kk][self._stateVariable1])} for kk in range(len(EQsol)) if sympy.Abs(sympy.im(EQsol[kk][self._stateVariable1])) <= eps]
         
         MAT = Matrix([EQ1])
         JAC = MAT.jacobian([self._stateVariable1])
@@ -2485,7 +2485,7 @@ class MuMoTview:
         
         for nn in range(len(realEQsol)): 
             evSet = {}
-            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1])])
+            JACsub = JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1])])
             #evSet = JACsub.eigenvals()
             eigVects = JACsub.eigenvects()
             for kk in range(len(eigVects)):
@@ -2503,7 +2503,7 @@ class MuMoTview:
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
        
-        eps=1e-8
+        eps = 1e-8
         EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
 
         for nn in range(len(EQsol)):
@@ -2511,7 +2511,7 @@ class MuMoTview:
                 self._showErrorMessage('Some or all solutions are NOT unique.')
                 return None, None
         
-        realEQsol = [{self._stateVariable1: sympy.re(EQsol[kk][self._stateVariable1]), self._stateVariable2: sympy.re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (sympy.Abs(sympy.im(EQsol[kk][self._stateVariable1]))<=eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable2]))<=eps)]
+        realEQsol = [{self._stateVariable1: sympy.re(EQsol[kk][self._stateVariable1]), self._stateVariable2: sympy.re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (sympy.Abs(sympy.im(EQsol[kk][self._stateVariable1])) <= eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable2])) <= eps)]
         
         MAT = Matrix([EQ1, EQ2])
         JAC = MAT.jacobian([self._stateVariable1, self._stateVariable2])
@@ -2519,7 +2519,7 @@ class MuMoTview:
         eigList = []
         for nn in range(len(realEQsol)): 
             evSet = {}
-            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
+            JACsub = JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2])])
             #evSet = JACsub.eigenvals()
             eigVects = JACsub.eigenvects()
             for kk in range(len(eigVects)):
@@ -2536,7 +2536,7 @@ class MuMoTview:
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
         EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
         
-        eps=1e-8
+        eps = 1e-8
         EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
         
         for nn in range(len(EQsol)):
@@ -2544,7 +2544,7 @@ class MuMoTview:
                 self._showErrorMessage('Some or all solutions are NOT unique.')
                 return None, None
         
-        realEQsol = [{self._stateVariable1: sympy.re(EQsol[kk][self._stateVariable1]), self._stateVariable2: sympy.re(EQsol[kk][self._stateVariable2]), self._stateVariable3: sympy.re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (sympy.Abs(sympy.im(EQsol[kk][self._stateVariable1]))<=eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable2]))<=eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable3]))<=eps)]
+        realEQsol = [{self._stateVariable1: sympy.re(EQsol[kk][self._stateVariable1]), self._stateVariable2: sympy.re(EQsol[kk][self._stateVariable2]), self._stateVariable3: sympy.re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (sympy.Abs(sympy.im(EQsol[kk][self._stateVariable1])) <= eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable2])) <= eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable3])) <= eps)]
         
         MAT = Matrix([EQ1, EQ2, EQ3])
         JAC = MAT.jacobian([self._stateVariable1, self._stateVariable2, self._stateVariable3])
@@ -2552,7 +2552,7 @@ class MuMoTview:
         eigList = []
         for nn in range(len(realEQsol)): 
             evSet = {}
-            JACsub=JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
+            JACsub = JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1]), (self._stateVariable2, realEQsol[nn][self._stateVariable2]), (self._stateVariable3, realEQsol[nn][self._stateVariable3])])
             #evSet = JACsub.eigenvals()
             eigVects = JACsub.eigenvects()
             for kk in range(len(eigVects)):
@@ -2624,7 +2624,7 @@ class MuMoTmultiView(MuMoTview):
             plt.gcf().set_size_inches(9, 4.5)
         
     def _plot(self, _=None):
-        fig=plt.figure(self._figureNum)
+        fig = plt.figure(self._figureNum)
         plt.clf()
         self._resetErrorMessage()
         if self._shareAxes:
@@ -2665,7 +2665,7 @@ class MuMoTmultiView(MuMoTview):
                 logStr += ", "
                 for key in self._generatingKwargs:
                     if type(self._generatingKwargs[key]) == str:
-                        logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                        logStr += key + " = " + "\'" + str(self._generatingKwargs[key]) + "\'" + ", "
                     else:
                         logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
                     
@@ -2823,28 +2823,28 @@ class MuMoTmultiController(MuMoTcontroller):
                 if key == 'choose_xrange':
                     for controller in controllers:
                         controller._view._chooseXrange = kwargs.get('choose_xrange')
-                if key=='initialState': ep1 = views[0]._mumotModel._getAllReactants() ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
-                if key=='visualisationType': ep1="multicontroller"
-                if key=='final_x' or key=='final_y': ep1=views[0]._mumotModel._getAllReactants()[0] ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
-                if key=='netParam': 
-                    ep1= [kwargs.get('netType', self._widgetsExtraParams.get('netType')), kwargs.get('netType') is not None] 
+                if key == 'initialState': ep1 = views[0]._mumotModel._getAllReactants() ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
+                if key == 'visualisationType': ep1 = "multicontroller"
+                if key == 'final_x' or key == 'final_y': ep1 = views[0]._mumotModel._getAllReactants()[0] ## @todo assuming same model for all views. This operation is NOT correct when multicotroller views have different models
+                if key == 'netParam': 
+                    ep1 = [kwargs.get('netType', self._widgetsExtraParams.get('netType')), kwargs.get('netType') is not None] 
                     maxSysSize = 1
                     for view in views:
                         maxSysSize = max(maxSysSize, view._getSystemSize())
-                    ep2= maxSysSize
+                    ep2 = maxSysSize
                 optionValues = _format_advanced_option(optionName=key, inputValue=inputValue, initValues=initWidgets.get(key), extraParam=ep1, extraParam2=ep2)
                 # if option is fixed
-                if optionValues[-1]==True:
-                    if key =='initialState': # initialState is special
+                if optionValues[-1] == True:
+                    if key == 'initialState': # initialState is special
                         for state, pop in optionValues[0].items():
                             optionValues[0][state] = pop[0]
                             stateKey = "init" + str(state)
                             # delete the widgets
                             if stateKey in self._widgetsExtraParams:
                                 del self._widgetsExtraParams[stateKey]
-                    if key =='netType': # netType is special
+                    if key == 'netType': # netType is special
                         optionValues[0] = _decodeNetworkTypeFromString(optionValues[0]) ## @todo: if only netType (and not netParam) is specified, then multicotroller won't work...
-                    if key =='visualisationType' and optionValues[0]=='final': # visualisationType == 'final' is special
+                    if key == 'visualisationType' and optionValues[0] == 'final': # visualisationType == 'final' is special
                         if self._widgetsPlotOnly.get('final_x') is not None:
                             self._widgetsPlotOnly['final_x'].layout.display = 'flex'
                         if self._widgetsPlotOnly.get('final_y') is not None:
@@ -2865,7 +2865,7 @@ class MuMoTmultiController(MuMoTcontroller):
                             self._widgetsExtraParams[key].min = optionValues[1]
                             self._widgetsExtraParams[key].max = optionValues[2]
                             self._widgetsExtraParams[key].step = optionValues[3]
-                            self._widgetsExtraParams[key].readout_format='.' + str(_count_sig_decimals(str(optionValues[3]))) + 'f'
+                            self._widgetsExtraParams[key].readout_format = '.' + str(_count_sig_decimals(str(optionValues[3]))) + 'f'
                         self._widgetsExtraParams[key].value = optionValues[0]
                     if key in self._widgetsPlotOnly:
                         if len(optionValues) == 5:
@@ -2873,7 +2873,7 @@ class MuMoTmultiController(MuMoTcontroller):
                             self._widgetsPlotOnly[key].min = optionValues[1]
                             self._widgetsPlotOnly[key].max = optionValues[2]
                             self._widgetsPlotOnly[key].step = optionValues[3]
-                            self._widgetsPlotOnly[key].readout_format='.' + str(_count_sig_decimals(str(optionValues[3]))) + 'f'
+                            self._widgetsPlotOnly[key].readout_format = '.' + str(_count_sig_decimals(str(optionValues[3]))) + 'f'
                         self._widgetsPlotOnly[key].value = optionValues[0]
                     if key == 'initialState':
                         for state, pop in optionValues[0].items():
@@ -2882,7 +2882,7 @@ class MuMoTmultiController(MuMoTcontroller):
                             self._widgetsExtraParams['init'+str(state)].min = pop[1]
                             self._widgetsExtraParams['init'+str(state)].max = pop[2]
                             self._widgetsExtraParams['init'+str(state)].step = pop[3]
-                            self._widgetsExtraParams['init'+str(state)].readout_format='.' + str(_count_sig_decimals(str(pop[3]))) + 'f'
+                            self._widgetsExtraParams['init'+str(state)].readout_format = '.' + str(_count_sig_decimals(str(pop[3]))) + 'f'
                             self._widgetsExtraParams['init'+str(state)].value = pop[0] 
 #                             self._widgetsExtraParams['init'+str(state)].observe(self._updateInitialStateWidgets, 'value')
             
@@ -2974,7 +2974,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
         super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
         #super().__init__(model, controller, figure, params, **kwargs)
         
-        self._tEParams=tEParams
+        self._tEParams = tEParams
         self._chooseXrange = kwargs.get('choose_xrange', None)
         self._chooseYrange = kwargs.get('choose_yrange', None)
         
@@ -3025,7 +3025,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
             if 'fontsize' in kwargs:
                 self._chooseFontSize = kwargs['fontsize']
             else:
-                self._chooseFontSize=None
+                self._chooseFontSize = None
             self._xlab = kwargs.get('xlab', 'time t')
             #self._ylab = kwargs.get('ylab', r'evolution of states')
             
@@ -3099,7 +3099,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
                     # add normal and constant reactants to the _initialState 
                     self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
             if 'plotProportions' in self._tEParams:
-                self._plotProportions =  self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
+                self._plotProportions = self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
             self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
 
                
@@ -3187,7 +3187,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
         NrDP = int(self._maxTime/self._tstep) + 1
         time = np.linspace(0, self._maxTime, NrDP)
         
-        initDict=self._initialState  #self._get_tEParams()   #self._initialState
+        initDict = self._initialState  #self._get_tEParams()   #self._initialState
          
    
         #if len(initDict) < 2 or len(initDict) > 4:
@@ -3199,7 +3199,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
             SVi0 = initDict[Symbol(str(self._stateVarList[nn]))]
             y0.append(SVi0)
         
-        self._y0=y0        
+        self._y0 = y0        
 
         sol_ODE = odeint(self._get_eqsODE, y0, time)  
         
@@ -3207,7 +3207,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
         for nn in range(len(self._stateVarList)):
             sol_ODE_dict[str(self._stateVarList[nn])] = sol_ODE[:, nn]
         
-        self._sol_ODE_dict=sol_ODE_dict  
+        self._sol_ODE_dict = sol_ODE_dict  
         #x_data = [time for kk in range(len(self._get_eqsODE(y0, time)))]
         x_data = [time for kk in range(len(self._stateVarListDisplay))]
         #y_data = [sol_ODE[:, kk] for kk in range(len(self._get_eqsODE(y0, time)))]
@@ -3222,13 +3222,13 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
             #if y_scaling > 0:
             #    sysS = sysS/y_scaling
             for nn in range(len(y_data)):
-                y_temp=np.copy(y_data[nn])
+                y_temp = np.copy(y_data[nn])
                 for kk in range(len(y_temp)):
                     y_temp[kk] = y_temp[kk]*sysS
                 y_data[nn] = y_temp
             c_labels = [r'$'+str(self._stateVarListDisplay[nn])+'$' for nn in range(len(self._stateVarListDisplay))]
         else:
-            c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
+            c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) + '$' for nn in range(len(self._stateVarListDisplay))] 
         
         c_labels = [_doubleUnderscorify(_greekPrependify(c_labels[jj])) for jj in range(len(c_labels))]
 #         
@@ -3239,9 +3239,9 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
 #             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
         
         if self._chooseXrange:
-            choose_xrange=self._chooseXrange
+            choose_xrange = self._chooseXrange
         else:
-            choose_xrange=[0, self._maxTime]
+            choose_xrange = [0, self._maxTime]
         _fig_formatting_2D(xdata=x_data, ydata=y_data , xlab=self._xlab, ylab=self._ylab, choose_xrange=choose_xrange,
                            choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid=True,
                            legend_fontsize=self._legend_fontsize, line_color_list=self._colors)
@@ -3283,13 +3283,13 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
             #if y_scaling > 0:
             #    sysS = sysS/y_scaling
             for nn in range(len(y_data)):
-                y_temp=np.copy(y_data[nn])
+                y_temp = np.copy(y_data[nn])
                 for kk in range(len(y_temp)):
                     y_temp[kk] = y_temp[kk]*sysS
                 y_data[nn] = y_temp
             c_labels = [r'$'+str(self._stateVarListDisplay[nn])+'$' for nn in range(len(self._stateVarListDisplay))]
         else:
-            c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) +'$' for nn in range(len(self._stateVarListDisplay))] 
+            c_labels = [r'$'+latex(Symbol('Phi_'+str(self._stateVarListDisplay[nn]))) + '$' for nn in range(len(self._stateVarListDisplay))] 
         
         c_labels = [_doubleUnderscorify(_greekPrependify(c_labels[jj])) for jj in range(len(c_labels))]
 #         
@@ -3300,9 +3300,9 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
 #             c_labels.append(r'$'+latex(Symbol('Phi_'+str(self._stateVariable4)))+'$')         
 #         
         if self._chooseXrange:
-            choose_xrange=self._chooseXrange
+            choose_xrange = self._chooseXrange
         else:
-            choose_xrange=[0, self._maxTime]
+            choose_xrange = [0, self._maxTime]
         _fig_formatting_2D(xdata=x_data, ydata=y_data , xlab=self._xlab, ylab=self._ylab, choose_xrange=choose_xrange,
                            choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid=True,
                            legend_fontsize=self._legend_fontsize)
@@ -3346,7 +3346,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
         if len(self._generatingKwargs) > 0:
             for key in self._generatingKwargs:
                 if type(self._generatingKwargs[key]) == str:
-                    logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                    logStr += key + " = " + "\'" + str(self._generatingKwargs[key]) + "\'" + ", "
                 else:
                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "    
         logStr += "bookmark = False"
@@ -3380,7 +3380,7 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         self._EOM_1stOrdMomDict = EOM_1stOrdMom
         self._EOM_2ndOrdMomDict = EOM_2ndOrdMom
         self._maxTimeDS = kwargs.get('maxTimeDS', 50)
-        self._tstepDS= kwargs.get('tstepDS', 0.01)
+        self._tstepDS = kwargs.get('tstepDS', 0.01)
         self._ylab = kwargs.get('ylab', 'noise correlations')
         self._silent = kwargs.get('silent', False)
         super().__init__(model=model, controller=controller, tEParams=NCParams, showStateVars=None, figure=figure, params=params, **kwargs)
@@ -3414,7 +3414,7 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         #NrDP = int(self._tend/self._tstep) + 1
         #time = np.linspace(0, self._tend, NrDP)
         
-        initDict=self._initialState
+        initDict = self._initialState
           
         SV1_0 = initDict[Symbol(str(self._stateVariable1))]
         y0 = [SV1_0]
@@ -3501,7 +3501,7 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         
         SOL_2ndOrdMomDict = self._numericSol2ndOrdMoment(EOM_2ndOrdMomDict, steadyStateDict, argDict)
         
-        time_depend_noise=[]
+        time_depend_noise = []
         for reactant in self._mumotModel._reactants:
             if reactant not in self._mumotModel._constantReactants:
                 time_depend_noise.append(Symbol('eta_'+str(reactant)))
@@ -3600,36 +3600,36 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         noiseNorm = systemSize.subs(argDict)
         noiseNorm = sympy.N(noiseNorm)
         for nn in range(len(y_data)):
-            y_temp=np.copy(y_data[nn])
+            y_temp = np.copy(y_data[nn])
             for kk in range(len(y_temp)):
                 y_temp[kk] = y_temp[kk]/noiseNorm
             y_data[nn] = y_temp
             
         if self._stateVariable3:
-            c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV2)+'(0)'+ '>$',
-                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV3)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV2)+'(0)'+ '>$',
-                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV3)+'(0)'+ '>$',
-                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV2)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV3)+'(0)'+ '>$']
+            c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)' + '>$', 
+                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV2)+'(0)' + '>$',
+                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV3)+'(0)' + '>$', 
+                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV1)+'(0)' + '>$', 
+                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV2)+'(0)' + '>$',
+                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV1)+'(0)' + '>$', 
+                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV3)+'(0)' + '>$',
+                        r'$<'+latex(eta_SV3)+'(t)'+latex(eta_SV2)+'(0)' + '>$', 
+                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV3)+'(0)' + '>$']
             
         elif self._stateVariable2:
-            c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV2)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV1)+'(0)'+ '>$', 
-                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV2)+'(0)'+ '>$']
+            c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)' + '>$', 
+                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV2)+'(0)' + '>$', 
+                        r'$<'+latex(eta_SV2)+'(t)'+latex(eta_SV1)+'(0)' + '>$', 
+                        r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV2)+'(0)' + '>$']
         else:
-            c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)'+ '>$']
+            c_labels = [r'$<'+latex(eta_SV1)+'(t)'+latex(eta_SV1)+'(0)' + '>$']
         
         c_labels = [_doubleUnderscorify(_greekPrependify(c_labels[jj])) for jj in range(len(c_labels))]
         
         if self._chooseXrange:
-            choose_xrange=self._chooseXrange
+            choose_xrange = self._chooseXrange
         else:
-            choose_xrange=[0, self._maxTime]
+            choose_xrange = [0, self._maxTime]
         _fig_formatting_2D(xdata=x_data, ydata=y_data , xlab=self._xlab, ylab=self._ylab, choose_xrange=choose_xrange, 
                            choose_yrange=self._chooseYrange, fontsize=self._chooseFontSize, curvelab=c_labels, legend_loc=self._legend_loc, grid=True, 
                            legend_fontsize=self._legend_fontsize)
@@ -3716,7 +3716,7 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         if len(self._generatingKwargs) > 0:
             for key in self._generatingKwargs:
                 if type(self._generatingKwargs[key]) == str:
-                    logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                    logStr += key + " = " + "\'" + str(self._generatingKwargs[key]) + "\'" + ", "
                 else:
                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "    
         logStr += "bookmark = False"
@@ -3789,10 +3789,10 @@ class MuMoTfieldView(MuMoTview):
         if 'fontsize' in kwargs:
             self._chooseFontSize = kwargs['fontsize']
         else:
-            self._chooseFontSize=None
+            self._chooseFontSize = None
         self._showFixedPoints = kwargs.get('showFixedPoints', False)
-        self._xlab = r'' + kwargs.get('xlab', r'$'+ '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable1)))+'}$')
-        self._ylab = r'' + kwargs.get('ylab', r'$'+ '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable2)))+'}$')
+        self._xlab = r'' + kwargs.get('xlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable1)))+'}$')
+        self._ylab = r'' + kwargs.get('ylab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable2)))+'}$')
         if stateVariable3:
             self._zlab = r'' + kwargs.get('zlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable3))) + '}$') 
         
@@ -3827,7 +3827,7 @@ class MuMoTfieldView(MuMoTview):
             logStr = "bookmark = "
         else:
             logStr = ""
-        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) +"', "
+        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) + "', "
         if self._stateVariable3 is not None:
             logStr += "'" + str(self._stateVariable3) + "', "
         if includeParams:
@@ -3860,7 +3860,7 @@ class MuMoTfieldView(MuMoTview):
         Evects = None
         
         if self._stateVariable3 is None:
-            if self._showFixedPoints==True or self._SOL_2ndOrdMomDict is not None or self._showSSANoise:
+            if self._showFixedPoints == True or self._SOL_2ndOrdMomDict is not None or self._showSSANoise:
                 Phi_stateVar1 = Symbol('Phi_'+str(self._stateVariable1)) 
                 Phi_stateVar2 = Symbol('Phi_'+str(self._stateVariable2))
                 eta_stateVar1 = Symbol('eta_'+str(self._stateVariable1)) 
@@ -3877,7 +3877,7 @@ class MuMoTfieldView(MuMoTview):
             
                 PhiSubList = []
                 for kk in range(len(realEQsol)):
-                    PhiSubDict={}
+                    PhiSubDict = {}
                     for solXi in realEQsol[kk]:
                         PhiSubDict[Symbol('Phi_'+str(solXi))] = realEQsol[kk][solXi]
                     PhiSubList.append(PhiSubDict)
@@ -3892,7 +3892,7 @@ class MuMoTfieldView(MuMoTview):
                     for key in eigList[kk]:
                         for jj in range(len(eigList[kk][key][1])):
                             EvectsSub.append(eigList[kk][key][1][jj].evalf())
-                        if eigList[kk][key][0] >1:
+                        if eigList[kk][key][0] > 1:
                             for jj in range(eigList[kk][key][0]):
                                 EVsub.append(key.evalf())
                         else:
@@ -3946,9 +3946,9 @@ class MuMoTfieldView(MuMoTview):
                     angle_ell_list.append(round(angle_ell_deg, 5))
                 projection_angle_list = [abs(projection_angle_list[kk]) if abs(projection_angle_list[kk]) <= sympy.N(sympy.pi/2) else sympy.N(sympy.pi)-abs(projection_angle_list[kk]) for kk in range(len(projection_angle_list))]
             
-            if self._showFixedPoints==True or self._SOL_2ndOrdMomDict is not None or self._showSSANoise:
+            if self._showFixedPoints == True or self._SOL_2ndOrdMomDict is not None or self._showSSANoise:
                 if self._mumotModel._constantSystemSize == True:
-                    FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)], 
+                    FixedPoints = [[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)], 
                                  [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)]]
                     if self._SOL_2ndOrdMomDict:
                         Ell_width = [2.0*sympy.re(sympy.cos(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sympy.sin(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1 and 0 <= sympy.re(PhiSubList[kk][Phi_stateVar2]) <= 1)]
@@ -3956,7 +3956,7 @@ class MuMoTfieldView(MuMoTview):
                     #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)], 
                     #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)]]
                 else:
-                    FixedPoints=[[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList))], 
+                    FixedPoints = [[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList))], 
                                  [PhiSubList[kk][Phi_stateVar2] for kk in range(len(PhiSubList))]]
                     if self._SOL_2ndOrdMomDict:
                         Ell_width = [2.0*sympy.re(sympy.cos(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)]/systemSize.subs(argDict)) + sympy.sin(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict))) for kk in range(len(SOL_2ndOrdMomDictList))]
@@ -3997,7 +3997,7 @@ class MuMoTfieldView(MuMoTview):
 #                 
             
             else:
-                FixedPoints=None
+                FixedPoints = None
             
             self._FixedPoints = FixedPoints
             
@@ -4070,7 +4070,7 @@ class MuMoTfieldView(MuMoTview):
         else:
             if self._showNoise == True:
                 print('Please note: Currently \'showNoise\' only available for 2D stream and vector plots.')
-            if self._showFixedPoints==True:
+            if self._showFixedPoints == True:
                 realEQsol, eigList = self._get_fixedPoints3d()
                 EV = []
                 EVplot = []
@@ -4078,7 +4078,7 @@ class MuMoTfieldView(MuMoTview):
                 for kk in range(len(eigList)):
                     EVsub = []
                     for key in eigList[kk]:
-                        if eigList[kk][key][0] >1:
+                        if eigList[kk][key][0] > 1:
                             for jj in range(eigList[kk][key][0]):
                                 EVsub.append(key.evalf())
                         else:
@@ -4092,11 +4092,11 @@ class MuMoTfieldView(MuMoTview):
                         EVplot.append(EVsub)
                     
                 if self._mumotModel._constantSystemSize == True:
-                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)], 
+                    FixedPoints = [[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)], 
                                  [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)],
                                  [realEQsol[kk][self._stateVariable3] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)]]
                 else:
-                    FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
+                    FixedPoints = [[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
                                  [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))],
                                  [realEQsol[kk][self._stateVariable3] for kk in range(len(realEQsol))]]
                 FixedPoints.append(EVplot)
@@ -4215,7 +4215,7 @@ class MuMoTfieldView(MuMoTview):
                     realEQsolStr += str(key) + ' = ' + str(_roundNumLogsOut(val)) + ', '
                 evalString = ""
                 for val in EV[kk]:
-                    evalString +=  str(_roundNumLogsOut(val)) + ', ' 
+                    evalString += str(_roundNumLogsOut(val)) + ', ' 
                 if Evects is None:
                     print('Fixed point'+str(kk+1)+': ', realEQsolStr, 'with eigenvalues: ', evalString)
                 else:
@@ -4224,9 +4224,9 @@ class MuMoTfieldView(MuMoTview):
                         evecStringPart = "["
                         for entry in matrix.col(0):
                             if evecStringPart == "[":
-                                evecStringPart +=  str(_roundNumLogsOut(entry))
+                                evecStringPart += str(_roundNumLogsOut(entry))
                             else:
-                                evecStringPart +=  ', '  + str(_roundNumLogsOut(entry)) 
+                                evecStringPart += ', ' + str(_roundNumLogsOut(entry)) 
                         evecStringPart += "]"
                         if evecString == "":
                             evecString += evecStringPart 
@@ -4261,25 +4261,25 @@ class MuMoTvectorView(MuMoTfieldView):
         
         if self._stateVariable3 is None:   
             self._get_field2d("2d vector plot", 10) ## @todo: allow user to set mesh points with keyword
-            fig_vector=plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color='black') ## @todo: define colormap by user keyword
+            fig_vector = plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color='black') ## @todo: define colormap by user keyword
             
             if self._mumotModel._constantSystemSize == True:
                 plt.fill_between([0, 1], [1, 0], [1, 1], color='grey', alpha='0.25')
                 if self._chooseXrange:
-                    choose_xrange=self._chooseXrange
+                    choose_xrange = self._chooseXrange
                 else:
                     choose_xrange = [0, 1]
                 if self._chooseYrange:
-                    choose_yrange=self._chooseYrange
+                    choose_yrange = self._chooseYrange
                 else:
                     choose_yrange = [0, 1]
             else:
                 if self._chooseXrange:
-                    choose_xrange=self._chooseXrange
+                    choose_xrange = self._chooseXrange
                 else:
                     choose_xrange = [0, self._X.max()]
                 if self._chooseYrange:
-                    choose_yrange=self._chooseYrange
+                    choose_yrange = self._chooseYrange
                 else:
                     choose_yrange = [0, self._Y.max()]
                 #plt.xlim(0,self._X.max())
@@ -4291,7 +4291,7 @@ class MuMoTvectorView(MuMoTfieldView):
         else:
             self._get_field3d("3d vector plot", 10)
             ax = self._figure.gca(projection='3d')
-            fig_vec3d=ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length=0.01, color='black') ## @todo: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
+            fig_vec3d = ax.quiver(self._X, self._Y, self._Z, self._Xdot, self._Ydot, self._Zdot, length=0.01, color='black') ## @todo: define colormap by user keyword; normalise off maximum value in self._speed, and meshpoints?
             
             _fig_formatting_3D(figure=fig_vec3d, xlab=self._xlab, ylab=self._ylab, zlab=self._zlab, specialPoints=self._FixedPoints,
                                showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=self._mumotModel._constantSystemSize, fontsize=self._chooseFontSize)
@@ -4373,27 +4373,27 @@ class MuMoTstreamView(MuMoTfieldView):
             self._get_field2d("2d stream plot", 100) ## @todo: allow user to set mesh points with keyword
             
             if self._speed is not None:
-                fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color=self._speed, cmap='gray') ## @todo: define colormap by user keyword
+                fig_stream = plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color=self._speed, cmap='gray') ## @todo: define colormap by user keyword
             else:
-                fig_stream=plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color='k') ## @todo: define colormap by user keyword
+                fig_stream = plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color='k') ## @todo: define colormap by user keyword
             
             if self._mumotModel._constantSystemSize == True:
                 plt.fill_between([0, 1], [1, 0], [1, 1], color='grey', alpha='0.25')
                 if self._chooseXrange:
-                    choose_xrange=self._chooseXrange
+                    choose_xrange = self._chooseXrange
                 else:
                     choose_xrange = [0, 1]
                 if self._chooseYrange:
-                    choose_yrange=self._chooseYrange
+                    choose_yrange = self._chooseYrange
                 else:
                     choose_yrange = [0, 1]
             else:
                 if self._chooseXrange:
-                    choose_xrange=self._chooseXrange
+                    choose_xrange = self._chooseXrange
                 else:
                     choose_xrange = [0, self._X.max()]
                 if self._chooseYrange:
-                    choose_yrange=self._chooseYrange
+                    choose_yrange = self._chooseYrange
                 else:
                     choose_yrange = [0, self._Y.max()]
                 #plt.xlim(0,self._X.max())
@@ -4481,14 +4481,14 @@ class MuMoTbifurcationView(MuMoTview):
         
         self._chooseFontSize = kwargs.get('fontsize', None)
         if '-' in str(stateVarExpr1):
-            self._LabelY =  kwargs.get('ylab', r'$' + '\Phi_{' + str(stateVarExpr1)[:str(stateVarExpr1).index('-')].replace('\\\\', '\\') +'}' + '-' + '\Phi_{' + str(stateVarExpr1)[str(stateVarExpr1).index('-')+1:].replace('\\\\', '\\') +'}' + '$') 
+            self._LabelY = kwargs.get('ylab', r'$' + '\Phi_{' + str(stateVarExpr1)[:str(stateVarExpr1).index('-')].replace('\\\\', '\\') + '}' + '-' + '\Phi_{' + str(stateVarExpr1)[str(stateVarExpr1).index('-')+1:].replace('\\\\', '\\') + '}' + '$') 
         elif '+' in str(stateVarExpr1):
-            self._LabelY =  kwargs.get('ylab', r'$' + '\Phi_{' + str(stateVarExpr1)[:str(stateVarExpr1).index('-')].replace('\\\\', '\\') +'}' + '+' + '\Phi_{' + str(stateVarExpr1)[str(stateVarExpr1).index('-')+1:].replace('\\\\', '\\') +'}' + '$') 
+            self._LabelY = kwargs.get('ylab', r'$' + '\Phi_{' + str(stateVarExpr1)[:str(stateVarExpr1).index('-')].replace('\\\\', '\\') + '}' + '+' + '\Phi_{' + str(stateVarExpr1)[str(stateVarExpr1).index('-')+1:].replace('\\\\', '\\') + '}' + '$') 
         else:
-            self._LabelY =  kwargs.get('ylab', r'$' + '\Phi_{' + str(stateVarExpr1).replace('\\\\', '\\') + '}$') 
+            self._LabelY = kwargs.get('ylab', r'$' + '\Phi_{' + str(stateVarExpr1).replace('\\\\', '\\') + '}$') 
         #self._LabelY =  kwargs.get('ylab', r'$' + stateVarExpr1 +'$') 
         #self._LabelX = kwargs.get('xlab', r'$' + _doubleUnderscorify(_greekPrependify(bifurcationParameter)) +'$')
-        self._LabelX = kwargs.get('xlab', r'$' + bifurcationParameter +'$')
+        self._LabelX = kwargs.get('xlab', r'$' + bifurcationParameter + '$')
         self._chooseXrange = kwargs.get('choose_xrange', None)
         self._chooseYrange = kwargs.get('choose_yrange', None)
         
@@ -4528,7 +4528,7 @@ class MuMoTbifurcationView(MuMoTview):
         #print(self._stateVarBif1) 
         #print(self._stateVarBif2)
         
-        self._BfcParams=BfcParams            
+        self._BfcParams = BfcParams            
 
         if self._controller is None:
             # storing the initial state
@@ -4684,12 +4684,12 @@ class MuMoTbifurcationView(MuMoTview):
                 self._showErrorMessage('Stationary states could not be calculated; used initial conditions specified on sliders in Advanced options tab instead. This means only one branch was attempted to be continuated and the starting point might not have been a stationary state. ')
                 print('Stationary states could not be calculated; used initial conditions specified on sliders in Advanced options tab instead: ', self._pyDSmodel_ics, '. This means only one branch was continuated and the starting point might not have been a stationary state.')   
             
-            specialPoints=[]  # list of special points: LP and BP
-            sPoints_X=[] #bifurcation parameter
-            sPoints_Y=[] #stateVarBif1
-            sPoints_Labels=[]
+            specialPoints = []  # list of special points: LP and BP
+            sPoints_X = [] #bifurcation parameter
+            sPoints_Y = [] #stateVarBif1
+            sPoints_Labels = []
             EIGENVALUES = []
-            sPoints_Z=[] #stateVarBif2
+            sPoints_Z = [] #stateVarBif2
             k_iter_BPlabel = 0
             k_iter_LPlabel = 0
             #print(initDictList)
@@ -4714,13 +4714,13 @@ class MuMoTbifurcationView(MuMoTview):
                 k_iter_BP = 1
                 k_iter_LP = 1
                 pyDScontArgs = dst.args(name='EQ'+str(EQ_iter), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
-                pyDScontArgs.freepars     = [self._bifurcationParameterPyDS]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
+                pyDScontArgs.freepars = [self._bifurcationParameterPyDS]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
                 pyDScontArgs.MaxNumPoints = self._MaxNumPoints    # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
-                pyDScontArgs.MaxStepSize  = 1e-1
-                pyDScontArgs.MinStepSize  = 1e-5
-                pyDScontArgs.StepSize     = 2e-3
+                pyDScontArgs.MaxStepSize = 1e-1
+                pyDScontArgs.MinStepSize = 1e-5
+                pyDScontArgs.StepSize = 2e-3
                 pyDScontArgs.LocBifPoints = ['LP', 'BP']       # 'Limit Points' and 'Branch Points may be detected'
-                pyDScontArgs.SaveEigen    = True            # to tell unstable from stable branches
+                pyDScontArgs.SaveEigen = True            # to tell unstable from stable branches
                 
                 pyDScont.newCurve(pyDScontArgs)   
                 
@@ -4765,7 +4765,7 @@ class MuMoTbifurcationView(MuMoTview):
                                 sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif2])
                                 k_iter_LPlabel += 1
                                 sPoints_Labels.append('LP'+str(k_iter_LPlabel))
-                            k_iter_LP+=1
+                            k_iter_LP += 1
                                                
                         k_iter_BPlabel_previous = k_iter_BPlabel
                         while pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP)):
@@ -4777,20 +4777,20 @@ class MuMoTbifurcationView(MuMoTview):
                                 sPoints_Z.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif2])
                                 k_iter_BPlabel += 1
                                 sPoints_Labels.append('BP'+str(k_iter_BPlabel))
-                            k_iter_BP+=1
+                            k_iter_BP += 1
                         for jj in range(1, k_iter_BP):
                             if 'BP'+str(jj+k_iter_BPlabel_previous) in sPoints_Labels:
                                 EQ_iter_BP = jj
                                 #print(EQ_iter_BP)
                                 k_iter_next = 1
                                 pyDScontArgs = dst.args(name='EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
-                                pyDScontArgs.freepars     = [self._bifurcationParameterPyDS]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
+                                pyDScontArgs.freepars = [self._bifurcationParameterPyDS]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
                                 pyDScontArgs.MaxNumPoints = self._MaxNumPoints    # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
-                                pyDScontArgs.MaxStepSize  = 1e-1
-                                pyDScontArgs.MinStepSize  = 1e-5
-                                pyDScontArgs.StepSize     = 5e-3
+                                pyDScontArgs.MaxStepSize = 1e-1
+                                pyDScontArgs.MinStepSize = 1e-5
+                                pyDScontArgs.StepSize = 5e-3
                                 pyDScontArgs.LocBifPoints = ['LP', 'BP']        # 'Limit Points' and 'Branch Points may be detected'
-                                pyDScontArgs.SaveEigen    = True             # to tell unstable from stable branches
+                                pyDScontArgs.SaveEigen = True             # to tell unstable from stable branches
                                 pyDScontArgs.initpoint = 'EQ'+str(EQ_iter)+':BP'+str(jj)
                                 pyDScont.newCurve(pyDScontArgs)
                                 
@@ -4862,7 +4862,7 @@ class MuMoTbifurcationView(MuMoTview):
                                 sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('LP'+str(k_iter_LP))[self._stateVarBif1])
                                 k_iter_LPlabel += 1
                                 sPoints_Labels.append('LP'+str(k_iter_LPlabel))
-                            k_iter_LP+=1
+                            k_iter_LP += 1
                         
                         
                         k_iter_BPlabel_previous = k_iter_BPlabel
@@ -4873,20 +4873,20 @@ class MuMoTbifurcationView(MuMoTview):
                                 sPoints_Y.append(pyDScont['EQ'+str(EQ_iter)].getSpecialPoint('BP'+str(k_iter_BP))[self._stateVarBif1])
                                 k_iter_BPlabel += 1
                                 sPoints_Labels.append('BP'+str(k_iter_BPlabel))
-                            k_iter_BP+=1
+                            k_iter_BP += 1
                         for jj in range(1, k_iter_BP):
                             if 'BP'+str(jj+k_iter_BPlabel_previous) in sPoints_Labels:
                                 EQ_iter_BP = jj
                                 print(EQ_iter_BP)
                                 k_iter_next = 1
                                 pyDScontArgs = dst.args(name='EQ'+str(EQ_iter)+'BP'+str(EQ_iter_BP), type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
-                                pyDScontArgs.freepars     = [self._bifurcationParameterPyDS]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
+                                pyDScontArgs.freepars = [self._bifurcationParameterPyDS]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
                                 pyDScontArgs.MaxNumPoints = self._MaxNumPoints    # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
-                                pyDScontArgs.MaxStepSize  = 1e-1
-                                pyDScontArgs.MinStepSize  = 1e-5
-                                pyDScontArgs.StepSize     = 5e-3
+                                pyDScontArgs.MaxStepSize = 1e-1
+                                pyDScontArgs.MinStepSize = 1e-5
+                                pyDScontArgs.StepSize = 5e-3
                                 pyDScontArgs.LocBifPoints = ['LP', 'BP']        # 'Limit Points' and 'Branch Points may be detected'
-                                pyDScontArgs.SaveEigen    = True             # to tell unstable from stable branches
+                                pyDScontArgs.SaveEigen = True             # to tell unstable from stable branches
                                 pyDScontArgs.initpoint = 'EQ'+str(EQ_iter)+':BP'+str(jj)
                                 pyDScont.newCurve(pyDScontArgs)
                                 
@@ -4934,17 +4934,17 @@ class MuMoTbifurcationView(MuMoTview):
                 del(pyDSode)
             if self._SVoperation:
                 if self._SVoperation == '-':    
-                    specialPoints=[sPoints_X, np.asarray(sPoints_Y)-np.asarray(sPoints_Z), sPoints_Labels]
+                    specialPoints = [sPoints_X, np.asarray(sPoints_Y)-np.asarray(sPoints_Z), sPoints_Labels]
                 elif self._SVoperation == '+':    
-                    specialPoints=[sPoints_X, np.asarray(sPoints_Y)+np.asarray(sPoints_Z), sPoints_Labels]
+                    specialPoints = [sPoints_X, np.asarray(sPoints_Y)+np.asarray(sPoints_Z), sPoints_Labels]
                 else:
                     self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')
             else:
-                specialPoints=[sPoints_X, np.asarray(sPoints_Y), sPoints_Labels]
+                specialPoints = [sPoints_X, np.asarray(sPoints_Y), sPoints_Labels]
                 
             #print('Special Points on curve: ', specialPoints)
             print('Special Points on curve:')
-            if len(specialPoints[0])==0:
+            if len(specialPoints[0]) == 0:
                 print('No special points could be detected.')
             else:
                 for kk in range(len(specialPoints[0])):
@@ -4959,7 +4959,7 @@ class MuMoTbifurcationView(MuMoTview):
                 xmaxbif = np.max([np.max(XDATA[kk]) for kk in range(len(XDATA))])
                 self._chooseXrange = [0, xmaxbif]
                 
-            if XDATA !=[] and YDATA != []:
+            if XDATA != [] and YDATA != []:
                 #plt.clf()
                 _fig_formatting_2D(xdata=XDATA, 
                                 ydata=YDATA,
@@ -5006,7 +5006,7 @@ class MuMoTbifurcationView(MuMoTview):
             logStr = "bookmark = "
         else:
             logStr = ""
-        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._bifurcationParameter_for_bookmark) + "', '" + str(self._stateVarExpr1) +"', "
+        logStr += "<modelName>." + self._generatingCommand + "('" + str(self._bifurcationParameter_for_bookmark) + "', '" + str(self._stateVarExpr1) + "', "
         #if self._stateVarBif2 is not None:
         #    logStr += "'" + str(self._stateVarBif2) + "', "
         if "initialState" not in self._generatingKwargs.keys():
@@ -5019,7 +5019,7 @@ class MuMoTbifurcationView(MuMoTview):
         if len(self._generatingKwargs) > 0:
             for key in self._generatingKwargs:
                 if type(self._generatingKwargs[key]) == str:
-                    logStr += key + " = " + "\'"+ str(self._generatingKwargs[key]) + "\'" + ", "
+                    logStr += key + " = " + "\'" + str(self._generatingKwargs[key]) + "\'" + ", "
                 else:
                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "    
         logStr += "bookmark = False"
@@ -5320,7 +5320,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 if self._aggregateResults and len(allResults) > 1: # plot in aggregate mode only if there's enough data
                     self._initFigure()
                     steps = 10
-                    timesteps=list(np.arange(0, self._maxTime, step=self._maxTime/steps))
+                    timesteps = list(np.arange(0, self._maxTime, step=self._maxTime/steps))
     #                 if timesteps[-1] - self._maxTime > self._maxTime/(steps*2):
     #                     timesteps.append(self._maxTime)
     #                 else:
@@ -5332,7 +5332,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                         if state == 'time': continue
                         if state in self._mumotModel._constantReactants: continue
                         boxesData = []
-                        avgs=[]
+                        avgs = []
                         for timestep in timesteps:
                             boxData = []
                             for results in allResults:
@@ -5470,11 +5470,11 @@ class MuMoTstochasticSimulationView(MuMoTview):
             if not fullPlot: plt.plot(trajectory_x, trajectory_y, '-', c='0.6')
             plt.plot(points_x, points_y, 'ro')
             if self._plotProportions:
-                xlab = r'$'+ '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[0])))+'}$'
-                ylab = r'$'+ '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[1])))+'}$'
+                xlab = r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[0])))+'}$'
+                ylab = r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[1])))+'}$'
             else:
-                xlab = r'$'+ _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[0])))+'$'
-                ylab = r'$'+ _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[1])))+'$'                
+                xlab = r'$' + _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[0])))+'$'
+                ylab = r'$' + _doubleUnderscorify(_greekPrependify(str(self._finalViewAxes[1])))+'$'                
             _fig_formatting_2D(figure=self._figure, aspectRatioEqual=True, xlab=xlab, ylab=ylab)
         elif (self._visualisationType == "barplot"):
             self._initFigure()
@@ -5520,7 +5520,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             ax = plt.gca()
             ax.set_xticks(xpos)  # for matplotlib < 2 ---> ax.set_xticks(xpos - (width/2) )
             y_max = max(y_max, max(finaldata))
-            padding_y = y_max/100.0 if self._runs <=1 else y_max/20.0 
+            padding_y = y_max/100.0 if self._runs <= 1 else y_max/20.0 
             # set lables
             if self._plotProportions:
                 stateNamesLabel = [r'$' + _doubleUnderscorify(_greekPrependify(str(Symbol('Phi_{'+str(state)+'}')))) + '$' for state in sorted(self._initialState.keys(), key=str) if state not in self._mumotModel._constantReactants]
@@ -5647,7 +5647,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                 if self._netParam < 0 or self._netParam > 1:
                     wrnMsg = "WARNING! net-param value " + str(self._netParam) + " is invalid for Moving-Particles. Valid range is [0,1] indicating the particles' communication range. \n"
                     self._netParam = 0.1
-                    wrnMsg += "New default values is '_netParam'="  + str(self._netParam)
+                    wrnMsg += "New default values is '_netParam'=" + str(self._netParam)
                     print(wrnMsg)
     
     def _build_bookmark(self, includeParams=True):
@@ -5664,7 +5664,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         logStr += ", maxTime = " + str(self._maxTime)
         logStr += ", timestepSize = " + str(self._timestepSize)
         logStr += ", randomSeed = " + str(self._randomSeed)
-        logStr += ", netType = '" + _encodeNetworkTypeToString(self._netType) +"'"
+        logStr += ", netType = '" + _encodeNetworkTypeToString(self._netType) + "'"
         if not self._netType == NetworkType.FULLY_CONNECTED:
             logStr += ", netParam = " + str(self._netParam)
         if self._netType == NetworkType.DYNAMIC:
@@ -5843,7 +5843,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                 for state in self._initialState.keys():
                     plt.plot(xs.get(state, []), ys.get(state, []), 'o', c=self._colors[state])
             else:
-                stateColors=[]
+                stateColors = []
                 for n in self._graph.nodes():
                     stateColors.append(self._colors.get(self._agents[n], 'w')) 
                 nx.draw_networkx(self._graph, self._positionHistory, node_color=stateColors, with_labels=True)
@@ -5869,7 +5869,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             if sumRates > maxRatesAll:
                 maxRatesAll = sumRates
         
-        if maxRatesAll>0: maxTimestepSize = 1/maxRatesAll 
+        if maxRatesAll > 0: maxTimestepSize = 1/maxRatesAll 
         else: maxTimestepSize = 1        
         # if the timestep size is too small (and generated a too large number of timesteps, it returns an error!)
         if math.ceil(self._maxTime / maxTimestepSize) > 10000000:
@@ -5903,7 +5903,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             self._controller._widgetsExtraParams['timestepSize'].max = maxTimestepSize
             self._controller._widgetsExtraParams['timestepSize'].min = min(maxTimestepSize/100, timestepSize)
             self._controller._widgetsExtraParams['timestepSize'].step = self._controller._widgetsExtraParams['timestepSize'].min
-            self._controller._widgetsExtraParams['timestepSize'].readout_format ='.' + str(_count_sig_decimals(str(self._controller._widgetsExtraParams['timestepSize'].step))) + 'f'
+            self._controller._widgetsExtraParams['timestepSize'].readout_format = '.' + str(_count_sig_decimals(str(self._controller._widgetsExtraParams['timestepSize'].step))) + 'f'
         if self._controller._widgetsExtraParams.get('maxTime'):
             self._controller._widgetsExtraParams['maxTime'].description = "Simulation time (equivalent to " + str(maxTimeSteps) + " simulation timesteps)"
             self._controller._widgetsExtraParams['maxTime'].layout = widgets.Layout(width='70%')
@@ -5912,7 +5912,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             self._controller._widgetsExtraParams['timestepSize'].layout = widgets.Layout(width='70%')
                     
     def _initGraph(self):
-        numNodes=sum(self._currentState.values())
+        numNodes = sum(self._currentState.values())
         if (self._netType == NetworkType.FULLY_CONNECTED):
             #print("Generating full graph")
             self._graph = nx.complete_graph(numNodes) #np.repeat(0, self.numNodes)
@@ -6013,7 +6013,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             oneStepOutput = self._stepOneAgent(a, neighAgents, neighActive)
             self._agents[idx] = oneStepOutput[0][0]
             # check for new particles generated in the step
-            if len(oneStepOutput[0]) >  1: # new particles must be created
+            if len(oneStepOutput[0]) > 1: # new particles must be created
                 for particle in oneStepOutput[0][1:]:
                     children.append((particle, tmp_positions[idx]))
             for idx_c, neighChange in enumerate(oneStepOutput[1]):
@@ -6222,7 +6222,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             if self._controller._widgetsPlotOnly.get('showInteractions') is not None:
                 self._controller._widgetsPlotOnly['showInteractions'].layout.display = 'none'
             
-        self._controller._widgetsExtraParams['netParam'].readout_format ='.' + str(_count_sig_decimals(str(self._controller._widgetsExtraParams['netParam'].step))) + 'f'
+        self._controller._widgetsExtraParams['netParam'].readout_format = '.' + str(_count_sig_decimals(str(self._controller._widgetsExtraParams['netParam'].step))) + 'f'
         if toLinkPlotFunction:
             self._controller._widgetsExtraParams['netParam'].observe(self._controller._replotFunction, 'value')
 
@@ -6311,9 +6311,9 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
                 if str(reactant) == self._finalViewAxes[0]: ssaParams['final_x'] = latex(reactant)
                 if str(reactant) == self._finalViewAxes[1]: ssaParams['final_y'] = latex(reactant)
         ssaParams["plotProportions"] = self._plotProportions
-        ssaParams['realtimePlot']  = self._realtimePlot
-        ssaParams['runs']  = self._runs
-        ssaParams['aggregateResults']  = self._aggregateResults
+        ssaParams['realtimePlot'] = self._realtimePlot
+        ssaParams['runs'] = self._runs
+        ssaParams['aggregateResults'] = self._aggregateResults
         #str( list(self._ratesDict.items()) )
         print("mumot.MuMoTSSAView(<modelName>, None, " + str(self._get_bookmarks_params().replace('\\', '\\\\')) + ", SSParams = " + str(ssaParams) + " )")
             
@@ -6333,7 +6333,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
                     prob *= self._currentState[reactant] * reactantOccurencies
                 numReagents += reactantOccurencies
             if prob > 0 and numReagents > 1:
-                prob /= sum(self._currentState.values())**(numReagents -1) 
+                prob /= sum(self._currentState.values())**(numReagents - 1) 
             probabilitiesOfChange[reaction_id] = prob
 #         for rule in self._reactantsMatrix:
 #             prob = sum([a*b for a,b in zip(rule,currentState)])
@@ -6462,7 +6462,7 @@ def parseModel(modelDescription):
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
-                            raise MuMoTSyntaxError("Non-singleton symbol set in token " + token +" in rule " + rule)
+                            raise MuMoTSyntaxError("Non-singleton symbol set in token " + token + " in rule " + rule)
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
                         if constantReactant:
@@ -6500,7 +6500,7 @@ def parseModel(modelDescription):
                         expr = process_sympy(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
-                            raise MuMoTSyntaxError("Non-singleton symbol set in token " + token +" in rule " + rule)
+                            raise MuMoTSyntaxError("Non-singleton symbol set in token " + token + " in rule " + rule)
                         for reactant in reactantAtoms:
                             pass # this loop extracts element from singleton set
                         if constantReactant:
@@ -6665,11 +6665,11 @@ def _deriveMasterEquation(stoichiometry):
             if stoich[key1][key2] == 'const':
                 rate_fact *= key2/V
         
-        if len(nvec)==1:
+        if len(nvec) == 1:
             sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], t), stoich[key1]['rate']*rate_fact)
-        elif len(nvec)==2:
+        elif len(nvec) == 2:
             sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], t), stoich[key1]['rate']*rate_fact)
-        elif len(nvec)==3:
+        elif len(nvec) == 3:
             sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], t), stoich[key1]['rate']*rate_fact)
         else:
             sol_dict_rhs[key1] = (prod1, simplify(prod2*V), P(nvec[0], nvec[1], nvec[2], nvec[3], t), stoich[key1]['rate']*rate_fact)
@@ -6715,7 +6715,7 @@ def _doVanKampenExpansion(rhs, stoich):
     rhs_vKE = 0
     
     
-    if len(nvec)==1:
+    if len(nvec) == 1:
         lhs_vKE = (Derivative(P(nvec[0], t), t).subs({nvec[0]: NoiseDict[nvec[0]]})
                   - sympy.sqrt(V)*Derivative(PhiDict[nvec[0]], t)*Derivative(P(nvec[0], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]]}))
         for key in rhs_dict:
@@ -6732,7 +6732,7 @@ def _doVanKampenExpansion(rhs, stoich):
             #    term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sympy.sqrt(V)*Derivative(term, op.args[0].args[0]) 
             #                           + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             rhs_vKE += rhs_dict[key][3].subs(PhiConstDict)*(term.doit() - func)
-    elif len(nvec)==2:
+    elif len(nvec) == 2:
         lhs_vKE = (Derivative(P(nvec[0], nvec[1], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
                   - sympy.sqrt(V)*Derivative(PhiDict[nvec[0]], t)*Derivative(P(nvec[0], nvec[1], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
                   - sympy.sqrt(V)*Derivative(PhiDict[nvec[1]], t)*Derivative(P(nvec[0], nvec[1], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]}))
@@ -6742,7 +6742,7 @@ def _doVanKampenExpansion(rhs, stoich):
             func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sympy.sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sympy.sqrt(V)*NoiseDict[nvec[1]]})
             func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
             func = func1*func2
-            if len(op.args[0].args) ==0:
+            if len(op.args[0].args) == 0:
                 term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0])})
                 
             else:
@@ -6752,7 +6752,7 @@ def _doVanKampenExpansion(rhs, stoich):
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
             #term_num, term_denom = term.as_numer_denom()
             rhs_vKE += rhs_dict[key][3].subs(PhiConstDict)*(term.doit() - func)
-    elif len(nvec)==3:
+    elif len(nvec) == 3:
         lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
                   - sympy.sqrt(V)*Derivative(PhiDict[nvec[0]], t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
                   - sympy.sqrt(V)*Derivative(PhiDict[nvec[1]], t)*Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
@@ -6764,15 +6764,15 @@ def _doVanKampenExpansion(rhs, stoich):
             func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sympy.sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sympy.sqrt(V)*NoiseDict[nvec[1]], nvec[2]: V*PhiDict[nvec[2]]+sympy.sqrt(V)*NoiseDict[nvec[2]]})
             func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
             func = func1*func2
-            if len(op.args[0].args) ==0:
+            if len(op.args[0].args) == 0:
                 term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0])})
                 
-            elif len(op.args) ==2:
+            elif len(op.args) == 2:
                 term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sympy.sqrt(V)*Derivative(func, op.args[1].args[0]) 
                                        + op.args[1].args[1]**2/(2*V)*Derivative(func, op.args[1].args[0], op.args[1].args[0])})
                 term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sympy.sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
-            elif len(op.args) ==3:
+            elif len(op.args) == 3:
                 term = (op.args[2]*func).subs({op.args[2]*func: func + op.args[2].args[1]/sympy.sqrt(V)*Derivative(func, op.args[2].args[0]) 
                                        + op.args[2].args[1]**2/(2*V)*Derivative(func, op.args[2].args[0], op.args[2].args[0])})
                 term = (op.args[1]*term).subs({op.args[1]*term: term + op.args[1].args[1]/sympy.sqrt(V)*Derivative(term, op.args[1].args[0]) 
@@ -6795,22 +6795,22 @@ def _doVanKampenExpansion(rhs, stoich):
             func1 = rhs_dict[key][1].subs({nvec[0]: V*PhiDict[nvec[0]]+sympy.sqrt(V)*NoiseDict[nvec[0]], nvec[1]: V*PhiDict[nvec[1]]+sympy.sqrt(V)*NoiseDict[nvec[1]], nvec[2]: V*PhiDict[nvec[2]]+sympy.sqrt(V)*NoiseDict[nvec[2]], nvec[3]: V*PhiDict[nvec[3]]+sympy.sqrt(V)*NoiseDict[nvec[3]]})
             func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
             func = func1*func2
-            if len(op.args[0].args) ==0:
+            if len(op.args[0].args) == 0:
                 term = (op*func).subs({op*func: func + op.args[1]/sympy.sqrt(V)*Derivative(func, op.args[0]) + op.args[1]**2/(2*V)*Derivative(func, op.args[0], op.args[0])})
                 
-            elif len(op.args) ==2:
+            elif len(op.args) == 2:
                 term = (op.args[1]*func).subs({op.args[1]*func: func + op.args[1].args[1]/sympy.sqrt(V)*Derivative(func, op.args[1].args[0]) 
                                        + op.args[1].args[1]**2/(2*V)*Derivative(func, op.args[1].args[0], op.args[1].args[0])})
                 term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sympy.sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
-            elif len(op.args) ==3:
+            elif len(op.args) == 3:
                 term = (op.args[2]*func).subs({op.args[2]*func: func + op.args[2].args[1]/sympy.sqrt(V)*Derivative(func, op.args[2].args[0]) 
                                        + op.args[2].args[1]**2/(2*V)*Derivative(func, op.args[2].args[0], op.args[2].args[0])})
                 term = (op.args[1]*term).subs({op.args[1]*term: term + op.args[1].args[1]/sympy.sqrt(V)*Derivative(term, op.args[1].args[0]) 
                                        + op.args[1].args[1]**2/(2*V)*Derivative(term, op.args[1].args[0], op.args[1].args[0])})
                 term = (op.args[0]*term).subs({op.args[0]*term: term + op.args[0].args[1]/sympy.sqrt(V)*Derivative(term, op.args[0].args[0]) 
                                        + op.args[0].args[1]**2/(2*V)*Derivative(term, op.args[0].args[0], op.args[0].args[0])})
-            elif len(op.args) ==4:
+            elif len(op.args) == 4:
                 term = (op.args[3]*func).subs({op.args[3]*func: func + op.args[3].args[1]/sympy.sqrt(V)*Derivative(func, op.args[3].args[0]) 
                                        + op.args[3].args[1]**2/(2*V)*Derivative(func, op.args[3].args[0], op.args[3].args[0])})
                 term = (op.args[2]*term).subs({op.args[2]*term: term + op.args[2].args[1]/sympy.sqrt(V)*Derivative(term, op.args[2].args[0]) 
@@ -6831,16 +6831,16 @@ def _get_orderedLists_vKE(stoich):
     V = Symbol('\overline{V}', real=True, constant=True)
     stoichiometry = stoich
     rhs_vke, lhs_vke, substring = _doVanKampenExpansion(_deriveMasterEquation, stoichiometry)
-    Vlist_lhs=[]
-    Vlist_rhs=[]
+    Vlist_lhs = []
+    Vlist_rhs = []
     for jj in range(len(rhs_vke.args)):
         try:
             Vlist_rhs.append(simplify(rhs_vke.args[jj]).collect(V, evaluate=False))
         except NotImplementedError:
-            prod=1
+            prod = 1
             for nn in range(len(rhs_vke.args[jj].args)-1):
-                prod*=rhs_vke.args[jj].args[nn]
-            tempdict=prod.collect(V, evaluate=False)
+                prod *= rhs_vke.args[jj].args[nn]
+            tempdict = prod.collect(V, evaluate=False)
             for key in tempdict:
                 Vlist_rhs.append({key: prod/key*rhs_vke.args[jj].args[-1]})
     
@@ -6848,10 +6848,10 @@ def _get_orderedLists_vKE(stoich):
         try:
             Vlist_lhs.append(simplify(lhs_vke.args[jj]).collect(V, evaluate=False))
         except NotImplementedError:
-            prod=1
+            prod = 1
             for nn in range(len(lhs_vke.args[jj].args)-1):
-                prod*=lhs_vke.args[jj].args[nn]
-            tempdict=prod.collect(V, evaluate=False)
+                prod *= lhs_vke.args[jj].args[nn]
+            tempdict = prod.collect(V, evaluate=False)
             for key in tempdict:
                 Vlist_lhs.append({key: prod/key*lhs_vke.args[jj].args[-1]})
     return Vlist_lhs, Vlist_rhs, substring
@@ -6862,15 +6862,15 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
     P, t = symbols('P t')
     V = Symbol('\overline{V}', real=True, constant=True)
     Vlist_lhs, Vlist_rhs, substring = _get_orderedLists_vKE(stoich)
-    rhsFPE=0
-    lhsFPE=0
+    rhsFPE = 0
+    lhsFPE = 0
     for kk in range(len(Vlist_rhs)):
         for key in Vlist_rhs[kk]:
-            if key==1:
+            if key == 1:
                 rhsFPE += Vlist_rhs[kk][key]  
     for kk in range(len(Vlist_lhs)):
         for key in Vlist_lhs[kk]:
-            if key==1:
+            if key == 1:
                 lhsFPE += Vlist_lhs[kk][key]            
         
     FPE = lhsFPE-rhsFPE
@@ -6937,11 +6937,11 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
     NoiseSub1stOrder = {}
     NoiseSub2ndOrder = {}
     
-    if len(NoiseDict)==1:
+    if len(NoiseDict) == 1:
         Pdim = P(NoiseDict[nvec[0]], t)
-    elif len(NoiseDict)==2:
+    elif len(NoiseDict) == 2:
         Pdim = P(NoiseDict[nvec[0]], NoiseDict[nvec[1]], t)
-    elif len(NoiseDict)==3:
+    elif len(NoiseDict) == 3:
         Pdim = P(NoiseDict[nvec[0]], NoiseDict[nvec[1]], NoiseDict[nvec[2]], t)
     else:
         Pdim = P(NoiseDict[nvec[0]], NoiseDict[nvec[1]], NoiseDict[nvec[2]], NoiseDict[nvec[3]], t)
@@ -7017,12 +7017,12 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
         for noise in NoiseDict:
             eq1stOrderMoment = (NoiseDict[noise]*FPEdict[fpe_lhs]).expand() 
             eq1stOrderMoment = eq1stOrderMoment.subs(NoiseSub1stOrder)
-            if len(NoiseDict)==1:
+            if len(NoiseDict) == 1:
                 eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[0]]))
-            elif len(NoiseDict)==2:
+            elif len(NoiseDict) == 2:
                 eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[0]]))
                 eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[1]]))
-            elif len(NoiseDict)==3:
+            elif len(NoiseDict) == 3:
                 eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[0]]))
                 eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[1]]))
                 eq1stOrderMoment = collect(eq1stOrderMoment, M_1(NoiseDict[nvec[2]]))
@@ -7034,7 +7034,7 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
             EQsys1stOrdMom.append(eq1stOrderMoment)
             if M_1(NoiseDict[noise]) not in EOM_1stOrderMom:
                 EOM_1stOrderMom[M_1(NoiseDict[noise])] = eq1stOrderMoment
-                NoiseSubs1stOrder[M_1(NoiseDict[noise])] = r'\left< \vphantom{Dg}\right.' +latex(NoiseDict[noise]) + r'\left. \vphantom{Dg}\right>'
+                NoiseSubs1stOrder[M_1(NoiseDict[noise])] = r'\left< \vphantom{Dg}\right.' + latex(NoiseDict[noise]) + r'\left. \vphantom{Dg}\right>'
     
     NoiseSubs2ndOrder = {}
     EQsys2ndOrdMom = []
@@ -7046,13 +7046,13 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
                 eq2ndOrderMoment = eq2ndOrderMoment.subs(NoiseSub2ndOrder)
                 eq2ndOrderMoment = eq2ndOrderMoment.subs(NoiseSub1stOrder)
                 #eq2ndOrderMoment = eq2ndOrderMoment.subs(SOL_1stOrderMom[0])
-                if len(NoiseDict)==1:
+                if len(NoiseDict) == 1:
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
-                elif len(NoiseDict)==2:
+                elif len(NoiseDict) == 2:
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]))
-                elif len(NoiseDict)==3:
+                elif len(NoiseDict) == 3:
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]]))
@@ -7076,7 +7076,7 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
                     EQsys2ndOrdMom.append(eq2ndOrderMoment)
                 if M_2(NoiseDict[noise1]*NoiseDict[noise2]) not in EOM_2ndOrderMom:
                     EOM_2ndOrderMom[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = eq2ndOrderMoment
-                    NoiseSubs2ndOrder[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = r'\left< \vphantom{Dg}\right.' +latex(NoiseDict[noise1]*NoiseDict[noise2]) + r'\left. \vphantom{Dg}\right>' 
+                    NoiseSubs2ndOrder[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = r'\left< \vphantom{Dg}\right.' + latex(NoiseDict[noise1]*NoiseDict[noise2]) + r'\left. \vphantom{Dg}\right>' 
       
     return EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder 
 
@@ -7104,11 +7104,11 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
     NoiseDict = {}
     for kk in range(len(nvec)):
         NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
-    if len(NoiseDict)==1:
+    if len(NoiseDict) == 1:
         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]])], dict=True)        
-    elif len(NoiseDict)==2:
+    elif len(NoiseDict) == 2:
         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]), M_1(NoiseDict[nvec[1]])], dict=True)
-    elif len(NoiseDict)==3:
+    elif len(NoiseDict) == 3:
         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]), M_1(NoiseDict[nvec[1]]), M_1(NoiseDict[nvec[2]])], dict=True)
     else:
         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]), M_1(NoiseDict[nvec[1]]), M_1(NoiseDict[nvec[2]]), M_1(NoiseDict[nvec[3]])], dict=True)
@@ -7119,11 +7119,11 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
                     
     SOL_2ndOrdMomDict = {} 
     
-    if len(NoiseDict)==1:
+    if len(NoiseDict) == 1:
         SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])]))[0] #only one set of solutions (if any) in linear system of equations        
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
     
-    elif len(NoiseDict)==2:
+    elif len(NoiseDict) == 2:
         SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), 
                                                          M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), 
                                                          M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])]))[0] #only one set of solutions (if any) in linear system of equations
@@ -7141,7 +7141,7 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[1]
         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[2]
     
-    elif len(NoiseDict)==3:
+    elif len(NoiseDict) == 3:
         SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), 
                                                          M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), 
                                                          M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]]), 
@@ -7397,15 +7397,15 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     P, t = symbols('P t')
     V = Symbol('\overline{V}', real=True, constant=True)
     Vlist_lhs, Vlist_rhs, substring = _get_orderedLists_vKE(stoich)
-    rhsODE=0
-    lhsODE=0
+    rhsODE = 0
+    lhsODE = 0
     for kk in range(len(Vlist_rhs)):
         for key in Vlist_rhs[kk]:
-            if key==sympy.sqrt(V):
+            if key == sympy.sqrt(V):
                 rhsODE += Vlist_rhs[kk][key]            
     for kk in range(len(Vlist_lhs)):
         for key in Vlist_lhs[kk]:
-            if key==sympy.sqrt(V):
+            if key == sympy.sqrt(V):
                 lhsODE += Vlist_lhs[kk][key]  
         
     ODE = lhsODE-rhsODE
@@ -7450,7 +7450,7 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     if len(Vlist_lhs)-1 == 1:
         ode1 = 0
         for kk in range(len(ODE.args)):
-            prod=1
+            prod = 1
             for nn in range(len(ODE.args[kk].args)-1):
                 prod *= ODE.args[kk].args[nn]
             if ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]], t), NoiseDict[nvec[0]]):
@@ -7472,7 +7472,7 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
         ode1 = 0
         ode2 = 0
         for kk in range(len(ODE.args)):
-            prod=1
+            prod = 1
             for nn in range(len(ODE.args[kk].args)-1):
                 prod *= ODE.args[kk].args[nn]
             if ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]], NoiseDict[nvec[1]], t), NoiseDict[nvec[0]]):
@@ -7507,7 +7507,7 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
         ode2 = 0
         ode3 = 0
         for kk in range(len(ODE.args)):
-            prod=1
+            prod = 1
             for nn in range(len(ODE.args[kk].args)-1):
                 prod *= ODE.args[kk].args[nn]
             if ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]], NoiseDict[nvec[1]], NoiseDict[nvec[2]], t), NoiseDict[nvec[0]]):
@@ -7553,7 +7553,7 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
         ode3 = 0
         ode4 = 0
         for kk in range(len(ODE.args)):
-            prod=1
+            prod = 1
             for nn in range(len(ODE.args[kk].args)-1):
                 prod *= ODE.args[kk].args[nn]
             if ODE.args[kk].args[-1] == Derivative(P(NoiseDict[nvec[0]], NoiseDict[nvec[1]], NoiseDict[nvec[2]], NoiseDict[nvec[3]], t), NoiseDict[nvec[0]]):
@@ -7640,7 +7640,7 @@ def _raiseModelError(expected, read, rule):
 def _buildFig(object, figure=None):
     global figureCounter
     object._figureNum = figureCounter
-    if figureCounter==1:
+    if figureCounter == 1:
         plt.ion()
     else:
         plt.ioff()
@@ -7650,7 +7650,7 @@ def _buildFig(object, figure=None):
         warnings.filterwarnings("ignore", category=UserWarning)
         plt.hold(True)  
     if figure is None:
-        if figureCounter>2:
+        if figureCounter > 2:
             plt.ion()
         object._figure = plt.figure(object._figureNum) 
     else:
@@ -7699,7 +7699,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     if xlab is None:
         try:
             xlabelstr = ax.xaxis.get_label_text()
-            if len(ax.xaxis.get_label_text())==0:
+            if len(ax.xaxis.get_label_text()) == 0:
                 xlabelstr = 'choose x-label'
         except:
             xlabelstr = 'choose x-label'
@@ -7709,7 +7709,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     if ylab is None:
         try:
             ylabelstr = ax.yaxis.get_label_text()
-            if len(ax.yaxis.get_label_text())==0:
+            if len(ax.yaxis.get_label_text()) == 0:
                 ylabelstr = 'choose y-label'
         except:
             ylabelstr = 'choose y-label'
@@ -7719,7 +7719,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     if zlab is None:
         try:
             zlabelstr = ax.yaxis.get_label_text()
-            if len(ax.zaxis.get_label_text())==0:
+            if len(ax.zaxis.get_label_text()) == 0:
                 zlabelstr = 'choose z-label'
         except:
             zlabelstr = 'choose z-label'
@@ -7732,7 +7732,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     y_lim_top = ax.get_ybound()[1]
     z_lim_bot = ax.get_zbound()[0]#ax.zaxis.get_data_interval()[0]
     z_lim_top = ax.get_zbound()[1]
-    if ax_reformat==False:
+    if ax_reformat == False:
         xmajortickslocs = ax.xaxis.get_majorticklocs()
         #xminortickslocs = ax.xaxis.get_minorticklocs()
         ymajortickslocs = ax.yaxis.get_majorticklocs()
@@ -7783,7 +7783,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     else:
         ax.set_zlim3d(z_lim_bot, z_lim_top)
                     
-    if showFixedPoints==True:
+    if showFixedPoints == True:
         if not specialPoints[0] == []:
             for jj in range(len(specialPoints[0])):
                 try:
@@ -7799,7 +7799,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
                         FPmarker = '>'     
                 except:
                     print('Check input!')
-                    FPcolor='k'  
+                    FPcolor = 'k'  
                      
                 ax.scatter([specialPoints[0][jj]], [specialPoints[1][jj]], [specialPoints[2][jj]], 
                            marker=FPmarker, s=100, c=FPcolor)
@@ -7820,7 +7820,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     ax.zaxis.labelpad = 20
     ax.set_xlabel(r''+str(xlabelstr), fontsize=chooseFontSize)
     ax.set_ylabel(r''+str(ylabelstr), fontsize=chooseFontSize)
-    if len(str(zlabelstr))>1:
+    if len(str(zlabelstr)) > 1:
         ax.set_zlabel(r''+str(zlabelstr), fontsize=chooseFontSize, rotation=90)
     else:
         ax.set_zlabel(r''+str(zlabelstr), fontsize=chooseFontSize)
@@ -7853,8 +7853,8 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
             #plt.figure(figsize=(8,6), dpi=80)
             #ax = plt.axes()
             ax = plt.gca()
-            data_x=xdata
-            data_y=ydata
+            data_x = xdata
+            data_y = ydata
             
         else:
             print('CHECK input:')
@@ -7874,7 +7874,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     if xlab is None:
         try:
             xlabelstr = ax.xaxis.get_label_text()
-            if len(ax.xaxis.get_label_text())==0:
+            if len(ax.xaxis.get_label_text()) == 0:
                 xlabelstr = 'choose x-label'
         except:
             xlabelstr = 'choose x-label'
@@ -7884,14 +7884,14 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     if ylab is None:
         try:
             ylabelstr = ax.yaxis.get_label_text()
-            if len(ax.yaxis.get_label_text())==0:
+            if len(ax.yaxis.get_label_text()) == 0:
                 ylabelstr = 'choose y-label'
         except:
             ylabelstr = 'choose y-label'
     else:
         ylabelstr = ylab
     
-    if ax_reformat==False and figure is not None:
+    if ax_reformat == False and figure is not None:
         xmajortickslocs = ax.xaxis.get_majorticklocs()
         xminortickslocs = ax.xaxis.get_minorticklocs()
         ymajortickslocs = ax.yaxis.get_majorticklocs()
@@ -7902,10 +7902,10 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         y_lim_top = ax.get_ybound()[1]#ax.yaxis.get_data_interval()[1]
         #print(ax.yaxis.get_data_interval())
         
-    if curve_replot==True:
+    if curve_replot == True:
         plt.cla()
     
-    if ax_reformat==False and figure is not None:
+    if ax_reformat == False and figure is not None:
         ax.set_xticks(xmajortickslocs)
         ax.set_xticks(xminortickslocs, minor=True)
         ax.set_yticks(ymajortickslocs)
@@ -7915,7 +7915,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         plt.xlim(x_lim_left, x_lim_right)
         plt.ylim(y_lim_bot, y_lim_top)
         
-    if figure is None or curve_replot==True:
+    if figure is None or curve_replot == True:
 
         if 'LineThickness' in kwargs:
             LineThickness = kwargs['LineThickness']
@@ -7946,20 +7946,20 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
             Nr_saddle = 0 
             
             for nn in range(len(data_x)):
-                solX_dict={} #bifurcation parameter
-                solY_dict={} #state variable 1
-                solX_dict['solX_unst']=[] 
-                solY_dict['solY_unst']=[]
-                solX_dict['solX_stab']=[]
-                solY_dict['solY_stab']=[]
-                solX_dict['solX_saddle']=[]
-                solY_dict['solY_saddle']=[]
+                solX_dict = {} #bifurcation parameter
+                solY_dict = {} #state variable 1
+                solX_dict['solX_unst'] = [] 
+                solY_dict['solY_unst'] = []
+                solX_dict['solX_stab'] = []
+                solY_dict['solY_stab'] = []
+                solX_dict['solX_saddle'] = []
+                solY_dict['solY_saddle'] = []
                 
-                nr_sol_unst=0
-                nr_sol_saddle=0
-                nr_sol_stab=0
-                data_x_tmp=[]
-                data_y_tmp=[]
+                nr_sol_unst = 0
+                nr_sol_saddle = 0
+                nr_sol_stab = 0
+                data_x_tmp = []
+                data_y_tmp = []
                 #sign_change=0
                 for kk in range(len(eigenvalues[nn])):
                     if kk > 0:
@@ -7984,13 +7984,13 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                                 else:
                                     print('Something went wrong!')
                                 
-                                data_x_tmp_first=data_x_tmp[-1]
-                                data_y_tmp_first=data_y_tmp[-1]
-                                nr_sol_stab=0
-                                nr_sol_saddle=0
-                                nr_sol_unst=0
-                                data_x_tmp=[]
-                                data_y_tmp=[]
+                                data_x_tmp_first = data_x_tmp[-1]
+                                data_y_tmp_first = data_y_tmp[-1]
+                                nr_sol_stab = 0
+                                nr_sol_saddle = 0
+                                nr_sol_unst = 0
+                                data_x_tmp = []
+                                data_y_tmp = []
                                 data_x_tmp.append(data_x_tmp_first)
                                 data_y_tmp.append(data_y_tmp_first)
                                 #if specialPoints is not None and specialPoints[0]!=[]:
@@ -8018,13 +8018,13 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                                 else:
                                     print('Something went wrong!')
                                 
-                                data_x_tmp_first=data_x_tmp[-1]
-                                data_y_tmp_first=data_y_tmp[-1]
-                                nr_sol_stab=0
-                                nr_sol_saddle=0
-                                nr_sol_unst=0
-                                data_x_tmp=[]
-                                data_y_tmp=[]
+                                data_x_tmp_first = data_x_tmp[-1]
+                                data_y_tmp_first = data_y_tmp[-1]
+                                nr_sol_stab = 0
+                                nr_sol_saddle = 0
+                                nr_sol_unst = 0
+                                data_x_tmp = []
+                                data_y_tmp = []
                                 data_x_tmp.append(data_x_tmp_first)
                                 data_y_tmp.append(data_y_tmp_first)
                                 #if specialPoints is not None and specialPoints[0]!=[]:
@@ -8033,19 +8033,19 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                     
                     if len(eigenvalues[0][0]) == 1:
                         if np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1:  
-                            nr_sol_stab=1
+                            nr_sol_stab = 1
                         else:
-                            nr_sol_unst=1    
+                            nr_sol_unst = 1    
                     
                     elif len(eigenvalues[0][0]) == 2:
                         if np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:  
-                            nr_sol_stab=1
+                            nr_sol_stab = 1
                         elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) in [0, 1] and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:
-                            nr_sol_saddle=1
+                            nr_sol_saddle = 1
                         elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) in [0, 1]:
-                            nr_sol_saddle=1
+                            nr_sol_saddle = 1
                         else:
-                            nr_sol_unst=1                
+                            nr_sol_unst = 1                
     #                     if np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) < 0:  
     #                         nr_sol_stab=1
     #                     elif np.real(eigenvalues[nn][kk][0]) >= 0 and np.real(eigenvalues[nn][kk][1]) < 0:
@@ -8073,7 +8073,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                         
                 if not solX_dict['solX_unst'] == []:           
                     for jj in range(len(solX_dict['solX_unst'])):
-                        if jj == 0 and Nr_unstable ==0:
+                        if jj == 0 and Nr_unstable == 0:
                             label_description = r'unstable'
                             Nr_unstable = 1 
                         else:
@@ -8084,7 +8084,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                                  ls=linestyle_list[1], lw=LineThickness, label=label_description)
                 if not solX_dict['solX_stab'] == []:           
                     for jj in range(len(solX_dict['solX_stab'])):
-                        if jj == 0 and Nr_stable ==0:
+                        if jj == 0 and Nr_stable == 0:
                             label_description = r'stable'
                             Nr_stable = 1
                         else:
@@ -8155,7 +8155,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     #ax.set_xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
     #ax.set_ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
      
-    if figure is None or ax_reformat==True or choose_xrange is not None or choose_yrange is not None:
+    if figure is None or ax_reformat == True or choose_xrange is not None or choose_yrange is not None:
         if choose_xrange:
             max_xrange = choose_xrange[1]-choose_xrange[0]
         else:
@@ -8220,7 +8220,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                         y_offset = (plt.ylim()[1]-plt.ylim()[0])*0.05
                     plt.text(a+x_offset, b+y_offset, c, fontsize=18)
     
-    if showFixedPoints==True:
+    if showFixedPoints == True:
         if not specialPoints[0] == []:
             for jj in range(len(specialPoints[0])):
                 try:
@@ -8239,7 +8239,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                         
                 except:
                     print('Check input!')
-                    FPcolor=line_color_list[-1]  
+                    FPcolor = line_color_list[-1]  
                     FPfill = 'none'
                      
                 plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=9, 
@@ -8429,7 +8429,7 @@ def _count_sig_decimals(digits, maximum=7):
 ## \param[out] values contains a list of five items (start-value, min-value, max-value, step-size, fixed). if onlyValue, it's only two items (start-value, fixed). The item 'fixed' is a boolean. If True the value is fixed (partial controller active), if False the widget will be created. 
 def _parse_input_keyword_for_numeric_widgets(inputValue, defaultValueRangeStep, initValueRangeStep, validRange=None, onlyValue=False):
     outputValues = defaultValueRangeStep if not onlyValue else [defaultValueRangeStep]
-    if onlyValue==False:
+    if onlyValue == False:
         if initValueRangeStep is not None and getattr(initValueRangeStep, "__getitem__", None) is None:
             errorMsg = "initValueRangeStep value '" + str(initValueRangeStep) + "' must be specified in the format [val,min,max,step].\n" \
                     "Please, correct the value and retry."
@@ -8759,17 +8759,17 @@ def _doubleUnderscorify(s):
     else:
         index_MinCharLength = 1
         index_MaxCharLength_init = 20
-        s_list=list(s)
+        s_list = list(s)
         
         for ind in ind_list:
-            ind_diff=len(s_list)-1-ind
+            ind_diff = len(s_list)-1-ind
             if ind_diff > 5:
-                index_MaxCharLength=min(index_MaxCharLength_init, ind_diff-5)
+                index_MaxCharLength = min(index_MaxCharLength_init, ind_diff-5)
                 # the following requires that indices consist of 1 or 2 charcter(s) only
                 for nn in range(4+index_MinCharLength, 5+index_MaxCharLength):
-                    if s_list[ind+nn] == '}' and s_list[ind+nn+1] !='}' :
-                        s_list[ind]='_{'
-                        s_list[ind+nn]='}}' 
+                    if s_list[ind+nn] == '}' and s_list[ind+nn+1] != '}' :
+                        s_list[ind] = '_{'
+                        s_list[ind+nn] = '}}' 
                         break
         
     return ''.join(s_list)
@@ -8795,14 +8795,14 @@ def _greekReplace(s, sub, repl):
     while find_index != -1:
         if find_index == 0 or (s[find_index-1] != '\\' and not s[find_index-1].isalpha()):
             if sub != 'eta':
-                s=s[:find_index]+repl+s[find_index + len(sub):]
+                s = s[:find_index]+repl+s[find_index + len(sub):]
             else:
                 if s[find_index-1] != 'b' and s[find_index-1] != 'z':
                     if s[find_index-1] != 'h':
-                        s=s[:find_index]+repl+s[find_index + len(sub):]
+                        s = s[:find_index]+repl+s[find_index + len(sub):]
                     elif s[find_index-1] == 'h':
                         if s[find_index-2] != 't' and s[find_index-2] != 'T':
-                            s=s[:find_index]+repl+s[find_index + len(sub):]
+                            s = s[:find_index]+repl+s[find_index + len(sub):]
         # find + 1 means we start at the last match start index + 1
         find_index = s.find(sub, find_index + 1)
     return s
