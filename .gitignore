@@ -13,6 +13,7 @@ __mumot_files__/
 # Test-related caches
 .tox/
 .pytest_cache/
+.coverage
 
 # Jupyter Notebooks checkpoints
 .ipynb_checkpoints/
