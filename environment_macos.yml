@@ -3,6 +3,7 @@ channels:
 - conda-forge
 - defaults
 dependencies:
+- appnope=0.1.0=py35_0
 - bleach=2.0.0=py35_0
 - entrypoints=0.2.3=py35_1
 - html5lib=1.0.1=py_0
@@ -65,11 +66,9 @@ dependencies:
 - openssl=1.0.2l=0
 - pip=9.0.1=py35_1
 - pyparsing=2.2.0=py35_0
-- pyqt=5.6.0=py35_2
 - python=3.5.4=0
 - python-dateutil=2.6.1=py35_0
 - pytz=2017.2=py35_0
-- qt=5.6.2=2
 - readline=6.2=2
 - scipy=0.19.1=np113py35_0
 - setuptools=36.4.0=py35_1
