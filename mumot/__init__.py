@@ -763,7 +763,7 @@ class MuMoTmodel:
         
         viewController._setReplotFunction(modelView._plot_NumSolODE)
         
-        return viewController;
+        return viewController
 
     
     def _check2ndOrderMom(self, showNoise=False):
@@ -6346,7 +6346,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
             infiniteTime = self._maxTime-self._t
             return (infiniteTime, self._currentState)
         # computing when is happening next reaction
-        timeInterval = np.random.exponential(1/probSum);
+        timeInterval = np.random.exponential(1/probSum)
         
         # Selecting the occurred reaction at random, with probability proportional to each reaction probabilities
         bottom = 0.0
@@ -8261,10 +8261,10 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     for tick in ax.yaxis.get_major_ticks():
                     tick.label.set_fontsize(13)               
     
-    plt.tight_layout();
+    plt.tight_layout()
     
     if aspectRatioEqual:
-        ax.set_aspect('equal'); 
+        ax.set_aspect('equal')
     
 def _decodeNetworkTypeFromString(netTypeStr):
     # init the network type
