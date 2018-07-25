@@ -35,7 +35,7 @@ setup(
         'matplotlib',
         'networkx',
         'pydstool',
-        'scipy<1.0.0',
+        'scipy<1.0.0',  # see https://github.com/DiODeProject/MuMoT/issues/63
         'sympy>=1.1.1',
         ],
     extras_require={
