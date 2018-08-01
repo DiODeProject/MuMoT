@@ -101,7 +101,30 @@ The visualisation of particular representations of models requires that you have
 Hyperlinked tables of contents can be userful when viewing longer Notebooks such as the [MuMoT User Manual](docs/MuMoTuserManual.ipynb).
 Tables of contents can be displayed if you enable the **TOC2** Jupyter Extension as follows:
 
- 1. If using conda:
+ 1. Ensure the `jupyter_contrib_nbextensions` package is installed. 
+    This is "a collection of extensions that add functionality to the Jupyter notebook".
+    If you installed MuMoT using **conda** and an enclosed `environment.yml` file then you can **skip this step**.
+    If you  installed MuMoT into a *virtualenv* using **pip** then you need to 
+    ensure that virtualenv is activated then **run**:
+ 
+    ```sh
+    pip install jupyter_contrib_nbextensions
+    ```
+
+1.  Enable `jupyter_contrib_nbextensions`:
+
+    ```sh
+    jupyter contrib nbextension install --sys-prefix
+    ```
+
+1.  Enable the TOC2 ('table of contents') extension that is provided by `jupyter_contrib_nbextensions`:
+
+    ```sh
+    jupyter nbextension enable toc2/main
+    ```
+
+ 1. Enable a graphical interface for enabling/disabling TOC2 and other Jupyter extensions.
+    If using conda:
 
     ```sh
     conda install -c conda-forge jupyter_nbextensions_configurator
@@ -111,17 +134,14 @@ Tables of contents can be displayed if you enable the **TOC2** Jupyter Extension
 
     ```sh
     pip install jupyter_nbextensions_configurator  # AND 
-    jupyter nbextensions_configurator enable --user
+    jupyter nbextensions_configurator enable --sys-prefix
     ```
-    
- 1. Start a Jupyter Notebook server with
 
-    ```sh
-    jupyter notebook
-    ```
-    
- 1. Click the *nbextensions* tab and enable the *TOC2* extension.
- 1. Subsequently, within any Notebook you can toggle the table of contents by clicking on the appropriate button in the toolbar.
+The next time you start Jupyter from your conda environment or virtualenv then open a Notebook 
+you should see a table of contents displayed down the left-hand-side of the Notebook.
+
+If you subsequently want to disable the TOC2 extension and/or enable other Notebook extensions then 
+click '*Nbextensions*' in the Jupyter file browser tab.
 
 ## Starting using MuMoT
 
