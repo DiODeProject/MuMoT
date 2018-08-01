@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.com/DiODeProject/MuMoT.svg?token=6zhMFY3Y4Ems6GzwEDLn&branch=master)](https://travis-ci.com/DiODeProject/MuMoT)
 
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=docs%2FMuMoTuserManual.ipynb)
+
 ## Introduction / overview
 
 TODO
