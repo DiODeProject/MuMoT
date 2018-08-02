@@ -239,4 +239,4 @@ MuMoT developed with funds from the European Research Council (ERC) under the Eu
 
 * [mumot/process_latex/](mumot/process_latex): LaTeX parser; taken from [latex2sympy](https://github.com/augustt198/latex2sympy) project and updated for Python 3) ((C) latex2sympy, under the MIT license)
 * [mumot/gen](mumot/gen): includes submodules used by MuMoT
-* [mumot/__init__.py](mumot/__init__.py): contains functions (C) 2012 Free Software Foundation, under the MIT Licence
+* [mumot/\_\_init\_\_.py](mumot/__init__.py): contains functions (C) 2012 Free Software Foundation, under the MIT Licence
