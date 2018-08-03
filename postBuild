@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Not needed if installed ipywidgets using conda
+#jupyter nbextension enable --py widgetsnbextension --sys-prefix
+
+# Enable per-Notebook table of contents in Jupyter UI 
+# First, configure jupyter_contrib_nbextensions: the following "copies the
+# nbextensions' javascript and css files into the jupyter server's search
+# directory"
+jupyter contrib nbextension install --sys-prefix
+# Second, enable the TOC2 extension
+jupyter nbextension enable toc2/main
+
+# Enable Nbextensions tab in Jupyter UI; should not be necessary if installed nbextensions_configurator using conda
+#jupyter nbextensions_configurator enable --sys-prefix
+
+# run matplotlib once to generate the font cache
+python -c "import matplotlib as mpl; mpl.use('Agg'); import pylab as plt; fig, ax = plt.subplots(); fig.savefig('test.png')"
+
+test -e test.png && rm test.png
