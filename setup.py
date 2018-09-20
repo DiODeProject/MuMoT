@@ -32,7 +32,7 @@ setup(
         'graphviz',
         'ipython',
         'ipywidgets',
-        'matplotlib',
+        'matplotlib<3.0',  # see https://github.com/DiODeProject/MuMoT/issues/171
         'networkx',
         'pydstool',
         'scipy<1.0.0',  # see https://github.com/DiODeProject/MuMoT/issues/63
