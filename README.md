@@ -184,6 +184,7 @@ This:
     (using [nbval](https://github.com/computationalmodelling/nbval)).
     If an Exception/Error is encountered then a Jupyter tab is opened in the default web browser showing its location 
     (using [nbdime](https://nbdime.readthedocs.io/en/stable/)).
+ 1. Checks that the user manual notebook does not contain output cells
 
 <!--1. Checks that the [docs/MuMoTuserManual.ipynb](docs/MuMoTuserManual.ipynb) and [TestNotebooks/MuMoTtest.ipynb](TestNotebooks/MuMoTtest.ipynb) Notebooks 
     generate the same output cell content as is saved in the Notebook files when re-run 
@@ -210,6 +211,8 @@ If you want to contribute a feature or fix a bug then:
           [TestNotebooks/MuMoTtest.ipynb](TestNotebooks/MuMoTtest.ipynb) or test notebooks to [TestNotebooks/MiscTests/](TestNotebooks/MiscTests). 
     * Documentation: Include Python docstrings documentation in the [numpydoc](http://numpydoc.readthedocs.io/en/latest/format.html) format 
       for all modules, functions, classes, methods and (if applicable) attributes.
+    * Do not commit an updated user manual Notebook containing output cells; all output cells should be stripped first using: 
+      ``jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace docs/MuMoTuserManual.ipynb``
     * Use `@todo` for reminders.
 * When you are ready to merge that into the `master` branch of the 'upstream' repository:
     * Run all tests using `tox` (see [Testing](#testing)) *first*.
