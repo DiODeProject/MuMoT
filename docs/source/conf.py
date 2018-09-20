@@ -19,7 +19,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../mumot'))
+sys.path.insert(0, os.path.abspath('../..'))
+#sys.path.insert(0, os.path.abspath('../../mumot'))
 
 
 # -- General configuration ------------------------------------------------
@@ -33,11 +34,12 @@ sys.path.insert(0, os.path.abspath('../../mumot'))
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    'numpydoc',
+    'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages'
 ]
@@ -57,7 +59,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'MuMoT'
 copyright = '2018, James A. R. Marshall, Andreagiovanni Reina, Thomas Bose'
-author = 'James A. R. Marshall, Andreagiovanni Reina, Thomas Bose\''
+author = 'James A. R. Marshall, Andreagiovanni Reina, Thomas Bose'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -178,3 +180,20 @@ texinfo_documents = [
      author, 'MuMoT', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+# -- Options for autodoc and autosummary ----------------------------------
+
+autodoc_default_flags = [
+    # Make sure that any autodoc declarations show the right members
+    "members",
+    "inherited-members",
+    "show-inheritance",
+    # "private-members",
+]
+autosummary_generate = True
+
+# -- Options for napoleon/numpydoc ----------------------------------------
+napoleon_numpy_docstring = True
+napoleon_google_docstring = False
+napoleon_use_param = False
+napoleon_use_rtype = False

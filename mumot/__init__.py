@@ -215,7 +215,7 @@ class MuMoTmodel:
 
         Returns
         -------
-        MuMoTmodel
+        :class:`MuMoTmodel`
             A new model.
 
         """
@@ -316,7 +316,7 @@ class MuMoTmodel:
 
         Returns
         -------
-        graphviz.Digraph
+        :class:`graphviz.Digraph`
             Graphical representation of model.
 
         Notes
@@ -491,12 +491,12 @@ class MuMoTmodel:
     def showODEs(self, method='massAction'):
         """Show a LaTeX representation of the model system of ODEs
 
+        Displays rendered LaTeX in the Jupyter Notebook.
+
         Parameters
         ----------
         method : str, optional
             Can be ``'massAction'`` (default) or ``'vanKampen'``.
-
-        Displays rendered LaTeX in the Jupyter Notebook.
 
         """
 
@@ -765,7 +765,7 @@ class MuMoTmodel:
 
         Returns
         -------
-            MuMoTtimeEvolutionController
+            :class:`MuMoTtimeEvolutionController`
 
         Notes
         -----
@@ -858,7 +858,7 @@ class MuMoTmodel:
 
         Returns
         -------
-            MuMoTtimeEvolutionController
+            :class:`MuMoTtimeEvolutionController`
 
         Notes
         -----
@@ -967,7 +967,7 @@ class MuMoTmodel:
 
         Returns
         -------
-        mumot.MuMoTcontroller
+        :class:`MuMoTcontroller`
             A MuMoT controller object
 
         Notes
@@ -1050,7 +1050,7 @@ class MuMoTmodel:
 
         Returns
         -------
-        MuMoTcontroller
+        :class:`MuMoTcontroller`
             A MuMoT controller object
         
         Notes
@@ -1110,7 +1110,7 @@ class MuMoTmodel:
             dictionary.
         initialState : float, optional
             Initial proportions of the reactants.  A value in the range [0,1].
-            Will be used ONLY if calculation of stationary states fails.  Can
+            Will be used *only* if calculation of stationary states fails.  Can
             also be set via ``initWidgets`` argument
         initBifParam : float, optional
             Initial value of bifurcation parameter.  Can also be set via
@@ -1144,7 +1144,7 @@ class MuMoTmodel:
 
         Returns
         -------
-            MuMoTbifurcationController
+            :class:`MuMoTbifurcationController`
 
         Notes
         -----
@@ -1205,31 +1205,61 @@ class MuMoTmodel:
         return viewController
          
     
-    def multiagent(self, initWidgets={}, **kwargs):
-        """construct interactive multiagent plot (simulation of agents locally interacting with each other)
+    def multiagent(self, initWidgets=None, **kwargs):
+        """Construct interactive multiagent plot (simulation of agents locally interacting with each other).
         
-        :Arguments:
-            `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+        Parameters
+        ----------
+        initWidgets : dict, optional
+           Keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+
+        Other Parameters
+        ----------------
         
-        :Keyword Arguments:
-            `initialState` - initial proportions of the reactants (type: float in range [0,1])
-            `maxTime` - simulation time (type: float larger than 0)
-            `randomSeed` - random seed (type: int in range [0, MAX_RANDOM_SEED])
-            `plotProportions` - flag to plot proportions or full populations (type: bool)
-            `realtimePlot` - flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation) (type: bool)
-            `visualisationType` - type of visualisation (type: string in {'evo','graph','final','barplot'})
-            `final_x` - which reactant is shown on x-axis when visualisation type is final
-            `final_y` - which reactant is shown on x-axis when visualisation type is final
-            `runs` - number of simulation runs to be executed
-            `aggregateResults` - flag to aggregate or not the results from several runs
-            `netType` - type of network (type: string in {'full','erdos-renyi','barabasi-albert','dynamic'})
-            `netParam` - property of the network ralated to connectivity. It varies depending on the netType (type: float)
-            `motionCorrelatedness` - (active only for netType='dynamic') level of inertia in the random walk (type: float in [0,1]) with 0 completely uncorrelated random walk and 1 straight trajectories
-            `particleSpeed` - (active only for netType='dynamic') speed of the moving particle, i.e. displacement in one timestep (type: float in [0,1])
-            `timestepSize` - length of one timestep, the maximum size is determined by the rates (type: float > 0)
-            `showTrace` - (active only for netType='dynamic') flag to plot the part trajectory of each particle (type: bool)
-            `showInteractions` - (active only for netType='dynamic') flag to plot the interaction range between particles (type: bool)
+        initialState : float 
+           Initial proportions of the reactants; a value in the range [0,1].
+        maxTime : float
+           Simulation time; must be > 0.
+        randomSeed : int 
+           Random seed in range [0, MAX_RANDOM_SEED]).
+        plotProportions : bool
+           Flag to plot proportions or full populations.
+        realtimePlot : bool
+           Flag to plot results in realtime (True = the plot is updated each
+           timestep of the simulation; False = the plot is updated once at the
+           end of the simulation).
+        visualisationType : str
+            Type of visualisation (``'evo'``,``'graph'``,``'final'`` or ``'barplot'``).
+        final_x : object
+           Which reactant is shown on x-axis when visualisation type is final.
+        final_y : object
+           Which reactant is shown on x-axis when visualisation type is final.
+        runs : int
+           Number of simulation runs to be executed.
+        aggregateResults : bool
+           Flag to aggregate or not the results from several runs.
+        netType : str
+           Type of network (``'full'``, ``'erdos-renyi'``, ``'barabasi-albert'`` or ``'dynamic'``.
+        netParam : float
+           Property of the network ralated to connectivity. It varies depending on the netType.
+        motionCorrelatedness : float
+           (active only for netType='dynamic') level of inertia in the random walk, with 0 completely uncorrelated random walk and 1 straight trajectories.  Must be in range [0, 1].
+        particleSpeed : float
+           (active only for netType='dynamic') speed of the moving particle,
+           i.e. displacement in one timestep.  Must be in range  [0,1].
+        timestepSize : float
+           Length of one timestep, the maximum size is determined by the rates.
+           Must be > 0.
+        showTrace : bool
+           (active only for netType='dynamic') flag to plot the part trajectory
+           of each particle.
+        showInteractions : bool
+           (active only for netType='dynamic') flag to plot the interaction
+           range between particles.
         """
+        if initWidgets is None:
+            initWidgets = dict()
+
         paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params', []), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False)
         
         MAParams = {} 
@@ -8599,7 +8629,7 @@ def _plot_point_cov(points, nstd=2, ax=None, **kwargs):
 
     Returns
     -------
-    matplotlib.patches.Ellipse
+    :class:`matplotlib.patches.Ellipse`
         A matplotlib ellipse artist
 
     Notes
@@ -8656,7 +8686,7 @@ def _plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
 
     Returns
     -------
-    matplotlib.patches.Ellipse
+    :class:`matplotlib`.patches.Ellipse
         A matplotlib ellipse artist
         
     Notes
