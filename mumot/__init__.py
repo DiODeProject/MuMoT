@@ -803,7 +803,7 @@ class MuMoTmodel:
         return viewController
     
         
-    def noiseCorrelations(self, initWidgets={}, **kwargs):
+    def noiseCorrelations(self, initWidgets=None, **kwargs):
         """Construct interactive time evolution plot for noise correlations
         around fixed points.
 
@@ -813,7 +813,6 @@ class MuMoTmodel:
             Dictionary where keys are the free-parameter or any other specific
             parameter, and values are four values, e.g.
             ``'parameter': [initial-value, min-value, max-value, step-size]``.
-            Defaults to an empty dictionary.
         maxTime : float, optional
             Simulation time for noise correlations.  Must be strictly positive.
             Defaults to 3.0.
@@ -867,6 +866,9 @@ class MuMoTmodel:
         .. _user manual: https://diodeproject.github.io/MuMoT/
 
         """
+        if initWidgets is None:
+            initWidgets = {}
+
         if self._systemSize:
             kwargs['conserved'] = True
         
@@ -924,7 +926,7 @@ class MuMoTmodel:
     # construct interactive stream plot with the option to show noise around
     # fixed points
     def stream(self, stateVariable1, stateVariable2, stateVariable3=None,
-               params=None, initWidgets={}, **kwargs):
+               params=None, initWidgets=None, **kwargs):
         """Display interactive stream plot of ``stateVariable1`` (x-axis),
         ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis;
         not currently supported - see below).
@@ -944,7 +946,7 @@ class MuMoTmodel:
         initWidgets : dict, optional
              Keys are the free parameter or any other specific parameter, and
              values each a list of ``[initial-value, min-value, max-value,
-             step-size]``.  Defaults to an empty dictionary.
+             step-size]``.  
         showFixedPoints : bool, optional
              Plot fixed points.  Defaults to False.
         showNoise : bool, optional
@@ -977,6 +979,9 @@ class MuMoTmodel:
         .. _user manual: https://diodeproject.github.io/MuMoT/
 
         """
+        if initWidgets is None:
+            initWidgets = {}
+
         if self._systemSize is None and self._constantSystemSize == True:  # duplicate check in view and controller required for speedy error reporting, plus flexibility to instantiate view independent of controller
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return None
@@ -1006,7 +1011,7 @@ class MuMoTmodel:
     # construct interactive vector plot with the option to show noise around
     # fixed points
     def vector(self, stateVariable1, stateVariable2, stateVariable3=None,
-               params=None, initWidgets={}, **kwargs):
+               params=None, initWidgets=None, **kwargs):
         """Display interactive stream plot of ``stateVariable1`` (x-axis),
         ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis;
         not currently supported - see below)
@@ -1025,7 +1030,7 @@ class MuMoTmodel:
         initWidgets : dict, optional
              Keys are the free parameter or any other specific parameter, and
              values each a list of ``[initial-value, min-value, max-value,
-             step-size]``.  Defaults to an empty dictionary.
+             step-size]``.  
         showFixedPoints : bool, optional
              Plot fixed points.  Defaults to False.
         showNoise : bool, optional
@@ -1060,6 +1065,9 @@ class MuMoTmodel:
         .. _user manual: https://diodeproject.github.io/MuMoT/
 
         """
+        if initWidgets is None:
+            initWidgets = {}
+
         if self._systemSize is None and self._constantSystemSize == True:  # duplicate check in view and controller required for speedy error reporting, plus flexibility to instantiate view independent of controller
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return None
@@ -1085,7 +1093,7 @@ class MuMoTmodel:
             return None
 
     def bifurcation(self, bifurcationParameter, stateVariable1,
-                    stateVariable2=None, initWidgets={}, **kwargs):
+                    stateVariable2=None, initWidgets=None, **kwargs):
         """Construct and display bifurcation plot of ``stateVariable1``
         (y-axis), or ``stateVariable1`` +/- ``stateVariable2`` (y-axis),
         depending on ``bifurcationParameter`` (x-axis).
@@ -1106,8 +1114,7 @@ class MuMoTmodel:
         initWidgets : dict, optional
             Keys are the free-parameter or any other specific parameter, and
             values are four values, e.g. ``'parameter': [initial-value,
-            min-value, max-value, step-size]``.  Defaults to an empty
-            dictionary.
+            min-value, max-value, step-size]``.  
         initialState : float, optional
             Initial proportions of the reactants.  A value in the range [0,1].
             Will be used *only* if calculation of stationary states fails.  Can
@@ -1153,6 +1160,8 @@ class MuMoTmodel:
         .. _user manual: https://diodeproject.github.io/MuMoT/
 
         """
+        if initWidgets is None:
+            initWidgets = {}
         stateVariableList = []
         for reactant in self._reactants:
             if reactant not in self._constantReactants:
@@ -1305,7 +1314,7 @@ class MuMoTmodel:
 
         return viewController
 
-    def SSA(self, initWidgets={}, **kwargs):
+    def SSA(self, initWidgets=None, **kwargs):
         """Construct interactive SSA plot (simulation run of the Gillespie
         algorithm to approximate the Master Equation solution).
 
@@ -1314,7 +1323,7 @@ class MuMoTmodel:
         initWidgets : dict, optional
             Keys are the free parameter or any other specific parameter, and
             values are four values as ``[initial-value, min-value, max-value,
-            step-size]``.   Defaults to an empty dictionary.
+            step-size]``.
         initialState : float
             Initial proportions of the reactants.  Must be value in the
             range [0,1].
@@ -1343,6 +1352,9 @@ class MuMoTmodel:
             Flag to aggregate or not the results from several runs.
 
         """
+        if initWidgets is None:
+            initWidgets = {}
+
         paramValuesDict = self._create_free_param_dictionary_for_controller(
             inputParams=kwargs.get('params', []),
             initWidgets=initWidgets,
@@ -1468,7 +1480,10 @@ class MuMoTmodel:
         return self._solutions
 
 
-    def _create_free_param_dictionary_for_controller(self, inputParams, initWidgets={}, showSystemSize=False, showPlotLimits=False):
+    def _create_free_param_dictionary_for_controller(self, inputParams, initWidgets=None, showSystemSize=False, showPlotLimits=False):
+        if initWidgets is None:
+            initWidgets = {}
+
         paramValuesDict = {}        
         for freeParam in self._rates.union(self._constantReactants):
             paramValuesDict[str(freeParam)] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(inputParams, str(freeParam)),
@@ -1489,8 +1504,11 @@ class MuMoTmodel:
         
         return paramValuesDict
 
-    ## general controller constructor with all rates as free parameters
-    def _controller(self, contRefresh, plotLimitsSlider=False, params=None, initWidgets={}, **kwargs):            
+    def _controller(self, contRefresh, plotLimitsSlider=False, params=None, initWidgets=None, **kwargs):            
+        """General controller constructor with all rates as free parameters."""
+        if initWidgets is None:
+            initWidgets = {}
+
         if kwargs.get('showNoise', False) == True or kwargs.get('plotProportion', True) == False:                 
             systemSizeSlider = True
         else:
@@ -1834,9 +1852,9 @@ class MuMoTcontroller:
     ## bookmark button widget
     _bookmarkWidget = None
 
-    def __init__(self, paramValuesDict, paramLabelDict={}, continuousReplot=False, showPlotLimits=False, showSystemSize=False, advancedOpts=None, **kwargs):
+    def __init__(self, paramValuesDict, paramLabelDict=None, continuousReplot=False, showPlotLimits=False, showSystemSize=False, advancedOpts=None, **kwargs):
         self._silent = kwargs.get('silent', False)
-        self._paramLabelDict = paramLabelDict
+        self._paramLabelDict = paramLabelDict if paramLabelDict is not None else {}
         self._widgetsFreeParams = {}
         self._widgetsExtraParams = {}
         self._widgetsPlotOnly = {}
@@ -2859,8 +2877,10 @@ class MuMoTview:
             self._systemSize = self._getSystemSize()
         self._update_view_specific_params(freeParamDict)
         
-    def _update_view_specific_params(self, freeParamDict={}):
+    def _update_view_specific_params(self, freeParamDict=None):
         """interface method to update view-specific params from widgets"""
+        if freeParamDict is None:
+            freeParamDict = {}
         pass
                         
     def showLogs(self, tail=False):
@@ -2971,8 +2991,11 @@ class MuMoTmultiController(MuMoTcontroller):
     ## replot function list to invoke on views
     _replotFunctions = None
 
-    def __init__(self, controllers, params=None, initWidgets={},  **kwargs):
+    def __init__(self, controllers, params=None, initWidgets=None,  **kwargs):
         global figureCounter
+
+        if initWidgets is None:
+            initWidgets = {}
 
         self._silent = kwargs.get('silent', False)
         self._replotFunctions = []
@@ -3371,8 +3394,11 @@ class MuMoTtimeEvolutionView(MuMoTview):
         self._showErrorMessage(str(self))
         self._update_params()
 
-    def _update_view_specific_params(self, freeParamDict={}):
+    def _update_view_specific_params(self, freeParamDict=None):
         """getting other parameters specific to integrate"""
+        if freeParamDict is None:
+            freeParamDict = {}
+
         if self._controller is not None:
             if self._fixedParams.get('initialState') is not None:
                 self._initialState = self._fixedParams['initialState']
@@ -5313,8 +5339,11 @@ class MuMoTbifurcationView(MuMoTview):
         
         return logStr    
 
-    def _update_view_specific_params(self, freeParamDict={}):
+    def _update_view_specific_params(self, freeParamDict=None):
         """get other parameters specific to bifurcation()"""
+        if freeParamDict is None:
+            freeParamDict = {}
+
         if self._controller is not None:
             if self._fixedParams.get('initialState') is not None:
                 self._initialState = self._fixedParams['initialState']
@@ -5507,8 +5536,10 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._show_computation_stop()
         self._logs.append(log)
         
-    def _update_view_specific_params(self, freeParamDict={}):
+    def _update_view_specific_params(self, freeParamDict=None):
         """Getting other parameters specific to SSA."""
+        if freeParamDict is None:
+            freeParamDict = {}
         if self._controller is not None:
             if self._fixedParams.get('initialState') is not None:
                 self._initialState = self._fixedParams['initialState']
@@ -6011,8 +6042,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
 #         sortedDict += "}"
         print("mumot.MuMoTmultiagentView(<modelName>, None, " + self._get_bookmarks_params().replace('\\', '\\\\') + ", SSParams = " + str(MAParams) + " )")
     
-    def _update_view_specific_params(self, freeParamDict={}):
+    def _update_view_specific_params(self, freeParamDict=None):
         """read the new parameters (in case they changed in the controller) specific to multiagent(). This function should only update local parameters and not compute data"""
+        if freeParamDict is None:
+            freeParamDict = {}
         super()._update_view_specific_params(freeParamDict)
         self._adjust_barabasi_network_range()
         if self._controller is not None:
