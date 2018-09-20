@@ -1,5 +1,4 @@
-"""
-Multiscale Modelling Tool (MuMoT)
+"""Multiscale Modelling Tool (MuMoT)
 
 Help:
 https://diodeproject.github.io/MuMoT/
@@ -65,11 +64,14 @@ except NameError as e:
     # There is no currently-running IPython instance
     pass
 
+
 class MuMoTError(Exception):
     pass
 
+
 class MuMoTValueError(MuMoTError):
     pass
+
 
 class MuMoTSyntaxError(MuMoTError):
     pass
@@ -109,6 +111,7 @@ class NetworkType(Enum):
     BARABASI_ALBERT = 2
     SPACE = 3
     DYNAMIC = 4
+
 
 # class with default parameters
 class MuMoTdefault:
@@ -176,13 +179,13 @@ class MuMoTmodel:
     ## list of LaTeX strings describing reactants (@todo: depracated?)
     _reactantsLaTeX = None
     ## set of rates
-    _rates = None 
+    _rates = None
     ## dictionary of LaTeX strings describing rates and constant reactants (@todo: rename)
-    _ratesLaTeX = None 
+    _ratesLaTeX = None
     ## dictionary of ODE righthand sides with reactant as key
     _equations = None
     ## set of solutions to equations
-    _solutions = None 
+    _solutions = None
     ## summary of stoichiometry as nested dictionaries
     _stoichiometry = None
     ## dictionary (reagents as keys) with reaction-rate and relative effects of each reaction-rule for each reagent (structure necessary for multiagent simulations)
@@ -190,7 +193,7 @@ class MuMoTmodel:
     ## dictionary of lambdified functions for integration, plotting, etc.
     _funcs = None
     ## tuple of argument symbols for lambdified functions
-    _args = None 
+    _args = None
     ## graphviz visualisation of model
     _dot = None
     ## image format used for rendering edge labels for model visualisation
@@ -201,9 +204,21 @@ class MuMoTmodel:
     _tmpdir = None 
     ## list of temporary files created
     _tmpfiles = None 
-    
-    ## create new model with variable substitutions listed as comma separated string of assignments
+
     def substitute(self, subsString):
+        """Create a new model with variable substitutions.
+
+        Parameters
+        ----------
+        subsString: str
+            Comma-separated string of assignments.
+
+        Returns
+        -------
+        :class:`MuMoTmodel`
+            A new model.
+
+        """
         sizeSet = False
         sizeSetrhs = []
         sizeSetExpr = None
@@ -222,7 +237,7 @@ class MuMoTmodel:
         newModel._constantReactants = copy.deepcopy(self._constantReactants)
         newModel._equations = copy.deepcopy(self._equations)
         newModel._stoichiometry = copy.deepcopy(self._stoichiometry)
-        
+
         for sub in subs:
             if sub[0] in newModel._reactants and len(sub[1].atoms(Symbol)) == 1:
                 raise MuMoTSyntaxError("Using substitute to rename reactants not supported: " + str(sub[0]) + " = " + str(sub[1]))
@@ -296,12 +311,23 @@ class MuMoTmodel:
 
         return newModel
 
-
-    ## build a graphical representation of the model
-    # if result cannot be plotted check for installation of libltdl - eg on Mac see if XQuartz requires update or do:<br>
-    #  `brew install libtool --universal` <br>
-    #  `brew link libtool`
     def visualise(self):
+        """Build a graphical representation of the model.
+
+        Returns
+        -------
+        :class:`graphviz.Digraph`
+            Graphical representation of model.
+
+        Notes
+        -----
+        If result cannot be plotted check for installation of ``libltdl``
+        e.g on macOS see if XQuartz needs updating or do: ::
+
+            brew install libtool --universal
+            brew link libtool
+
+        """
         errorShown = False
         if self._dot is None:
             dot = Digraph(comment="Model", engine='circo')
@@ -363,8 +389,13 @@ class MuMoTmodel:
                 
         return self._dot
 
-    ## show a sorted LaTeX representation of the model's constant reactants
     def showConstantReactants(self):
+        """Show a sorted LaTeX representation of the model's constant reactants.
+
+        Displays the LaTeX representation in the Jupyter Notebook if there are
+        constant reactants in the model, otherwise prints an error.
+
+        """
         if len(self._constantReactants) == 0:
             print('No constant reactants in the model!')
         else:
@@ -388,9 +419,12 @@ class MuMoTmodel:
         #                display(Math(latex(reactant)))
         #                reactant_list.append(reactant)
 
-
-    ## show a sorted LaTeX representation of the model's reactants
     def showReactants(self):
+        """Show a sorted LaTeX representation of the model's reactants.
+
+        Displays rendered LaTeX in the Jupyter Notebook.
+
+        """
         if self._reactantsLaTeX is None:
             self._reactantsLaTeX = []
             reactants = map(latex, list(self._reactants))
@@ -408,19 +442,28 @@ class MuMoTmodel:
         #                display(Math(latex(reactant)))
         #                reactant_list.append(reactant)
 
-    ## show a sorted LaTeX representation of the model's rate parameters
     def showRates(self):
+        """Show a sorted LaTeX representation of the model's rate parameters.
+
+        Displays rendered LaTeX in the Jupyter Notebook.
+
+        """
         for reaction in self._stoichiometry:
             out = latex(self._stoichiometry[reaction]['rate']) + "\; (" + latex(reaction) + ")"
             out = _doubleUnderscorify(_greekPrependify(out))
-            display(Math(out))        
-    
+            display(Math(out))
+
 #    def showRatesOLD(self):
 #        for rate in self._ratesLaTeX:
 #            display(Math(self._ratesLaTeX[rate]))
 
     def showSingleAgentRules(self):
-        """show the probabilistic transition of the agents in each reactant-state"""
+        """Show the probabilistic transition of the agents in each
+        reactant-state.
+
+        Prints strings.
+
+        """
         if not self._agentProbabilities:
             self._getSingleAgentRules()
         for agent, probs in self._agentProbabilities.items():
@@ -443,16 +486,20 @@ class MuMoTmodel:
                             print("reagent " + str(prob[0][i]) + " becomes " + str(prob[3][i]), end=' ')
                     print("")
             else: 
-                print("does not initiate any reaction.") 
-    
+                print("does not initiate any reaction.")
 
     def showODEs(self, method='massAction'):
         """Show a LaTeX representation of the model system of ODEs
-        
-        :Arguments:
-            `method = 'massAction'` - argument of type str, default value is 'massAction', alternative value is 'vanKampen' 
+
+        Displays rendered LaTeX in the Jupyter Notebook.
+
+        Parameters
+        ----------
+        method : str, optional
+            Can be ``'massAction'`` (default) or ``'vanKampen'``.
+
         """
-        
+
         if method == 'massAction':
             for reactant in self._reactants:
                 out = "\\displaystyle \\frac{\\textrm{d}" + latex(reactant) + "}{\\textrm{d}t} := " + latex(self._equations[reactant])
@@ -466,7 +513,7 @@ class MuMoTmodel:
                 display(Math(out))
         else:
             print('Invalid input for method. Choose either method = \'massAction\' or method = \'vanKampen\'. Default is \'massAction\'.')
-            
+
 #     
 #     ## shows ODEs derived from the leading term in van Kampen expansion
 #     def showODEs_vKE(self):
@@ -476,19 +523,25 @@ class MuMoTmodel:
 #             out = _doubleUnderscorify(_greekPrependify(out))
 #             display(Math(out))
 #     
-    
+
     def showStoichiometry(self):
         """Display stoichiometry as a dictionary with keys ReactionNr,
-        ReactionNr represents another dictionary with reaction rate, reactants and corresponding stoichiometry"""
-        
+        ReactionNr represents another dictionary with reaction rate, reactants
+        and corresponding stoichiometry.
+
+        Displays rendered LaTeX in the Jupyter Notebook.
+
+        """
         out = latex(self._stoichiometry)
         out = _doubleUnderscorify(_greekPrependify(out))
         display(Math(out))
-    
-    
+
     def showMasterEquation(self):
-        """Displays Master equation expressed with step operators"""
-        
+        """Displays Master equation expressed with step operators.
+
+        Displays rendered LaTeX in the Jupyter Notebook.
+
+        """
         P, t = symbols('P t')
         out_rhs = ""
         stoich = self._stoichiometry
@@ -537,11 +590,14 @@ class MuMoTmodel:
                 subK = _greekPrependify(_doubleUnderscorify(str(subKey)))
                 subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
                 display(Math("With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
-        
-        
+
     def showVanKampenExpansion(self):
-        """Show van Kampen expansion when the operators are expanded up to second order"""
-        
+        """Show van Kampen expansion when the operators are expanded up to
+        second order.
+
+        Displays rendered LaTeX in the Jupyter Notebook.
+
+        """
         rhs_vke, lhs_vke, substring = _doVanKampenExpansion(_deriveMasterEquation, self._stoichiometry)
         out = latex(lhs_vke) + " := \n" + latex(rhs_vke)
         out = _doubleUnderscorify(_greekPrependify(out))
@@ -552,11 +608,14 @@ class MuMoTmodel:
                 subK = _greekPrependify(_doubleUnderscorify(str(subKey)))
                 subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
                 display(Math("With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
-        
-    
+
     def showFokkerPlanckEquation(self):
-        """Show Fokker-Planck equation derived from term ~ O(1) in van Kampen expansion (linear noise approximation)"""
-        
+        """Show Fokker-Planck equation derived from term ~ O(1) in van Kampen
+        expansion (linear noise approximation).
+
+        Displays rendered LaTeX in the Jupyter Notebook.
+
+        """
         FPEdict, substring = _getFokkerPlanckEquation(_get_orderedLists_vKE, self._stoichiometry)
         for fpe in FPEdict:
             out = latex(fpe) + " := " + latex(FPEdict[fpe])
@@ -568,11 +627,13 @@ class MuMoTmodel:
                 subK = _greekPrependify(_doubleUnderscorify(str(subKey)))
                 subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
                 display(Math("With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
-    
-                
+
     def showNoiseEquations(self):
-        """Display equations of motion of first and second order moments of noise"""
-        
+        """Display equations of motion of first and second order moments of noise.
+
+        Displays rendered LaTeX in the Jupyter Notebook.
+
+        """
         EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         for eom1 in EOM_1stOrderMom:
             out = "\\displaystyle \\frac{\\textrm{d}" + latex(eom1.subs(NoiseSubs1stOrder)) + "}{\\textrm{d}t} := " + latex(EOM_1stOrderMom[eom1].subs(NoiseSubs1stOrder))
@@ -584,11 +645,13 @@ class MuMoTmodel:
             out = _doubleUnderscorify(out)
             out = _greekPrependify(out)
             display(Math(out))
-    
-    
+
     def showNoiseSolutions(self):
-        """Display noise in the stationary state"""
-        
+        """Display noise in the stationary state.
+
+        Displays rendered LaTeX in the Jupyter Notebook.
+
+        """
         SOL_1stOrderMom, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         print('Stationary solutions of first and second order moments of noise:')
         if SOL_1stOrderMom is None:
@@ -606,20 +669,31 @@ class MuMoTmodel:
             for sol2 in SOL_2ndOrdMomDict:
                 out = latex(sol2.subs(NoiseSubs2ndOrder)) + latex(r'(t \to \infty)') + " := " + latex(SOL_2ndOrdMomDict[sol2].subs(NoiseSubs2ndOrder))
                 out = _doubleUnderscorify(_greekPrependify(out))
-                display(Math(out))    
-        
-        
-    # show a LaTeX representation of the model <br>
-    # if rules have | after them update notebook (allegedly, or switch browser): <br>
-    # `pip install --upgrade notebook`
+                display(Math(out))
+
     def show(self):
+        """Show a LaTeX representation of the model.
+
+        Display all rules in the model as rendered LaTeX in the Jupyter
+        Notebook.
+
+        Notes
+        -----
+        If rules are rendered in the Notebook with extraneous ``|`` characters
+        on the right-hand-side then try:
+
+         * Switching web browser and/or
+         * Updating the ``notebook`` package:
+           ``pip install --upgrade --no-deps notebook``
+
+        """
         for rule in self._rules:
             out = ""
             for reactant in rule.lhsReactants:
                 if reactant == EMPTYSET_SYMBOL:
                     reactant = Symbol('\emptyset')
                 if reactant in self._constantReactants:
-                    out += "(" 
+                    out += "("
                 out += latex(reactant)
                 if reactant in self._constantReactants:
                     out += ")"                 
@@ -638,52 +712,68 @@ class MuMoTmodel:
             out = out[0:len(out) - 2]  # delete the last ' + '
             out = _doubleUnderscorify(_greekPrependify(out))
             display(Math(out))
-    
-    
+
     def integrate(self, showStateVars=None, initWidgets=None, **kwargs):
         """Construct interactive time evolution plot for state variables.
-        
+
         Parameters
         ----------
         showStateVars : optional
-            Select reactants (state variables) to be shown in plot, if not specified all reactants are plotted.  Type?
+            Select reactants (state variables) to be shown in plot, if not
+            specified all reactants are plotted.  Type?
         initWidgets : dict, optional
-            Dictionary where keys are the free-parameter or any other specific parameter, 
-            and values are four values, e.g. ``'parameter':[initial-value, min-value, max-value, step-size]``
+            Dictionary where keys are the free-parameter or any other specific
+            parameter, and values are four values, e.g.
+            ``'parameter':[initial-value, min-value, max-value, step-size]``
         maxTime : float, optional
-            Simulation time for noise correlations.  Must be strictly positive.  Defaults to 3.0.
+            Simulation time for noise correlations.  Must be strictly positive.
+            Defaults to 3.0.
         tstep : float, optional
-            Time step of numerical integration of reactants.  Defaults to 0.01. 
+            Time step of numerical integration of reactants.  Defaults to 0.01.
         plotProportions : bool, optional
-            Flag to plot proportions or full populations.  Defaults to False 
+            Flag to plot proportions or full populations.  Defaults to False
         initialState : dict, optional
-            Initial proportions of the reactants (type: float in range [0,1]), can also be set via `initWidgets` argument.  Defaults to an empty dictionary.
+            Initial proportions of the reactants (type: float in range [0,1]),
+            can also be set via ``initWidgets`` argument.  Defaults to an empty
+            dictionary.
         conserved : bool, optional
-            Specify if a system is conserved to make proportions of state variables (at time t=0) sum up to 1, or not. Defaults to False. 
+            Specify if a system is conserved to make proportions of state
+            variables (at time t=0) sum up to 1, or not. Defaults to False.
         legend_fontsize: int, optional
             Specify fontsize of legend.  Defaults to 14.
         legend_loc : str
-            Specify legend location: combinations like 'upper left' (default), 'lower right', or 'center center' are allowed (9 options in total).
+            Specify legend location: combinations like 'upper left' (default),
+            'lower right', or 'center center' are allowed (9 options in total).
         fontsize : integer, optional
-            Specify fontsize for axis-labels.  If not specified, the fontsize is automatically derived from the length of axis label.
+            Specify fontsize for axis-labels.  If not specified, the fontsize
+            is automatically derived from the length of axis label.
         xlab : str, optional
             Specify label on x-axis.   Defaults to 'time t'.
         ylab : str, optional
             Specify label on y-axis.   Defaults to 'reactants'.
         choose_xrange : list of float, optional
-            Specify range plotted on x-axis as a two-element iterable of the form [xmin, xmax]. If not given uses data values to set axis limits.
+            Specify range plotted on x-axis as a two-element iterable of the
+            form [xmin, xmax]. If not given uses data values to set axis
+            limits.
         choose_trange : list of float, optional
-            Specify range plotted on y-axis as a two-element iterable of the form [ymin, ymax]. If not given uses data values to set axis limits.
-        silent : boolean, optional
-            Switch on/off widgets and plot. Important for use with multi controllers. Defaults to False.
-            
+            Specify range plotted on y-axis as a two-element iterable of the
+            form [ymin, ymax]. If not given uses data values to set axis
+            limits.
+        silent : bool, optional
+            Switch on/off widgets and plot. Important for use with multi
+            controllers. Defaults to False.
+
         Returns
         -------
-            MuMoTtimeEvolutionController
+            :class:`MuMoTtimeEvolutionController`
 
-        Note: plotting keywords are also described in the user manual: https://diodeproject.github.io/MuMoT/
+        Notes
+        -----
+        Plotting keywords are also described in the `user manual`_.
+
+        .. _user manual: https://diodeproject.github.io/MuMoT/
+
         """
-
         if not initWidgets:
             initWidgets = {}
         
@@ -714,32 +804,69 @@ class MuMoTmodel:
     
         
     def noiseCorrelations(self, initWidgets={}, **kwargs):
-        """Construct interactive time evolution plot for noise correlations around fixed points.
-        
-        :Arguments:
-            `initWidgets = {}`: dictionary where keys are the free-parameter or any other specific parameter, and values are four values, e.g. 'parameter':[initial-value, min-value, max-value, step-size]
-        
-        :Keyword arguments:
-            `maxTime = 3.0`: simulation time for noise correlations (type: float larger than 0)
-            `tstep = 0.01`: time step of numerical integration of noise correlations (type: float)
-            `maxTimeDS = 50`: simulation time for ODE system (type: float larger than 0)
-            `tstepDS = 0.01`: time step of numerical integration of ODE system (type: float)
-            `initialState = {}`: initial proportions of the reactants (type: float in range [0,1]), can also be set via `initWidgets` argument
-            `conserved = False`: specify if a system is conserved to make proportions of state variables (at time t=0) sum up to 1, or not; type: boolean (takes True or False)
-            `legend_fontsize = 14`: specify fontsize of legend (type: integer)
-            `legend_loc = 'upper left'`: specify legend location: combinations like 'upper left', 'lower right', or 'center center' are allowed (9 options in total)
-            `fontsize = None`: specify fontsize for axis-labels, accepts integer, if not given fontsize is automatically derived from length of axis label
-            `xlab = 'time t'`: specify label on x-axis (type: str)
-            `ylab = 'noise correlations'`: specify label on y-axis (type: str)
-            `choose_xrange = None`: specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float, if not given uses data values to set axis limits
-            `choose_yrange = None`: specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float, if not given uses data values to set axis limits
-            `silent = False`: switch on/off widgets and plot (type: boolean), accepts True or False; important for use with multi controllers
-            Note: plotting keywords are also described in the user manual: https://diodeproject.github.io/MuMoT/
-        
-        :Returns:
-            MuMoTtimeEvolutionController
+        """Construct interactive time evolution plot for noise correlations
+        around fixed points.
+
+        Parameters
+        ----------
+        initWidgets : dict, optional
+            Dictionary where keys are the free-parameter or any other specific
+            parameter, and values are four values, e.g.
+            ``'parameter': [initial-value, min-value, max-value, step-size]``.
+            Defaults to an empty dictionary.
+        maxTime : float, optional
+            Simulation time for noise correlations.  Must be strictly positive.
+            Defaults to 3.0.
+        tstep : float, optional
+            Time step of numerical integration of noise correlations.  Defaults
+            to 0.01.
+        maxTimeDS : float, optional
+            Simulation time for ODE system.  Must be strictly positive.
+            Defaults to 50.
+        tstepDS : float, optional
+            Time step of numerical integration of ODE system.  Defaults to
+            0.01.
+        initialState : dict, optional
+            Initial proportions of the reactants.  Must be in range [0, 1].
+            Can also be set via ``initWidgets`` argument.
+            Defaults to an empty dictionary.
+        conserved : bool, optional
+            Whether a system is conserved to make proportions of state
+            variables (at time t=0) sum up to 1.  Defaults to False.
+        legend_fontsize : int, optional
+            Font size of legend.  Defaults to 14.
+        legend_loc : str, optional
+            Legend location.  Combinations like ``'upper left'``, ``'lower
+            right'``, or ``'center center'`` are allowed (9 options in total).
+            Defaults to ``'upper left'``.
+        fontsize : int, optional
+            Font size for axis labels  If not given, font size is automatically
+            derived from length of axis label.
+        xlab = str, optional
+            Label on x-axis.  Defaults to ``'time t'``.
+        ylab : str, optional
+            Label on y-axis.  Defaults to ``'noise correlations'``.
+        choose_xrange : list of float, optional
+            Range to be plotted on x-axis.  Specified as ``[xmin, xmax]``.  If
+            not given uses data values to set axis limits.
+        choose_yrange : list of float, optional
+            Range to be plotted on y-axis.  Specified as ``[ymin, ymax]``.  If
+            not given uses data values to set axis limits.
+        silent : bool, optional
+            Switch on/off widgets and plot.  Important for use with multi
+            controllers.  Defaults to False.
+
+        Returns
+        -------
+            :class:`MuMoTtimeEvolutionController`
+
+        Notes
+        -----
+        Plotting keywords are also described in the `user manual`_.
+
+        .. _user manual: https://diodeproject.github.io/MuMoT/
+
         """
-        
         if self._systemSize:
             kwargs['conserved'] = True
         
@@ -793,31 +920,63 @@ class MuMoTmodel:
             SOL_2ndOrdMomDict = None
             
         return SOL_2ndOrdMomDict
-    
-    ## construct interactive stream plot with the option to show noise around fixed points
-    def stream(self, stateVariable1, stateVariable2, stateVariable3=None, params=None, initWidgets={}, **kwargs):
-        """Display interactive stream plot of `stateVariable1` (x-axis), `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis; not currently supported - see below)
 
-        :Arguments:
-            `stateVariable1` : state variable to be plotted on the x-axis
-            `stateVariable2`: state variable to be plotted on the y-axis
-            `stateVariable3 = None`: state variable to be plotted on the z-axis (not currently supported; use `vector` instead for 3-dimensional systems)
-            `params = None`: parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
-            `initWidgets = {}`: dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
-        
-        :Keyword arguments:
-            `showFixedPoints = False`: plot fixed points, accepts True or False
-            `showNoise = False`: plot noise around fixed points, accepts True or False
-            `fontsize = None`: specify fontsize (type: integer) for axis-labels
-            `xlab = 'stateVariable1'`: specify label on x-axis (type: str)
-            `ylab = 'stateVariable2'`: specify label on y-axis (type: str)
-            `choose_xrange = None`: specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float, if not given uses data values to set axis limits
-            `choose_yrange = None`: specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float, if not given uses data values to set axis limits
-            `silent = False`: switch on/off widgets and plot (type: boolean), accepts True or False; important for use with multi controllers
-            Note: plotting keywords are also described in the user manual: https://diodeproject.github.io/MuMoT/
-        
-        :Returns:
-            MuMoTcontroller"""
+    # construct interactive stream plot with the option to show noise around
+    # fixed points
+    def stream(self, stateVariable1, stateVariable2, stateVariable3=None,
+               params=None, initWidgets={}, **kwargs):
+        """Display interactive stream plot of ``stateVariable1`` (x-axis),
+        ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis;
+        not currently supported - see below).
+
+        Parameters
+        ----------
+        stateVariable1
+            State variable to be plotted on the x-axis. Type?
+        stateVariable2
+            State variable to be plotted on the y-axis. Type?
+        stateVariable3 : optional
+            State variable to be plotted on the z-axis.  Not currently
+            supported; use `vector` instead for 3-dimensional systems.  Type?
+        params : optional
+            Parameter list (see 'Partial controllers' in the `user manual`_).
+            Type?
+        initWidgets : dict, optional
+             Keys are the free parameter or any other specific parameter, and
+             values each a list of ``[initial-value, min-value, max-value,
+             step-size]``.  Defaults to an empty dictionary.
+        showFixedPoints : bool, optional
+             Plot fixed points.  Defaults to False.
+        showNoise : bool, optional
+             Plot noise around fixed points.  Defaults to False.
+        fontsize : int, optional
+             Font size for axis-labels.
+        xlab : str, optional
+             Label for x-axis.  Defaults to ``'stateVariable1'``.
+        ylab : str, optional
+             Label for y-axis.  Defaults to ``'stateVariable2'``.
+        choose_xrange : list of float, optional
+             Range plotted on x-axis.  Specify as ``[xmin, xmax]``.  If not
+             given uses data values to set axis limits
+        choose_yrange : list of float, optional
+             Range plotted on y-axis.  Specify as ``[ymin, ymax]``.  If not
+             given uses data values to set axis limits
+        silent : bool, optional
+             Switch on/off widgets and plot.  Important for use with multi
+             controllers.  Defaults to False.
+
+        Returns
+        -------
+        :class:`MuMoTcontroller`
+            A MuMoT controller object
+
+        Notes
+        -----
+        Plotting keywords are also described in the `user manual`_.
+
+        .. _user manual: https://diodeproject.github.io/MuMoT/
+
+        """
         if self._systemSize is None and self._constantSystemSize == True:  # duplicate check in view and controller required for speedy error reporting, plus flexibility to instantiate view independent of controller
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return None
@@ -833,43 +992,74 @@ class MuMoTmodel:
             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
             # construct controller
             viewController = self._controller(continuous_update, plotLimitsSlider=not(self._constantSystemSize), params=params, initWidgets=initWidgets, **kwargs)
-            
+
             # construct view
             modelView = MuMoTstreamView(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params=params, **kwargs)
-                    
+
             viewController.setView(modelView)
-            viewController._setReplotFunction(modelView._plot_field)         
-            
+            viewController._setReplotFunction(modelView._plot_field)
+
             return viewController
         else:
             return None
-    
-    
-    ## construct interactive vector plot with the option to show noise around fixed points
-    def vector(self, stateVariable1, stateVariable2, stateVariable3=None, params=None, initWidgets={}, **kwargs):
-        """Display interactive stream plot of `stateVariable1` (x-axis), `stateVariable2` (y-axis), and optionally `stateVariable3` (z-axis; not currently supported - see below)
 
-        :Arguments:
-            `stateVariable1`: state variable to be plotted on the x-axis
-            `stateVariable2`: state variable to be plotted on the y-axis
-            `stateVariable3 = None`: state variable to be plotted on the z-axis 
-            `params = None`: parameter list (see 'Partial controllers' in the user manual: https://diodeproject.github.io/MuMoT/)
-            `initWidgets = {}`: dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+    # construct interactive vector plot with the option to show noise around
+    # fixed points
+    def vector(self, stateVariable1, stateVariable2, stateVariable3=None,
+               params=None, initWidgets={}, **kwargs):
+        """Display interactive stream plot of ``stateVariable1`` (x-axis),
+        ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis;
+        not currently supported - see below)
 
-        :Keyword arguments:
-            `showFixedPoints = False`: plot fixed points, accepts True or False
-            `showNoise = False`: plot noise around fixed points, accepts True or False
-            `fontsize = None`: specify fontsize (type: integer) for axis-labels
-            `xlab = 'stateVariable1'`: specify label on x-axis (type: str)
-            `ylab = 'stateVariable2'`: specify label on y-axis (type: str)
-            `zlab = 'stateVariable3'`: specify label on z-axis (type: str), 3D plots only
-            `choose_xrange = None`: specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float, if not given uses data values to set axis limits
-            `choose_yrange = None`: specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float, if not given uses data values to set axis limits
-            `silent = False`: switch on/off widgets and plot (type: boolean), accepts True or False; important for use with multi controllers
-            Note: plotting keywords are also described in the user manual: https://diodeproject.github.io/MuMoT/
-            
-        :Returns:
-            MuMoTcontroller"""
+        Parameters
+        ----------
+        stateVariable1
+            State variable to be plotted on the x-axis. Type?
+        stateVariable2
+            State variable to be plotted on the y-axis. Type?
+        stateVariable3 : optional
+            State variable to be plotted on the z-axis.  Type?
+        params : optional
+            Parameter list (see 'Partial controllers' in the `user manual`_).
+            Type?
+        initWidgets : dict, optional
+             Keys are the free parameter or any other specific parameter, and
+             values each a list of ``[initial-value, min-value, max-value,
+             step-size]``.  Defaults to an empty dictionary.
+        showFixedPoints : bool, optional
+             Plot fixed points.  Defaults to False.
+        showNoise : bool, optional
+             Plot noise around fixed points.  Defaults to False.
+        fontsize : int, optional
+             Font size for axis-labels.
+        xlab : str, optional
+             Label for x-axis.  Defaults to ``'stateVariable1'``.
+        ylab : str, optional
+             Label for y-axis.  Defaults to ``'stateVariable2'``.
+        zlab : str, optional
+             Label for z-axis (3D plots only).  Defaults to ``'stateVariable3'``.
+        choose_xrange : list of float, optional
+             Range plotted on x-axis.  Specify as ``[xmin, xmax]``.  If not
+             given uses data values to set axis limits
+        choose_yrange : list of float, optional
+             Range plotted on y-axis.  Specify as ``[ymin, ymax]``.  If not
+             given uses data values to set axis limits
+        silent : bool, optional
+             Switch on/off widgets and plot.  Important for use with multi
+             controllers.  Defaults to False.
+
+        Returns
+        -------
+        :class:`MuMoTcontroller`
+            A MuMoT controller object
+        
+        Notes
+        -----
+        Plotting keywords are also described in the `user manual`_.
+
+        .. _user manual: https://diodeproject.github.io/MuMoT/
+
+        """
         if self._systemSize is None and self._constantSystemSize == True:  # duplicate check in view and controller required for speedy error reporting, plus flexibility to instantiate view independent of controller
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return None
@@ -893,37 +1083,76 @@ class MuMoTmodel:
             return viewController
         else:
             return None
-    
 
-    def bifurcation(self, bifurcationParameter, stateVariable1, stateVariable2=None, initWidgets={}, **kwargs):
-        """Construct and display bifurcation plot of `stateVariable1` (y-axis), or `stateVariable1` +/- `stateVariable2` (y-axis), depending on `bifurcationParameter` (x-axis).
-        
-        1D and 2D systems are currently supported, only limit points and branch points can be detected
-        
-        :Arguments:
-            `bifurcationParameter`: critical parameter plotted on x-axis
+    def bifurcation(self, bifurcationParameter, stateVariable1,
+                    stateVariable2=None, initWidgets={}, **kwargs):
+        """Construct and display bifurcation plot of ``stateVariable1``
+        (y-axis), or ``stateVariable1`` +/- ``stateVariable2`` (y-axis),
+        depending on ``bifurcationParameter`` (x-axis).
 
-            `stateVariable1`: state variable expression to be plotted on the y-axis, allowed are: reactant1, reactant1-reactant2, or reactant1+reactant2
-            `stateVariable2 = None`: state variable if system is larger than 2D (not currently supported)
-            `initWidgets = {}`: dictionary where keys are the free-parameter or any other specific parameter, and values are four values, e.g. 'parameter':[initial-value, min-value, max-value, step-size]
-        
-        :Keyword arguments:
-            `initialState = {}`: initial proportions of the reactants (type: float in range [0,1]), will be used ONLY if calculation of stationary states fails, can also be set via `initWidgets` argument
-            `initBifParam = 2.0`: initial value of bifurcation parameter, can also be set via `initWidgets` argument
-            `conserved = False`: specify if a system is conserved to make proportions of state variables (at time t=0) sum up to 1, or not; type: boolean (takes True or False)
-            `contMaxNumPoints = 100`: choose maximum number of continuation points, accepts integers
-            `fontsize = None`: specify fontsize for axis-labels, accepts integer, if not given fontsize is automatically derived from length of axis label
-            `xlab = 'bifurcationParameter'`: specify label on x-axis (type: str), if not given uses symbol for `bifurcationParameter` in arguments as default label
-            `ylab = '\Phi_{stateVariable1}'`: specify label on y-axis (type: str), if not given uses expression given as `stateVariable1` in arguments as index, if `stateVariable1` is a sum/difference of the form 'Reactant1 +/- Reactant2' the default label is \Phi_{Reactant1} - \Phi_{Reactant2}
-            `choose_xrange = None`: specify range plotted on x-axis; usage: choose_xrange=[xmin, xmax], xmin and xmax are of type: float, if not given uses data values to set axis limits
-            `choose_yrange = None`: specify range plotted on y-axis; usage: choose_xrange=[ymin, ymax], ymin and ymax are of type: float, if not given uses data values to set axis limits
-            `silent = False`: switch on/off widgets and plot (type: boolean), accepts True or False; important for use with multi controllers
-            Note: plotting keywords are also described in the user manual: https://diodeproject.github.io/MuMoT/
-            
-        :Returns:
-            MuMoTbifurcationController
+        1D and 2D systems are currently supported.  Only limit points and
+        branch points can be detected.
+
+        Parameters
+        ----------
+        bifurcationParameter
+            Critical parameter plotted on x-axis.  Type?
+        stateVariable1
+            State variable expression to be plotted on the y-axis; allowed are:
+            reactant1, reactant1-reactant2, or reactant1+reactant2.  Type?
+        stateVariable2 : optional
+            State variable if system is larger than 2D (not currently
+            supported).  Type?
+        initWidgets : dict, optional
+            Keys are the free-parameter or any other specific parameter, and
+            values are four values, e.g. ``'parameter': [initial-value,
+            min-value, max-value, step-size]``.  Defaults to an empty
+            dictionary.
+        initialState : float, optional
+            Initial proportions of the reactants.  A value in the range [0,1].
+            Will be used *only* if calculation of stationary states fails.  Can
+            also be set via ``initWidgets`` argument
+        initBifParam : float, optional
+            Initial value of bifurcation parameter.  Can also be set via
+            ``initWidgets`` argument.  Defaults to 2.0.
+        conserved : bool, optional
+            Whether a system is conserved to make proportions of state
+            variables (at time t=0) sum up to 1, or not.  Defaults to False.
+        contMaxNumPoints: int, optional
+            Maximum number of continuation points.  Defaults to 100.
+        fontsize : int, optional
+            Font size for axis labels.  If not given, font size is
+            automatically derived from length of axis label.
+        xlab : str, optional
+            Label for x-axis. If not given uses symbol for
+            ``bifurcationParameter`` in arguments as default label.
+        ylab : str, optional
+            Label for y-axis.  If not given, defaults to
+            ``'\Phi_{stateVariable1}'``, where ``stateVariable1`` is another
+            argument to this method.  If ``stateVariable1`` is a sum/difference
+            of the form 'Reactant1 +/- Reactant2' the default label is
+            ``'\Phi_{Reactant1} - \Phi_{Reactant2}'``.
+        choose_xrange : list of float, optional
+            Range plotted on x-axis as ``[xmin, xmax]``.  If not given,
+            uses data values to set axis limits.
+        choose_yrange : list of float, optional
+            Range plotted on y-axis as ``[ymin, ymax]``.  If not given,
+            uses data values to set axis limits.
+        silent : bool, optional
+            Switch on/off widgets and plot. Important for use with multi
+            controllers.
+
+        Returns
+        -------
+            :class:`MuMoTbifurcationController`
+
+        Notes
+        -----
+        Plotting keywords are also described in the `user manual`_.
+
+        .. _user manual: https://diodeproject.github.io/MuMoT/
+
         """
-        
         stateVariableList = []
         for reactant in self._reactants:
             if reactant not in self._constantReactants:
@@ -976,31 +1205,61 @@ class MuMoTmodel:
         return viewController
          
     
-    def multiagent(self, initWidgets={}, **kwargs):
-        """construct interactive multiagent plot (simulation of agents locally interacting with each other)
+    def multiagent(self, initWidgets=None, **kwargs):
+        """Construct interactive multiagent plot (simulation of agents locally interacting with each other).
         
-        :Arguments:
-            `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+        Parameters
+        ----------
+        initWidgets : dict, optional
+           Keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
+
+        Other Parameters
+        ----------------
         
-        :Keyword Arguments:
-            `initialState` - initial proportions of the reactants (type: float in range [0,1])
-            `maxTime` - simulation time (type: float larger than 0)
-            `randomSeed` - random seed (type: int in range [0, MAX_RANDOM_SEED])
-            `plotProportions` - flag to plot proportions or full populations (type: boolean)
-            `realtimePlot` - flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation) (type: boolean)
-            `visualisationType` - type of visualisation (type: string in {'evo','graph','final','barplot'})
-            `final_x` - which reactant is shown on x-axis when visualisation type is final
-            `final_y` - which reactant is shown on x-axis when visualisation type is final
-            `runs` - number of simulation runs to be executed
-            `aggregateResults` - flag to aggregate or not the results from several runs
-            `netType` - type of network (type: string in {'full','erdos-renyi','barabasi-albert','dynamic'})
-            `netParam` - property of the network ralated to connectivity. It varies depending on the netType (type: float)
-            `motionCorrelatedness` - (active only for netType='dynamic') level of inertia in the random walk (type: float in [0,1]) with 0 completely uncorrelated random walk and 1 straight trajectories
-            `particleSpeed` - (active only for netType='dynamic') speed of the moving particle, i.e. displacement in one timestep (type: float in [0,1])
-            `timestepSize` - length of one timestep, the maximum size is determined by the rates (type: float > 0)
-            `showTrace` - (active only for netType='dynamic') flag to plot the part trajectory of each particle (type: boolean)
-            `showInteractions` - (active only for netType='dynamic') flag to plot the interaction range between particles (type: boolean)
+        initialState : float 
+           Initial proportions of the reactants; a value in the range [0,1].
+        maxTime : float
+           Simulation time; must be > 0.
+        randomSeed : int 
+           Random seed in range [0, MAX_RANDOM_SEED]).
+        plotProportions : bool
+           Flag to plot proportions or full populations.
+        realtimePlot : bool
+           Flag to plot results in realtime (True = the plot is updated each
+           timestep of the simulation; False = the plot is updated once at the
+           end of the simulation).
+        visualisationType : str
+            Type of visualisation (``'evo'``,``'graph'``,``'final'`` or ``'barplot'``).
+        final_x : object
+           Which reactant is shown on x-axis when visualisation type is final.
+        final_y : object
+           Which reactant is shown on x-axis when visualisation type is final.
+        runs : int
+           Number of simulation runs to be executed.
+        aggregateResults : bool
+           Flag to aggregate or not the results from several runs.
+        netType : str
+           Type of network (``'full'``, ``'erdos-renyi'``, ``'barabasi-albert'`` or ``'dynamic'``.
+        netParam : float
+           Property of the network ralated to connectivity. It varies depending on the netType.
+        motionCorrelatedness : float
+           (active only for netType='dynamic') level of inertia in the random walk, with 0 completely uncorrelated random walk and 1 straight trajectories.  Must be in range [0, 1].
+        particleSpeed : float
+           (active only for netType='dynamic') speed of the moving particle,
+           i.e. displacement in one timestep.  Must be in range  [0,1].
+        timestepSize : float
+           Length of one timestep, the maximum size is determined by the rates.
+           Must be > 0.
+        showTrace : bool
+           (active only for netType='dynamic') flag to plot the part trajectory
+           of each particle.
+        showInteractions : bool
+           (active only for netType='dynamic') flag to plot the interaction
+           range between particles.
         """
+        if initWidgets is None:
+            initWidgets = dict()
+
         paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params', []), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False)
         
         MAParams = {} 
@@ -1047,26 +1306,49 @@ class MuMoTmodel:
         return viewController
 
     def SSA(self, initWidgets={}, **kwargs):
-        """construct interactive SSA plot (simulation run of the Gillespie algorithm to approximate the Master Equation solution)
-        
-        :Arguments:
-            `initWidgets = {}` - dictionary where keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
-        
-        :Keyword Arguments:
-            `initialState` - initial proportions of the reactants (type: float in range [0,1])
-            `maxTime` - simulation time (type: float larger than 0)
-            `randomSeed` - random seed (type: int in range [0, MAX_RANDOM_SEED])
-            `plotProportions` - flag to plot proportions or full populations (type: boolean)
-            `realtimePlot` - flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation) (type: boolean)
-            `visualisationType` - type of visualisation (type: string in {'evo','graph','final','barplot'})
-            `final_x` - which reactant is shown on x-axis when visualisation type is final
-            `final_y` - which reactant is shown on x-axis when visualisation type is final
-            `runs` - number of simulation runs to be executed
-            `aggregateResults` - flag to aggregate or not the results from several runs
+        """Construct interactive SSA plot (simulation run of the Gillespie
+        algorithm to approximate the Master Equation solution).
+
+        Parameters
+        ----------
+        initWidgets : dict, optional
+            Keys are the free parameter or any other specific parameter, and
+            values are four values as ``[initial-value, min-value, max-value,
+            step-size]``.   Defaults to an empty dictionary.
+        initialState : float
+            Initial proportions of the reactants.  Must be value in the
+            range [0,1].
+        maxTime : float
+            Simulation time.  Must be strictly positive.
+        randomSeed : int
+            Random seed.  Must be in range [0, ``MAX_RANDOM_SEED``].
+        plotProportions: bool
+            Flag to plot proportions or full populations.
+        realtimePlot : bool
+            Flag to plot results in realtime.  If True, the plot is updated
+            each timestep of the simulation; if  False, the plot is updated
+            once at the end of the simulation.
+        visualisationType : str
+            Type of visualisation.  Must be one of: ``'evo'``, ``'graph'``,
+            ``'final'``, ``'barplot'``.
+        final_x
+            Which reactant is shown on x-axis when visualisation type is
+            ``'final'``.  Type?
+        final_y
+            Which reactant is shown on x-axis when visualisation type is
+            ``'final'``.  Type?
+        runs: int
+            Number of simulation runs to be executed.
+        aggregateResults: bool
+            Flag to aggregate or not the results from several runs.
+
         """
-        
-        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params', []), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False)
-        
+        paramValuesDict = self._create_free_param_dictionary_for_controller(
+            inputParams=kwargs.get('params', []),
+            initWidgets=initWidgets,
+            showSystemSize=True, 
+            showPlotLimits=False)
+
         ssaParams = {}
         # read input parameters
         ssaParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
@@ -5226,7 +5508,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
         self._logs.append(log)
         
     def _update_view_specific_params(self, freeParamDict={}):
-        """getting other parameters specific to SSA"""
+        """Getting other parameters specific to SSA."""
         if self._controller is not None:
             if self._fixedParams.get('initialState') is not None:
                 self._initialState = self._fixedParams['initialState']
@@ -6058,8 +6340,8 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         currentState = {state : self._agents.count(state) for state in self._initialState.keys()}  # if state not in self._mumotModel._constantReactants} #self._mumotModel._reactants | self._mumotModel._constantReactants}
         return (self._timestepSize, currentState)
 
-    ## one timestep for one agent
     def _stepOneAgent(self, agent, neighs, activeNeighs):
+        """One timestep for one agent."""
         rnd = np.random.rand()
         lastVal = 0
         neighChanges = [None]*len(neighs)
@@ -6128,21 +6410,24 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         # elif a.position.y > self.dimensions.y: a.position.x = self.dimensions.x 
         return (x, y, o)
 
-    ## return the (index) list of neighbours of 'agent'
     def _getNeighbours(self, agent, positions, distance_range):
+        """Return the (index) list of neighbours of ``agent``."""
         neighbour_list = []
         for neigh in np.arange(len(positions)):
             if (not neigh == agent) and (self._distance_on_torus(positions[agent][0], positions[agent][1], positions[neigh][0], positions[neigh][1]) < distance_range):
                 neighbour_list.append(neigh)
         return neighbour_list
     
-    ## returns the minimum distance calucalted on the torus given by periodic boundary conditions
     def _distance_on_torus(self, x_1, y_1, x_2, y_2):
+        """Returns the minimum distance calucalted on the torus given by periodic boundary conditions."""
         return np.sqrt(min(abs(x_1 - x_2), self._arena_width - abs(x_1 - x_2))**2 + 
                     min(abs(y_1 - y_2), self._arena_height - abs(y_1 - y_2))**2)
     
-    ## updates the widgets related to the netType (it cannot be a MuMoTcontroller method because with multi-controller it needs to point to the right _controller)
     def _update_net_params(self, resetValueAndRange):
+        """Update the widgets related to the netType 
+        
+        (it cannot be a :class:`MuMoTcontroller` method because with multi-controller it needs to point to the right ``_controller``)
+        """
         # if netType is fixed, no update is necessary
         if self._fixedParams.get('netParam') is not None: return
         self._netType = self._fixedParams['netType'] if self._fixedParams.get('netType') is not None else self._controller._widgetsExtraParams['netType'].value
@@ -6247,8 +6532,9 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         if toLinkPlotFunction:
             self._controller._widgetsExtraParams['netParam'].observe(self._controller._replotFunction, 'value')
         
+
 class MuMoTSSAView(MuMoTstochasticSimulationView): 
-    """view for computational simulations of the Gillespie algorithm to approximate the Master Equation solution""" 
+    """View for computational simulations of the Gillespie algorithm to approximate the Master Equation solution""" 
     ## a matrix form of the left-handside of the rules
     _reactantsMatrix = None 
     ## the effect of each rule
@@ -6393,9 +6679,9 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
         return (timeInterval, self._currentState)
     
 
-## create model from text description
 def parseModel(modelDescription):
-    ## @todo: add system size to model description
+    """Create model from text description."""
+    # @todo: add system size to model description
     if "get_ipython" in modelDescription:
         # hack to extract model description from input cell tagged with %%model magic
         modelDescr = modelDescription.split("\"")[0].split("'")[5]
@@ -6565,18 +6851,24 @@ def parseModel(modelDescription):
     
     return model
 
+
 def setVerboseExceptions(verbose=True):
-    """Set the verbosity of exception handling
-    
-    Parameters:
-        verbose = True - show exception traceback?"""
+    """Set the verbosity of exception handling.
+
+    Parameters
+    ----------
+    verbose : boolean, optional
+        Whether to show a exception traceback.  Defaults to True.
+
+    """
     if verbose:
         ipython.showtraceback = _show_traceback
     else:
         ipython.showtraceback = _hide_traceback
-    
+
+
 def _deriveODEsFromRules(reactants, rules):
-    ## @todo: replace with principled derivation via Master Equation and van Kampen expansion
+    # @todo: replace with principled derivation via Master Equation and van Kampen expansion
     equations = {}
     terms = []
     for rule in rules:
@@ -6603,10 +6895,13 @@ def _deriveODEsFromRules(reactants, rules):
 
     return equations
 
-## produces dictionary with stoichiometry of all reactions with key ReactionNr
-# ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry
-## @todo: shall this become a model method?
+
 def _getStoichiometry(rules, const_reactants):
+    """Produce dictionary with stoichiometry of all reactions with key ReactionNr.
+
+    ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry.
+    """
+    # @todo: shall this become a model method?
     stoich = {}
     ReactionNr = numbered_symbols(prefix='Reaction ', cls=Symbol, start=1)
     for rule in rules:
@@ -6627,8 +6922,11 @@ def _getStoichiometry(rules, const_reactants):
     return stoich
 
 
-## derivation of the Master equation, returns dictionary used in showMasterEquation
 def _deriveMasterEquation(stoichiometry):
+    """Derive the Master equation
+    
+    Returns dictionary used in :method:`MuMoTmodel.showMasterEquation`.
+    """
     substring = None
     P, E_op, x, y, v, w, t, m = symbols('P E_op x y v w t m')
     V = Symbol('\overline{V}', real=True, constant=True)
@@ -6677,8 +6975,8 @@ def _deriveMasterEquation(stoichiometry):
     return sol_dict_rhs, substring
 
 
-## Function returning the left-hand side and right-hand side of van Kampen expansion    
 def _doVanKampenExpansion(rhs, stoich):
+    """Return the left-hand side and right-hand side of van Kampen expansion."""
     P, E_op, x, y, v, w, t, m = symbols('P E_op x y v w t m')
     V = Symbol('\overline{V}', real=True, constant=True)
     nvec = []
@@ -6825,9 +7123,10 @@ def _doVanKampenExpansion(rhs, stoich):
     
     return rhs_vKE.expand(), lhs_vKE, substring
 
-## creates list of dictionaries where the key is the system size order
-#def _get_orderedLists_vKE( _getStoichiometry,rules):
+
+# def _get_orderedLists_vKE( _getStoichiometry,rules):
 def _get_orderedLists_vKE(stoich):
+    """Create list of dictionaries where the key is the system size order."""
     V = Symbol('\overline{V}', real=True, constant=True)
     stoichiometry = stoich
     rhs_vke, lhs_vke, substring = _doVanKampenExpansion(_deriveMasterEquation, stoichiometry)
@@ -6857,8 +7156,8 @@ def _get_orderedLists_vKE(stoich):
     return Vlist_lhs, Vlist_rhs, substring
 
 
-## Function that returns the Fokker-Planck equation
 def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
+    """Return the Fokker-Planck equation."""
     P, t = symbols('P t')
     V = Symbol('\overline{V}', real=True, constant=True)
     Vlist_lhs, Vlist_rhs, substring = _get_orderedLists_vKE(stoich)
@@ -6906,9 +7205,12 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
     return SOL_FPE, substring
 
 
-## calculates noise in the system
-# returns equations of motion for noise
 def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
+    """Calculates noise in the system.
+
+    Returns equations of motion for noise.
+
+    """
     P, M_1, M_2, t = symbols('P M_1 M_2 t')
     #
     #A,B, alpha, beta, gamma = symbols('A B alpha beta gamma')
@@ -7081,9 +7383,12 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
     return EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder 
 
 
-## calculates noise in the system
-# returns analytical solution for stationary noise
 def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
+    """Calculate noise in the system.
+
+    Returns analytical solution for stationary noise.
+
+    """
     P, M_1, M_2, t = symbols('P M_1 M_2 t')
     
     EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich)
@@ -7392,8 +7697,8 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
 #     return EOM_1stOrderMom, SOL_1stOrderMom[0], NoiseSubs1stOrder, EOM_2ndOrderMom, SOL_2ndOrdMomDict, NoiseSubs2ndOrder 
     
 
-## Function that returns the ODE system deerived from Master equation
 def _getODEs_vKE(_get_orderedLists_vKE, stoich):
+    """Return the ODE system derived from Master equation."""
     P, t = symbols('P t')
     V = Symbol('\overline{V}', real=True, constant=True)
     Vlist_lhs, Vlist_rhs, substring = _get_orderedLists_vKE(stoich)
@@ -7631,13 +7936,13 @@ def _process_params(params):
             
     return (paramsRet, paramValues)
 
-    
+
 def _raiseModelError(expected, read, rule):
     raise MuMoTSyntaxError("Expected " + expected + " but read '" + read + "' in rule: " + rule)
 
 
-## generic method for constructing figures in MuMoTview and MuMoTmultiController classes
 def _buildFig(object, figure=None):
+    """Generic function for constructing figures in :class:`MuMoTview` and :class:`MuMoTmultiController` classes."""
     global figureCounter
     object._figureNum = figureCounter
     if figureCounter == 1:
@@ -7657,8 +7962,8 @@ def _buildFig(object, figure=None):
         object._figure = figure
 
 
-## generic method for constructing figures in MuMoTview and MuMoTmultiController classes
 def _buildFigOLD(object, figure=None):
+    """Generic function for constructing figures in :class:`MuMoTview` and :class:`MuMoTmultiController` classes."""
     global figureCounter
     object._figureNum = figureCounter
     figureCounter += 1
@@ -7677,12 +7982,13 @@ def round_to_1(x):
     if x == 0: return 1
     return round(x, -int(floor(log10(abs(x)))))
 
-## Function for editing properties of 3D plots. 
-#
-#This function is used in MuMoTvectorView.
 def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=False, 
                        specialPoints=None, showFixedPoints=False, **kwargs):
-    
+    """Function for editing properties of 3D plots. 
+
+    Called by :class:`MuMoTvectorView`.
+
+    """
     fig = plt.gcf()
     #fig.set_size_inches(10,8) 
     ax = fig.gca(projection='3d')
@@ -7836,14 +8142,15 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     plt.tight_layout(pad=4)
  
 
-## Function for formatting 2D plots. 
-#
-#This function is used in MuMoTvectorView, MuMoTstreamView and MuMoTbifurcationView    
 def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None, 
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
                        xlab=None, ylab=None, curvelab=None, aspectRatioEqual=False, line_color_list=LINE_COLOR_LIST, 
                        **kwargs):
-    
+    """Format 2D plots.
+
+    Called by :class:`MuMoTvectorView`, :class:`MuMoTstreamView` and :class:`MuMoTbifurcationView`
+
+    """
     showLegend = kwargs.get('showLegend', False)
     
     linestyle_list = ['solid', 'dashed', 'dashdot', 'dotted', 'solid', 'dashed', 'dashdot', 'dotted', 'solid']
@@ -8266,6 +8573,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     if aspectRatioEqual:
         ax.set_aspect('equal')
     
+
 def _decodeNetworkTypeFromString(netTypeStr):
     # init the network type
     admissibleNetTypes = {'full': NetworkType.FULLY_CONNECTED, 
@@ -8276,6 +8584,7 @@ def _decodeNetworkTypeFromString(netTypeStr):
     if netTypeStr not in admissibleNetTypes:
         print("ERROR! Invalid network type argument! Valid strings are: " + str(admissibleNetTypes))
     return admissibleNetTypes.get(netTypeStr, None)
+
 
 def _encodeNetworkTypeToString(netType):
     # init the network type
@@ -8288,12 +8597,14 @@ def _encodeNetworkTypeToString(netType):
         print("ERROR! Invalid netTypeEncoding table! Tryed to encode network type: " + str(netType))
     return netTypeEncoding.get(netType, 'none')
 
+
 def _make_autopct(values):
     def my_autopct(pct):
         total = sum(values)
         val = int(round(pct*total/100.0))
         return '{p:.2f}%  ({v:d})'.format(p=pct, v=val)
     return my_autopct
+
 
 def _almostEqual(a, b):
     epsilon = 0.0000001
@@ -8302,25 +8613,32 @@ def _almostEqual(a, b):
 
 def _plot_point_cov(points, nstd=2, ax=None, **kwargs):
     """
-    Plots an `nstd` sigma ellipse based on the mean and covariance of a point
-    "cloud" (points, an Nx2 array).
+    Plots an ``nstd`` sigma ellipse based on the mean and covariance of a point
+    "cloud" (``points``, an Nx2 array).
 
     Parameters
     ----------
-        points : An Nx2 array of the data points.
-        nstd : The radius of the ellipse in numbers of standard deviations.
-            Defaults to 2 standard deviations.
-        ax : The axis that the ellipse will be plotted on. Defaults to the 
-            current axis.
-        Additional keyword arguments are pass on to the ellipse patch.
+    points : numpy.ndarray
+        An Nx2 array of the data points.
+    nstd : float, optional
+        The radius of the ellipse in numbers of standard deviations.
+        Defaults to 2 standard deviations.
+    ax : matplotlib.axes.Axes, optional
+        The axis that the ellipse will be plotted on. Defaults to the 
+        current axis.
 
     Returns
     -------
+    :class:`matplotlib.patches.Ellipse`
         A matplotlib ellipse artist
+
+    Notes
+    -----
+    Additional keyword arguments are pass on to the ellipse patch.
         
     Credit
     ------
-        https://github.com/joferkington/oost_paper_code/blob/master/error_ellipse.py        
+    https://github.com/joferkington/oost_paper_code/blob/master/error_ellipse.py        
     """
     # Copyright (c) 2012 Free Software Foundation
     # 
@@ -8345,31 +8663,39 @@ def _plot_point_cov(points, nstd=2, ax=None, **kwargs):
     cov = np.cov(points, rowvar=False)
     return _plot_cov_ellipse(cov, pos, nstd, ax, **kwargs)
 
-# function copied from https://github.com/joferkington/oost_paper_code/blob/master/error_ellipse.py
+
 def _plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
     """
-    Plots an `nstd` sigma error ellipse based on the specified covariance
-    matrix (`cov`). Additional keyword arguments are passed on to the 
+    Plots an ``nstd`` sigma error ellipse based on the specified covariance
+    matrix (``cov``). Additional keyword arguments are passed on to the 
     ellipse patch artist.
 
     Parameters
     ----------
-        cov : The 2x2 covariance matrix to base the ellipse on
-        pos : The location of the center of the ellipse. Expects a 2-element
-            sequence of [x0, y0].
-        nstd : The radius of the ellipse in numbers of standard deviations.
-            Defaults to 2 standard deviations.
-        ax : The axis that the ellipse will be plotted on. Defaults to the 
-            current axis.
-        Additional keyword arguments are pass on to the ellipse patch.
+    cov : numpy.ndarray
+        The 2x2 covariance matrix to base the ellipse on.
+    pos : list of float
+        The location of the center of the ellipse. Expects a 2-element
+        sequence of [x0, y0].
+    nstd : float, optional
+        The radius of the ellipse in numbers of standard deviations.
+        Defaults to 2 standard deviations.
+    ax : matplotlib.axes.Axes, optional
+        The axis that the ellipse will be plotted on. Defaults to the 
+        current axis.
 
     Returns
     -------
+    :class:`matplotlib`.patches.Ellipse
         A matplotlib ellipse artist
         
+    Notes
+    -----
+    Additional keyword arguments are pass on to the ellipse patch.
+
     Credit
     ------
-        https://github.com/joferkington/oost_paper_code/blob/master/error_ellipse.py        
+    https://github.com/joferkington/oost_paper_code/blob/master/error_ellipse.py        
     """
     # Copyright (c) 2012 Free Software Foundation
     # 
@@ -8408,8 +8734,9 @@ def _plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
     ax.add_artist(ellip)
     return ellip 
 
-## Return the number of significant decimals of the input digit string (up to a maximum of 7)
+
 def _count_sig_decimals(digits, maximum=7):
+    """Return the number of significant decimals of the input digit string (up to a maximum of 7). """
     _, _, fractional = digits.partition(".")
 
     if fractional:
@@ -8417,17 +8744,36 @@ def _count_sig_decimals(digits, maximum=7):
     else:
         return 0
 
-## standard function to parse an input keyword and set initial range and default values (when the input is a slider-widget)
-## check if the fixed value is not None, otherwise it returns the default value (samewise for initRange and defaultRange)
-## the optional parameter validRange is use to check if the fixedValue has a usable value
-## if the defaultValue is out of the initRange, the default value is move to the closest of the initRange extremes
-## \param[in] inputValue if not None it indicated the fixed value to use
-## \param[in] defaultValueRangeStep dafault set of values in the format [val,min,max,step]
-## \param[in] initValueRangeStep user-specified set of values in the format [val,min,max,step]
-## \param[in] validRange (optional) idicated the min and max accepted values [min,max]
-## \param[in] onlyValue (optional) if True defaultValueRangeStep and initValueRangeStep are only a single value
-## \param[out] values contains a list of five items (start-value, min-value, max-value, step-size, fixed). if onlyValue, it's only two items (start-value, fixed). The item 'fixed' is a boolean. If True the value is fixed (partial controller active), if False the widget will be created. 
+
 def _parse_input_keyword_for_numeric_widgets(inputValue, defaultValueRangeStep, initValueRangeStep, validRange=None, onlyValue=False):
+    """Parse an input keyword and set initial range and default values (when the input is a slider-widget).
+
+    Check if the fixed value is not None, otherwise it returns the default value (samewise for ``initRange`` and ``defaultRange``).
+    The optional parameter ``validRange`` is use to check if the fixedValue has a usable value.
+    If the ``defaultValue`` is out of the ``initRange``, the default value is move to the closest of the initRange extremes.
+
+    Parameters
+    ----------
+    inputValue : object
+        if not ``None`` it indicated the fixed value to use
+    defaultValueRangeStep : list of object
+        Default set of values in the format ``[val,min,max,step]``
+    initValueRangeStep : list of object
+        User-specified set of values in the format ``[val,min,max,step]``
+    validRange : list of object, optional 
+        The min and max accepted values ``[min,max]``
+    onlyValue : bool, optional
+        If ``True`` then ``defaultValueRangeStep`` and ``initValueRangeStep`` are only a single value
+
+    Returns
+    -------
+    values : list of object 
+        Contains a list of five items (start-value, min-value, max-value,
+        step-size, fixed). if onlyValue, it's only two items (start-value,
+        fixed). The item fixed is a bool. If ``True`` the value is fixed (partial
+        controller active), if ``False`` the widget will be created. 
+
+    """
     outputValues = defaultValueRangeStep if not onlyValue else [defaultValueRangeStep]
     if onlyValue == False:
         if initValueRangeStep is not None and getattr(initValueRangeStep, "__getitem__", None) is None:
@@ -8481,12 +8827,26 @@ def _parse_input_keyword_for_numeric_widgets(inputValue, defaultValueRangeStep, 
     outputValues.append(False)
     return outputValues
 
-## standard function to parse an input keyword and set initial range and default values (when the input is a boolean checkbox)
-## check if the fixed value is not None, otherwise it returns the default value
-## \param[in] inputValue if not None it indicated the fixed value to use
-## \param[in] defaultValue dafault boolean value 
-## \param[out] [value,fixed] The item value contains the keyword value; 'fixed' is a boolean. If True the value is fixed (partial controller active), if False the widget will be created. 
+
 def _parse_input_keyword_for_boolean_widgets(inputValue, defaultValue, initValue=None, paramNameForErrorMsg=None):
+    """Parse an input keyword and set initial range and default values (when the input is a boolean checkbox)
+    check if the fixed value is not None, otherwise it returns the default value.
+
+    Parameters
+    ----------
+    inputValue : object
+        If not None it indicates the fixed value to use
+    defaultValue : bool
+        dafault boolean value 
+
+    Returns
+    -------
+    value : object
+        The keyword value; 'fixed' is a boolean. 
+    fixed : bool 
+        If True the value is fixed (partial controller active); if False the widget will be created. 
+    
+    """
     if inputValue is not None:
         if not isinstance(inputValue, bool):  # terminating the process if the input argument is wrong
             paramNameForErrorMsg = "for " + str(paramNameForErrorMsg) + " = " if paramNameForErrorMsg else ""
@@ -8501,18 +8861,25 @@ def _parse_input_keyword_for_boolean_widgets(inputValue, defaultValue, initValue
         else:  
             return [defaultValue, False]
 
-## params is a list (rather than a dictionary) and this method is necessary to fecth the value by name 
+
 def _get_item_from_params_list(params, targetName):
+    """Params is a list (rather than a dictionary) and this method is necessary to fetch the value by name. """
     for param in params:
         if param[0] == targetName or param[0].replace('\\', '') == targetName:
             return param[1]
     return None
 
-## function to check if the user-specified values are within valid range (appropriate subfunctions are called depending on the parameter)
-## parameters for slider widgets return list of length 5 as [value, min, max, step, fixed]
-## parameters for boolean, dropbox, or input fields return list of lenght two as [value, fixed]
-## values is the initial value, (min,max,step) are for sliders, and fixed is a boolean that indciates if the parameter is fixed or the widget should be displayed
+
 def _format_advanced_option(optionName, inputValue, initValues, extraParam=None, extraParam2=None):
+    """Check if the user-specified values are within valid range (appropriate subfunctions are called depending on the parameter).
+
+    parameters for slider widgets return list of length 5 as [value, min, max, step, fixed]
+
+    parameters for boolean, dropbox, or input fields return list of lenght two as [value, fixed]
+
+    values is the initial value, (min,max,step) are for sliders, and fixed is a boolean that indciates if the parameter is fixed or the widget should be displayed
+
+    """
     if (optionName == 'initialState'):
         (allReactants, _) = extraParam
         initialState = {}
@@ -8751,8 +9118,8 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
     return [None, False]  # default output for unknown optionName
 
 
-## set underscores in expressions which need two indices to enable proper LaTeX rendering
 def _doubleUnderscorify(s):
+    """ Set underscores in expressions which need two indices to enable proper LaTeX rendering. """
     ind_list = [kk for kk, char in enumerate(s) if char == '_' and s[kk+1] != '{']
     if len(ind_list) == 0:
         return s
@@ -8767,16 +9134,16 @@ def _doubleUnderscorify(s):
                 index_MaxCharLength = min(index_MaxCharLength_init, ind_diff-5)
                 # the following requires that indices consist of 1 or 2 charcter(s) only
                 for nn in range(4+index_MinCharLength, 5+index_MaxCharLength):
-                    if s_list[ind+nn] == '}' and s_list[ind+nn+1] != '}' :
+                    if s_list[ind+nn] == '}' and s_list[ind+nn+1] != '}':
                         s_list[ind] = '_{'
-                        s_list[ind+nn] = '}}' 
+                        s_list[ind+nn] = '}}'
                         break
         
     return ''.join(s_list)
 
 
-## prepend two backslash symbols in front of Greek letters to enable proper LaTeX rendering
 def _greekPrependify(s):
+    """ Prepend two backslash symbols in front of Greek letters to enable proper LaTeX rendering. """
     for nn in range(len(GREEK_LETT_LIST_1)):
         if 'eta' in s:
             s = _greekReplace(s, 'eta', '\\eta')
@@ -8787,8 +9154,8 @@ def _greekPrependify(s):
     return s
 
 
-## auxiliary function for _greekPrependify()
 def _greekReplace(s, sub, repl):
+    """ Auxiliary function for _greekPrependify() """
     # if find_index is not minus1 we have found at least one match for the substring
     find_index = s.find(sub)
     # loop util we find no (more) match
@@ -8808,15 +9175,15 @@ def _greekReplace(s, sub, repl):
     return s
 
 
-## round numerical output in Logs to 3 decimal places
 def _roundNumLogsOut(number):
+    """ Round numerical output in Logs to 3 decimal places. """
     # if number is complex
     if type(number) == sympy.Add:
         return str(round(sympy.re(number), 3)) + str(round(sympy.im(number), 3)) + 'j'
     # if number is real
     else:
         return str(round(number, 3))
-    
+
 # import gc, inspect
 # def _find_obj_names(obj):
 #     frame = inspect.currentframe()

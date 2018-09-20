@@ -3,22 +3,64 @@ API
 
 .. todo:: Add preamble before API documentation.  Note that primarily of interest to developers.
 
-.. autoclass:: mumot.MuMoTmodel 
-   :members:
- 
-.. 
-   COMMENTED OUT
+.. currentmodule:: mumot
 
-.. automodule:: mumot
-   :members:
+Functions
+---------
 
+.. autosummary::
+   :toctree: autosummary
 
-   .. autoclass:: MuMoT.NetworkType MuMoTdefault MuMoTmodel,MuMoTcontroller,MuMoTSSAController,MuMoTmultiagentController,MuMoTview,MuMoTmultiView,MuMoTmultiController,MuMoTtimeEvolutionView,MuMoTtimeEvoStateVarView,MuMoTtimeEvoNoiseCorrView,MuMoTfieldView,MuMoTstreamView,MuMoTvectorView,MuMoTbifurcationView,MuMoTmultiagentView,MuMoTSSAView
-       :members:
+   parseModel
+   setVerboseExceptions
+   round_to_1
 
-   Indices and tables
-   ==================
+Model classes
+-------------
 
-   * :ref:`genindex`
-   * :ref:`modindex`
-   * :ref:`search`
+.. autosummary::
+   :toctree: autosummary
+
+   MuMoTmodel
+
+View classes
+------------
+
+.. autosummary::
+   :toctree: autosummary
+
+   MuMoTview
+   MuMoTmultiView
+   MuMoTtimeEvolutionView
+   MuMoTintegrateView
+   MuMoTnoiseCorrelationsView
+   MuMoTfieldView
+   MuMoTvectorView
+   MuMoTstreamView
+   MuMoTbifurcationView
+   MuMoTstochasticSimulationView
+   MuMoTmultiagentView
+   MuMoTSSAView
+
+Controller classes
+------------------
+
+.. autosummary::
+   :toctree: autosummary
+
+   MuMoTcontroller
+   MuMoTbifurcationController
+   MuMoTtimeEvolutionController
+   MuMoTstochasticSimulationController
+   MuMoTmultiagentController
+   MuMoTmultiController
+
+Exception classes
+-----------------
+
+.. autosummary::
+   :toctree: autosummary
+
+   MuMoTError
+   MuMoTValueError
+   MuMoTSyntaxError

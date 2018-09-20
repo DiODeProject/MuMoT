@@ -3,24 +3,16 @@ MuMoT: Multiscale Modelling Tool
 
 MuMoT was developed at the University of Sheffield as part of the `DiODe <http://diode.group.shef.ac.uk/>`__ project.
 
-.. currentmodule:: mumot.MuMoT
-
-.. autosummary::
-   :toctree: functions
-
-
 .. todo:: Add general overview (inc graphic?)
 
-
-
 .. toctree::
+   :maxdepth: 2
    :hidden:
 
    self
 
-
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    install
