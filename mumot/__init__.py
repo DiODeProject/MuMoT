@@ -725,6 +725,9 @@ class MuMoTmodel:
             Dictionary where keys are the free-parameter or any other specific
             parameter, and values are four values, e.g.
             ``'parameter':[initial-value, min-value, max-value, step-size]``
+
+        Other Parameters
+        ----------------
         maxTime : float, optional
             Simulation time for noise correlations.  Must be strictly positive.
             Defaults to 3.0.
@@ -813,6 +816,9 @@ class MuMoTmodel:
             Dictionary where keys are the free-parameter or any other specific
             parameter, and values are four values, e.g.
             ``'parameter': [initial-value, min-value, max-value, step-size]``.
+
+        Other Parameters
+        ----------------
         maxTime : float, optional
             Simulation time for noise correlations.  Must be strictly positive.
             Defaults to 3.0.
@@ -947,6 +953,9 @@ class MuMoTmodel:
              Keys are the free parameter or any other specific parameter, and
              values each a list of ``[initial-value, min-value, max-value,
              step-size]``.  
+
+        Other Parameters
+        ----------------
         showFixedPoints : bool, optional
              Plot fixed points.  Defaults to False.
         showNoise : bool, optional
@@ -1031,6 +1040,9 @@ class MuMoTmodel:
              Keys are the free parameter or any other specific parameter, and
              values each a list of ``[initial-value, min-value, max-value,
              step-size]``.  
+
+        Other Parameters
+        ----------------
         showFixedPoints : bool, optional
              Plot fixed points.  Defaults to False.
         showNoise : bool, optional
@@ -1115,6 +1127,9 @@ class MuMoTmodel:
             Keys are the free-parameter or any other specific parameter, and
             values are four values, e.g. ``'parameter': [initial-value,
             min-value, max-value, step-size]``.  
+
+        Other Parameters
+        ----------------
         initialState : float, optional
             Initial proportions of the reactants.  A value in the range [0,1].
             Will be used *only* if calculation of stationary states fails.  Can
@@ -1224,7 +1239,6 @@ class MuMoTmodel:
 
         Other Parameters
         ----------------
-        
         initialState : float 
            Initial proportions of the reactants; a value in the range [0,1].
         maxTime : float
@@ -1324,6 +1338,9 @@ class MuMoTmodel:
             Keys are the free parameter or any other specific parameter, and
             values are four values as ``[initial-value, min-value, max-value,
             step-size]``.
+
+        Other Parameters
+        ----------------
         initialState : float
             Initial proportions of the reactants.  Must be value in the
             range [0,1].
