@@ -94,9 +94,7 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-#html_theme = 'alabaster'
-import sphinx_rtd_theme
-html_theme = "sphinx_rtd_theme"
+html_theme = "nature"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -112,18 +110,7 @@ html_static_path = ['_static']
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
 #
-# This is required for the alabaster theme
-# refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
-html_sidebars = {
-    '**': [
-        'about.html',
-        'navigation.html',
-        'relations.html',  # needs 'show_related': True theme option to display
-        'searchbox.html',
-        'donate.html',
-    ]
-}
-
+html_sidebars = { '**': ['globaltoc.html', 'searchbox.html'] }
 
 # -- Options for HTMLHelp output ------------------------------------------
 
@@ -183,13 +170,13 @@ texinfo_documents = [
 
 # -- Options for autodoc and autosummary ----------------------------------
 
-autodoc_default_flags = [
+autodoc_default_options = {
     # Make sure that any autodoc declarations show the right members
-    "members",
-    "inherited-members",
-    "show-inheritance",
-    # "private-members",
-]
+    "members": None,
+    "inherited-members": None,
+    "show-inheritance": None,
+    # "private-members": None,
+}
 autosummary_generate = True
 
 # -- Options for napoleon/numpydoc ----------------------------------------
