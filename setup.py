@@ -48,8 +48,6 @@ setup(
             ],
         'docs': [
             'sphinx',
-            'sphinx-rtd-theme',
-            'numpydoc'
         ],
     },
     classifiers=[
