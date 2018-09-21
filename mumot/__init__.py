@@ -104,8 +104,9 @@ GREEK_LETT_RESERVED_LIST = ['\\eta', '\\nu', '\\Phi']
 #                     '\\upsilon', '\\Upsilon', '\\phi', '\\Phi', '\\chi', '\\psi', '\\Psi', '\\omega', '\\Omega']
 
 
-# enum possible Network types
 class NetworkType(Enum):
+    """Enumeration of possible network types."""
+
     FULLY_CONNECTED = 0
     ERSOS_RENYI = 1
     BARABASI_ALBERT = 2
@@ -113,11 +114,13 @@ class NetworkType(Enum):
     DYNAMIC = 4
 
 
-# class with default parameters
 class MuMoTdefault:
+    """Store default parameters."""
+
     _initialRateValue = 2  # @todo: was 1 (choose initial values sensibly)
     _rateLimits = (0.0, 20.0)  # @todo: choose limit values sensibly
     _rateStep = 0.1  # @todo: choose rate step sensibly
+
     @staticmethod
     def setRateDefaults(initRate=_initialRateValue, limits=_rateLimits, step=_rateStep):
         MuMoTdefault._initialRateValue = initRate
@@ -130,6 +133,7 @@ class MuMoTdefault:
     #_maxTime = 5
     #_timeLimits = (0, 50)
     #_timeStep = 0.5
+
     @staticmethod
     def setTimeDefaults(initTime=_maxTime, limits=_timeLimits, step=_timeStep):
         MuMoTdefault._maxTime = initTime
@@ -139,6 +143,7 @@ class MuMoTdefault:
     _agents = 1.0
     _agentsLimits = (0.0, 1.0)
     _agentsStep = 0.01
+
     @staticmethod
     def setAgentsDefaults(initAgents=_agents, limits=_agentsLimits, step=_agentsStep):
         MuMoTdefault._agents = initAgents
@@ -148,6 +153,7 @@ class MuMoTdefault:
     _systemSize = 10
     _systemSizeLimits = (5, 100)
     _systemSizeStep = 1
+
     @staticmethod
     def setSystemSizeDefaults(initSysSize=_systemSize, limits=_systemSizeLimits, step=_systemSizeStep):
         MuMoTdefault._systemSize = initSysSize
@@ -157,6 +163,7 @@ class MuMoTdefault:
     _plotLimits = 1.0
     _plotLimitsLimits = (0.1, 5.0)
     _plotLimitsStep = 0.1
+
     @staticmethod
     def setPlotLimitsDefaults(initPlotLimits=_plotLimits, limits=_plotLimitsLimits, step=_plotLimitsStep):
         MuMoTdefault._plotLimits = initPlotLimits
@@ -164,8 +171,8 @@ class MuMoTdefault:
         MuMoTdefault._plotLimitsStep = step
     
 
-## class describing a model
 class MuMoTmodel:
+    """Model class."""
     ## list of rules
     _rules = None 
     ## set of reactants
@@ -489,7 +496,7 @@ class MuMoTmodel:
                 print("does not initiate any reaction.")
 
     def showODEs(self, method='massAction'):
-        """Show a LaTeX representation of the model system of ODEs
+        """Show a LaTeX representation of the model system of ODEs.
 
         Displays rendered LaTeX in the Jupyter Notebook.
 
@@ -1833,8 +1840,10 @@ class MuMoTmodel:
             del tmpfile
         del self._tmpdir
 
-## class describing a single reaction rule
+
 class _Rule:
+    """Single reaction rule."""
+
     lhsReactants = []
     rhsReactants = []
     rate = ""
@@ -1843,8 +1852,10 @@ class _Rule:
         self.rhsReactants = []
         self.rate = ""
 
-## class describing a controller for a model view
+
 class MuMoTcontroller:
+    """Controller for a model view."""
+
     _view = None
     ## dictionary of LaTeX labels for widgets, with parameter name as key
     _paramLabelDict = None
@@ -2069,8 +2080,9 @@ class MuMoTcontroller:
         
         return Javascript(js_download)
 
-## Controller class to enable Advanced options widgets for bifurcation view
+
 class MuMoTbifurcationController(MuMoTcontroller):
+    """Controller to enable Advanced options widgets for bifurcation view."""
     
     def _createAdvancedWidgets(self, BfcParams, continuousReplot=False):
         initialState = BfcParams['initialState'][0]
@@ -2119,8 +2131,9 @@ class MuMoTbifurcationController(MuMoTcontroller):
         for state in sorted(initialState.keys(), key=str):
             self._extraWidgetsOrder.append('init'+str(state))
 
-## Controller class to enable Advanced options widgets for simulation of ODEs and time evolution of noise correlations
+
 class MuMoTtimeEvolutionController(MuMoTcontroller):
+    """Controller class to enable Advanced options widgets for simulation of ODEs and time evolution of noise correlations."""
     
     def _createAdvancedWidgets(self, tEParams, continuousReplot=False):
         initialState = tEParams['initialState'][0]
@@ -2183,8 +2196,8 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
             self._extraWidgetsOrder.append('plotProportions')
 
 
-## class describing a controller for stochastic simulations (base class of the MuMoTmultiagentController)
 class MuMoTstochasticSimulationController(MuMoTcontroller):
+    """Controller for stochastic simulations (base class of MuMoTmultiagentController)."""
     
     def _createAdvancedWidgets(self, SSParams, continuousReplot=False):
         initialState = SSParams['initialState'][0]
@@ -2345,8 +2358,8 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
         self._extraWidgetsOrder.append('aggregateResults')
         
 
-## class describing a controller for multiagent views
 class MuMoTmultiagentController(MuMoTstochasticSimulationController):
+    """Controller for multiagent views."""
 
     def _addSpecificWidgets(self, MAParams, continuousReplot=False):
         
@@ -2478,19 +2491,21 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
         self._extraWidgetsOrder.append('runs')
         self._extraWidgetsOrder.append('aggregateResults')
         
-
-    ## updates the widgets related to the netType (it is linked --through observe()-- before the _view is created) 
     def _update_net_params(self, _=None):
+        """Update the widgets related to the ``netType`` 
+        
+        It is linked - through ``observe()`` - before the ``_view`` is created.
+
+        """
         if self._view: self._view._update_net_params(True)
     
     def downloadTimeEvolution(self):
         return self._downloadFile(self._view._latestResults[0])
     
 
-
-
-## class describing a view on a model
 class MuMoTview:
+    """A view on a model."""
+
     ## Model view is on
     _mumotModel = None
     ## Figure/axis object to plot view to
@@ -2911,8 +2926,12 @@ class MuMoTview:
                 log.show()
     
 
-## multi-view view (tied closely to MuMoTmultiController)
 class MuMoTmultiView(MuMoTview):
+    """Multi-view view.
+    
+    Tied closely to :class:`MuMoTmultiController`.
+    
+    """
     ## view list
     _views = None
     ## axes are used for subplots ('shareAxes = True')
@@ -3003,8 +3022,9 @@ class MuMoTmultiView(MuMoTview):
             view._set_fixedParams(paramDict)
 
 
-## multi-view controller
 class MuMoTmultiController(MuMoTcontroller):
+    """Multi-view controller."""
+
     ## replot function list to invoke on views
     _replotFunctions = None
 
@@ -3244,9 +3264,12 @@ class MuMoTmultiController(MuMoTcontroller):
             self._view._plot()
 
 
-
-## time evolution view on model including state variables and noise (specialised by MuMoTintegrateView and MuMoTnoiseCorrelationsView)
 class MuMoTtimeEvolutionView(MuMoTview):
+    """Time evolution view on model including state variables and noise.
+    
+    Specialised by :class:`MuMoTintegrateView` and :class:`MuMoTnoiseCorrelationsView`.
+
+    """
     ## list of all state variables
     _stateVarList = None
     ## list of all state variables displayed in figure
@@ -3453,8 +3476,8 @@ class MuMoTtimeEvolutionView(MuMoTview):
 #             
 
  
-## numerical solution of ODEs plot view on model
 class MuMoTintegrateView(MuMoTtimeEvolutionView):
+    """Numerical solution of ODEs plot view on model."""
     
     ## y-label with default specific to this MuMoTintegrateView class (can be set via keyword)
     _ylab = None
@@ -3683,8 +3706,8 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
         return logStr
 
 
-## noise correlations around fixed points plot view on model
 class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
+    """Noise correlations around fixed points plot view on model."""
     
     ## equations of motion for first order moments of noise variables
     _EOM_1stOrdMomDict = None
@@ -4053,8 +4076,12 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         return logStr
 
 
-## field view on model (specialised by MuMoTvectorView and MuMoTstreamView)
 class MuMoTfieldView(MuMoTview):
+    """Field view on model.
+
+    Specialised by :class:`MuMoTvectorView` and :class:`MuMoTstreamView`.
+
+    """
     ## 1st state variable (x-dimension)
     _stateVariable1 = None
     ## 2nd state variable (y-dimension)
@@ -4561,8 +4588,9 @@ class MuMoTfieldView(MuMoTview):
                           'and eigenvectors: ', evecString)
         
 
-## vector plot view on model
 class MuMoTvectorView(MuMoTfieldView):
+    """Vector plot view on model."""
+
     ## dictionary containing the solutions of the second order noise moments in the stationary state
     _SOL_2ndOrdMomDict = None
     ## set of all reactants
@@ -4653,9 +4681,9 @@ class MuMoTvectorView(MuMoTfieldView):
 #         self._logs.append(log)
 
 
-
-## stream plot view on model
 class MuMoTstreamView(MuMoTfieldView):
+    """Stream plot view on model."""
+
     ## dictionary containing the solutions of the second order noise moments in the stationary state
     _SOL_2ndOrdMomDict = None
     ## set of all reactants
@@ -5410,7 +5438,11 @@ class MuMoTbifurcationView(MuMoTview):
 
 
 class MuMoTstochasticSimulationView(MuMoTview):
-    """stochastic-simulations-view view (for views that allow for multiple runs with different random-seeds)"""
+    """Stochastic-simulations-view view.
+    
+    For views that allow for multiple runs with different random-seeds.
+    
+    """
     ## the system state at the start of the simulation (timestep zero) described as proportion of _systemSize
     _initialState = None
     ## variable to link a color to each reactant
@@ -5895,7 +5927,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
             pass
 
 class MuMoTmultiagentView(MuMoTstochasticSimulationView):
-    """agent on networks view on model""" 
+    """Agent on networks view on model."""
+
     ## structure to store the communication network
     _graph = None
     ## type of network used in the M-A simulation
@@ -6584,7 +6617,8 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         
 
 class MuMoTSSAView(MuMoTstochasticSimulationView): 
-    """View for computational simulations of the Gillespie algorithm to approximate the Master Equation solution""" 
+    """View for computational simulations of the Gillespie algorithm to approximate the Master Equation solution.""" 
+
     ## a matrix form of the left-handside of the rules
     _reactantsMatrix = None 
     ## the effect of each rule
@@ -9188,7 +9222,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
 
 
 def _doubleUnderscorify(s):
-    """ Set underscores in expressions which need two indices to enable proper LaTeX rendering. """
+    """Set underscores in expressions which need two indices to enable proper LaTeX rendering. """
     ind_list = [kk for kk, char in enumerate(s) if char == '_' and s[kk+1] != '{']
     if len(ind_list) == 0:
         return s
@@ -9212,7 +9246,7 @@ def _doubleUnderscorify(s):
 
 
 def _greekPrependify(s):
-    """ Prepend two backslash symbols in front of Greek letters to enable proper LaTeX rendering. """
+    """Prepend two backslash symbols in front of Greek letters to enable proper LaTeX rendering. """
     for nn in range(len(GREEK_LETT_LIST_1)):
         if 'eta' in s:
             s = _greekReplace(s, 'eta', '\\eta')
