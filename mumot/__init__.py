@@ -7975,7 +7975,26 @@ def _raiseModelError(expected, read, rule):
 
 
 def _buildFig(object, figure=None):
-    """Generic function for constructing figures in :class:`MuMoTview` and :class:`MuMoTmultiController` classes."""
+    """Generic function for constructing figure objects in :class:`MuMoTview` and :class:`MuMoTmultiController` classes.
+
+    This constructs figure objects with a global figure number. 
+    To avoid superfluous drawings, ``plt.ion``  and ``plt.ioff`` 
+    are used to turn interactive mode on and off,
+    i.e. choosing when data and figure objects are drawn and displayed or not
+    to avoid replotting of previous figure windows in addition to updated plots.
+
+    Parameters
+    ----------
+    object : MuMoTview figure object
+        Generated internally.
+    figure : optional
+        If ``None` then switch interactive mode on ONLY when global figure number larger than 2 
+        to avoid superfluous matplotlib figure.
+
+    Returns
+    -------
+    value : Numbered figure object
+    """
     global figureCounter
     object._figureNum = figureCounter
     if figureCounter == 1:
