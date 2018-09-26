@@ -1,15 +1,22 @@
 About
 =====
 
-Authors
--------
+Contributors
+------------
 
-.. todo:: Add author list/info.
+Core Development Team:
 
-Contact
--------
+* [James A. R. Marshall](https://staffwww.dcs.shef.ac.uk/people/J.Marshall/james.html) (james.marshall@sheffield.ac.uk)
+* [Andreagiovanni Reina](https://areina.staff.shef.ac.uk/)
+* [Thomas Bose](http://thomas-bose.staff.shef.ac.uk/)
 
-.. todo:: Add contact details.
+Packaging, Documentation and Deployment:
+
+* [Will Furnass](https://learningpatterns.me/)
+
+Windows Compatibility:
+
+* [Renato Pagliara Vasquez](https://mae.princeton.edu/people/graduate-students/vasquez)
 
 Citation
 --------
