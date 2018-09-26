@@ -1,0 +1,11 @@
+# Need to use latest RTD image for Python 3.6 support
+build:
+  image: latest
+
+python:
+  version: 3.6
+  extra_requirements:
+    - docs
+
+# Don't build any extra formats
+formats: []
