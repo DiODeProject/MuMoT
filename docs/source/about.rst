@@ -40,6 +40,11 @@ Included third-party code
 * ``mumot/gen``: includes submodules used by MuMoT
 * ``mumot/__init__.py``: contains functions (C) 2012 Free Software Foundation, under the MIT Licence
 
+mybinder.org
+^^^^^^^^^^^^
+
+The MuMoT manual is :ref:`runnable online <getting_started>` via the the excellent and free `mybinder.org <https://mybinder.org/>`__ service,
+funded by the `Gordon and Betty Moore Foundation <https://www.moore.org/>`__.
 
 .. _Andreagiovanni Reina: https://areina.staff.shef.ac.uk/
 .. _DiODe: http://diode.group.shef.ac.uk/
