@@ -27,7 +27,7 @@ If you want to contribute a feature or fix a bug then:
        or test notebooks to ``TestNotebooks/MiscTests/``.
 
    * Documentation: include Python docstrings documentation in the numpydoc_ format for all modules, functions, classes, methods and (if applicable) attributes.
-   * Do not commit an updated user manual Notebook containing output cells; all output cells should be stripped first using: :: 
+   * Do not commit an updated user manual Notebook containing output cells; all output cells should be stripped first using:
 
      .. code:: sh
 
