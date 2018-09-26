@@ -43,7 +43,7 @@ Included third-party code
 
 .. _Andreagiovanni Reina: https://areina.staff.shef.ac.uk/
 .. _DiODe: http://diode.group.shef.ac.uk/
-.. _European Research Counci: lhttps://erc.europa.eu/>`__ 
+.. _European Research Council: lhttps://erc.europa.eu/>`__ 
 .. _Horizon 2020: https://ec.europa.eu/programmes/horizon2020/en/
 .. _James A. R. Marshall: https://staffwww.dcs.shef.ac.uk/people/J.Marshall/james.html
 .. _ORDA: https://orda.shef.ac.uk/ 
