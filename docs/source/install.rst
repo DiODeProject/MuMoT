@@ -110,7 +110,7 @@ Installing MuMoT within a VirtualEnv
 
    .. code:: sh
 
-      python -m pip install mumot
+      python -m pip install path/to/clone/of/MuMoT/repository
       jupyter nbextension enable --py widgetsnbextension --sys-prefix
 
 
