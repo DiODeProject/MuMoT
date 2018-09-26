@@ -17,6 +17,7 @@ If you want to contribute a feature or fix a bug then:
 #. `Fork <https://help.github.com/articles/fork-a-repo/>`__ the `MuMoT GitHub repository`_.
 #. Create a `feature branch <https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow>`__.
 #. Make commits to that branch:
+
    * Style: write code using `standard Python naming conventions <https://www.python.org/dev/peps/pep-0008/#naming-conventions>`__.
    * Testing: if you add new features, fix bug(s) or change existing functionality:
 

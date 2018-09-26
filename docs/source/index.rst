@@ -18,5 +18,5 @@ MuMoT was developed at the University of Sheffield as part of the `DiODe <http:/
    getting_started
    install
    about
-   contributing
+   development
    api
