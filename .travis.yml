@@ -8,3 +8,4 @@ install:
   - pip install tox-travis
 script: 
   - tox
+  - bash <(curl -s https://codecov.io/bash)
