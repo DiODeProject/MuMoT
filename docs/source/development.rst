@@ -227,28 +227,73 @@ By default `ReadTheDocs <rtd>`_ builds and serves HTML documentation from/for th
 
 The project's `ReadTheDocs dashboard <rtd_dash>`_ includes logs for each build (occasionally useful for trouble-shooting).
 
+Running the User Manual Notebook on mybinder.org
+------------------------------------------------
+
+The User Manual Notebook can be run online without the need for any local installation and configuration. 
+
+This is facilitated by mybinder.org_, a public instance of the BinderHub_ service.  
+BinderHub is allows many users to start *Binder* sessions: 
+within a session, BinderHub creates a per-session software environment on demand on remote hardware (using repo2docker_) then 
+starts a Jupyter service within that environment.  
+
+As an end user, all you need to start a BinderHub session is 
+
+* The URL of an accessible Git repository that contains a software environment definition 
+  (e.g. a Python ``requirements.txt`` file, conda ``environment.yml`` or a Docker ``Dockerfile``);
+* The branch, tag or commit that you'd like to access within that repository;
+* (Optional) a relative path within that directory to a Notebook you'd like to run.
+
+These parameters can be supplied via a web form or as URL parameters (allowing someone to just follow a link to start a Binder session).
+
+Configuration
+^^^^^^^^^^^^^
+
+Behind the scenes mybinder.org uses repo2docker to 
+build an Ubuntu Docker image for running the MuMoT User Manual Notebook in, 
+and pushes this to its Docker image registry.  The build process has three steps:
+
+#. Install several Ubuntu packages (inc. GraphViz and a LaTeX distribution); see the ``apt.txt`` file in this repo;
+#. Create a conda environment using the ``environment.yml`` file in this repo 
+   (*this should idealy be a non-conda Python environment (defined using a ``requirements.txt`` file) for consistency with the testing framework*);
+#. Perform some post-install steps (install the TOC2 (table of contents) Jupyter extension and generate the MatPlotLib font cache); see the ``postBuild`` file in this repo;
+
+After an image has been created and pushed to the image registry it remains cached there until:
+
+* a timeout is reached or;
+* a user requests an image for a commit for which an image has not yet been cached 
+  (e.g. if the user wants to work with the tip of master and 
+  new commits have recently been pushed to that repository.
+
+The repo2docker build process takes ~15 mins for MuMoT; 
+therefore note that any pushes to the master branch will invalidate any cached image for the tip of the master branch, 
+which will increase mybinder.org startup times from seconds to ~15 mins.
+
+**Button**: A mybinder.org session for the User Manual as of the tip of the master branch can be started by 
+following the link in the instructions for :ref:`getting started online <mybinder_usage>`.
+
 Creating a new release
 ----------------------
 
 .. todo:: Add info.
 
-..
-   #. UPDATE VERSION NUMBER IN ONE OR TWO PLACES
-   #. TAG RELEASE
-   #. PUSH TO PYPI
+
 
 .. _MuMoT GitHub repository: https://github.com/DiODeProject/MuMoT
 .. _Pull Request: https://help.github.com/articles/about-pull-requests/
-.. _Sphinx: http://www.sphinx-doc.org/en/master/
+.. _Sphinx: http://www.sphinx-doc.org/
 .. _autodoc: http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 .. _autosummary: http://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html
-.. _nbdime: https://nbdime.readthedocs.io/en/stable/
+.. _nbdime: https://nbdime.readthedocs.io/
 .. _nbval: https://github.com/computationalmodelling/nbval
 .. _numpydoc: http://numpydoc.readthedocs.io/en/latest/format.html
-.. _pytest-cov: https://pytest-cov.readthedocs.io/en/latest/
+.. _pytest-cov: https://pytest-cov.readthedocs.io/
 .. _pytest: https://docs.pytest.org/en/latest/
 .. _reStructuredText: http://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
 .. _rtd: https://readthedocs.org/
 .. _rtd_dash: https://readthedocs.org/projects/mumot/
-.. _tox: https://tox.readthedocs.io/en/latest/
-.. _virtualenv: https://virtualenv.pypa.io/en/stable/
+.. _tox: https://tox.readthedocs.io/
+.. _virtualenv: https://virtualenv.pypa.io/
+.. _mybinder.org: https://mybinder.org/
+.. _BinderHub: https://binderhub.readthedocs.io/
+.. _repo2docker: https://github.com/jupyter/repo2docker
