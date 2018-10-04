@@ -5,7 +5,8 @@ python:
 before_install:
   - sudo apt-get install -y texlive graphviz dvipng
 install:
-  - pip install tox-travis
+  - pip install tox-travis codecov
 script: 
   - tox
-  - bash <(curl -s https://codecov.io/bash)
+  - ls -l .coverage
+  - codecov
