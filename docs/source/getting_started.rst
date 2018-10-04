@@ -7,6 +7,8 @@ Getting started
 
 The MuMoT user manual (a Jupyter Notebook) provides the most accessible introduction to working with MuMoT.  
 
+.. _mybinder_usage:
+
 Online
 ------
 
