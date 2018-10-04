@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/DiODeProject/MuMoT.svg?token=6zhMFY3Y4Ems6GzwEDLn&branch=master)](https://travis-ci.com/DiODeProject/MuMoT)
 [![Documentation Status](https://readthedocs.org/projects/mumot/badge/?version=latest)](https://mumot.readthedocs.io/en/latest/?badge=latest)
-[![Coverage Status](https://codecov.io/github/DiODeProject/MuMoT/coverage.svg?branch=master)](https://codecov.io/gh/DiODeProject/MuMoT&branch=master)
+[![Coverage Status](https://codecov.io/github/DiODeProject/MuMoT/coverage.svg?branch=master)](https://codecov.io/gh/DiODeProject/MuMoT)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=docs%2FMuMoTuserManual.ipynb)
 
 ## Introduction / overview
