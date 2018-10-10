@@ -22,7 +22,7 @@ Installing MuMoT within a Conda environment
 -------------------------------------------
 
 #. `Clone <https://help.github.com/articles/cloning-a-repository/>`__
-   this repository.
+   `this repository <https://github.com/DiODeProject/MuMoT/>`__.
 #. Install the conda package manager by 
    installing a version of Miniconda_ appropriate to your operating system.
 #. Open a terminal within which conda is available; 
@@ -33,7 +33,7 @@ Installing MuMoT within a Conda environment
       conda --version
 
 #. Create a new conda environment containing MuMoT and all dependencies:
-   within the terminal navigate to the directory containing the clone of this repository 
+   within the terminal navigate to the directory containing the clone of that repository 
    and run:
 
    .. code:: sh
@@ -71,7 +71,7 @@ Installing MuMoT within a VirtualEnv
 ------------------------------------
 
 1. `Clone <https://help.github.com/articles/cloning-a-repository/>`__
-   this repository.
+   `this repository <https://github.com/DiODeProject/MuMoT/>`__.
 2. Ensure you have the following installed:
 
    -  `Python >= 3.4 <https://www.python.org/downloads/>`__
