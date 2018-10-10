@@ -30,7 +30,7 @@ If you want to contribute a feature or fix a bug then:
      * Add (lower-level) `unit tests <https://en.wikipedia.org/wiki/Unit_testing>`__ to 
        the Python source files in the ``tests/`` directory.
      * Add (higher-level) `acceptance <https://en.wikipedia.org/wiki/Acceptance_testing>`__/`regression <https://en.wikipedia.org/wiki/Regression_testing>`__ tests 
-       to ``TestNotebooks/MuMoTtest.ipynb`` or to/as Notebooks in the ``TestNotebooks/MiscTests/`` directory.
+       to ``TestNotebooks/MuMoTtest.ipynb`` (or to/as Notebooks in the ``TestNotebooks/MiscTests/`` directory).
 
    * Documentation: include Python docstrings documentation in the numpydoc_ format for all modules, functions, classes, methods and (if applicable) attributes.
    * Do not commit an updated User Manual Notebook containing output cells; all output cells should be stripped first using:
@@ -89,7 +89,7 @@ Testing of MuMoT is currently very basic;
 the test suite only checks that certain Jupyter Notebooks run without failing i.e. there are nno checks for correctness of results.
 However, there is a framework in place to allow more tests to be written:
 
-* **Unit tests**: run by pointing pytest_ at the ``tests/`` directory; also generates a code coverage report using pytest-cov_; *no tests implemented yet*.
+* **Unit tests**: run by pointing pytest_ at the ``tests/`` directory; also generates a code coverage data using pytest-cov_; *no tests implemented yet*.
 * **Basic integration tests**: 
   Ensure that certain Jupyter Notebooks can be run without 
   raising Python exceptions/errors:
@@ -98,13 +98,15 @@ However, there is a framework in place to allow more tests to be written:
    * ``TestNotebooks/MuMoTtest.ipynb``
 
   These tests are performed by running the Notebooks using the nbval_ plug-in for pytest_, with nbval_ being run in *lax* mode.
+  Code coverage data is also captured at this stage when running ``TestNotebooks/MuMoTtest.ipynb`` and 
+  appended to that captured during the unit testing.
 * **Regression tests**: 
 * Ensure that the ``TestNotebooks/MuMoTtest.ipynb`` integration test Notebook 
   generates sufficiently similar output cells to those saved in that file 
   when re-run in a clean environment; 
   *not yet implemented* but could be performed by running the Notebook using the nbval_ plug-in for pytest_, with nbval_ being run in normal (not *lax*) mode.
 * **Notebook formatting/content**: 
-  Check that the User Manual Notebook does not contain output cells (as they could confuse new users)
+  Check that the User Manual Notebook does not contain output cells (as they could confuse new users).
 * **Documentation**: Check that Sphinx_ can build HTML documentation for the package 
   (more info in `Building and Serving Documentation`_ section).
 
@@ -139,6 +141,12 @@ To locally run the MuMoT test suite in an isolated Python environment
        If nbval_ encounters any failures/errors then 
        a Jupyter tab is opened in the default web browser showing 
        the location of the failure/error.
+
+Note: attempts to measure code coverage using a Notebook will fail if 
+you call the ``parseModel`` function in a Notebook by passing it a reference to 
+an input cell that uses the ``%%model`` cell magic; you need to instead 
+call ``parseModel`` by passing it a model defined as a simple string
+(e.g. as is done in ``TestNotebooks/MuMoTtest.ipynb``).
 
 .. _test_ci:
 
