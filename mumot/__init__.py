@@ -6765,7 +6765,43 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
     
 
 def parseModel(modelDescription):
-    """Create model from text description."""
+    """Create model from text description.
+
+    Parameters
+    ----------
+    modelDescription : str
+        A reference to an input cell in a Jupyter Notebook (e.g. ``In[4]``)
+        that uses the ``%%model`` cell magic and contains several rules e.g. ::
+
+            %%model
+            U -> A : g_A
+            U -> B : g_B
+            A -> U : a_A
+            B -> U : a_B
+            A + U -> A + A : r_A
+            B + U -> B + B : r_B
+            A + B -> A + U : s
+            A + B -> B + U : s
+
+        or a model expressed as a multi-line string comprised of rules e.g. ::
+
+            '''
+            U -> A : g_A
+            U -> B : g_B
+            A -> U : a_A
+            B -> U : a_B
+            A + U -> A + A : r_A
+            B + U -> B + B : r_B
+            A + B -> A + U : s
+            A + B -> B + U : s
+            '''
+
+    Returns
+    -------
+    :class:`MuMoTmodel` or None
+        The instantiated MuMoT model.
+
+    """
     # @todo: add system size to model description
     if "get_ipython" in modelDescription:
         # hack to extract model description from input cell tagged with %%model magic
