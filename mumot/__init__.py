@@ -9282,10 +9282,21 @@ def _roundNumLogsOut(number):
     """ Round numerical output in Logs to 3 decimal places. """
     # if number is complex
     if type(number) == sympy.Add:
-        return str(round(sympy.re(number), 3)) + str(round(sympy.im(number), 3)) + 'j'
+        return str(sympy.re(number).round(4)) + str(sympy.im(number).round(4)) + 'j'
     # if number is real
     else:
-        return str(round(number, 3))
+        return str(number.round(4))
+
+#def _roundNumLogsOutOLD(number):
+#    """ Round numerical output in Logs to 3 decimal places. """
+#    # if number is complex
+#    if type(number) == sympy.Add:
+#        return str(round(sympy.re(number), 3)) + str(round(sympy.im(number), 3)) + 'j'
+#    # if number is real
+#    else:
+#        return str(round(number, 3))
+
+
 
 # import gc, inspect
 # def _find_obj_names(obj):
