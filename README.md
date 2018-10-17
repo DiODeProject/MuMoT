@@ -18,5 +18,3 @@ See [https://mumot.readthedocs.io/en/latest/](https://mumot.readthedocs.io/en/la
 * **Development**: how to report issues and how to contribute to the project.
 * Information about MuMoT inc. contributors and acknowledgements.
 * API documentation
-
-<!-- For more technical information read the documentation at [https://diodeproject.github.io/MuMoT/](https://diodeproject.github.io/MuMoT/) -->

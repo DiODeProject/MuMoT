@@ -1,7 +1,6 @@
 """Multiscale Modelling Tool (MuMoT)
 
-Help:
-https://diodeproject.github.io/MuMoT/
+See https://mumot.readthedocs.io/
 
 Contributors:
 James A. R. Marshall, Andreagiovanni Reina, Thomas Bose
@@ -782,7 +781,7 @@ class MuMoTmodel:
         -----
         Plotting keywords are also described in the `user manual`_.
 
-        .. _user manual: https://diodeproject.github.io/MuMoT/
+        .. _user manual: https://mumot.readthedocs.io/en/latest/getting_started.html
 
         """
         if not initWidgets:
@@ -877,7 +876,7 @@ class MuMoTmodel:
         -----
         Plotting keywords are also described in the `user manual`_.
 
-        .. _user manual: https://diodeproject.github.io/MuMoT/
+        .. _user manual: https://mumot.readthedocs.io/en/latest/getting_started.html
 
         """
         if initWidgets is None:
@@ -993,7 +992,7 @@ class MuMoTmodel:
         -----
         Plotting keywords are also described in the `user manual`_.
 
-        .. _user manual: https://diodeproject.github.io/MuMoT/
+        .. _user manual: https://mumot.readthedocs.io/en/latest/getting_started.html
 
         """
         if initWidgets is None:
@@ -1082,7 +1081,7 @@ class MuMoTmodel:
         -----
         Plotting keywords are also described in the `user manual`_.
 
-        .. _user manual: https://diodeproject.github.io/MuMoT/
+        .. _user manual: https://mumot.readthedocs.io/en/latest/getting_started.html
 
         """
         if initWidgets is None:
@@ -1180,7 +1179,7 @@ class MuMoTmodel:
         -----
         Plotting keywords are also described in the `user manual`_.
 
-        .. _user manual: https://diodeproject.github.io/MuMoT/
+        .. _user manual: https://mumot.readthedocs.io/en/latest/getting_started.html
 
         """
         if initWidgets is None:
