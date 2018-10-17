@@ -283,7 +283,126 @@ following the link in the instructions for :ref:`getting started online <mybinde
 Creating a new release
 ----------------------
 
-.. todo:: Add info.
+#. Update the file ``CHANGELOG.md`` with changes since the last release.
+   You can derive this list of changes from commits made since the last release; 
+   if the last release was tagged in git with ``v0.8.0`` 
+   then you can see the first line of all commit commnets since then with: ::
+
+      $ git checkout master
+      $ git log --pretty=oneline --abbrev-commit v0.9.0..HEAD
+
+#. Ensure all GitHub Issues tagged with the pending release (*Milestone*) 
+   have either been addressed or 
+   are reassigned to a different Milestone.
+   Ensure all pull requests against ``master`` relating to the pendiing Milestone have been merged and all CI tests pass.
+
+#. Create a *release branch*: ::
+   
+      $ git checkout -b release-0.9.0 master
+      Switched to a new branch "release-0.9.0"
+
+#. Decide on the version of the next release.  
+   Do this once you are familiar with the principles of `semantic versioning`_; 
+   this will help you decide whether the next release after ``0.8.0`` should be ``0.8.1``, ``0.9.0`` or ``1.0.0``.
+
+#. Bump the version in ``mumot/_version`` from e.g.
+
+   .. code-block:: python
+   
+      version_info = (0, 8, 0, 'dev')
+        __version__ = "{}.{}.{}-{}".format(*version_info)
+   
+   to e.g.
+   
+   .. code-block:: python
+   
+      version_info = (0, 9, 0)
+        __version__ = "{}.{}.{}".format(*version_info)
+
+   Package versions (``setup.py``) and Sphinx docs versions are automatically
+   set using this variable.
+
+   Don't forget to: ::
+
+      $ git commit -a -m "Bumped version number to 0.9.0"
+
+   and add an `annotated tag`_ to this commit: ::
+
+      $ git tag -a v0.9.0 -m "Release 0.9.0"
+      $ git push upstream --tags
+
+   Here we assume that you've set up your local git repository with a remote called ``upstream`` that points at ``github.com/DiODeProject/MuMoT.git`` e.g. ::
+
+      $ git remote -v
+      origin	git@github.com:willfurnass/MuMoT.git (fetch)
+      origin	git@github.com:willfurnass/MuMoT.git (push)
+      upstream	git@github.com:DiODeProject/MuMoT.git (fetch)
+      upstream	git@github.com:DiODeProject/MuMoT.git (push)
+
+   NB annotated tags are are often used within git repositories to identify the commits corresponding to particular releases.
+
+#. Install the packages required to build source and binary distributions of the package: ::
+
+      $ python3 -m pip install setuptools wheel
+
+#. Build source and binary distributions of the package: ::
+
+      $ cd top/level/directory/in/repo
+      $ python3 setup.py sdist bdist_wheel
+
+   This creates two files in the ``dist`` subdirectory:
+
+      * A binary 'wheel' package e.g. ``mumot-0.9.0-py3-none-any.whl``
+      * A source package e.g. ``mumot-0.9.0.tar.gz``
+
+#. Upload this package to Test PyPI.
+
+   * `Register for an account <https://test.pypi.org/account/register/>`__
+     and verify your email address.
+   * Push your binary and source packages to Test PyPI using the twine_ tool: ::
+
+      $ python3 -m pip install twine
+      $ twine upload --repository-url https://test.pypi.org/legacy/ dist/mumot-0.9.0*
+
+   * Check that your package is visible at `https://test.pypi.org/project/mumot <https://test.pypi.org/project/mumot>`__.
+
+#. Follow the :ref:`MuMoT installation instructions <install>` but at the relevant point
+   try to install ``mumot`` from Test PyPI instead of from the MuMoT git repository. ::
+
+      $ python3 -m pip install --index-url https://test.pypi.org/simple/ mumot
+
+#. If uploading to Test PyPI then downloading and installing from Test PyPI was successful, then do the same for the main PyPI:
+
+   * `Register for an account <https://pypi.org/account/register/>`__
+        and verify your email address.
+   * Push your binary and source packages to PyPI using: ::
+
+      $ twine upload dist/mumot-0.9.0*
+
+#. Finally, bump the version info on the ``master`` branch (not the ``release-...`` branch) by updating ``mumot/_version`` from e.g.
+
+   .. code-block:: python
+   
+      version_info = (0, 8, 0, 'dev')
+        __version__ = "{}.{}.{}-{}".format(*version_info)
+   
+   to e.g.
+   
+   .. code-block:: python
+   
+      version_info = (0, 9, 0, 'dev')
+        __version__ = "{}.{}.{}-{}".format(*version_info)
+
+#. Ensure there is an item in ORDA_ (The University of Sheffield's Research Data Catalogue and Repository) for this release. 
+   This results in 
+   
+   * The release being referenceable/citable by DOI_.
+   * The release being discoverable via the University's Library Catalogue.
+
+#. Add citation info (including the DOI) for the latest stable release to ``docs/source/about.rst``.
+
+.. 
+   https://github.com/scikit-learn/scikit-learn/wiki/How-to-make-a-release
 
 
 
@@ -305,3 +424,8 @@ Creating a new release
 .. _mybinder.org: https://mybinder.org/
 .. _BinderHub: https://binderhub.readthedocs.io/
 .. _repo2docker: https://github.com/jupyter/repo2docker
+.. _twine: https://pypi.org/project/twine/
+.. _annotated tag: https://git-scm.com/book/en/v2/Git-Basics-Tagging
+.. _ORDA: https://www.sheffield.ac.uk/library/rdm/orda
+.. _DOI: https://www.doi.org/
+.. _semantic versioning: https://semver.org/
