@@ -18,6 +18,7 @@ import datetime
 import math
 import numbers
 import os
+import re
 import sys
 import tempfile
 import warnings
@@ -6764,7 +6765,43 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
     
 
 def parseModel(modelDescription):
-    """Create model from text description."""
+    """Create model from text description.
+
+    Parameters
+    ----------
+    modelDescription : str
+        A reference to an input cell in a Jupyter Notebook (e.g. ``In[4]``)
+        that uses the ``%%model`` cell magic and contains several rules e.g. ::
+
+            %%model
+            U -> A : g_A
+            U -> B : g_B
+            A -> U : a_A
+            B -> U : a_B
+            A + U -> A + A : r_A
+            B + U -> B + B : r_B
+            A + B -> A + U : s
+            A + B -> B + U : s
+
+        or a model expressed as a multi-line string comprised of rules e.g. ::
+
+            '''
+            U -> A : g_A
+            U -> B : g_B
+            A -> U : a_A
+            B -> U : a_B
+            A + U -> A + A : r_A
+            B + U -> B + B : r_B
+            A + B -> A + U : s
+            A + B -> B + U : s
+            '''
+
+    Returns
+    -------
+    :class:`MuMoTmodel` or None
+        The instantiated MuMoT model.
+
+    """
     # @todo: add system size to model description
     if "get_ipython" in modelDescription:
         # hack to extract model description from input cell tagged with %%model magic
@@ -6776,28 +6813,30 @@ def parseModel(modelDescription):
         # assume input describes filename and attempt to load
         print("Input does not appear to be valid model - attempting to load from file `" + modelDescription + "`...")
         print("Loading from file not currently supported")
-        
+
         return None
-#        assert False
-    
-    # strip out any basic LaTeX equation formatting user has input
+
+    # Strip out any basic LaTeX equation formatting user has input
     modelDescr = modelDescr.replace('$', '')
     modelDescr = modelDescr.replace(r'\\\\', '')
-    # add white space to make parsing easy
+    # Add white space to make parsing easy
     modelDescr = modelDescr.replace('+', ' + ')
     modelDescr = modelDescr.replace('->', ' -> ')
     modelDescr = modelDescr.replace(':', ' : ')
-    # split _rules line-by-line, one rule per line
-    modelRules = modelDescr.split('\\n')
+    # Split rules line-by-line, one rule per line.
+    # Delimiters can be: windows newline, unix newline, or latex-y newline.
+    modelRules = [s.strip()
+                  for s in re.split("\r\n|\n|\\\\n", modelDescr)
+                  if not s.isspace()]
     # parse and construct the model
     reactants = set()
     constantReactants = set()
     rates = set()
     rules = []
     model = MuMoTmodel()
-    
+
     for rule in modelRules:
-        if (len(rule) > 0):
+        if len(rule) > 0:
             tokens = rule.split()
             reactantCount = 0
             constantReactantCount = 0
@@ -6817,7 +6856,7 @@ def parseModel(modelDescription):
                 constantReactant = False
 
                 if state == 'A':
-                    if token != "+" and token != "->" and token != ":":
+                    if token not in ("+", "->", ":"):
                         state = 'B'
                         if '^' in token:
                             raise MuMoTSyntaxError("Reactants cannot contain '^' :" + token + " in " + rule)
@@ -6899,7 +6938,7 @@ def parseModel(modelDescription):
                     # should never reach here
                     assert False
 
-            newRule.rate = process_sympy(rate) 
+            newRule.rate = process_sympy(rate)
             rateAtoms = newRule.rate.atoms(Symbol)
             for atom in rateAtoms:
                 if atom not in rates:
@@ -6917,18 +6956,18 @@ def parseModel(modelDescription):
     model._reactants = reactants
     model._constantReactants = constantReactants
     # check intersection of reactants and constantReactants is empty
-    intersect = model._reactants.intersection(model._constantReactants) 
+    intersect = model._reactants.intersection(model._constantReactants)
     if len(intersect) != 0:
         raise MuMoTSyntaxError("Following reactants defined as both constant and variable: " + str(intersect))
     model._rates = rates
     model._equations = _deriveODEsFromRules(model._reactants, model._rules)
     model._ratesLaTeX = {}
     rates = map(latex, list(model._rates))
-    for (rate, latexStr) in zip(model._rates, rates):
-        model._ratesLaTeX[repr(rate)] = latexStr
+    for (rate, latex_str) in zip(model._rates, rates):
+        model._ratesLaTeX[repr(rate)] = latex_str
     constantReactants = map(latex, list(model._constantReactants))
     for (reactant, latexStr) in zip(model._constantReactants, constantReactants):
-#        model._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'    
+        #model._ratesLaTeX[repr(reactant)] = '(' + latexStr + ')'
         model._ratesLaTeX[repr(reactant)] = '\Phi_{' + latexStr + '}'
     
     model._stoichiometry = _getStoichiometry(model._rules, model._constantReactants)
