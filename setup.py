@@ -35,6 +35,7 @@ setup(
         'ipywidgets',
         'matplotlib<3.0',  # see https://github.com/DiODeProject/MuMoT/issues/171
         'networkx',
+        'notebook<5.5',  # needed if using pyzmq < 17
         'pydstool',
         'pyzmq<17',  # needed if using tornado < 5
         'scipy<1.0.0',  # see https://github.com/DiODeProject/MuMoT/issues/63
