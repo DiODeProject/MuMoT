@@ -20,7 +20,7 @@ dependencies:
 - jupyter_highlight_selected_word=0.1.1=py35_0
 - jupyter_latex_envs=1.4.4=py35_0
 - jupyter_nbextensions_configurator=0.4.0=py35_0
-- libiconv=1.15=0
+- libiconv=1.14=0
 - libsodium=1.0.15=1
 - libxslt=1.1.29=4
 - lxml=4.2.1=py35_0
