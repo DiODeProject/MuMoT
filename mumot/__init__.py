@@ -343,10 +343,13 @@ class MuMoTmodel:
             for reactant in self._reactants:
                 dot.node(str(reactant), " ", image=self._localLaTeXimageFile(reactant))
             for reactant in self._constantReactants:
-                dot.node(str(reactant), " ", image=self._localLaTeXimageFile(Symbol(self._ratesLaTeX[repr(reactant)])))                
+                latexrep = '(' + self._ratesLaTeX[repr(reactant)].replace('\Phi_{', '').replace('}', '') + ')'
+                dot.node(str(reactant), " ", image=self._localLaTeXimageFile(Symbol(latexrep)))                
             for rule in self._rules:
                 # render LaTeX representation of rule
-                localfilename = self._localLaTeXimageFile(rule.rate)
+                latexrep = '$$' + _doubleUnderscorify(_greekPrependify(self._ratesLaTeX.get(repr(rule.rate), repr(rule.rate)))) + '$$'
+#                latexrep = latexrep.replace('\\','\\\\')
+                localfilename = self._localLaTeXimageFile(latexrep)
                 htmlLabel = r'<<TABLE BORDER="0"><TR><TD><IMG SRC="' + localfilename + r'"/></TD></TR></TABLE>>'
                 if len(rule.lhsReactants) == 1:
                     dot.edge(str(rule.lhsReactants[0]), str(rule.rhsReactants[0]), label=htmlLabel)
