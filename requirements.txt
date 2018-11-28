@@ -1,4 +1,1 @@
-pydstool
-graphviz
-antlr4-python3-runtime==4.5.3
-sympy>=1.1.1
+.
