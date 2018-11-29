@@ -262,8 +262,7 @@ build an Ubuntu Docker image for running the MuMoT User Manual Notebook in,
 and pushes this to its Docker image registry.  The build process has three steps:
 
 #. Install several Ubuntu packages (inc. GraphViz and a LaTeX distribution); see the ``apt.txt`` file in this repo;
-#. Create a conda environment using the ``environment.yml`` file in this repo 
-   (*this should idealy be a non-conda Python environment (defined using a ``requirements.txt`` file) for consistency with the testing framework*);
+#. Create a Python virtualenv containing just the MuMoT Python package and its dependencies;
 #. Perform some post-install steps (install the TOC2 (table of contents) Jupyter extension and generate the MatPlotLib font cache); see the ``postBuild`` file in this repo;
 
 After an image has been created and pushed to the image registry it remains cached there until:

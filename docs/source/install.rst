@@ -14,7 +14,7 @@ The visualisation of particular representations of models requires that you have
 * Linux: install TexLive_
 * Windows: install MiKTeX_ or TexLive_
   
-You can now install MuMoT :ref:`within a conda environment <conda_inst>` (recommended) or :ref:`within a Python virtualenv <venv_inst>`.
+You can now install MuMoT :ref:`within a conda environment <conda_inst>` or :ref:`within a Python virtualenv <venv_inst>`.
 
 .. _conda_inst:
 
@@ -32,14 +32,12 @@ Installing MuMoT within a Conda environment
 
       conda --version
 
-#. Create a new conda environment containing MuMoT and all dependencies:
-   within the terminal navigate to the directory containing the clone of that repository 
-   and run:
+#. Create a new conda environment containing just Python 3.6:
 
    .. code:: sh
 
       conda update conda
-      conda env create -n mumot-env -f environment.yml
+      conda env create -n mumot-env python=3.6
 
 #. Check that conda environment has been created: 
    
@@ -124,10 +122,8 @@ Tables of contents can be displayed if you enable the **TOC2** Jupyter Extension
 
 #. Ensure the ``jupyter_contrib_nbextensions`` package is installed.
    This is "a collection of extensions that add functionality to the Jupyter notebook". 
-   If you installed MuMoT using **conda** and an enclosed ``environment.yml`` file then 
-   you can **skip this step**. 
    If you installed MuMoT into a *virtualenv* using **pip** then 
-   you need to ensure that virtualenv is activated then **run**:
+   you need to ensure that virtualenv is activated before running:
 
    .. code:: sh
 
