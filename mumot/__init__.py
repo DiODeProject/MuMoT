@@ -1,6 +1,6 @@
 """Multiscale Modelling Tool (MuMoT)
 
-See https://mumot.readthedocs.io/
+For documentation and version information use about()
 
 Contributors:
 James A. R. Marshall, Andreagiovanni Reina, Thomas Bose
@@ -4729,7 +4729,9 @@ class MuMoTstreamView(MuMoTfieldView):
             self._get_field2d("2d stream plot", 100)  # @todo: allow user to set mesh points with keyword
             
             if self._speed is not None:
-                fig_stream = plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color=self._speed, cmap='gray')  # @todo: define colormap by user keyword
+                with io.capture_output() as log: # catch warnings from streamplot
+                    fig_stream = plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color=self._speed, cmap='gray')  # @todo: define colormap by user keyword
+                self._logs.append(log)                    
             else:
                 fig_stream = plt.streamplot(self._X, self._Y, self._Xdot, self._Ydot, color='k')  # @todo: define colormap by user keyword
             
@@ -6976,6 +6978,12 @@ def parseModel(modelDescription):
     
     return model
 
+def about():
+    """Display version, author and documentation information
+    """
+    print("Multiscale Modelling Tool (MuMoT): Version " + __version__)
+    print("Authors: James A. R. Marshall, Andreagiovanni Reina, Thomas Bose")
+    print("Documentation: http://mumot.readthedocs.io")
 
 def setVerboseExceptions(verbose=True):
     """Set the verbosity of exception handling.
