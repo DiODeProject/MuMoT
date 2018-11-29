@@ -10,3 +10,11 @@ script:
   - tox
   - ls -l .coverage
   - codecov
+deploy:
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN
+  keep-history: true
+  local-dir: docs/_build/html
+  on:
+    branch: master
