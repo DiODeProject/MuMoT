@@ -498,7 +498,32 @@ class MuMoTmodel:
             else: 
                 print("does not initiate any reaction.")
 
-    def showODEs(self, method='massAction'):
+    def getODEs(self, method = 'massAction'):
+        """Get symbolic equations for the model system of ODEs.
+
+
+
+        Parameters
+        ----------
+        method : str, optional
+            Can be ``'massAction'`` (default) or ``'vanKampen'``.
+
+        Returns
+        -------
+        :class:`dict`
+            Dictionary of ODE right hand sides with reactant (left hand side) as key
+
+        """
+
+        if method == 'massAction':
+            return self._equations
+        elif method == 'vanKampen':
+            return _getODEs_vKE(_get_orderedLists_vKE, self._stoichiometry)
+        else:
+            print('Invalid input for method. Choose either method = \'massAction\' or method = \'vanKampen\'. Default is \'massAction\'.')
+
+
+    def showODEs(self, method = 'massAction'):
         """Show a LaTeX representation of the model system of ODEs.
 
         Displays rendered LaTeX in the Jupyter Notebook.
@@ -534,6 +559,19 @@ class MuMoTmodel:
 #             display(Math(out))
 #     
 
+    def getStoichiometry(self):
+        """Get stoichiometry as a dictionary
+
+        Returns
+        -------
+        :class:`dict`
+            Dictionary  with key ReactionNr; ReactionNr represents another dictionary with reaction rate, reactants
+            and corresponding stoichiometry.
+
+        """
+
+        return self._stoichiometry
+
     def showStoichiometry(self):
         """Display stoichiometry as a dictionary with keys ReactionNr,
         ReactionNr represents another dictionary with reaction rate, reactants
@@ -546,12 +584,17 @@ class MuMoTmodel:
         out = _doubleUnderscorify(_greekPrependify(out))
         display(Math(out))
 
-    def showMasterEquation(self):
-        """Displays Master equation expressed with step operators.
+    def getMasterEquation(self):
+        """Gets Master Equation expressed with step operators, and substitutions.
 
-        Displays rendered LaTeX in the Jupyter Notebook.
+        Returns
+        -------
+        :class:`dict`, :class:`dict`
+            Dictionary of Master Equation right hand sides
+            Dictionary of substitutions used
 
         """
+
         P, t = symbols('P t')
         out_rhs = ""
         stoich = self._stoichiometry
@@ -569,6 +612,35 @@ class MuMoTmodel:
             return
 #        assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
         rhs_dict, substring = _deriveMasterEquation(stoich)
+
+        return rhs_dict, substring
+
+
+    def showMasterEquation(self):
+        """Displays Master equation expressed with step operators.
+
+        Displays rendered LaTeX in the Jupyter Notebook.
+
+        """
+
+        P, t = symbols('P t')
+        out_rhs = ""
+        stoich = self._stoichiometry
+        nvec = []
+        for key1 in stoich:
+            for key2 in stoich[key1]:
+                if key2 != 'rate' and stoich[key1][key2] != 'const':
+                    if not key2 in nvec:
+                        nvec.append(key2)
+        nvec = sorted(nvec, key=default_sort_key)
+        
+        if len(nvec) < 1 or len(nvec) > 4:
+            print("Derivation of Master Equation works for 1, 2, 3 or 4 different reactants only")
+            
+            return
+#        assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+        rhs_dict, substring = _deriveMasterEquation(stoich)
+
         #rhs_ME = 0
         term_count = 0
         for key in rhs_dict:
@@ -601,6 +673,24 @@ class MuMoTmodel:
                 subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
                 display(Math("With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
 
+
+    def getVanKampenExpansion(self):
+        """Get van Kampen expansion when the operators are expanded up to
+        second order.
+
+        Returns
+        -------
+        :class:`Add`, :class:`Add`, :class:`dict`
+            van Kampen expansion left hand side
+            van Kampen expansion right hand side
+            Dictionary of substitutions used
+        """
+
+        rhs_vke, lhs_vke, substring = _doVanKampenExpansion(_deriveMasterEquation, self._stoichiometry)
+
+        return lhs_vke, rhs_vke, substring
+
+
     def showVanKampenExpansion(self):
         """Show van Kampen expansion when the operators are expanded up to
         second order.
@@ -618,6 +708,22 @@ class MuMoTmodel:
                 subK = _greekPrependify(_doubleUnderscorify(str(subKey)))
                 subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
                 display(Math("With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
+
+
+    def getFokkerPlanckEquation(self):
+        """Get Fokker-Planck equation derived from term ~ O(1) in van Kampen
+        expansion (linear noise approximation).
+
+        Returns
+        -------
+        :class:`dict`, :class:`dict`
+            Dictionary of Fokker-Planck right hand sides
+            Dictionary of substitutions used
+
+        """
+
+        return _getFokkerPlanckEquation(_get_orderedLists_vKE, self._stoichiometry)
+
 
     def showFokkerPlanckEquation(self):
         """Show Fokker-Planck equation derived from term ~ O(1) in van Kampen
@@ -638,6 +744,24 @@ class MuMoTmodel:
                 subV = _greekPrependify(_doubleUnderscorify(str(subVal)))
                 display(Math("With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
 
+
+    def getNoiseEquations(self):
+        """Get equations of motion of first and second order moments of noise.
+
+        Returns
+        -------
+        :class:`dict`, :class:`dict`, :class:`dict`, :class:`dict`
+            Dictionary of first order equations of motion right hand sides
+            Dictionary of substitutions used for first order equations of motion
+            Dictionary of second order equations of motion right hand sides
+            Dictionary of substitutions used for second order equations of motion
+
+        """
+        EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+
+        return EOM_1stOrderMom, NoiseSubs1stOrder, EOM_2ndOrderMom, NoiseSubs2ndOrder
+
+
     def showNoiseEquations(self):
         """Display equations of motion of first and second order moments of noise.
 
@@ -655,6 +779,21 @@ class MuMoTmodel:
             out = _doubleUnderscorify(out)
             out = _greekPrependify(out)
             display(Math(out))
+
+
+    def getNoiseSolutions(self):
+        """Gets noise in the stationary state.
+
+        Returns
+        -------
+        :class:`dict`, :class:`dict`, :class:`dict`, :class:`dict`
+            Dictionary of first order noise solution right hand sides
+            Dictionary of substitutions used for first order solutions
+            Dictionary of second order noise solution right hand sides
+            Dictionary of substitutions used for second order solutions
+        """
+        return _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
+
 
     def showNoiseSolutions(self):
         """Display noise in the stationary state.
@@ -680,6 +819,7 @@ class MuMoTmodel:
                 out = latex(sol2.subs(NoiseSubs2ndOrder)) + latex(r'(t \to \infty)') + " := " + latex(SOL_2ndOrdMomDict[sol2].subs(NoiseSubs2ndOrder))
                 out = _doubleUnderscorify(_greekPrependify(out))
                 display(Math(out))
+
 
     def show(self):
         """Show a LaTeX representation of the model.
