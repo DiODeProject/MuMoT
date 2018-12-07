@@ -6298,7 +6298,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             self._netType = self._getWidgetParamValue('netType', self._controller._widgetsExtraParams)
             if self._netType != NetworkType.FULLY_CONNECTED: # this used to refer only to value in self._fixedParams; possible bug?
                 self._netParam = self._getWidgetParamValue('netParam', self._controller._widgetsExtraParams) # self._fixedParams['netParam'] if self._fixedParams.get('netParam') is not None else self._controller._widgetsExtraParams['netParam'].value
-                if self._netType is None or self.netType == NetworkType.DYNAMIC: # this used to refer only to value in self._fixedParams; possible bug?
+                if self._netType is None or self._netType == NetworkType.DYNAMIC: # this used to refer only to value in self._fixedParams; possible bug?
                     self._motionCorrelatedness = self._getWidgetParamValue('motionCorrelatedness', self._controller._widgetsExtraParams) # self._fixedParams['motionCorrelatedness'] if self._fixedParams.get('motionCorrelatedness') is not None else self._controller._widgetsExtraParams['motionCorrelatedness'].value
                     self._particleSpeed = self._getWidgetParamValue('particleSpeed', self._controller._widgetsExtraParams) # self._fixedParams['particleSpeed'] if self._fixedParams.get('particleSpeed') is not None else self._controller._widgetsExtraParams['particleSpeed'].value
                     self._showTrace = self._getWidgetParamValue('showTrace', self._controller._widgetsPlotOnly) # self._fixedParams['showTrace'] if self._fixedParams.get('showTrace') is not None else self._controller._widgetsPlotOnly['showTrace'].value
