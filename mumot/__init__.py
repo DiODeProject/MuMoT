@@ -1876,7 +1876,7 @@ class MuMoTmodel:
                 try:
                     argList.append(argDict[arg])
                 except KeyError:
-                    raise MuMoTValueError('Unexpected reactant: system size > 2?')
+                    raise MuMoTValueError('Unexpected reactant \'' + str(arg) + '\': system size > 2?')
         return tuple(argList)
 
     ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
@@ -2091,7 +2091,7 @@ class MuMoTcontroller:
 
     def _print_standalone_view_cmd(self, _):
         self._errorMessage.value = "Pasted bookmark to log - view with showLogs(tail = True)"
-        self._view._print_standalone_view_cmd()
+        self._view._print_standalone_view_cmd(False, False)
 
     ## set the functions that must be triggered when the widgets are changed.
     ## @param[in]    recomputeFunction    The function to be called when recomputing is necessary 
@@ -2715,7 +2715,8 @@ class MuMoTview:
             self._controller._errorMessage.value = self._controller._errorMessage.value + message
         else:
             print(message)
-            
+
+
     def _show_computation_start(self):
         # ax = plt.gca()
         # ax.set_facecolor('xkcd:salmon')
@@ -2728,8 +2729,7 @@ class MuMoTview:
         if self._controller is not None:
             self._controller._bookmarkWidget.style.button_color = 'pink'
         
-        
-        
+               
     def _show_computation_stop(self):
         # ax = plt.gca()
         # ax.set_facecolor('xkcd:white')
@@ -2740,6 +2740,7 @@ class MuMoTview:
             
     def _setLog(self, log):
         self._logs = log
+
 
     def _log(self, analysis):
         print("Starting", analysis, "with parameters ", end='')
@@ -3051,12 +3052,42 @@ class MuMoTview:
             #print("_ratesDict=" + str(self._ratesDict))
             self._systemSize = self._getSystemSize()
         self._update_view_specific_params(freeParamDict)
-        
-    def _update_view_specific_params(self, freeParamDict=None):
+
+    def _getWidgetParamValue(self, key, dict = None):
+        """check fixedParams then generatingKwargs for a key value otherwise return from dict"""
+        if self._fixedParams.get(key) is not None:
+            return self._fixedParams[key]
+        elif self._generatingKwargs.get(key) is not None:
+            return self._generatingKwargs[key]
+        elif dict is not None:
+            if dict.get(key) is not None:
+                return dict[key].value
+            else:
+                raise MuMoTValueError('Could not find value for key \'' + key + '\'; if using a multicontroller try moving keyword definition down to creation of constitutent controllers')
+        else:
+            return None
+
+    def _getInitialState(self, state, freeParamDict):
+        """ get initial state from widgets, otherwise original initial state"""
+        if state in self._mumotModel._constantReactants:
+            return freeParamDict[state]
+        elif self._controller._widgetsExtraParams.get('init'+str(state)) is not None:
+            return self._controller._widgetsExtraParams['init'+str(state)].value
+        else:
+            return self._initialState[state]
+
+    def _update_view_specific_params(self, freeParamDict=None): # @todo JARM: I don't see what purpose this serves - it is mostly ignored and I don't think will function as intended
         """interface method to update view-specific params from widgets"""
         if freeParamDict is None:
             freeParamDict = {}
         pass
+
+    def _safeSymbol(self, item):
+        """used in _update_view_specific_params"""
+        if type(item) is Symbol:
+            return item
+        else:
+            return Symbol(item)
                         
     def showLogs(self, tail=False):
         if tail:
@@ -3087,11 +3118,14 @@ class MuMoTmultiView(MuMoTview):
     _numColumns = None
     ## use common axes for all plots (False = use subplots)
     _shareAxes = None
+    ## controllers (for building bookmarks)
+    _controllers = None
 
-    def __init__(self, controller, model, views, subPlotNum, **kwargs):
+    def __init__(self, controller, model, views, controllers, subPlotNum, **kwargs):
         super().__init__(model, controller, **kwargs)
         self._generatingCommand = "mumot.MuMoTmultiController"
         self._views = views
+        self._controllers = controllers
         self._subPlotNum = subPlotNum
         for view in self._views:
             view._figure = self._figure
@@ -3131,14 +3165,18 @@ class MuMoTmultiView(MuMoTview):
             view._setLog(log)
 
 
-    def _print_standalone_view_cmd(self):
+    def _print_standalone_view_cmd(self, foo = False, returnString = True):
         for view in self._views:  # @todo is this necessary?
             pass
         model = view._mumotModel  # @todo does this suppose that all models are the same for all views?
         with io.capture_output() as log:
-            logStr = "bookmark = " + self._generatingCommand + "(["
-            for view in self._views:
-                logStr += view._print_standalone_view_cmd(False) + ", "
+            if self._controller._silent == False:
+                logStr = "bookmark = "
+            else:
+                logStr = ""
+            logStr += self._generatingCommand + "(["
+            for controller in self._controllers:
+                logStr += controller._view._print_standalone_view_cmd(False) + ", "
             logStr = logStr[:-2]  # throw away last ", "
             logStr += "], "
             logStr += self._get_bookmarks_params(model)
@@ -3156,13 +3194,17 @@ class MuMoTmultiView(MuMoTview):
             #logStr = logStr.replace('\\', '\\\\') ## @todo is this necessary?
 
             print(logStr)
-        self._logs.append(log)
+        if returnString:
+            return str(log)
+        else:
+            self._logs.append(log)
 
 
     def _set_fixedParams(self, paramDict):
         self._fixedParams = paramDict
         for view in self._views:
-            view._set_fixedParams(paramDict)
+#            view._set_fixedParams(paramDict)
+            view._set_fixedParams({**paramDict, **view._fixedParams})  # this operation merge the two dictionaries with the second overriding the values of the first
 
 
 class MuMoTmultiController(MuMoTcontroller):
@@ -3391,7 +3433,7 @@ class MuMoTmultiController(MuMoTcontroller):
             if not self._silent:
                 display(self._progressBar)
 
-        self._view = MuMoTmultiView(self, model, views, subPlotNum - 1, **kwargs)
+        self._view = MuMoTmultiView(self, model, views, controllers, subPlotNum - 1, **kwargs)
         if fixedParamNames is not None:
 #            self._view._fixedParams = dict(zip(fixedParamNames, fixedParamValues))
             self._view._set_fixedParams(dict(zip(fixedParamNames, fixedParamValues))) 
@@ -3583,15 +3625,17 @@ class MuMoTtimeEvolutionView(MuMoTview):
             freeParamDict = {}
 
         if self._controller is not None:
-            if self._fixedParams.get('initialState') is not None:
-                self._initialState = self._fixedParams['initialState']
+            if self._getWidgetParamValue('initialState', None) is not None:
+#                self._initialState = self._getWidgetParamValue('initialState', None)
+#                self._initialState = { Symbol(key): self._getWidgetParamValue('initialState', None)[key] for key in self._getWidgetParamValue('initialState', None)}
+                self._initialState = { self._safeSymbol(key): self._getWidgetParamValue('initialState', None)[key] for key in self._getWidgetParamValue('initialState', None)}
             else:
                 for state in self._initialState.keys():
                     # add normal and constant reactants to the _initialState 
-                    self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
-            if 'plotProportions' in self._tEParams:
-                self._plotProportions = self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
-            self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
+                    self._initialState[state] = self._getInitialState(state, freeParamDict) # freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
+            if 'plotProportions' in self._tEParams: # @todo JARM: I don't really understand logic of checking _tEParams but then retrieving the value from elsewhere
+                self._plotProportions = self._getWidgetParamValue('plotProportions', self._controller._widgetsPlotOnly) # self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
+            self._maxTime = self._getWidgetParamValue('maxTime', self._controller._widgetsExtraParams) # self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
 
                
 #      
@@ -4926,7 +4970,6 @@ class MuMoTbifurcationView(MuMoTview):
     _stateVarBif1Print = None
     ## state variable 2 for logs output
     _stateVarBif2Print = None
-    
     ## generates command for bookmark functionality
     _generatingCommand = None
     ## fontsize on figure axes
@@ -5535,14 +5578,16 @@ class MuMoTbifurcationView(MuMoTview):
             freeParamDict = {}
 
         if self._controller is not None:
-            if self._fixedParams.get('initialState') is not None:
-                self._initialState = self._fixedParams['initialState']
+            if self._getWidgetParamValue('initialState', None) is not None:
+#                self._initialState = self._getWidgetParamValue('initialState', None)
+#                self._initialState = { Symbol(key): self._getWidgetParamValue('initialState', None)[key] for key in self._getWidgetParamValue('initialState', None)}
+                self._initialState = { self._safeSymbol(key): self._getWidgetParamValue('initialState', None)[key] for key in self._getWidgetParamValue('initialState', None)}
             else:
                 for state in self._initialState.keys():
                     # add normal and constant reactants to the _initialState 
-                    self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
+                    self._initialState[state] = self._getInitialState(state, freeParamDict) # freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
             
-            self._initBifParam = self._fixedParams['initBifParam'] if self._fixedParams.get('initBifParam') is not None else self._controller._widgetsExtraParams['initBifParam'].value
+            self._initBifParam = self._getWidgetParamValue('initBifParam', self._controller._widgetsExtraParams) # self._fixedParams['initBifParam'] if self._fixedParams.get('initBifParam') is not None else self._controller._widgetsExtraParams['initBifParam'].value
 
 
     ## gets and returns names and values from widgets, overrides method defined in parent class MuMoTview
@@ -5729,27 +5774,32 @@ class MuMoTstochasticSimulationView(MuMoTview):
             
             self._show_computation_stop()
         self._logs.append(log)
-        
+
+
     def _update_view_specific_params(self, freeParamDict=None):
         """Getting other parameters specific to SSA."""
+
         if freeParamDict is None:
             freeParamDict = {}
         if self._controller is not None:
-            if self._fixedParams.get('initialState') is not None:
-                self._initialState = self._fixedParams['initialState']
+            if self._getWidgetParamValue('initialState', None) is not None:
+#                self._initialState = self._getWidgetParamValue('initialState', None)
+#                self._initialState = { Symbol(key): self._getWidgetParamValue('initialState', None)[key] for key in self._getWidgetParamValue('initialState', None)}
+                self._initialState = { self._safeSymbol(key): self._getWidgetParamValue('initialState', None)[key] for key in self._getWidgetParamValue('initialState', None)}
             else:
                 for state in self._initialState.keys():
                     # add normal and constant reactants to the _initialState 
-                    self._initialState[state] = freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
-            self._randomSeed = self._fixedParams['randomSeed'] if self._fixedParams.get('randomSeed') is not None else self._controller._widgetsExtraParams['randomSeed'].value
-            self._visualisationType = self._fixedParams['visualisationType'] if self._fixedParams.get('visualisationType') is not None else self._controller._widgetsPlotOnly['visualisationType'].value
+                    self._initialState[state] = self._getInitialState(state, freeParamDict) # freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init'+str(state)].value
+            self._randomSeed =  self._getWidgetParamValue('randomSeed', self._controller._widgetsExtraParams) # self._fixedParams['randomSeed'] if self._fixedParams.get('randomSeed') is not None else self._controller._widgetsExtraParams['randomSeed'].value
+            self._visualisationType = self._getWidgetParamValue('visualisationType', self._controller._widgetsPlotOnly) # self._fixedParams['visualisationType'] if self._fixedParams.get('visualisationType') is not None else self._controller._widgetsPlotOnly['visualisationType'].value
             if self._visualisationType == 'final':
-                self._finalViewAxes = (self._fixedParams['final_x'] if self._fixedParams.get('final_x') is not None else self._controller._widgetsPlotOnly['final_x'].value, self._fixedParams['final_y'] if self._fixedParams.get('final_y') is not None else self._controller._widgetsPlotOnly['final_y'].value)
-            self._plotProportions = self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
-            self._maxTime = self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
-            self._realtimePlot = self._fixedParams['realtimePlot'] if self._fixedParams.get('realtimePlot') is not None else self._controller._widgetsExtraParams['realtimePlot'].value
-            self._runs = self._fixedParams['runs'] if self._fixedParams.get('runs') is not None else self._controller._widgetsExtraParams['runs'].value
-            self._aggregateResults = self._fixedParams['aggregateResults'] if self._fixedParams.get('aggregateResults') is not None else self._controller._widgetsPlotOnly['aggregateResults'].value
+                self._finalViewAxes = (self._getWidgetParamValue('final_x', self._controller._widgetsPlotOnly), self._getWidgetParamValue('final_y', self._controller._widgetsPlotOnly))
+                #self._finalViewAxes = (self._fixedParams['final_x'] if self._fixedParams.get('final_x') is not None else self._controller._widgetsPlotOnly['final_x'].value, self._fixedParams['final_y'] if self._fixedParams.get('final_y') is not None else self._controller._widgetsPlotOnly['final_y'].value)
+            self._plotProportions = self._getWidgetParamValue('plotProportions', self._controller._widgetsPlotOnly) # self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
+            self._maxTime = self._getWidgetParamValue('maxTime', self._controller._widgetsExtraParams) # self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
+            self._realtimePlot = self._getWidgetParamValue('realtimePlot', self._controller._widgetsExtraParams) # self._fixedParams['realtimePlot'] if self._fixedParams.get('realtimePlot') is not None else self._controller._widgetsExtraParams['realtimePlot'].value
+            self._runs = self._getWidgetParamValue('runs', self._controller._widgetsExtraParams) # self._fixedParams['runs'] if self._fixedParams.get('runs') is not None else self._controller._widgetsExtraParams['runs'].value
+            self._aggregateResults = self._getWidgetParamValue('aggregateResults', self._controller._widgetsPlotOnly) # self._fixedParams['aggregateResults'] if self._fixedParams.get('aggregateResults') is not None else self._controller._widgetsPlotOnly['aggregateResults'].value
     
     def _initSingleSimulation(self):
         self._progressBar.max = self._maxTime 
@@ -6241,21 +6291,19 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         """read the new parameters (in case they changed in the controller) specific to multiagent(). This function should only update local parameters and not compute data"""
         if freeParamDict is None:
             freeParamDict = {}
+
         super()._update_view_specific_params(freeParamDict)
         self._adjust_barabasi_network_range()
         if self._controller is not None:
-            if self._fixedParams.get('netType') is not None:
-                self._netType = self._fixedParams['netType']
-            else:
-                self._netType = self._controller._widgetsExtraParams['netType'].value
-            if self._fixedParams.get('netType') != NetworkType.FULLY_CONNECTED:
-                self._netParam = self._fixedParams['netParam'] if self._fixedParams.get('netParam') is not None else self._controller._widgetsExtraParams['netParam'].value
-                if self._fixedParams.get('netType') is None or self._fixedParams.get('netType') == NetworkType.DYNAMIC:
-                    self._motionCorrelatedness = self._fixedParams['motionCorrelatedness'] if self._fixedParams.get('motionCorrelatedness') is not None else self._controller._widgetsExtraParams['motionCorrelatedness'].value
-                    self._particleSpeed = self._fixedParams['particleSpeed'] if self._fixedParams.get('particleSpeed') is not None else self._controller._widgetsExtraParams['particleSpeed'].value
-                    self._showTrace = self._fixedParams['showTrace'] if self._fixedParams.get('showTrace') is not None else self._controller._widgetsPlotOnly['showTrace'].value
-                    self._showInteractions = self._fixedParams['showInteractions'] if self._fixedParams.get('showInteractions') is not None else self._controller._widgetsPlotOnly['showInteractions'].value
-            self._timestepSize = self._fixedParams['timestepSize'] if self._fixedParams.get('timestepSize') is not None else self._controller._widgetsExtraParams['timestepSize'].value
+            self._netType = self._getWidgetParamValue('netType', self._controller._widgetsExtraParams)
+            if self._netType != NetworkType.FULLY_CONNECTED: # this used to refer only to value in self._fixedParams; possible bug?
+                self._netParam = self._getWidgetParamValue('netParam', self._controller._widgetsExtraParams) # self._fixedParams['netParam'] if self._fixedParams.get('netParam') is not None else self._controller._widgetsExtraParams['netParam'].value
+                if self._netType is None or self._netType == NetworkType.DYNAMIC: # this used to refer only to value in self._fixedParams; possible bug?
+                    self._motionCorrelatedness = self._getWidgetParamValue('motionCorrelatedness', self._controller._widgetsExtraParams) # self._fixedParams['motionCorrelatedness'] if self._fixedParams.get('motionCorrelatedness') is not None else self._controller._widgetsExtraParams['motionCorrelatedness'].value
+                    self._particleSpeed = self._getWidgetParamValue('particleSpeed', self._controller._widgetsExtraParams) # self._fixedParams['particleSpeed'] if self._fixedParams.get('particleSpeed') is not None else self._controller._widgetsExtraParams['particleSpeed'].value
+                    self._showTrace = self._getWidgetParamValue('showTrace', self._controller._widgetsPlotOnly) # self._fixedParams['showTrace'] if self._fixedParams.get('showTrace') is not None else self._controller._widgetsPlotOnly['showTrace'].value
+                    self._showInteractions = self._getWidgetParamValue('showInteractions', self._controller._widgetsPlotOnly) # self._fixedParams['showInteractions'] if self._fixedParams.get('showInteractions') is not None else self._controller._widgetsPlotOnly['showInteractions'].value
+            self._timestepSize = self._getWidgetParamValue('timestepSize', self._controller._widgetsExtraParams) # self._fixedParams['timestepSize'] if self._fixedParams.get('timestepSize') is not None else self._controller._widgetsExtraParams['timestepSize'].value
         
         self._computeScalingFactor()
     
