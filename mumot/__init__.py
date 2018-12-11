@@ -9205,7 +9205,7 @@ def _parse_input_keyword_for_boolean_widgets(inputValue, defaultValue, initValue
 def _get_item_from_params_list(params, targetName):
     """Params is a list (rather than a dictionary) and this method is necessary to fetch the value by name. """
     for param in params:
-        if param[0] == targetName or param[0].replace('\\', '') == targetName:
+        if param[0] == targetName or param[0].replace('\\', '') == targetName or param[0].replace('_','_{') + '}' == targetName:
             return param[1]
     return None
 
