@@ -17,4 +17,4 @@ See [https://mumot.readthedocs.io/en/latest/](https://mumot.readthedocs.io/en/la
 * **Installation instructions**, should you want to instal it on your own machine.
 * **Development**: how to report issues and how to contribute to the project.
 * Information about MuMoT inc. contributors and acknowledgements.
-* API documentation
+* API documentation 
