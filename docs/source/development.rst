@@ -196,13 +196,14 @@ The Sphinx documentation is / can be built under several different circumstances
 * Automatically whenever :ref:`tox is run <test_local>`;
 * Automatically whenever :ref:`a CI job is run <test_ci>`;
 * Automatically following a push to the master branch of the MuMoT repository, 
-  which causes the `ReadTheDocs <rtd>`_ service (free for open-source projects) to not only build HTML documentation
-  but also start serving a new version of the Sphinx site.
+  which causes an additional final step of the CI job to deploy the built documentation to the ``gh-pages`` branch of the repository
+  (for viewing at `https://diodeproject.github.io/MuMoT/ <https://diodeproject.github.io/MuMoT/>`__).
 
 Building the docs locally 
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-#. Ensure the optional ``docs`` dependencies of ``mumot`` have been installed within your local development environment (a conda environment or virtualenv; see also the :ref:`MumoT install guide <install>`:
+#. Ensure the optional ``docs`` dependencies of ``mumot`` have been installed within your local development environment 
+   (a conda environment or virtualenv; see also the :ref:`MumoT install guide <install>`:
 
    .. code::
 
@@ -227,13 +228,6 @@ Building the docs locally
    .. code::
 
       firefox _build/html/index.html
-
-ReadTheDocs
-^^^^^^^^^^^
-
-By default `ReadTheDocs <rtd>`_ builds and serves HTML documentation from/for the tip of the ``master`` branch but this is configurable.
-
-The project's `ReadTheDocs dashboard <rtd_dash>`_ includes logs for each build (occasionally useful for trouble-shooting).
 
 Running the User Manual Notebook on mybinder.org
 ------------------------------------------------
@@ -416,8 +410,6 @@ Creating a new release
 .. _pytest-cov: https://pytest-cov.readthedocs.io/
 .. _pytest: https://docs.pytest.org/en/latest/
 .. _reStructuredText: http://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
-.. _rtd: https://readthedocs.org/
-.. _rtd_dash: https://readthedocs.org/projects/mumot/
 .. _tox: https://tox.readthedocs.io/
 .. _virtualenv: https://virtualenv.pypa.io/
 .. _mybinder.org: https://mybinder.org/
