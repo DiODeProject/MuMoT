@@ -65,6 +65,10 @@ except NameError as e:
     pass
 
 
+class MuMoTWarning(Warning):
+    pass
+
+
 class MuMoTError(Exception):
     pass
 
@@ -6990,7 +6994,7 @@ def parseModel(modelDescription):
 
     Returns
     -------
-    :class:`MuMoTmodel` or None
+    :class:`MuMoTmodel` or None (with warning)
         The instantiated MuMoT model.
 
     """
@@ -7004,7 +7008,7 @@ def parseModel(modelDescription):
     else:
         # assume input describes filename and attempt to load
         print("Input does not appear to be valid model - attempting to load from file `" + modelDescription + "`...")
-        print("Loading from file not currently supported")
+        raise MuMoTWarning("Loading from file not currently supported")
 
         return None
 
