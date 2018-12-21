@@ -7,6 +7,11 @@ Getting started
 
 The MuMoT user manual (a Jupyter Notebook) provides the most accessible introduction to working with MuMoT.  
 
+MuMoT (Multiscale Modelling Tool) is a tool designed to allow sophisticated mathematical modelling and analysis, without writing equations
+- the class of models that can be represented is broad, ranging from chemical reaction kinetics to demography and collective behaviour
+- by using a web-based interactive interface with minimal coding, rapid development and exploration of models is facilitated
+- the tool may also be particularly useful for pedagogical demonstrations
+
 .. _mybinder_usage:
 
 Online
