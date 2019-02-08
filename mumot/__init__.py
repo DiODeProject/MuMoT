@@ -8892,9 +8892,9 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                     print('Check input!')
                     FPcolor = line_color_list[-1]  
                     FPfill = 'none'
-                     
-                plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=9, 
-                         c=FPcolor, fillstyle=FPfill, mew=3, mec=FPcolor)
+                if sympy.re(lam1) != 0 and sympy.re(lam2) != 0:
+                    plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=9, 
+                             c=FPcolor, fillstyle=FPfill, mew=3, mec=FPcolor)
                 
     plt.grid(kwargs.get('grid', False))
         
