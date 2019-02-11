@@ -24,7 +24,7 @@ If you want to contribute a feature or fix a bug then:
    off the master branch within your personal MuMoT repository.
 #. Make commits to that branch:
 
-   * Style: write code using `standard Python naming conventions <https://www.python.org/dev/peps/pep-0008/#naming-conventions>`__.
+   * Style: write code using `standard Python naming conventions <pep8>`.
    * Testing: if you add new features, fix bug(s) or change existing functionality:
 
      * Add (lower-level) `unit tests <https://en.wikipedia.org/wiki/Unit_testing>`__ to 
@@ -155,8 +155,8 @@ Automated testing using Travis CI
 
 Each `Pull Request`_ against the `MuMoT GitHub repository`_ and 
 each push to the ``master`` branch in that repository 
-trigger a `Continuous Integration <https://docs.travis-ci.com/user/for-beginners>`__ (CI) job
-on the `travis-ci.org <https://docs.travis-ci.com/user/for-beginners>`__ platform 
+trigger a `Continuous Integration <travis_intro>` (CI) job
+on the `travis-ci.org <travis_intro>` platform 
 (a service that is free for open-source projects).
 
 Each job 
@@ -176,7 +176,11 @@ The **Travis CI configuration** is in the file ``.travis.yml``.
 This does little more than :ref:`call tox <test_local>`.
 
 The Travis CI **dashboard** for the project shows **job exit statuses** and **logs**:
-`https://travis-ci.com/DiODeProject/MuMoT/ <https://travis-ci.com/DiODeProject/MuMoT/>`__.
+`https://travis-ci.com/DiODeProject/MuMoT/ <travis_dashboard>`.
+From the **Build History** tab you can restart a particular Travis job, which might be useful if 
+a job unexpectedly `times out after 50 minutes <travis_timeouts>`, 
+fails as it has `not produced any output for 10 minutes <travis_timeouts>`
+or you suspect that job failures are otherwise non-deterministic.
 
 .. _build_docs:
 
@@ -399,24 +403,28 @@ Creating a new release
 
 
 
+.. _BinderHub: https://binderhub.readthedocs.io/
+.. _DOI: https://www.doi.org/
 .. _MuMoT GitHub repository: https://github.com/DiODeProject/MuMoT
+.. _ORDA: https://www.sheffield.ac.uk/library/rdm/orda
 .. _Pull Request: https://help.github.com/articles/about-pull-requests/
 .. _Sphinx: http://www.sphinx-doc.org/
+.. _annotated tag: https://git-scm.com/book/en/v2/Git-Basics-Tagging
 .. _autodoc: http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 .. _autosummary: http://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html
+.. _mybinder.org: https://mybinder.org/
 .. _nbdime: https://nbdime.readthedocs.io/
 .. _nbval: https://github.com/computationalmodelling/nbval
 .. _numpydoc: http://numpydoc.readthedocs.io/en/latest/format.html
 .. _pytest-cov: https://pytest-cov.readthedocs.io/
 .. _pytest: https://docs.pytest.org/en/latest/
 .. _reStructuredText: http://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
-.. _tox: https://tox.readthedocs.io/
-.. _virtualenv: https://virtualenv.pypa.io/
-.. _mybinder.org: https://mybinder.org/
-.. _BinderHub: https://binderhub.readthedocs.io/
 .. _repo2docker: https://github.com/jupyter/repo2docker
-.. _twine: https://pypi.org/project/twine/
-.. _annotated tag: https://git-scm.com/book/en/v2/Git-Basics-Tagging
-.. _ORDA: https://www.sheffield.ac.uk/library/rdm/orda
-.. _DOI: https://www.doi.org/
 .. _semantic versioning: https://semver.org/
+.. _tox: https://tox.readthedocs.io/
+.. _travis_dashboard: https://travis-ci.com/DiODeProject/MuMoT/
+.. _travis_limits: https://docs.travis-ci.com/user/customizing-the-build/
+.. _twine: https://pypi.org/project/twine/
+.. _virtualenv: https://virtualenv.pypa.io/
+.. _travis_intro: https://docs.travis-ci.com/user/for-beginners
+.. _pep8: https://www.python.org/dev/peps/pep-0008/#naming-conventions
