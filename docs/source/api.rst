@@ -13,7 +13,7 @@ Functions
 
    parseModel
    setVerboseExceptions
-   round_to_1
+   _round_to_1
 
 Model classes
 -------------

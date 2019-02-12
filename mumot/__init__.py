@@ -5226,11 +5226,11 @@ class MuMoTbifurcationView(MuMoTview):
                 for kk in range(len(realEQsol)):
                     if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]) == True:
                         initDictList.append(realEQsol[kk])
-                self._showErrorMessage('Stationary state(s) detected and continuated. Initial conditions for state variables specified on sliders in Advanced options tab were not used. (Those are only used in case the calculation of fixed points fails.) ')
-                print(len(initDictList), 'stable steady state(s) detected and continuated. Initial conditions for state variables specified on sliders in Advanced options tab were not used.')
+                #self._showErrorMessage('Stationary state(s) detected and continuated. Initial conditions for state variables specified on sliders in Advanced options tab were not used. (Those are only used in case the calculation of fixed points fails.) ')
+                print(len(initDictList), 'stable steady state(s) detected and continuated. Initial conditions for state variables specified on sliders in Advanced options tab were not used. Those are only used in case the calculation of fixed points fails.')
             else:
                 initDictList.append(self._pyDSmodel_ics)
-                self._showErrorMessage('Stationary states could not be calculated; used initial conditions specified on sliders in Advanced options tab instead. This means only one branch was attempted to be continuated and the starting point might not have been a stationary state. ')
+                #self._showErrorMessage('Stationary states could not be calculated; used initial conditions specified on sliders in Advanced options tab instead. This means only one branch was attempted to be continuated and the starting point might not have been a stationary state. ')
                 print('Stationary states could not be calculated; used initial conditions specified on sliders in Advanced options tab instead: ', self._pyDSmodel_ics, '. This means only one branch was continuated and the starting point might not have been a stationary state.')   
             
             specialPoints = []  # list of special points: LP and BP
@@ -8325,8 +8325,8 @@ def _buildFigOLD(object, figure=None):
     else:
         object._figure = figure
 
-## used for determining significant digits for axes formatting in plots MuMoTstreamView and MuMoTbifurcationView 
-def round_to_1(x):
+def _round_to_1(x):
+    '''used for determining significant digits for axes formatting in plots MuMoTstreamView and MuMoTbifurcationView.'''
     if x == 0: return 1
     return round(x, -int(floor(log10(abs(x)))))
 
@@ -8409,19 +8409,19 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
             max_zrange = z_lim_top - z_lim_bot
             
         if max_xrange < 1.0:
-            xMLocator_major = round_to_1(max_xrange/4)
+            xMLocator_major = _round_to_1(max_xrange/4)
         else:
-            xMLocator_major = round_to_1(max_xrange/6)
+            xMLocator_major = _round_to_1(max_xrange/6)
         #xMLocator_minor = xMLocator_major/2
         if max_yrange < 1.0:
-            yMLocator_major = round_to_1(max_yrange/4)
+            yMLocator_major = _round_to_1(max_yrange/4)
         else:
-            yMLocator_major = round_to_1(max_yrange/6)
+            yMLocator_major = _round_to_1(max_yrange/6)
         #yMLocator_minor = yMLocator_major/2
         if max_zrange < 1.0:
-            zMLocator_major = round_to_1(max_zrange/4)
+            zMLocator_major = _round_to_1(max_zrange/4)
         else:
-            zMLocator_major = round_to_1(max_zrange/6)
+            zMLocator_major = _round_to_1(max_zrange/6)
         #zMLocator_minor = yMLocator_major/2
         ax.xaxis.set_major_locator(ticker.MultipleLocator(xMLocator_major))
         #ax.xaxis.set_minor_locator(ticker.MultipleLocator(xMLocator_minor))
@@ -8829,14 +8829,14 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
             max_yrange = YaxisMax - YaxisMin
         
         if max_xrange < 1.0:
-            xMLocator_major = round_to_1(max_xrange/5)
+            xMLocator_major = _round_to_1(max_xrange/5)
         else:
-            xMLocator_major = round_to_1(max_xrange/10)
+            xMLocator_major = _round_to_1(max_xrange/10)
         xMLocator_minor = xMLocator_major/2
         if max_yrange < 1.0:
-            yMLocator_major = round_to_1(max_yrange/5)
+            yMLocator_major = _round_to_1(max_yrange/5)
         else:
-            yMLocator_major = round_to_1(max_yrange/10)
+            yMLocator_major = _round_to_1(max_yrange/10)
         yMLocator_minor = yMLocator_major/2
         
         if choose_xrange:
