@@ -25,6 +25,10 @@ from bisect import bisect_left
 from enum import Enum
 from math import floor, log10
 
+if sys.platform == "darwin": #if operating system is macOS
+    import matplotlib
+    matplotlib.use('TkAgg')
+
 import ipywidgets.widgets as widgets
 import matplotlib.patches as mpatch
 import matplotlib.ticker as ticker
