@@ -1292,10 +1292,11 @@ class MuMoTmodel:
 
         Other Parameters
         ----------------
-        initialState : float, optional
-            Initial proportions of the reactants.  A value in the range [0,1].
-            Will be used *only* if calculation of stationary states fails.  Can
-            also be set via ``initWidgets`` argument
+        initialState : dict, optional
+            Initial proportions of the reactants. State variables are the keys the
+            values of which must be in range [0, 1].
+            Can also be set via ``initWidgets`` argument.
+            Defaults to an empty dictionary.
         initBifParam : float, optional
             Initial value of bifurcation parameter.  Can also be set via
             ``initWidgets`` argument.  Defaults to 2.0.
