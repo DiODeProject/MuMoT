@@ -108,7 +108,8 @@ GREEK_LETT_LIST_1 = ['alpha', 'beta', 'gamma', 'Gamma', 'delta', 'Delta', 'epsil
                     'mu', 'xi', 'Xi', 'pi', 'Pi', 'rho', 'sigma', 'Sigma', 'tau', 
                     'upsilon', 'Upsilon', 'phi', 'Phi', 'chi', 'psi', 'Psi', 'omega', 'Omega', 'varrho', 'vartheta', 'varepsilon', 'varphi']
 GREEK_LETT_LIST_2 = ['\\' + GreekLett for GreekLett in GREEK_LETT_LIST_1]
-GREEK_LETT_RESERVED_LIST = ['\\eta', '\\nu', '\\Phi']
+GREEK_LETT_RESERVED_LIST = ['\\eta', '\\nu', '\\Phi', '(\\eta)', '(\\nu)', '(\\Phi)']
+GREEK_LETT_RESERVED_LIST_PRINT = ['eta', 'nu', 'Phi']
 # 
 # GREEK_LETT_LIST_2=['\\alpha', '\\beta', '\\gamma', '\\Gamma', '\\delta', '\\Delta', '\\epsilon',
 #                     '\\zeta', '\\theta', '\\Theta', '\\iota', '\\kappa', '\\lambda', '\\Lambda', 
@@ -7081,7 +7082,7 @@ def parseModel(modelDescription):
                 # state E: expecting a rate equation until end of rule
                 token = token.replace("\\\\", '\\')
                 if token in GREEK_LETT_RESERVED_LIST:
-                    raise MuMoTSyntaxError("Reserved letter " + token + " encountered: reserved letters are " + str(GREEK_LETT_RESERVED_LIST))                
+                    raise MuMoTSyntaxError("Reserved letter " + token + " encountered: the list of reserved letters is " + str(GREEK_LETT_RESERVED_LIST_PRINT))                
                 constantReactant = False
 
                 if state == 'A':
