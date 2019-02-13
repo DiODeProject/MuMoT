@@ -25,7 +25,11 @@ from bisect import bisect_left
 from enum import Enum
 from math import floor, log10
 
-if sys.platform == "darwin": #if operating system is macOS
+#if operating system is macOS
+#use non-default matplotlib backend
+#otherwise rendering of images might not be correct (e.g. superfluous figures when sliders are moved)
+#automated testing using tox could be affected as well if default matplotlib backend is used 
+if sys.platform == "darwin":
     import matplotlib
     matplotlib.use('TkAgg')
 
@@ -45,7 +49,7 @@ from mpl_toolkits.mplot3d import axes3d  # @UnresolvedImport
 from pyexpat import model  # @UnresolvedImport
 from scipy.integrate import odeint
 from sympy import (Derivative, Matrix, Symbol, collect, default_sort_key,
-                   expand, factorial, lambdify, latex, linsolve,
+                   expand, factorial, lambdify, latex, linsolve, nan,
                    numbered_symbols, preview, simplify, solve, symbols)
 
 from mumot.process_latex.process_latex import process_sympy
@@ -4548,9 +4552,22 @@ class MuMoTfieldView(MuMoTview):
             
             self._FixedPoints = FixedPoints
             
-            if self._SOL_2ndOrdMomDict:
+            skipEllipse=False    
+            if self._SOL_2ndOrdMomDict:   
+                for kk in range(len(Ell_width)):
+                    # remark: nan is imported from sympy
+                    if Ell_width[kk] == nan or Ell_width[kk] == 0 or Ell_height[kk] == nan or Ell_height[kk] == 0:
+                        skipEllipse=True
+                        self._showErrorMessage('Noise could not be calculated analytically. ')
+                        break
+            
+            if self._SOL_2ndOrdMomDict and skipEllipse==False:
                 # swap width and height of ellipse if width > height
                 for kk in range(len(Ell_width)):
+                    #print(Ell_width[kk])
+                    #print(type(Ell_width[kk]))
+                    #print(Ell_height[kk])
+                    #print(type(Ell_height[kk]))
                     ell_width_temp = Ell_width[kk]
                     ell_height_temp = Ell_height[kk]
                     if ell_width_temp > ell_height_temp:
@@ -4570,28 +4587,36 @@ class MuMoTfieldView(MuMoTview):
                         Fcolor = LINE_COLOR_LIST[0]
                     ells[kk].set_facecolor(Fcolor)
                 #self._ells = ells
-            
+            else:
+                if self._showNoise==True:
+                    self._showSSANoise=True   
+                
             if self._showSSANoise:
     #             print(FixedPoints)
     #             print(self._stateVariable1)
     #             print(self._stateVariable2)
     #             print(realEQsol)
+                skipList=[]
                 for kk in range(len(realEQsol)):
                     #print("printing ellipse for point " + str(realEQsol[kk]) )
                     # skip values out of range [0,1] and unstable equilibria
                     skip = False
                     for p in realEQsol[kk].values():
-                        if p < 0 or p > 1:
+                        #if p < 0 or p > 1:
+                        if p < 0:
                             skip = True
                             #print("Skipping for out range")
                             break
                         for eigenV in EV[kk]:
-                            if sympy.re(eigenV) > 0:
+                            #skip if no stable fixed points detected
+                            if sympy.re(eigenV) >= 0:
                                 skip = True
                                 #print("Skipping for positive eigenvalue")
                                 break
                         if skip: break
-                    if skip: continue
+                    if skip: 
+                        skipList.append('skip')
+                        continue
                     # generate proper init reactant list
                     initState = copy.deepcopy(realEQsol[kk])
                     for reactant in self._mumotModel._getAllReactants()[0]:
@@ -4613,7 +4638,10 @@ class MuMoTfieldView(MuMoTview):
                     #print(SSAView._printStandaloneViewCmd())
                     SSAView._figure = self._figure
                     SSAView._computeAndPlotSimulation()
-        
+                
+                if len(realEQsol) == len(skipList):
+                    self._showErrorMessage('No stable fixed points detected. Noise could not be calculated numerically.')
+                                
         else:
             if self._showNoise == True:
                 print('Please note: Currently \'showNoise\' only available for 2D stream and vector plots.')
