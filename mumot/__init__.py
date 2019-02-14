@@ -603,8 +603,8 @@ class MuMoTmodel:
         Returns
         -------
         :class:`dict`, :class:`dict`
-            Dictionary of Master Equation right hand sides
-            Dictionary of substitutions used
+            Dictionary showing all terms of the right hand side of the Master Equation
+            Dictionary of substitutions used, this defaults to `None` if no substitutions were made
 
         """
 
@@ -696,7 +696,7 @@ class MuMoTmodel:
         :class:`Add`, :class:`Add`, :class:`dict`
             van Kampen expansion left hand side
             van Kampen expansion right hand side
-            Dictionary of substitutions used
+            Dictionary of substitutions used, this defaults to `None` if no substitutions were made
         """
 
         rhs_vke, lhs_vke, substring = _doVanKampenExpansion(_deriveMasterEquation, self._stoichiometry)
@@ -731,7 +731,7 @@ class MuMoTmodel:
         -------
         :class:`dict`, :class:`dict`
             Dictionary of Fokker-Planck right hand sides
-            Dictionary of substitutions used
+            Dictionary of substitutions used, this defaults to `None` if no substitutions were made
 
         """
 
@@ -764,10 +764,10 @@ class MuMoTmodel:
         Returns
         -------
         :class:`dict`, :class:`dict`, :class:`dict`, :class:`dict`
-            Dictionary of first order equations of motion right hand sides
-            Dictionary of substitutions used for first order equations of motion
-            Dictionary of second order equations of motion right hand sides
-            Dictionary of substitutions used for second order equations of motion
+            Dictionary of first order moments equations of motion right hand sides (derived using Fokker-Planck equation)
+            Dictionary of substitutions used for first order moments equations
+            Dictionary of second order moments equations of motion right hand sides (derived using Fokker-Planck equation)
+            Dictionary of substitutions used for second order moments equations
 
         """
         EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
@@ -800,10 +800,10 @@ class MuMoTmodel:
         Returns
         -------
         :class:`dict`, :class:`dict`, :class:`dict`, :class:`dict`
-            Dictionary of first order noise solution right hand sides
-            Dictionary of substitutions used for first order solutions
-            Dictionary of second order noise solution right hand sides
-            Dictionary of substitutions used for second order solutions
+            Dictionary of first order moments noise solution right hand sides
+            Dictionary of substitutions used for first order moments solutions
+            Dictionary of second order moments noise solution right hand sides
+            Dictionary of substitutions used for second order moments solutions
         """
         return _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
 
