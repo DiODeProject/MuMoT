@@ -2994,12 +2994,30 @@ class MuMoTview:
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
        
         eps = 1e-8
-        EQsol = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
-
-        for nn in range(len(EQsol)):
-            if len(EQsol[nn]) != 2:
-                self._showErrorMessage('Some or all solutions are NOT unique.')
-                return None, None
+        EQsolA = solve((EQ1, EQ2), (self._stateVariable1, self._stateVariable2), dict=True)
+        
+        EQsol = []
+        addIndexToSolList = []
+        for nn in range(len(EQsolA)):
+            if len(EQsolA[nn]) == 2:
+                addIndexToSolList.append(nn)
+            else:
+                self._showErrorMessage('Some solutions for Fixed Points may not be unique.')
+                #self._showErrorMessage('Some or all solutions are NOT unique.')
+                #return None, None
+        
+        for el in addIndexToSolList:
+            EQsol.append(EQsolA[el])
+        
+        if len(EQsol) == 0:
+            self._showErrorMessage('Could not find any unique solutions for Fixed Points.')
+            return None, None
+        
+        
+        #for nn in range(len(EQsol)):
+        #    if len(EQsol[nn]) != 2:
+        #        self._showErrorMessage('Some or all solutions are NOT unique.')
+        #        return None, None
         
         realEQsol = [{self._stateVariable1: sympy.re(EQsol[kk][self._stateVariable1]), self._stateVariable2: sympy.re(EQsol[kk][self._stateVariable2])} for kk in range(len(EQsol)) if (sympy.Abs(sympy.im(EQsol[kk][self._stateVariable1])) <= eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable2])) <= eps)]
         
