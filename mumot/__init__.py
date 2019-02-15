@@ -3001,17 +3001,17 @@ class MuMoTview:
         for nn in range(len(EQsolA)):
             if len(EQsolA[nn]) == 2:
                 addIndexToSolList.append(nn)
-            else:
-                self._showErrorMessage('Some solutions for Fixed Points may not be unique.')
-                #self._showErrorMessage('Some or all solutions are NOT unique.')
-                #return None, None
+            #else:
+            #    self._showErrorMessage('Some solutions for Fixed Points may not be unique.')
         
         for el in addIndexToSolList:
             EQsol.append(EQsolA[el])
         
         if len(EQsol) == 0:
-            self._showErrorMessage('Could not find any unique solutions for Fixed Points.')
+            self._showErrorMessage('Could not compute any unique solutions for Fixed Points. ')
             return None, None
+        elif len(EQsol) < len(EQsolA):
+            self._showErrorMessage('Some solutions for Fixed Points may not be unique. ')
         
         
         #for nn in range(len(EQsol)):
@@ -3045,12 +3045,29 @@ class MuMoTview:
         EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
         
         eps = 1e-8
-        EQsol = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
+        EQsolA = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
         
-        for nn in range(len(EQsol)):
-            if len(EQsol[nn]) != 3:
-                self._showErrorMessage('Some or all solutions are NOT unique.')
-                return None, None
+        EQsol = []
+        addIndexToSolList = []
+        for nn in range(len(EQsolA)):
+            if len(EQsolA[nn]) == 3:
+                addIndexToSolList.append(nn)
+            #else:
+            #    self._showErrorMessage('Some solutions for Fixed Points may not be unique.')
+        
+        for el in addIndexToSolList:
+            EQsol.append(EQsolA[el])
+        
+        if len(EQsol) == 0:
+            self._showErrorMessage('Could not compute any unique solutions for Fixed Points. ')
+            return None, None
+        elif len(EQsol) < len(EQsolA):
+            self._showErrorMessage('Some solutions for Fixed Points may not be unique. ')
+        
+        #for nn in range(len(EQsol)):
+        #    if len(EQsol[nn]) != 3:
+        #        self._showErrorMessage('Some or all solutions are NOT unique.')
+        #        return None, None
         
         realEQsol = [{self._stateVariable1: sympy.re(EQsol[kk][self._stateVariable1]), self._stateVariable2: sympy.re(EQsol[kk][self._stateVariable2]), self._stateVariable3: sympy.re(EQsol[kk][self._stateVariable3])} for kk in range(len(EQsol)) if (sympy.Abs(sympy.im(EQsol[kk][self._stateVariable1])) <= eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable2])) <= eps and sympy.Abs(sympy.im(EQsol[kk][self._stateVariable3])) <= eps)]
         
@@ -3591,7 +3608,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
             self._xlab = kwargs.get('xlab', 'time t')
             #self._ylab = kwargs.get('ylab', r'evolution of states')
             
-            self._legend_loc = kwargs.get('legend_loc', 'upper left')
+            self._legend_loc = kwargs.get('legend_loc', 'upper right')
             self._legend_fontsize = kwargs.get('legend_fontsize', None)
             
             self._stateVarList = []
@@ -4028,11 +4045,11 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
                 
             if steadyStateReached == False:
                 self._show_computation_stop()
-                self._showErrorMessage('Stable steady state has not been reached: Try changing the initial conditions or model parameters using the sliders provided, increase simulation time, or decrease timestep tstep.') 
+                self._showErrorMessage('ODE system could not reach stable steady state: Try changing the initial conditions or model parameters using the sliders provided, increase simulation time, or decrease timestep tstep.') 
                 return None
         else:
             steadyStateReached = 'uncertain'
-            self._showErrorMessage('Warning: steady state may have not been reached. Substituted values of state variables at t=maxTimeDS (maxTimeDS can be set via keyword \'maxTimeDS = <number>\').')
+            self._showErrorMessage('Warning: ODE system may not have reached a steady state. Values of state variables at t=maxTimeDS were substituted (maxTimeDS can be set via keyword \'maxTimeDS = <number>\').')
             if self._stateVariable3:
                 steadyStateDict = {self._stateVariable1: y_stationary[0], self._stateVariable2: y_stationary[1], self._stateVariable3: y_stationary[2]}
             elif self._stateVariable2:
@@ -4147,16 +4164,22 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         
         NrDP = int(self._maxTime/self._tstep) + 1
         time = np.linspace(0, self._maxTime, NrDP)
-        if self._stateVariable3:
-            y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)], SOL_2ndOrdMomDict[M_2(eta_SV2**2)], SOL_2ndOrdMomDict[M_2(eta_SV3**2)], 
-                  SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)],
-                  SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)],
-                  SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)], SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)]]
-        elif self._stateVariable2:
-            y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)], SOL_2ndOrdMomDict[M_2(eta_SV2**2)], 
-                  SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)]]
+        
+        if len(SOL_2ndOrdMomDict) > 0:
+            if self._stateVariable3:
+                y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)], SOL_2ndOrdMomDict[M_2(eta_SV2**2)], SOL_2ndOrdMomDict[M_2(eta_SV3**2)], 
+                      SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)],
+                      SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)],
+                      SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)], SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)]]
+            elif self._stateVariable2:
+                y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)], SOL_2ndOrdMomDict[M_2(eta_SV2**2)], 
+                      SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)], SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)]]
+            else:
+                y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)]]
         else:
-            y0 = [SOL_2ndOrdMomDict[M_2(eta_SV1**2)]]
+            self._showErrorMessage('Could not compute Second Order Moments. Could not generate figure. Try different initial conditions in the Advanced options tab! ')
+            return None
+                
         #print(time)
         #print(y0)
         #print(SOL_2ndOrdMomDict)
@@ -4232,36 +4255,47 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)])
             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)])
-            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
+            solEQsys2ndOrdMom = linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
                                                              M_2(eta_SV2*eta_SV2), 
                                                              M_2(eta_SV3*eta_SV3), 
                                                              M_2(eta_SV1*eta_SV2), 
                                                              M_2(eta_SV1*eta_SV3), 
-                                                             M_2(eta_SV2*eta_SV3)]))[0]  # only one set of solutions (if any) in linear system of equations; hence index [0]
-            
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
-            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
-            SOL_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)] = SOL_2ndOrderMom[2]
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[3]
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)] = SOL_2ndOrderMom[4]
-            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)] = SOL_2ndOrderMom[5]
+                                                             M_2(eta_SV2*eta_SV3)])
+            if len(list(solEQsys2ndOrdMom)) == 0:
+                return SOL_2ndOrdMomDict
+            else:
+                SOL_2ndOrderMom = list(solEQsys2ndOrdMom)[0]  # only one set of solutions (if any) in linear system of equations; hence index [0]
+                SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
+                SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
+                SOL_2ndOrdMomDict[M_2(eta_SV3*eta_SV3)] = SOL_2ndOrderMom[2]
+                SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[3]
+                SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV3)] = SOL_2ndOrderMom[4]
+                SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV3)] = SOL_2ndOrderMom[5]
         
         elif self._stateVariable2:
             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)])
             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)])
-            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
+            solEQsys2ndOrdMom = linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1), 
                                                              M_2(eta_SV2*eta_SV2), 
-                                                             M_2(eta_SV1*eta_SV2)]))[0]  # only one set of solutions (if any) in linear system of equations
+                                                             M_2(eta_SV1*eta_SV2)])
             
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
-            SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[2]
+            if len(list(solEQsys2ndOrdMom)) == 0:
+                return SOL_2ndOrdMomDict
+            else:
+                SOL_2ndOrderMom = list(solEQsys2ndOrdMom)[0]  # only one set of solutions (if any) in linear system of equations
+                SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
+                SOL_2ndOrdMomDict[M_2(eta_SV2*eta_SV2)] = SOL_2ndOrderMom[1]
+                SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV2)] = SOL_2ndOrderMom[2]
             
         else:
             EQsys2ndOrdMom.append(EOM_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)])
-            SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1)]))[0]  # only one set of solutions (if any) in linear system of equations
-            SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
+            solEQsys2ndOrdMom = linsolve(EQsys2ndOrdMom, [M_2(eta_SV1*eta_SV1)])
+            if len(list(solEQsys2ndOrdMom)) == 0:
+                return SOL_2ndOrdMomDict
+            else:
+                SOL_2ndOrderMom = list(solEQsys2ndOrdMom)[0]  # only one set of solutions (if any) in linear system of equations
+                SOL_2ndOrdMomDict[M_2(eta_SV1*eta_SV1)] = SOL_2ndOrderMom[0]
             
         return SOL_2ndOrdMomDict
 
