@@ -417,6 +417,10 @@ class MuMoTmodel:
 
         Displays the LaTeX representation in the Jupyter Notebook if there are
         constant reactants in the model, otherwise prints an error.
+        
+        Returns
+        -------
+            `None`
 
         """
         if len(self._constantReactants) == 0:
@@ -446,6 +450,10 @@ class MuMoTmodel:
         """Show a sorted LaTeX representation of the model's reactants.
 
         Displays rendered LaTeX in the Jupyter Notebook.
+        
+        Returns
+        -------
+            `None`
 
         """
         if self._reactantsLaTeX is None:
@@ -469,6 +477,10 @@ class MuMoTmodel:
         """Show a sorted LaTeX representation of the model's rate parameters.
 
         Displays rendered LaTeX in the Jupyter Notebook.
+        
+        Returns
+        -------
+            `None`
 
         """
         for reaction in self._stoichiometry:
@@ -515,7 +527,6 @@ class MuMoTmodel:
         """Get symbolic equations for the model system of ODEs.
 
 
-
         Parameters
         ----------
         method : str, optional
@@ -545,6 +556,10 @@ class MuMoTmodel:
         ----------
         method : str, optional
             Can be ``'massAction'`` (default) or ``'vanKampen'``.
+            
+        Returns
+        -------
+            `None`
 
         """
 
@@ -591,6 +606,10 @@ class MuMoTmodel:
         and corresponding stoichiometry.
 
         Displays rendered LaTeX in the Jupyter Notebook.
+        
+        Returns
+        -------
+            `None`
 
         """
         out = latex(self._stoichiometry)
@@ -633,6 +652,10 @@ class MuMoTmodel:
         """Displays Master equation expressed with step operators.
 
         Displays rendered LaTeX in the Jupyter Notebook.
+        
+        Returns
+        -------
+            `None`
 
         """
 
@@ -709,6 +732,10 @@ class MuMoTmodel:
         second order.
 
         Displays rendered LaTeX in the Jupyter Notebook.
+        
+        Returns
+        -------
+            `None`
 
         """
         rhs_vke, lhs_vke, substring = _doVanKampenExpansion(_deriveMasterEquation, self._stoichiometry)
@@ -743,6 +770,10 @@ class MuMoTmodel:
         expansion (linear noise approximation).
 
         Displays rendered LaTeX in the Jupyter Notebook.
+        
+        Returns
+        -------
+            `None`
 
         """
         FPEdict, substring = _getFokkerPlanckEquation(_get_orderedLists_vKE, self._stoichiometry)
@@ -779,6 +810,10 @@ class MuMoTmodel:
         """Display equations of motion of first and second order moments of noise.
 
         Displays rendered LaTeX in the Jupyter Notebook.
+        
+        Returns
+        -------
+            `None`
 
         """
         EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
@@ -812,8 +847,13 @@ class MuMoTmodel:
         """Display noise in the stationary state.
 
         Displays rendered LaTeX in the Jupyter Notebook.
-
+        
+        Returns
+        -------
+            `None`
+            
         """
+        
         SOL_1stOrderMom, NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder = _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         print('Stationary solutions of first and second order moments of noise:')
         if SOL_1stOrderMom is None:
@@ -839,6 +879,10 @@ class MuMoTmodel:
 
         Display all rules in the model as rendered LaTeX in the Jupyter
         Notebook.
+        
+        Returns
+        -------
+            `None`
 
         Notes
         -----
@@ -5044,6 +5088,8 @@ class MuMoTstreamView(MuMoTfieldView):
         
 
 class MuMoTbifurcationView(MuMoTview):
+    """Bifurcation view on model."""
+    
     ## model for bifurcation analysis
     _pyDSmodel = None
     ## critical parameter for bifurcation analysis
