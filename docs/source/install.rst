@@ -37,7 +37,7 @@ Installing MuMoT within a Conda environment
    .. code:: sh
 
       conda update conda
-      conda env create -n mumot-env python=3.6
+      conda create -n mumot-env python=3.6
 
 #. Check that conda environment has been created: 
    
