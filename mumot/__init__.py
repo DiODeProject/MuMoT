@@ -2149,7 +2149,7 @@ class MuMoTcontroller:
 
     def _print_standalone_view_cmd(self, _):
         self._errorMessage.value = "Pasted bookmark to log - view with showLogs(tail = True)"
-        self._view._print_standalone_view_cmd(False, False)
+        self._view._print_standalone_view_cmd(False)
 
     ## set the functions that must be triggered when the widgets are changed.
     ## @param[in]    recomputeFunction    The function to be called when recomputing is necessary 
