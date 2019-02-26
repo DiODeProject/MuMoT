@@ -5892,7 +5892,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._show_computation_start()
             self._update_params()
             self._log("Stochastic Simulation")
-            self._printStandaloneViewCmd()
+            # if you need to access the standalone view, you can use the command self._printStandaloneViewCmd(), this is very useful for developer and advanced users as indicated in issue #92 
 
             # Clearing the plot and setting the axes
             self._initFigure()
