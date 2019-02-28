@@ -984,10 +984,10 @@ class MuMoTmodel:
         .. _user manual: https://diodeproject.github.io/MuMoT/getting_started.html
 
         """
-        if not initWidgets:
+        if initWidgets is None:
             initWidgets = {}
         
-        if self._systemSize:
+        if self._systemSize is not None:
             kwargs['conserved'] = True
         
         paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params', []), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False)
@@ -998,6 +998,7 @@ class MuMoTmodel:
         IntParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
         IntParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
         IntParams['conserved'] = [kwargs.get('conserved', False), True]
+        IntParams['substitutedReactant'] = [ [react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         
         # construct controller
         viewController = MuMoTtimeEvolutionController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=IntParams, showSystemSize=True, **kwargs)
@@ -1082,7 +1083,7 @@ class MuMoTmodel:
         if initWidgets is None:
             initWidgets = {}
 
-        if self._systemSize:
+        if self._systemSize is not None:
             kwargs['conserved'] = True
         
         paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params', []), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False)
@@ -1091,8 +1092,8 @@ class MuMoTmodel:
         # read input parameters
         NCParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
         NCParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
-        #NCParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
         NCParams['conserved'] = [kwargs.get('conserved', False), True]
+        NCParams['substitutedReactant'] = [ [react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         
         EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         
@@ -1421,7 +1422,7 @@ class MuMoTmodel:
         BfcParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
         BfcParams['bifurcationParameter'] = [bifPar, True]
         BfcParams['conserved'] = [conserved, True]
-        #BfcParams['conserved'] = [kwargs.get('conserved', False), True]
+        BfcParams['substitutedReactant'] = [ [react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         
         # construct controller
         viewController = MuMoTbifurcationController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=BfcParams, showSystemSize=False, **kwargs)
@@ -1496,6 +1497,7 @@ class MuMoTmodel:
         MAParams = {} 
         # read input parameters
         MAParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
+        MAParams['substitutedReactant'] = [ [react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         MAParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
         MAParams['randomSeed'] = _format_advanced_option(optionName='randomSeed', inputValue=kwargs.get('randomSeed'), initValues=initWidgets.get('randomSeed'))
         MAParams['motionCorrelatedness'] = _format_advanced_option(optionName='motionCorrelatedness', inputValue=kwargs.get('motionCorrelatedness'), initValues=initWidgets.get('motionCorrelatedness'))
@@ -1589,6 +1591,7 @@ class MuMoTmodel:
         ssaParams = {}
         # read input parameters
         ssaParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
+        ssaParams['substitutedReactant'] = [ [react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         ssaParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
         ssaParams['randomSeed'] = _format_advanced_option(optionName='randomSeed', inputValue=kwargs.get('randomSeed'), initValues=initWidgets.get('randomSeed'))
         ssaParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
@@ -2302,9 +2305,13 @@ class MuMoTbifurcationController(MuMoTcontroller):
                                              continuous_update=continuousReplot)
                 
                 if BfcParams['conserved'][0] == True:
-                    # disable last population widget (if there are more than 1)
-                    if len(initialState) > 1 and i == 0:
-                        widget.disabled = True
+                    # disable one population widget (if there are more than 1) to constrain the initial sum of population sizes to 1
+                    if len(initialState) > 1:
+                        # if there is not a 'substituted' reactant, the last population widget
+                        if BfcParams['substitutedReactant'][0] is None and i == 0:
+                            widget.disabled = True
+                        elif BfcParams['substitutedReactant'][0] is not None and state == BfcParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
+                            widget.disabled = True
                     else:
                         widget.observe(self._updateInitialStateWidgets, 'value')
                         
@@ -2353,9 +2360,13 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
                                              continuous_update=continuousReplot)
                 
                 if tEParams['conserved'][0] == True:
-                    # disable last population widget (if there are more than 1)
-                    if len(initialState) > 1 and i == 0:
-                        widget.disabled = True
+                    # disable one population widget (if there are more than 1) to constrain the initial sum of population sizes to 1
+                    if len(initialState) > 1:
+                        # if there is not a 'substituted' reactant, the last population widget
+                        if tEParams['substitutedReactant'][0] is None and i == 0:
+                            widget.disabled = True
+                        elif tEParams['substitutedReactant'][0] is not None and state == tEParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
+                            widget.disabled = True
                     else:
                         widget.observe(self._updateInitialStateWidgets, 'value')
                         
@@ -2414,9 +2425,13 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                                              #description = r'\(' + latex(Symbol('Phi_'+str(state))) + r'\)' + " at t=0: ",
                                              style={'description_width': 'initial'},
                                              continuous_update=continuousReplot)
-                # disable last population widget (if there are more than 1)
-                if len(initialState) > 1 and i == 0:
-                    widget.disabled = True
+                # disable one population widget (if there are more than 1) to constrain the initial sum of population sizes to 1
+                if len(initialState) > 1:
+                    # if there is not a 'substituted' reactant, the last population widget
+                    if SSParams['substitutedReactant'][0] is None and i == 0:
+                        widget.disabled = True
+                    elif SSParams['substitutedReactant'][0] is not None and state == SSParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
+                        widget.disabled = True
                 else:
                     widget.observe(self._updateInitialStateWidgets, 'value')
                         
