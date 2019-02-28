@@ -1706,14 +1706,13 @@ class MuMoTmodel:
 
 
     def _create_free_param_dictionary_for_controller(self, inputParams, initWidgets=None, showSystemSize=False, showPlotLimits=False):
-        if initWidgets is None:
-            initWidgets = {}
+        initWidgetsSympy = {process_sympy(paramName): paramValue for paramName, paramValue in initWidgets.items()} if initWidgets is not None else {}
 
-        paramValuesDict = {}        
+        paramValuesDict = {}
         for freeParam in self._rates.union(self._constantReactants):
             paramValuesDict[str(freeParam)] = _parse_input_keyword_for_numeric_widgets(inputValue=_get_item_from_params_list(inputParams, str(freeParam)),
                                     defaultValueRangeStep=[MuMoTdefault._initialRateValue, MuMoTdefault._rateLimits[0], MuMoTdefault._rateLimits[1], MuMoTdefault._rateStep], 
-                                    initValueRangeStep=initWidgets.get(str(freeParam)), 
+                                    initValueRangeStep=initWidgetsSympy.get(freeParam), 
                                     validRange=(-float("inf"), float("inf")))
             
         if showSystemSize:
