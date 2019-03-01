@@ -2146,11 +2146,16 @@ class MuMoTcontroller:
     def _displayAdvancedOptionsTab(self):
         """create and display the "Advanced options" tab (if not empty)"""
         advancedWidgets = []
+        atLeastOneAdvancedWidget = False
         for widgetName in self._extraWidgetsOrder:
             if self._widgetsExtraParams.get(widgetName):
                 advancedWidgets.append(self._widgetsExtraParams[widgetName])
+                if not self._widgetsExtraParams[widgetName].layout.display == 'none':
+                    atLeastOneAdvancedWidget = True
             elif self._widgetsPlotOnly.get(widgetName):
                 advancedWidgets.append(self._widgetsPlotOnly[widgetName])
+                if not self._widgetsPlotOnly[widgetName].layout.display == 'none':
+                    atLeastOneAdvancedWidget = True
             #else:
                 #print("WARNING! In the _extraWidgetsOrder is listed the widget " + widgetName + " which is although not found in _widgetsExtraParams or _widgetsPlotOnly")
         if advancedWidgets:  # if not empty
@@ -2159,7 +2164,7 @@ class MuMoTcontroller:
             self._advancedTabWidget = widgets.Accordion(children=[advancedPage])  # , selected_index=-1)
             self._advancedTabWidget.set_title(0, 'Advanced options')
             self._advancedTabWidget.selected_index = None
-            display(self._advancedTabWidget)
+            if atLeastOneAdvancedWidget: display(self._advancedTabWidget)
 
 
     def setView(self, view):
@@ -2455,9 +2460,6 @@ class MuMoTfieldController(MuMoTcontroller):
     
         return None
             
-    def _addSpecificWidgets(self, SSParams, continuousReplot):
-        pass
-    
     def _orderAdvancedWidgets(self, _noInitialState):
         # define the widget order
 #         self._extraWidgetsOrder.append('final_x')
