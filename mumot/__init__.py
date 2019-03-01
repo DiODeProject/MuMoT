@@ -3804,7 +3804,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
             if 'plotProportions' in self._tEParams: # @todo JARM: I don't really understand logic of checking _tEParams but then retrieving the value from elsewhere
                 self._plotProportions = self._getWidgetParamValue('plotProportions', self._controller._widgetsPlotOnly) # self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
             self._maxTime = self._getWidgetParamValue('maxTime', self._controller._widgetsExtraParams) # self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
-
                
 #      
 #     def _get_tEParams(self):
@@ -4187,13 +4186,12 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         self._logs.append(log)
          
         argDict = self._get_argDict()
-        for key in argDict:
-            if key in self._mumotModel._constantReactants:
+        for key in self._mumotModel._constantReactants:
+            if argDict[key] is not None:
                 argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
         for key in steadyStateDict:
             if key in self._mumotModel._reactants:
                 steadyStateDict[Symbol('Phi_'+str(key))] = steadyStateDict.pop(key)
-        
         EOM_1stOrdMomDict = copy.deepcopy(self._EOM_1stOrdMomDict)
         for sol in EOM_1stOrdMomDict:
             EOM_1stOrdMomDict[sol] = EOM_1stOrdMomDict[sol].subs(steadyStateDict)
@@ -4298,9 +4296,6 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
             self._showErrorMessage('Could not compute Second Order Moments. Could not generate figure. Try different initial conditions in the Advanced options tab! ')
             return None
                 
-        #print(time)
-        #print(y0)
-        #print(SOL_2ndOrdMomDict)
         sol_ODE = odeint(noiseODEsys, y0, time)  # sol_ODE overwritten
         
         x_data = [time for kk in range(len(y0))]  
