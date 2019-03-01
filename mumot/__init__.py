@@ -2918,55 +2918,8 @@ class MuMoTview:
             model = refModel
         else:
             model = self._mumotModel
-         
+        
         params = []
-         
-        paramInitCheck = []
-        for reactant in model._reactants:
-            if reactant not in model._constantReactants:
-                paramInitCheck.append(latex(Symbol('Phi^0_'+str(reactant))))
-                  
-        if self._controller:
-            for name, value in self._controller._widgetsFreeParams.items():
-#                 name = name.replace('\\', '\\\\')
-                if name in model._ratesLaTeX:
-                    name = model._ratesLaTeX[name]
-                name = name.replace('(', '')
-                name = name.replace(')', '')
-                if name not in paramInitCheck:
-                    #logStr += "('" + latex(name) + "', " + str(value.value) + "), "
-                    params.append((latex(name) , value.value))
-#         if self._paramNames is not None:
-#             for name, value in zip(self._paramNames, self._paramValues):
-#                 if name == 'systemSize' or name == 'plotLimits': continue
-#                 name= repr(name)
-#                 if name in model._ratesLaTeX:
-#                     name = model._ratesLaTeX[name]
-#                 name = name.replace('(', '')
-#                 name = name.replace(')', '')
-#                 #logStr += "('" + latex(name) + "', " + str(value) + "), "
-#                 params.append( ( latex(name) , value ) )
-
-        for name, value in self._fixedParams.items():
-            if name == 'systemSize' or name == 'plotLimits': continue
-            name = repr(name)
-            if name in model._ratesLaTeX:
-                name = model._ratesLaTeX[name]
-            name = name.replace('(', '')
-            name = name.replace(')', '')
-            #logStr += "('" + latex(name) + "', " + str(value) + "), "
-            params.append((latex(name) , value))
-        params.append(('plotLimits' , self._getPlotLimits()))
-        params.append(('systemSize' , self._getSystemSize()))
-                 
-        return params
-
-    def _get_bookmarks_params(self, refModel=None):
-        if refModel is not None:
-            model = refModel
-        else:
-            model = self._mumotModel
-        logStr = "params = ["
         
         paramInitCheck = []
         for reactant in model._reactants:
@@ -2975,22 +2928,12 @@ class MuMoTview:
                  
         if self._controller:
             for name, value in self._controller._widgetsFreeParams.items():
-#                 name = name.replace('\\', '\\\\')
                 if name in model._ratesLaTeX:
                     name = model._ratesLaTeX[name]
                 name = name.replace('(', '')
                 name = name.replace(')', '')
                 if name not in paramInitCheck:
-                    logStr += "('" + latex(name) + "', " + str(value.value) + "), "
-#         if self._paramNames is not None:
-#             for name, value in zip(self._paramNames, self._paramValues):
-#                 if name == 'systemSize' or name == 'plotLimits': continue
-#                 name= repr(name)
-#                 if name in model._ratesLaTeX:
-#                     name = model._ratesLaTeX[name]
-#                 name = name.replace('(', '')
-#                 name = name.replace(')', '')
-#                 logStr += "('" + latex(name) + "', " + str(value) + "), "
+                    params.append((latex(name) , value.value))
         for name, value in self._fixedParams.items():
             #if name == 'systemSize' or name == 'plotLimits': continue
             if name not in self._mumotModel._rates and name not in self._mumotModel._constantReactants: continue
@@ -2999,12 +2942,19 @@ class MuMoTview:
                 name = model._ratesLaTeX[name]
             name = name.replace('(', '')
             name = name.replace(')', '')
-            logStr += "('" + latex(name) + "', " + str(value) + "), "
-        logStr += "('plotLimits', " + str(self._getPlotLimits()) + "), "  # @todo is it necessary for every view? I think no.
-        logStr += "('systemSize', " + str(self._getSystemSize()) + "), "
+            params.append((latex(name) , value))
+        params.append(('plotLimits' , self._getPlotLimits()))
+        params.append(('systemSize' , self._getSystemSize()))
+        
+        return params
+
+    def _get_bookmarks_params(self, refModel=None):
+        params = self._get_params(refModel)
+        logStr = "params = ["
+        for name, value in params:
+            logStr += "('" + str(name) + "', " + str(value) + "), "
         logStr = logStr[:-2]  # throw away last ", "
         logStr += "]"
-                
         return logStr        
 
 
