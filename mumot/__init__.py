@@ -4565,23 +4565,44 @@ class MuMoTfieldView(MuMoTview):
             self._runs = self._getWidgetParamValue('runs', self._controller._widgetsExtraParams) # self._fixedParams['runs'] if self._fixedParams.get('runs') is not None else self._controller._widgetsExtraParams['runs'].value
             self._aggregateResults = self._getWidgetParamValue('aggregateResults', self._controller._widgetsExtraParams) # self._fixedParams['aggregateResults'] if self._fixedParams.get('aggregateResults') is not None else self._controller._widgetsPlotOnly['aggregateResults'].value
 
-    def _build_bookmark(self, includeParams=True):
-        if not self._silent:
-            logStr = "bookmark = "
-        else:
-            logStr = ""
+    def _build_bookmark(self, includeParams=True): 
+        logStr = "bookmark = " if not self._silent else ""
         logStr += "<modelName>." + self._generatingCommand + "('" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) + "', "
         if self._stateVariable3 is not None:
             logStr += "'" + str(self._stateVariable3) + "', "
+        # todo: plotting parameters are not kept, this could be solved with some work on the _generatingKwargs and should be made general for all views (similar to _get_bookmarks_params() )
+#         if includeParams:
+#             logStr += self._get_bookmarks_params() + ", "
+#         if len(self._generatingKwargs) > 0:
+#             for key in self._generatingKwargs:
+#                 if key == 'xlab' or key == 'ylab' or key == 'zlab':
+#                     logStr += key + " = '" + str(self._generatingKwargs[key]) + "', "
+#                 else:
+#                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
         if includeParams:
-            logStr += self._get_bookmarks_params() + ", "
-        if len(self._generatingKwargs) > 0:
-            for key in self._generatingKwargs:
-                if key == 'xlab' or key == 'ylab' or key == 'zlab':
-                    logStr += key + " = '" + str(self._generatingKwargs[key]) + "', "
-                else:
-                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-        logStr += "bookmark = False"
+            logStr += self._get_bookmarks_params()
+            logStr += ", "
+        logStr = logStr.replace('\\', '\\\\')
+        logStr += "showNoise = " + str(self._showNoise)
+        logStr += ", showFixedPoints = " + str(self._showFixedPoints)
+        logStr += ", runs = " + str(self._runs)
+        logStr += ", maxTime = " + str(self._maxTime)
+        logStr += ", randomSeed = " + str(self._randomSeed)
+#       todo: Following commented lines are ready to implement issue #95
+#         if self._visualisationType == 'final':
+#             # these loops are necessary to return the latex() format of the reactant 
+#             for reactant in self._mumotModel._getAllReactants()[0]:
+#                 if str(reactant) == self._finalViewAxes[0]:
+#                     logStr += ", final_x = '" + latex(reactant).replace('\\', '\\\\') + "'"
+#                     break
+#             for reactant in self._mumotModel._getAllReactants()[0]:
+#                 if str(reactant) == self._finalViewAxes[1]:
+#                     logStr += ", final_y = '" + latex(reactant).replace('\\', '\\\\') + "'"
+#                     break
+        #logStr += ", plotProportions = " + str(self._plotProportions) todo: ready to implement issue #283
+        logStr += ", aggregateResults = " + str(self._aggregateResults)
+        logStr += ", silent = " + str(self._silent)
+        logStr += ", bookmark = False"
         logStr += ")"
         logStr = _greekPrependify(logStr)
         logStr = logStr.replace('\\', '\\\\')
