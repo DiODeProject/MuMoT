@@ -2106,7 +2106,7 @@ class MuMoTcontroller:
         if not self._silent and bookmark:
             display(self._errorMessage)
 
-    def _print_standalone_view_cmd(self, _):
+    def _print_standalone_view_cmd(self, _includeParams):
         self._errorMessage.value = "Pasted bookmark to log - view with showLogs(tail = True)"
         self._view._print_standalone_view_cmd(True)
 
@@ -2908,8 +2908,7 @@ class MuMoTview:
             with io.capture_output() as log:
                 print(logStr)    
             self._logs.append(log)
-        else:
-            return logStr
+        return logStr
 
     def _set_fixedParams(self, paramDict):
         self._fixedParams = paramDict
@@ -3285,10 +3284,8 @@ class MuMoTmultiView(MuMoTview):
             view._setLog(log)
 
 
-    def _print_standalone_view_cmd(self, foo = False, returnString = True):
-        for view in self._views:  # @todo is this necessary?
-            pass
-        model = view._mumotModel  # @todo does this suppose that all models are the same for all views?
+    def _print_standalone_view_cmd(self, includeParams = False):
+        model = self._views[0]._mumotModel  # @todo this suppose that all models are the same for all views
         with io.capture_output() as log:
             if self._controller._silent == False:
                 logStr = "bookmark = "
@@ -3298,8 +3295,9 @@ class MuMoTmultiView(MuMoTview):
             for controller in self._controllers:
                 logStr += controller._view._print_standalone_view_cmd(False) + ", "
             logStr = logStr[:-2]  # throw away last ", "
-            logStr += "], "
-            logStr += self._get_bookmarks_params(model)
+            logStr += "]"
+            if includeParams:
+                logStr += ", " + self._get_bookmarks_params(model)
             if len(self._generatingKwargs) > 0:
                 logStr += ", "
                 for key in self._generatingKwargs:
@@ -3309,15 +3307,15 @@ class MuMoTmultiView(MuMoTview):
                         logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
                     
                 logStr = logStr[:-2]  # throw away last ", "
-            logStr += ", bookmark = False"
+            if 'silent' not in self._generatingKwargs: logStr += ", silent = " + str(self._silent)
+            if 'bookmark' not in self._generatingKwargs: logStr += ", bookmark = False"
             logStr += ")"
             #logStr = logStr.replace('\\', '\\\\') ## @todo is this necessary?
 
-            print(logStr)
-        if returnString:
-            return str(log)
-        else:
-            self._logs.append(log)
+            if not self._silent and logStr is not None:
+                print(logStr)    
+                self._logs.append(log)
+            return logStr
 
 
     def _set_fixedParams(self, paramDict):
