@@ -493,11 +493,11 @@ class MuMoTmodel:
 #            display(Math(self._ratesLaTeX[rate]))
 
     def showSingleAgentRules(self):
-        """Show the probabilistic transition of the agents in each
-        reactant-state.
+        """Show the probabilistic transitions of the agents in each possible reactant-state.
 
-        Prints strings.
-
+        Returns
+        -------
+            `None`
         """
         if not self._agentProbabilities:
             self._getSingleAgentRules()
@@ -1477,51 +1477,55 @@ class MuMoTmodel:
         
         Parameters
         ----------
-        initWidgets : dict, optional
+        initWidgets : dict {str,list}, optional
            Keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
 
         Other Parameters
         ----------------
-        initialState : float 
-           Initial proportions of the reactants; a value in the range [0,1].
-        maxTime : float
-           Simulation time; must be > 0.
-        randomSeed : int 
-           Random seed in range [0, MAX_RANDOM_SEED]).
-        plotProportions : bool
-           Flag to plot proportions or full populations.
-        realtimePlot : bool
-           Flag to plot results in realtime (True = the plot is updated each
-           timestep of the simulation; False = the plot is updated once at the
-           end of the simulation).
-        visualisationType : str
-            Type of visualisation (``'evo'``,``'graph'``,``'final'`` or ``'barplot'``).
-        final_x : object
-           Which reactant is shown on x-axis when visualisation type is final.
-        final_y : object
-           Which reactant is shown on x-axis when visualisation type is final.
-        runs : int
-           Number of simulation runs to be executed.
-        aggregateResults : bool
-           Flag to aggregate or not the results from several runs.
-        netType : str
-           Type of network (``'full'``, ``'erdos-renyi'``, ``'barabasi-albert'`` or ``'dynamic'``.
-        netParam : float
-           Property of the network ralated to connectivity. It varies depending on the netType.
-        motionCorrelatedness : float
-           (active only for netType='dynamic') level of inertia in the random walk, with 0 completely uncorrelated random walk and 1 straight trajectories.  Must be in range [0, 1].
-        particleSpeed : float
-           (active only for netType='dynamic') speed of the moving particle,
-           i.e. displacement in one timestep.  Must be in range  [0,1].
-        timestepSize : float
-           Length of one timestep, the maximum size is determined by the rates.
-           Must be > 0.
-        showTrace : bool
-           (active only for netType='dynamic') flag to plot the part trajectory
-           of each particle.
-        showInteractions : bool
-           (active only for netType='dynamic') flag to plot the interaction
-           range between particles.
+        params: list [(str,num)], optional
+            List of parameters defined as pairs ('parameter name', value). See 'Partial controllers' in the docs/MuMoTuserManual.ipynb. Rates defaults to mumot.MuMoTdefault._initialRateValue. System size defaults to mumot.MuMoTdefault._systemSize. 
+        initialState : dictionary {str:float}, optional
+           Initial proportions of the reactants (type: dictionary with reactants as keys and floats in range [0,1] as values).
+           See the bookmark of and example. Defaults to a dictionaly with the (alphabetically) first reactant to 1 and the rest to 0.
+        maxTime : float, optional
+           Simulation time. Must be strictly positive. Defaults to mumot.MuMoTdefault._maxTime.
+        randomSeed : int, optional
+           Random seed. Must be strictly positive in range [0, mumot.MAX_RANDOM_SEED]). Defaults to a random number.
+        plotProportions : bool, optional
+           Flag to plot proportions or full populations. Defaults to False.
+        realtimePlot : bool, optional
+           Flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation). Defaults to False.
+        visualisationType : str, optional
+            Type of visualisation (``'evo'``,``'graph'``,``'final'`` or ``'barplot'``). See docs/MuMoTuserManual.ipynb for more details. Defaults to 'evo'.
+        final_x : object, optional
+           Which reactant is shown on x-axis when visualisation type is 'final'. Defaults to the alphabetically first reactant.
+        final_y : object, optional
+           Which reactant is shown on y-axis when visualisation type is 'final'. Defaults to the alphabetically second reactant.
+        runs : int, optional
+           Number of simulation runs to be executed. Must be strictly positive. Defaults to 1.
+        aggregateResults : bool, optional
+           Flag to aggregate or not the results from several runs. Defaults to True.
+        netType : str, optional
+           Type of network (``'full'``, ``'erdos-renyi'``, ``'barabasi-albert'`` or ``'dynamic'``. See docs/MuMoTuserManual.ipynb for more details. Defaults to 'full'.
+        netParam : float, optional
+           Property of the network ralated to connectivity. The precise meaning and range of this parameter varies depending on the netType. See docs/MuMoTuserManual.ipynb for more details and defaults.
+        motionCorrelatedness : float, optional
+           (active only for netType='dynamic') level of inertia in the random walk, with 0 the reactants do a completely uncorrelated random walk and with 1 they move on straight trajectories. Must be in range [0, 1]. Defaults to 0.5.
+        particleSpeed : float, optional
+           (active only for netType='dynamic') speed of the moving particle, i.e. displacement in one timestep. Must be in range [0,1]. Defaults to 0.01.
+        timestepSize : float, optional
+           Length of one timestep, the maximum size is automatically determined by the rates. Must be strictly positive. Defaults to the maximum value.
+        showTrace : bool, optional
+           (active only for netType='dynamic') flag to plot the trajectory of each reactant. Defaults to False.
+        showInteractions : bool, optional
+           (active only for netType='dynamic') flag to plot the interaction range between particles. Defaults to False.
+        silent : bool, optional
+            Switch on/off widgets and plot. Important for use with multicontrollers. Defaults to False.
+            
+        Returns
+        -------
+        :class:`MuMoTmultiagentController`
+            A MuMoT controller object
         """
         if initWidgets is None:
             initWidgets = dict()
@@ -1573,45 +1577,45 @@ class MuMoTmodel:
         return viewController
 
     def SSA(self, initWidgets=None, **kwargs):
-        """Construct interactive SSA plot (simulation run of the Gillespie
-        algorithm to approximate the Master Equation solution).
+        """Construct interactive Stochastic Simulation Algorithm (SSA) plot (simulation run of the Gillespie algorithm to approximate the Master Equation solution).
 
         Parameters
         ----------
-        initWidgets : dict, optional
-            Keys are the free parameter or any other specific parameter, and
-            values are four values as ``[initial-value, min-value, max-value,
-            step-size]``.
+        initWidgets : dict {str,list}, optional
+           Keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
 
         Other Parameters
         ----------------
-        initialState : float
-            Initial proportions of the reactants.  Must be value in the
-            range [0,1].
-        maxTime : float
-            Simulation time.  Must be strictly positive.
-        randomSeed : int
-            Random seed.  Must be in range [0, ``MAX_RANDOM_SEED``].
-        plotProportions: bool
-            Flag to plot proportions or full populations.
-        realtimePlot : bool
-            Flag to plot results in realtime.  If True, the plot is updated
-            each timestep of the simulation; if  False, the plot is updated
-            once at the end of the simulation.
-        visualisationType : str
-            Type of visualisation.  Must be one of: ``'evo'``, ``'graph'``,
-            ``'final'``, ``'barplot'``.
-        final_x
-            Which reactant is shown on x-axis when visualisation type is
-            ``'final'``.  Type?
-        final_y
-            Which reactant is shown on x-axis when visualisation type is
-            ``'final'``.  Type?
-        runs: int
-            Number of simulation runs to be executed.
-        aggregateResults: bool
-            Flag to aggregate or not the results from several runs.
-
+        params: list [(str,num)], optional
+            List of parameters defined as pairs ('parameter name', value). See 'Partial controllers' in the docs/MuMoTuserManual.ipynb. Rates defaults to mumot.MuMoTdefault._initialRateValue. System size defaults to mumot.MuMoTdefault._systemSize. 
+        initialState : dictionary {str:float}, optional
+           Initial proportions of the reactants (type: dictionary with reactants as keys and floats in range [0,1] as values).
+           See the bookmark of and example. Defaults to a dictionaly with the (alphabetically) first reactant to 1 and the rest to 0.
+        maxTime : float, optional
+           Simulation time. Must be strictly positive. Defaults to mumot.MuMoTdefault._maxTime.
+        randomSeed : int, optional
+           Random seed. Must be strictly positive in range [0, mumot.MAX_RANDOM_SEED]). Defaults to a random number.
+        plotProportions : bool, optional
+           Flag to plot proportions or full populations. Defaults to False.
+        realtimePlot : bool, optional
+           Flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation). Defaults to False.
+        visualisationType : str, optional
+            Type of visualisation (``'evo'``,``'final'`` or ``'barplot'``). See docs/MuMoTuserManual.ipynb for more details. Defaults to 'evo'.
+        final_x : object, optional
+           Which reactant is shown on x-axis when visualisation type is 'final'. Defaults to the alphabetically first reactant.
+        final_y : object, optional
+           Which reactant is shown on y-axis when visualisation type is 'final'. Defaults to the alphabetically second reactant.
+        runs : int, optional
+           Number of simulation runs to be executed. Must be strictly positive. Defaults to 1.
+        aggregateResults : bool, optional
+           Flag to aggregate or not the results from several runs. Defaults to True.
+        silent : bool, optional
+            Switch on/off widgets and plot. Important for use with multicontrollers. Defaults to False.
+            
+        Returns
+        -------
+        :class:`MuMoTstochasticSimulationController`
+            A MuMoT controller object
         """
         if initWidgets is None:
             initWidgets = {}
@@ -1766,8 +1770,8 @@ class MuMoTmodel:
         return paramValuesDict
 
 
-    ## derive the single-agent rules from reaction rules
     def _getSingleAgentRules(self):
+        """derive the single-agent rules (which are used in the multiagent simulation) from the reaction rules"""
         # create the empty structure
         self._agentProbabilities = {}
         (allReactants, allConstantReactants) = self._getAllReactants()
