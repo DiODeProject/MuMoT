@@ -493,11 +493,11 @@ class MuMoTmodel:
 #            display(Math(self._ratesLaTeX[rate]))
 
     def showSingleAgentRules(self):
-        """Show the probabilistic transition of the agents in each
-        reactant-state.
+        """Show the probabilistic transitions of the agents in each possible reactant-state.
 
-        Prints strings.
-
+        Returns
+        -------
+            `None`
         """
         if not self._agentProbabilities:
             self._getSingleAgentRules()
@@ -984,10 +984,10 @@ class MuMoTmodel:
         .. _user manual: https://diodeproject.github.io/MuMoT/getting_started.html
 
         """
-        if not initWidgets:
+        if initWidgets is None:
             initWidgets = {}
         
-        if self._systemSize:
+        if self._systemSize is not None:
             kwargs['conserved'] = True
         
         paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params', []), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False)
@@ -998,6 +998,7 @@ class MuMoTmodel:
         IntParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
         IntParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
         IntParams['conserved'] = [kwargs.get('conserved', False), True]
+        IntParams['substitutedReactant'] = [ [react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         
         # construct controller
         viewController = MuMoTtimeEvolutionController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=IntParams, showSystemSize=True, **kwargs)
@@ -1082,7 +1083,7 @@ class MuMoTmodel:
         if initWidgets is None:
             initWidgets = {}
 
-        if self._systemSize:
+        if self._systemSize is not None:
             kwargs['conserved'] = True
         
         paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=kwargs.get('params', []), initWidgets=initWidgets, showSystemSize=True, showPlotLimits=False)
@@ -1091,8 +1092,8 @@ class MuMoTmodel:
         # read input parameters
         NCParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
         NCParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
-        #NCParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
         NCParams['conserved'] = [kwargs.get('conserved', False), True]
+        NCParams['substitutedReactant'] = [ [react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         
         EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
         
@@ -1209,13 +1210,30 @@ class MuMoTmodel:
                 print('3D stream plot not yet implemented.')
                 #SOL_2ndOrdMomDict = None
                 return None
-                    
+            
             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
+            showNoise = kwargs.get('showNoise', False)                 
+            showSystemSize = showNoise 
+            plotLimitsSlider = not(self._constantSystemSize)
+            paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=params if params is not None else [], initWidgets=initWidgets, showSystemSize=showSystemSize, showPlotLimits=plotLimitsSlider)
+            
+            advancedOpts = {} 
+            # read input parameters
+            advancedOpts['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'), extraParam="asNoise")
+            advancedOpts['randomSeed'] = _format_advanced_option(optionName='randomSeed', inputValue=kwargs.get('randomSeed'), initValues=initWidgets.get('randomSeed'))
+            # next line to address issue #283
+            #advancedOpts['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
+            # next lines useful to address issue #95
+            #advancedOpts['final_x'] = _format_advanced_option(optionName='final_x', inputValue=kwargs.get('final_x'), initValues=initWidgets.get('final_x'), extraParam=self._getAllReactants()[0])
+            #advancedOpts['final_y'] = _format_advanced_option(optionName='final_y', inputValue=kwargs.get('final_y'), initValues=initWidgets.get('final_y'), extraParam=self._getAllReactants()[0])
+            advancedOpts['runs'] = _format_advanced_option(optionName='runs', inputValue=kwargs.get('runs'), initValues=initWidgets.get('runs'), extraParam="asNoise")
+            advancedOpts['aggregateResults'] = _format_advanced_option(optionName='aggregateResults', inputValue=kwargs.get('aggregateResults'), initValues=initWidgets.get('aggregateResults'))
+            
             # construct controller
-            viewController = self._controller(continuous_update, plotLimitsSlider=not(self._constantSystemSize), params=params, initWidgets=initWidgets, **kwargs)
+            viewController = MuMoTfieldController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=continuous_update, showPlotLimits=plotLimitsSlider, advancedOpts=advancedOpts, showSystemSize=showSystemSize, **kwargs)
 
             # construct view
-            modelView = MuMoTstreamView(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params=params, **kwargs)
+            modelView = MuMoTstreamView(self, viewController, advancedOpts, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params=params, **kwargs)
 
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_field)
@@ -1298,11 +1316,28 @@ class MuMoTmodel:
                 SOL_2ndOrdMomDict = None
                     
             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
+            showNoise = kwargs.get('showNoise', False)                 
+            showSystemSize = showNoise 
+            plotLimitsSlider = not(self._constantSystemSize)
+            paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=params if params is not None else [], initWidgets=initWidgets, showSystemSize=showSystemSize, showPlotLimits=plotLimitsSlider)
+            
+            advancedOpts = {} 
+            # read input parameters
+            advancedOpts['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'), extraParam="asNoise")
+            advancedOpts['randomSeed'] = _format_advanced_option(optionName='randomSeed', inputValue=kwargs.get('randomSeed'), initValues=initWidgets.get('randomSeed'))
+            # next line to address issue #283
+            #advancedOpts['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
+            # next lines useful to address issue #95
+            #advancedOpts['final_x'] = _format_advanced_option(optionName='final_x', inputValue=kwargs.get('final_x'), initValues=initWidgets.get('final_x'), extraParam=self._getAllReactants()[0])
+            #advancedOpts['final_y'] = _format_advanced_option(optionName='final_y', inputValue=kwargs.get('final_y'), initValues=initWidgets.get('final_y'), extraParam=self._getAllReactants()[0])
+            advancedOpts['runs'] = _format_advanced_option(optionName='runs', inputValue=kwargs.get('runs'), initValues=initWidgets.get('runs'), extraParam="asNoise")
+            advancedOpts['aggregateResults'] = _format_advanced_option(optionName='aggregateResults', inputValue=kwargs.get('aggregateResults'), initValues=initWidgets.get('aggregateResults'))
+            
             # construct controller
-            viewController = self._controller(continuous_update, plotLimitsSlider=not(self._constantSystemSize), params=params, initWidgets=initWidgets, **kwargs)
+            viewController = MuMoTfieldController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=continuous_update, showPlotLimits=plotLimitsSlider, advancedOpts=advancedOpts, showSystemSize=showSystemSize, **kwargs)
             
             # construct view
-            modelView = MuMoTvectorView(self, viewController, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params=params, **kwargs)
+            modelView = MuMoTvectorView(self, viewController, advancedOpts, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params=params, **kwargs)
                     
             viewController.setView(modelView)
             viewController._setReplotFunction(modelView._plot_field)         
@@ -1421,7 +1456,7 @@ class MuMoTmodel:
         BfcParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
         BfcParams['bifurcationParameter'] = [bifPar, True]
         BfcParams['conserved'] = [conserved, True]
-        #BfcParams['conserved'] = [kwargs.get('conserved', False), True]
+        BfcParams['substitutedReactant'] = [ [react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         
         # construct controller
         viewController = MuMoTbifurcationController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=BfcParams, showSystemSize=False, **kwargs)
@@ -1442,51 +1477,55 @@ class MuMoTmodel:
         
         Parameters
         ----------
-        initWidgets : dict, optional
+        initWidgets : dict {str,list}, optional
            Keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
 
         Other Parameters
         ----------------
-        initialState : float 
-           Initial proportions of the reactants; a value in the range [0,1].
-        maxTime : float
-           Simulation time; must be > 0.
-        randomSeed : int 
-           Random seed in range [0, MAX_RANDOM_SEED]).
-        plotProportions : bool
-           Flag to plot proportions or full populations.
-        realtimePlot : bool
-           Flag to plot results in realtime (True = the plot is updated each
-           timestep of the simulation; False = the plot is updated once at the
-           end of the simulation).
-        visualisationType : str
-            Type of visualisation (``'evo'``,``'graph'``,``'final'`` or ``'barplot'``).
-        final_x : object
-           Which reactant is shown on x-axis when visualisation type is final.
-        final_y : object
-           Which reactant is shown on x-axis when visualisation type is final.
-        runs : int
-           Number of simulation runs to be executed.
-        aggregateResults : bool
-           Flag to aggregate or not the results from several runs.
-        netType : str
-           Type of network (``'full'``, ``'erdos-renyi'``, ``'barabasi-albert'`` or ``'dynamic'``.
-        netParam : float
-           Property of the network ralated to connectivity. It varies depending on the netType.
-        motionCorrelatedness : float
-           (active only for netType='dynamic') level of inertia in the random walk, with 0 completely uncorrelated random walk and 1 straight trajectories.  Must be in range [0, 1].
-        particleSpeed : float
-           (active only for netType='dynamic') speed of the moving particle,
-           i.e. displacement in one timestep.  Must be in range  [0,1].
-        timestepSize : float
-           Length of one timestep, the maximum size is determined by the rates.
-           Must be > 0.
-        showTrace : bool
-           (active only for netType='dynamic') flag to plot the part trajectory
-           of each particle.
-        showInteractions : bool
-           (active only for netType='dynamic') flag to plot the interaction
-           range between particles.
+        params: list [(str,num)], optional
+            List of parameters defined as pairs ('parameter name', value). See 'Partial controllers' in the docs/MuMoTuserManual.ipynb. Rates defaults to mumot.MuMoTdefault._initialRateValue. System size defaults to mumot.MuMoTdefault._systemSize. 
+        initialState : dictionary {str:float}, optional
+           Initial proportions of the reactants (type: dictionary with reactants as keys and floats in range [0,1] as values).
+           See the bookmark of and example. Defaults to a dictionaly with the (alphabetically) first reactant to 1 and the rest to 0.
+        maxTime : float, optional
+           Simulation time. Must be strictly positive. Defaults to mumot.MuMoTdefault._maxTime.
+        randomSeed : int, optional
+           Random seed. Must be strictly positive in range [0, mumot.MAX_RANDOM_SEED]). Defaults to a random number.
+        plotProportions : bool, optional
+           Flag to plot proportions or full populations. Defaults to False.
+        realtimePlot : bool, optional
+           Flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation). Defaults to False.
+        visualisationType : str, optional
+            Type of visualisation (``'evo'``,``'graph'``,``'final'`` or ``'barplot'``). See docs/MuMoTuserManual.ipynb for more details. Defaults to 'evo'.
+        final_x : object, optional
+           Which reactant is shown on x-axis when visualisation type is 'final'. Defaults to the alphabetically first reactant.
+        final_y : object, optional
+           Which reactant is shown on y-axis when visualisation type is 'final'. Defaults to the alphabetically second reactant.
+        runs : int, optional
+           Number of simulation runs to be executed. Must be strictly positive. Defaults to 1.
+        aggregateResults : bool, optional
+           Flag to aggregate or not the results from several runs. Defaults to True.
+        netType : str, optional
+           Type of network (``'full'``, ``'erdos-renyi'``, ``'barabasi-albert'`` or ``'dynamic'``. See docs/MuMoTuserManual.ipynb for more details. Defaults to 'full'.
+        netParam : float, optional
+           Property of the network ralated to connectivity. The precise meaning and range of this parameter varies depending on the netType. See docs/MuMoTuserManual.ipynb for more details and defaults.
+        motionCorrelatedness : float, optional
+           (active only for netType='dynamic') level of inertia in the random walk, with 0 the reactants do a completely uncorrelated random walk and with 1 they move on straight trajectories. Must be in range [0, 1]. Defaults to 0.5.
+        particleSpeed : float, optional
+           (active only for netType='dynamic') speed of the moving particle, i.e. displacement in one timestep. Must be in range [0,1]. Defaults to 0.01.
+        timestepSize : float, optional
+           Length of one timestep, the maximum size is automatically determined by the rates. Must be strictly positive. Defaults to the maximum value.
+        showTrace : bool, optional
+           (active only for netType='dynamic') flag to plot the trajectory of each reactant. Defaults to False.
+        showInteractions : bool, optional
+           (active only for netType='dynamic') flag to plot the interaction range between particles. Defaults to False.
+        silent : bool, optional
+            Switch on/off widgets and plot. Important for use with multicontrollers. Defaults to False.
+            
+        Returns
+        -------
+        :class:`MuMoTmultiagentController`
+            A MuMoT controller object
         """
         if initWidgets is None:
             initWidgets = dict()
@@ -1496,6 +1535,7 @@ class MuMoTmodel:
         MAParams = {} 
         # read input parameters
         MAParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
+        MAParams['substitutedReactant'] = [ [react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         MAParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
         MAParams['randomSeed'] = _format_advanced_option(optionName='randomSeed', inputValue=kwargs.get('randomSeed'), initValues=initWidgets.get('randomSeed'))
         MAParams['motionCorrelatedness'] = _format_advanced_option(optionName='motionCorrelatedness', inputValue=kwargs.get('motionCorrelatedness'), initValues=initWidgets.get('motionCorrelatedness'))
@@ -1537,45 +1577,45 @@ class MuMoTmodel:
         return viewController
 
     def SSA(self, initWidgets=None, **kwargs):
-        """Construct interactive SSA plot (simulation run of the Gillespie
-        algorithm to approximate the Master Equation solution).
+        """Construct interactive Stochastic Simulation Algorithm (SSA) plot (simulation run of the Gillespie algorithm to approximate the Master Equation solution).
 
         Parameters
         ----------
-        initWidgets : dict, optional
-            Keys are the free parameter or any other specific parameter, and
-            values are four values as ``[initial-value, min-value, max-value,
-            step-size]``.
+        initWidgets : dict {str,list}, optional
+           Keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
 
         Other Parameters
         ----------------
-        initialState : float
-            Initial proportions of the reactants.  Must be value in the
-            range [0,1].
-        maxTime : float
-            Simulation time.  Must be strictly positive.
-        randomSeed : int
-            Random seed.  Must be in range [0, ``MAX_RANDOM_SEED``].
-        plotProportions: bool
-            Flag to plot proportions or full populations.
-        realtimePlot : bool
-            Flag to plot results in realtime.  If True, the plot is updated
-            each timestep of the simulation; if  False, the plot is updated
-            once at the end of the simulation.
-        visualisationType : str
-            Type of visualisation.  Must be one of: ``'evo'``, ``'graph'``,
-            ``'final'``, ``'barplot'``.
-        final_x
-            Which reactant is shown on x-axis when visualisation type is
-            ``'final'``.  Type?
-        final_y
-            Which reactant is shown on x-axis when visualisation type is
-            ``'final'``.  Type?
-        runs: int
-            Number of simulation runs to be executed.
-        aggregateResults: bool
-            Flag to aggregate or not the results from several runs.
-
+        params: list [(str,num)], optional
+            List of parameters defined as pairs ('parameter name', value). See 'Partial controllers' in the docs/MuMoTuserManual.ipynb. Rates defaults to mumot.MuMoTdefault._initialRateValue. System size defaults to mumot.MuMoTdefault._systemSize. 
+        initialState : dictionary {str:float}, optional
+           Initial proportions of the reactants (type: dictionary with reactants as keys and floats in range [0,1] as values).
+           See the bookmark of and example. Defaults to a dictionaly with the (alphabetically) first reactant to 1 and the rest to 0.
+        maxTime : float, optional
+           Simulation time. Must be strictly positive. Defaults to mumot.MuMoTdefault._maxTime.
+        randomSeed : int, optional
+           Random seed. Must be strictly positive in range [0, mumot.MAX_RANDOM_SEED]). Defaults to a random number.
+        plotProportions : bool, optional
+           Flag to plot proportions or full populations. Defaults to False.
+        realtimePlot : bool, optional
+           Flag to plot results in realtime (True = the plot is updated each timestep of the simulation; False = the plot is updated once at the end of the simulation). Defaults to False.
+        visualisationType : str, optional
+            Type of visualisation (``'evo'``,``'final'`` or ``'barplot'``). See docs/MuMoTuserManual.ipynb for more details. Defaults to 'evo'.
+        final_x : object, optional
+           Which reactant is shown on x-axis when visualisation type is 'final'. Defaults to the alphabetically first reactant.
+        final_y : object, optional
+           Which reactant is shown on y-axis when visualisation type is 'final'. Defaults to the alphabetically second reactant.
+        runs : int, optional
+           Number of simulation runs to be executed. Must be strictly positive. Defaults to 1.
+        aggregateResults : bool, optional
+           Flag to aggregate or not the results from several runs. Defaults to True.
+        silent : bool, optional
+            Switch on/off widgets and plot. Important for use with multicontrollers. Defaults to False.
+            
+        Returns
+        -------
+        :class:`MuMoTstochasticSimulationController`
+            A MuMoT controller object
         """
         if initWidgets is None:
             initWidgets = {}
@@ -1589,6 +1629,7 @@ class MuMoTmodel:
         ssaParams = {}
         # read input parameters
         ssaParams['initialState'] = _format_advanced_option(optionName='initialState', inputValue=kwargs.get('initialState'), initValues=initWidgets.get('initialState'), extraParam=self._getAllReactants())
+        ssaParams['substitutedReactant'] = [ [react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         ssaParams['maxTime'] = _format_advanced_option(optionName='maxTime', inputValue=kwargs.get('maxTime'), initValues=initWidgets.get('maxTime'))
         ssaParams['randomSeed'] = _format_advanced_option(optionName='randomSeed', inputValue=kwargs.get('randomSeed'), initValues=initWidgets.get('randomSeed'))
         ssaParams['plotProportions'] = _format_advanced_option(optionName='plotProportions', inputValue=kwargs.get('plotProportions'), initValues=initWidgets.get('plotProportions'))
@@ -1728,88 +1769,9 @@ class MuMoTmodel:
         
         return paramValuesDict
 
-    def _controller(self, contRefresh, plotLimitsSlider=False, params=None, initWidgets=None, **kwargs):            
-        """General controller constructor with all rates as free parameters."""
-        if initWidgets is None:
-            initWidgets = {}
 
-        if kwargs.get('showNoise', False) == True or kwargs.get('plotProportion', True) == False:                 
-            systemSizeSlider = True
-        else:
-            systemSizeSlider = False
-        
-        paramValuesDict = self._create_free_param_dictionary_for_controller(inputParams=params if params is not None else [], initWidgets=initWidgets, showSystemSize=systemSizeSlider, showPlotLimits=plotLimitsSlider)
-         
-#         print("ParamNames: " + str(paramNames))
-#         print("paramValues: " + str(paramValues))
-        viewController = MuMoTcontroller(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=contRefresh, showPlotLimits=plotLimitsSlider, showSystemSize=systemSizeSlider, **kwargs)
-
-        return viewController
-
-#     
-#     ## general controller constructor with all rates as free parameters
-#     def _controller_deprecated(self, contRefresh, displayController = True, plotLimitsSlider = False, params = None, **kwargs):
-#         initialRateValue = INITIAL_RATE_VALUE ## @todo was 1 (choose initial values sensibly)
-#         rateLimits = (0, RATE_BOUND) ## @todo choose limit values sensibly
-#         rateStep = RATE_STEP ## @todo choose rate step sensibly                
-# 
-#         # construct controller
-#         paramValues = []
-#         paramNames = []  
-#         bifParam = kwargs.get('chooseBifParam', False)    
-#         bifParInitVal = kwargs.get('BifParInit', None) 
-#         
-#         for rate in self._rates:
-#             if str(rate) != bifParam:
-#                 paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-#                 paramNames.append(str(rate))
-#             else:
-#                 if bifParInitVal:
-#                     paramValues.append((bifParInitVal, rateLimits[0], rateLimits[1], rateStep))
-#                 else:
-#                     paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-#                 #paramNames.append(str(rate)+'_{init}')
-#                 paramNames.append(latex(Symbol(str(rate)+'_init')))
-#         for reactant in self._constantReactants:
-#             paramValues.append((initialRateValue, rateLimits[0], rateLimits[1], rateStep))
-# #            paramNames.append('(' + latex(reactant) + ')')
-#             paramNames.append(str(reactant))
-# #         if kwargs.get('showInitSV', False) == True:
-# #             initialInitCondValue = INITIAL_COND_INIT_VAL
-# #             initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
-# #             for reactant in self._reactants:
-# #                 if reactant not in self._constantReactants:
-# #                     paramNames.append(latex(Symbol('Phi^0_'+str(reactant))))
-# #                     paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
-# 
-#         if kwargs.get('showInitSV', False) == True:
-#             initialCondLimits = (0, INITIAL_COND_INIT_BOUND)
-#             initCondsSV = kwargs.get('initCondsSV', False)
-#             for reactant in self._reactants:
-#                 if reactant not in self._constantReactants:
-#                     paramNames.append(latex(Symbol('Phi^0_'+str(reactant))))
-#                     if initCondsSV != False:
-#                         # check input of initCondsSV
-#                         if str(reactant) not in initCondsSV:
-#                             initialInitCondValue = INITIAL_COND_INIT_VAL
-#                         else:
-#                             initialInitCondValue = initCondsSV[str(reactant)]
-#                     else:
-#                         initialInitCondValue = INITIAL_COND_INIT_VAL   
-#                     paramValues.append((initialInitCondValue, initialCondLimits[0], initialCondLimits[1], rateStep))            
-#         
-#         if kwargs.get('showNoise', False) == True or kwargs.get('plotProportion', True) == False:                 
-#             systemSizeSlider = True
-#         else:
-#             systemSizeSlider = False
-#         viewController = MuMoTcontroller(paramValues, paramNames, self._ratesLaTeX, contRefresh, plotLimitsSlider, systemSizeSlider, params, **kwargs)
-# 
-#         return viewController
-
-
-
-    ## derive the single-agent rules from reaction rules
     def _getSingleAgentRules(self):
+        """derive the single-agent rules (which are used in the multiagent simulation) from the reaction rules"""
         # create the empty structure
         self._agentProbabilities = {}
         (allReactants, allConstantReactants) = self._getAllReactants()
@@ -2079,6 +2041,8 @@ class MuMoTcontroller:
     _systemSizeWidget = None    
     ## bookmark button widget
     _bookmarkWidget = None
+    ## advanced tab widget
+    _advancedTabWidget = None
 
     def __init__(self, paramValuesDict, paramLabelDict=None, continuousReplot=False, showPlotLimits=False, showSystemSize=False, advancedOpts=None, **kwargs):
         self._silent = kwargs.get('silent', False)
@@ -2146,9 +2110,9 @@ class MuMoTcontroller:
         if not self._silent and bookmark:
             display(self._errorMessage)
 
-    def _print_standalone_view_cmd(self, _):
+    def _print_standalone_view_cmd(self, _includeParams):
         self._errorMessage.value = "Pasted bookmark to log - view with showLogs(tail = True)"
-        self._view._print_standalone_view_cmd(False)
+        self._view._print_standalone_view_cmd(True)
 
     ## set the functions that must be triggered when the widgets are changed.
     ## @param[in]    recomputeFunction    The function to be called when recomputing is necessary 
@@ -2186,20 +2150,25 @@ class MuMoTcontroller:
     def _displayAdvancedOptionsTab(self):
         """create and display the "Advanced options" tab (if not empty)"""
         advancedWidgets = []
+        atLeastOneAdvancedWidget = False
         for widgetName in self._extraWidgetsOrder:
             if self._widgetsExtraParams.get(widgetName):
                 advancedWidgets.append(self._widgetsExtraParams[widgetName])
+                if not self._widgetsExtraParams[widgetName].layout.display == 'none':
+                    atLeastOneAdvancedWidget = True
             elif self._widgetsPlotOnly.get(widgetName):
                 advancedWidgets.append(self._widgetsPlotOnly[widgetName])
+                if not self._widgetsPlotOnly[widgetName].layout.display == 'none':
+                    atLeastOneAdvancedWidget = True
             #else:
                 #print("WARNING! In the _extraWidgetsOrder is listed the widget " + widgetName + " which is although not found in _widgetsExtraParams or _widgetsPlotOnly")
         if advancedWidgets:  # if not empty
             advancedPage = widgets.Box(children=advancedWidgets)
             advancedPage.layout.flex_flow = 'column'
-            advancedOpts = widgets.Accordion(children=[advancedPage])  # , selected_index=-1)
-            advancedOpts.set_title(0, 'Advanced options')
-            advancedOpts.selected_index = None
-            display(advancedOpts)
+            self._advancedTabWidget = widgets.Accordion(children=[advancedPage])  # , selected_index=-1)
+            self._advancedTabWidget.set_title(0, 'Advanced options')
+            self._advancedTabWidget.selected_index = None
+            if atLeastOneAdvancedWidget: display(self._advancedTabWidget)
 
 
     def setView(self, view):
@@ -2302,9 +2271,13 @@ class MuMoTbifurcationController(MuMoTcontroller):
                                              continuous_update=continuousReplot)
                 
                 if BfcParams['conserved'][0] == True:
-                    # disable last population widget (if there are more than 1)
-                    if len(initialState) > 1 and i == 0:
-                        widget.disabled = True
+                    # disable one population widget (if there are more than 1) to constrain the initial sum of population sizes to 1
+                    if len(initialState) > 1:
+                        # if there is not a 'substituted' reactant, the last population widget
+                        if BfcParams['substitutedReactant'][0] is None and i == 0:
+                            widget.disabled = True
+                        elif BfcParams['substitutedReactant'][0] is not None and state == BfcParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
+                            widget.disabled = True
                     else:
                         widget.observe(self._updateInitialStateWidgets, 'value')
                         
@@ -2353,9 +2326,13 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
                                              continuous_update=continuousReplot)
                 
                 if tEParams['conserved'][0] == True:
-                    # disable last population widget (if there are more than 1)
-                    if len(initialState) > 1 and i == 0:
-                        widget.disabled = True
+                    # disable one population widget (if there are more than 1) to constrain the initial sum of population sizes to 1
+                    if len(initialState) > 1:
+                        # if there is not a 'substituted' reactant, the last population widget
+                        if tEParams['substitutedReactant'][0] is None and i == 0:
+                            widget.disabled = True
+                        elif tEParams['substitutedReactant'][0] is not None and state == tEParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
+                            widget.disabled = True
                     else:
                         widget.observe(self._updateInitialStateWidgets, 'value')
                         
@@ -2396,6 +2373,107 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
             self._extraWidgetsOrder.append('plotProportions')
 
 
+class MuMoTfieldController(MuMoTcontroller):
+    """Controller for field views"""
+    
+    def _createAdvancedWidgets(self, advancedOpts, continuousReplot=False):
+        # Max time slider
+        if not advancedOpts['maxTime'][-1]:
+            maxTime = advancedOpts['maxTime']
+            widget = widgets.FloatSlider(value=maxTime[0], min=maxTime[1], 
+                                             max=maxTime[2], step=maxTime[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(maxTime[3]))) + 'f',
+                                             description='Simulation time:',
+                                             style={'description_width': 'initial'},
+                                             #layout=widgets.Layout(width='50%'),
+                                             disabled=False,
+                                             continuous_update=continuousReplot) 
+            self._widgetsExtraParams['maxTime'] = widget
+        
+        # Random seed input field
+        if not advancedOpts['randomSeed'][-1]:
+            widget = widgets.IntText(
+                value=advancedOpts['randomSeed'][0],
+                description='Random seed:',
+                style={'description_width': 'initial'},
+                disabled=False
+            )
+            self._widgetsExtraParams['randomSeed'] = widget
+        
+        ## @todo: this block of commented code can be used readily used to fix issue #95 
+#         if not advancedOpts['final_x'][-1]:
+#             opts = []
+#             for reactant in sorted(initialState.keys(), key=str):
+#                 #opts.append( ( "Reactant " + r'$'+ latex(Symbol(str(reactant)))+r'$', str(reactant) ) )
+#                 opts.append(("Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(str(reactant))) + r'\)', str(reactant)))
+#             dropdown = widgets.Dropdown( 
+#                 options=opts,
+#                 description='Final distribution (x axis):',
+#                 value=advancedOpts['final_x'][0], 
+#                 style={'description_width': 'initial'}
+#             )
+#             self._widgetsPlotOnly['final_x'] = dropdown
+#         if not advancedOpts['final_y'][-1]:
+#             opts = []
+#             for reactant in sorted(initialState.keys(), key=str):
+# #                 opts.append( ( r'$'+ _doubleUnderscorify(_greekPrependify(str(reactant))) +'$' , str(reactant) ) )
+# #                 print("the reactant is " + str(reactant))
+# #                 print("the _greekPrependify(str(reactant) is " + str(_greekPrependify(str(reactant))) )
+# #                 print("the _doubleUnderscorify(_greekPrependify(str(reactant))) is " + str(_doubleUnderscorify(_greekPrependify(str(reactant)))) )
+#                 opts.append(("Reactant " + r'\(' + _doubleUnderscorify(_greekPrependify(str(reactant))) + r'\)', str(reactant)))
+#             dropdown = widgets.Dropdown( 
+#                 options=opts,
+#                 description='Final distribution (y axis):',
+#                 value=advancedOpts['final_y'][0], 
+#                 style={'description_width': 'initial'}
+#             )
+#             self._widgetsPlotOnly['final_y'] = dropdown
+            
+        
+        ## @todo: this block of commented code can be used readily used to fix issue #283
+#         ## Checkbox for proportions or full populations plot
+#         if not advancedOpts['plotProportions'][-1]:
+#             widget = widgets.Checkbox(
+#                 value=advancedOpts['plotProportions'][0],
+#                 description='Plot population proportions',
+#                 disabled=False
+#             )
+#             self._widgetsPlotOnly['plotProportions'] = widget
+        
+        # Number of runs slider
+        if not advancedOpts['runs'][-1]:
+            runs = advancedOpts['runs']
+            widget = widgets.IntSlider(value=runs[0], min=runs[1], 
+                                             max=runs[2], step=runs[3],
+                                             readout_format='.' + str(_count_sig_decimals(str(runs[3]))) + 'f',
+                                             description='Number of runs:',
+                                             style={'description_width': 'initial'},
+                                             #layout=widgets.Layout(width='50%'),
+                                             disabled=False,
+                                             continuous_update=continuousReplot) 
+            self._widgetsExtraParams['runs'] = widget
+            
+        ## Checkbox for realtime plot update
+        if not advancedOpts['aggregateResults'][-1]:
+            widget = widgets.Checkbox(
+                value=advancedOpts['aggregateResults'][0],
+                description='Aggregate results',
+                disabled=False
+            )
+            self._widgetsExtraParams['aggregateResults'] = widget
+    
+        return None
+            
+    def _orderAdvancedWidgets(self, _noInitialState):
+        # define the widget order
+#         self._extraWidgetsOrder.append('final_x')
+#         self._extraWidgetsOrder.append('final_y')
+#         self._extraWidgetsOrder.append('plotProportions')
+        self._extraWidgetsOrder.append('runs')
+        self._extraWidgetsOrder.append('maxTime')
+        self._extraWidgetsOrder.append('randomSeed')
+        self._extraWidgetsOrder.append('aggregateResults')
+        
 class MuMoTstochasticSimulationController(MuMoTcontroller):
     """Controller for stochastic simulations (base class of MuMoTmultiagentController)."""
     
@@ -2414,9 +2492,13 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                                              #description = r'\(' + latex(Symbol('Phi_'+str(state))) + r'\)' + " at t=0: ",
                                              style={'description_width': 'initial'},
                                              continuous_update=continuousReplot)
-                # disable last population widget (if there are more than 1)
-                if len(initialState) > 1 and i == 0:
-                    widget.disabled = True
+                # disable one population widget (if there are more than 1) to constrain the initial sum of population sizes to 1
+                if len(initialState) > 1:
+                    # if there is not a 'substituted' reactant, the last population widget
+                    if SSParams['substitutedReactant'][0] is None and i == 0:
+                        widget.disabled = True
+                    elif SSParams['substitutedReactant'][0] is not None and state == SSParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
+                        widget.disabled = True
                 else:
                     widget.observe(self._updateInitialStateWidgets, 'value')
                         
@@ -2830,8 +2912,7 @@ class MuMoTview:
             with io.capture_output() as log:
                 print(logStr)    
             self._logs.append(log)
-        else:
-            return logStr
+        return logStr
 
     def _set_fixedParams(self, paramDict):
         self._fixedParams = paramDict
@@ -2842,55 +2923,8 @@ class MuMoTview:
             model = refModel
         else:
             model = self._mumotModel
-         
+        
         params = []
-         
-        paramInitCheck = []
-        for reactant in model._reactants:
-            if reactant not in model._constantReactants:
-                paramInitCheck.append(latex(Symbol('Phi^0_'+str(reactant))))
-                  
-        if self._controller:
-            for name, value in self._controller._widgetsFreeParams.items():
-#                 name = name.replace('\\', '\\\\')
-                if name in model._ratesLaTeX:
-                    name = model._ratesLaTeX[name]
-                name = name.replace('(', '')
-                name = name.replace(')', '')
-                if name not in paramInitCheck:
-                    #logStr += "('" + latex(name) + "', " + str(value.value) + "), "
-                    params.append((latex(name) , value.value))
-#         if self._paramNames is not None:
-#             for name, value in zip(self._paramNames, self._paramValues):
-#                 if name == 'systemSize' or name == 'plotLimits': continue
-#                 name= repr(name)
-#                 if name in model._ratesLaTeX:
-#                     name = model._ratesLaTeX[name]
-#                 name = name.replace('(', '')
-#                 name = name.replace(')', '')
-#                 #logStr += "('" + latex(name) + "', " + str(value) + "), "
-#                 params.append( ( latex(name) , value ) )
-
-        for name, value in self._fixedParams.items():
-            if name == 'systemSize' or name == 'plotLimits': continue
-            name = repr(name)
-            if name in model._ratesLaTeX:
-                name = model._ratesLaTeX[name]
-            name = name.replace('(', '')
-            name = name.replace(')', '')
-            #logStr += "('" + latex(name) + "', " + str(value) + "), "
-            params.append((latex(name) , value))
-        params.append(('plotLimits' , self._getPlotLimits()))
-        params.append(('systemSize' , self._getSystemSize()))
-                 
-        return params
-
-    def _get_bookmarks_params(self, refModel=None):
-        if refModel is not None:
-            model = refModel
-        else:
-            model = self._mumotModel
-        logStr = "params = ["
         
         paramInitCheck = []
         for reactant in model._reactants:
@@ -2899,22 +2933,12 @@ class MuMoTview:
                  
         if self._controller:
             for name, value in self._controller._widgetsFreeParams.items():
-#                 name = name.replace('\\', '\\\\')
                 if name in model._ratesLaTeX:
                     name = model._ratesLaTeX[name]
                 name = name.replace('(', '')
                 name = name.replace(')', '')
                 if name not in paramInitCheck:
-                    logStr += "('" + latex(name) + "', " + str(value.value) + "), "
-#         if self._paramNames is not None:
-#             for name, value in zip(self._paramNames, self._paramValues):
-#                 if name == 'systemSize' or name == 'plotLimits': continue
-#                 name= repr(name)
-#                 if name in model._ratesLaTeX:
-#                     name = model._ratesLaTeX[name]
-#                 name = name.replace('(', '')
-#                 name = name.replace(')', '')
-#                 logStr += "('" + latex(name) + "', " + str(value) + "), "
+                    params.append((latex(name) , value.value))
         for name, value in self._fixedParams.items():
             #if name == 'systemSize' or name == 'plotLimits': continue
             if name not in self._mumotModel._rates and name not in self._mumotModel._constantReactants: continue
@@ -2923,12 +2947,19 @@ class MuMoTview:
                 name = model._ratesLaTeX[name]
             name = name.replace('(', '')
             name = name.replace(')', '')
-            logStr += "('" + latex(name) + "', " + str(value) + "), "
-        logStr += "('plotLimits', " + str(self._getPlotLimits()) + "), "  # @todo is it necessary for every view? I think no.
-        logStr += "('systemSize', " + str(self._getSystemSize()) + "), "
+            params.append((latex(name) , value))
+        params.append(('plotLimits' , self._getPlotLimits()))
+        params.append(('systemSize' , self._getSystemSize()))
+        
+        return params
+
+    def _get_bookmarks_params(self, refModel=None):
+        params = self._get_params(refModel)
+        logStr = "params = ["
+        for name, value in params:
+            logStr += "('" + str(name) + "', " + str(value) + "), "
         logStr = logStr[:-2]  # throw away last ", "
         logStr += "]"
-                
         return logStr        
 
 
@@ -3257,10 +3288,8 @@ class MuMoTmultiView(MuMoTview):
             view._setLog(log)
 
 
-    def _print_standalone_view_cmd(self, foo = False, returnString = True):
-        for view in self._views:  # @todo is this necessary?
-            pass
-        model = view._mumotModel  # @todo does this suppose that all models are the same for all views?
+    def _print_standalone_view_cmd(self, includeParams = False):
+        model = self._views[0]._mumotModel  # @todo this suppose that all models are the same for all views
         with io.capture_output() as log:
             if self._controller._silent == False:
                 logStr = "bookmark = "
@@ -3270,8 +3299,9 @@ class MuMoTmultiView(MuMoTview):
             for controller in self._controllers:
                 logStr += controller._view._print_standalone_view_cmd(False) + ", "
             logStr = logStr[:-2]  # throw away last ", "
-            logStr += "], "
-            logStr += self._get_bookmarks_params(model)
+            logStr += "]"
+            if includeParams:
+                logStr += ", " + self._get_bookmarks_params(model)
             if len(self._generatingKwargs) > 0:
                 logStr += ", "
                 for key in self._generatingKwargs:
@@ -3281,15 +3311,15 @@ class MuMoTmultiView(MuMoTview):
                         logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
                     
                 logStr = logStr[:-2]  # throw away last ", "
-            logStr += ", bookmark = False"
+            if 'silent' not in self._generatingKwargs: logStr += ", silent = " + str(self._silent)
+            if 'bookmark' not in self._generatingKwargs: logStr += ", bookmark = False"
             logStr += ")"
             #logStr = logStr.replace('\\', '\\\\') ## @todo is this necessary?
 
-            print(logStr)
-        if returnString:
-            return str(log)
-        else:
-            self._logs.append(log)
+            if not self._silent and logStr is not None:
+                print(logStr)    
+                self._logs.append(log)
+            return logStr
 
 
     def _set_fixedParams(self, paramDict):
@@ -3728,7 +3758,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
             if 'plotProportions' in self._tEParams: # @todo JARM: I don't really understand logic of checking _tEParams but then retrieving the value from elsewhere
                 self._plotProportions = self._getWidgetParamValue('plotProportions', self._controller._widgetsPlotOnly) # self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
             self._maxTime = self._getWidgetParamValue('maxTime', self._controller._widgetsExtraParams) # self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
-
                
 #      
 #     def _get_tEParams(self):
@@ -3778,7 +3807,6 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
         #print(self._colors) 
     
     def __init__(self, *args, **kwargs):
-        #self._plotProportion = kwargs.get('plotProportion', True)
         self._ylab = kwargs.get('ylab', 'reactants')
         super().__init__(*args, **kwargs)
         #self._generatingCommand = "numSimStateVar"
@@ -4112,13 +4140,12 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         self._logs.append(log)
          
         argDict = self._get_argDict()
-        for key in argDict:
-            if key in self._mumotModel._constantReactants:
+        for key in self._mumotModel._constantReactants:
+            if argDict[key] is not None:
                 argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
         for key in steadyStateDict:
             if key in self._mumotModel._reactants:
                 steadyStateDict[Symbol('Phi_'+str(key))] = steadyStateDict.pop(key)
-        
         EOM_1stOrdMomDict = copy.deepcopy(self._EOM_1stOrdMomDict)
         for sol in EOM_1stOrdMomDict:
             EOM_1stOrdMomDict[sol] = EOM_1stOrdMomDict[sol].subs(steadyStateDict)
@@ -4223,9 +4250,6 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
             self._showErrorMessage('Could not compute Second Order Moments. Could not generate figure. Try different initial conditions in the Advanced options tab! ')
             return None
                 
-        #print(time)
-        #print(y0)
-        #print(SOL_2ndOrdMomDict)
         sol_ODE = odeint(noiseODEsys, y0, time)  # sol_ODE overwritten
         
         x_data = [time for kk in range(len(y0))]  
@@ -4426,67 +4450,163 @@ class MuMoTfieldView(MuMoTview):
     _EV = None
     ## eigenvectors for logs 
     _Evects = None
+    ## random seed  (for computing SSA noise)
+    _randomSeed = None
+    ## simulation length (for computing SSA noise)
+    _maxTime = None 
+    ## reactants to display on the two axes
+    #_finalViewAxes = None
+    ## flag to plot proportions or full populations
+    _plotProportions = None 
+    ## number of runs to execute  (for computing SSA noise)
+    _runs = None
+    ## flag to set if the results from multimple runs must be aggregated or not (for computing SSA noise)  
+    _aggregateResults = None
     
-    def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
+    
+    def __init__(self, model, controller, fieldParams, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
         if model._systemSize is None and model._constantSystemSize == True:
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return
-        silent = kwargs.get('silent', False)
-        super().__init__(model, controller, figure, params, **kwargs)
+        self._silent = kwargs.get('silent', False)
+        super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
         
-        if 'fontsize' in kwargs:
-            self._chooseFontSize = kwargs['fontsize']
-        else:
-            self._chooseFontSize = None
-        self._showFixedPoints = kwargs.get('showFixedPoints', False)
-        self._xlab = r'' + kwargs.get('xlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable1)))+'}$')
-        self._ylab = r'' + kwargs.get('ylab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable2)))+'}$')
-        if stateVariable3:
-            self._zlab = r'' + kwargs.get('zlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable3))) + '}$') 
+        with io.capture_output() as log:
+        #if True:
+            if 'fontsize' in kwargs:
+                self._chooseFontSize = kwargs['fontsize']
+            else:
+                self._chooseFontSize = None
+            self._showFixedPoints = kwargs.get('showFixedPoints', False)
+            self._xlab = r'' + kwargs.get('xlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable1)))+'}$')
+            self._ylab = r'' + kwargs.get('ylab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable2)))+'}$')
+            if stateVariable3:
+                self._zlab = r'' + kwargs.get('zlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable3))) + '}$') 
+            
+            self._stateVariable1 = process_sympy(stateVariable1)
+            self._stateVariable2 = process_sympy(stateVariable2)
+            if stateVariable3 is not None:
+                self._axes3d = True
+                self._stateVariable3 = process_sympy(stateVariable3)
+            _mask = {}
+            
+            self._SOL_2ndOrdMomDict = SOL_2ndOrd
+            
+            self._showNoise = kwargs.get('showNoise', False)
+            
+            if self._showNoise == True and self._SOL_2ndOrdMomDict is None and self._stateVariable3 is None:
+                self._showSSANoise = True
+            else:
+                self._showSSANoise = False
+            
+            if stateVariable3 is None:    
+                self._chooseXrange = kwargs.get('choose_xrange', None)
+                self._chooseYrange = kwargs.get('choose_yrange', None)
+            
+            if self._controller is None:
+                # storing all values of MA-specific parameters
+                self._maxTime = fieldParams["maxTime"]
+                self._randomSeed = fieldParams["randomSeed"]
+#                 final_x = str(process_sympy(fieldParams.get("final_x", latex(sorted(self._mumotModel._getAllReactants()[0], key=str)[0]))))
+#                 final_y = str(process_sympy(fieldParams.get("final_y", latex(sorted(self._mumotModel._getAllReactants()[0], key=str)[0]))))
+#                 self._finalViewAxes = (final_x, final_y)
+#                self._plotProportions = fieldParams["plotProportions"]
+                self._runs = fieldParams.get('runs', 20)
+                self._aggregateResults = fieldParams.get('aggregateResults', True)
+            
+            else:
+                # storing fixed params
+                for key, value in fieldParams.items():
+                    if value[-1]:
+                        self._fixedParams[key] = value[0]
+                self._update_field_params_wdgt()
         
-        self._stateVariable1 = process_sympy(stateVariable1)
-        self._stateVariable2 = process_sympy(stateVariable2)
-        if stateVariable3 is not None:
-            self._axes3d = True
-            self._stateVariable3 = process_sympy(stateVariable3)
-        _mask = {}
-        
-        self._SOL_2ndOrdMomDict = SOL_2ndOrd
-        
-        self._showNoise = kwargs.get('showNoise', False)
-        
-        if self._showNoise == True and self._SOL_2ndOrdMomDict is None and self._stateVariable3 is None:
-            self._showSSANoise = True
-        else:
-            self._showSSANoise = False
-        
-        if stateVariable3 is None:    
-            self._chooseXrange = kwargs.get('choose_xrange', None)
-            self._chooseYrange = kwargs.get('choose_yrange', None)
-        
-        if not(silent):
+        self._logs.append(log)
+        if not self._silent:
             self._plot_field()
 
-
-#    def __init__(self, model, controller, stateVariable1, stateVariable2, stateVariable3 = None, figure = None, params = None, **kwargs):
-
-    def _build_bookmark(self, includeParams=True):
-        if not self._silent:
-            logStr = "bookmark = "
+    # @todo: this function will be useful to implement a solution to issue #282
+    def _update_field_params_wdgt(self):
+        """Update the widgets related to the _showSSANoise 
+        
+        (it cannot be a :class:`MuMoTcontroller` method because with multi-controller it needs to point to the right ``_controller``)
+        """
+        if self._showSSANoise:
+            if self._controller._advancedTabWidget is not None:
+                self._controller._advancedTabWidget.layout.display = 'flex'
+            if self._controller._widgetsExtraParams.get('maxTime') is not None:
+                self._controller._widgetsExtraParams['maxTime'].layout.display = 'flex'
+            if self._controller._widgetsExtraParams.get('maxTime') is not None:
+                self._controller._widgetsExtraParams['maxTime'].layout.display = 'flex'
+            if self._controller._widgetsExtraParams.get('randomSeed') is not None:
+                self._controller._widgetsExtraParams['randomSeed'].layout.display = 'flex'
+            if self._controller._widgetsExtraParams.get('runs') is not None:
+                self._controller._widgetsExtraParams['runs'].layout.display = 'flex'
+            if self._controller._widgetsExtraParams.get('aggregateResults') is not None:
+                self._controller._widgetsExtraParams['aggregateResults'].layout.display = 'flex'
         else:
-            logStr = ""
+            if self._controller._widgetsExtraParams.get('maxTime') is not None:
+                self._controller._widgetsExtraParams['maxTime'].layout.display = 'none'
+            if self._controller._widgetsExtraParams.get('randomSeed') is not None:
+                self._controller._widgetsExtraParams['randomSeed'].layout.display = 'none'
+            if self._controller._widgetsExtraParams.get('runs') is not None:
+                self._controller._widgetsExtraParams['runs'].layout.display = 'none'
+            if self._controller._widgetsExtraParams.get('aggregateResults') is not None:
+                self._controller._widgetsExtraParams['aggregateResults'].layout.display = 'none'
+            if self._controller._advancedTabWidget is not None:
+                self._controller._advancedTabWidget.layout.display = 'none'
+    
+    def _update_view_specific_params(self, freeParamDict=None):
+        """Getting other parameters specific to the Field view."""
+        if freeParamDict is None:
+            freeParamDict = {}
+        if self._controller is not None:
+            self._randomSeed =  self._getWidgetParamValue('randomSeed', self._controller._widgetsExtraParams) # self._fixedParams['randomSeed'] if self._fixedParams.get('randomSeed') is not None else self._controller._widgetsExtraParams['randomSeed'].value
+            #self._finalViewAxes = (self._getWidgetParamValue('final_x', self._controller._widgetsPlotOnly), self._getWidgetParamValue('final_y', self._controller._widgetsPlotOnly))
+            #self._finalViewAxes = (self._fixedParams['final_x'] if self._fixedParams.get('final_x') is not None else self._controller._widgetsPlotOnly['final_x'].value, self._fixedParams['final_y'] if self._fixedParams.get('final_y') is not None else self._controller._widgetsPlotOnly['final_y'].value)
+            #self._plotProportions = self._getWidgetParamValue('plotProportions', self._controller._widgetsPlotOnly) # self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
+            self._maxTime = self._getWidgetParamValue('maxTime', self._controller._widgetsExtraParams) # self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
+            self._runs = self._getWidgetParamValue('runs', self._controller._widgetsExtraParams) # self._fixedParams['runs'] if self._fixedParams.get('runs') is not None else self._controller._widgetsExtraParams['runs'].value
+            self._aggregateResults = self._getWidgetParamValue('aggregateResults', self._controller._widgetsExtraParams) # self._fixedParams['aggregateResults'] if self._fixedParams.get('aggregateResults') is not None else self._controller._widgetsPlotOnly['aggregateResults'].value
+
+    def _build_bookmark(self, includeParams=True): 
+        logStr = "bookmark = " if not self._silent else ""
         logStr += "<modelName>." + self._generatingCommand + "('" + str(self._stateVariable1) + "', '" + str(self._stateVariable2) + "', "
         if self._stateVariable3 is not None:
             logStr += "'" + str(self._stateVariable3) + "', "
+        # todo: plotting parameters are not kept, this could be solved with some work on the _generatingKwargs and should be made general for all views (similar to _get_bookmarks_params() )
+#         if includeParams:
+#             logStr += self._get_bookmarks_params() + ", "
+#         if len(self._generatingKwargs) > 0:
+#             for key in self._generatingKwargs:
+#                 if key == 'xlab' or key == 'ylab' or key == 'zlab':
+#                     logStr += key + " = '" + str(self._generatingKwargs[key]) + "', "
+#                 else:
+#                     logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
         if includeParams:
-            logStr += self._get_bookmarks_params() + ", "
-        if len(self._generatingKwargs) > 0:
-            for key in self._generatingKwargs:
-                if key == 'xlab' or key == 'ylab' or key == 'zlab':
-                    logStr += key + " = '" + str(self._generatingKwargs[key]) + "', "
-                else:
-                    logStr += key + " = " + str(self._generatingKwargs[key]) + ", "
-        logStr += "bookmark = False"
+            logStr += self._get_bookmarks_params()
+            logStr += ", "
+        logStr = logStr.replace('\\', '\\\\')
+        logStr += "showNoise = " + str(self._showNoise)
+        logStr += ", showFixedPoints = " + str(self._showFixedPoints)
+        logStr += ", runs = " + str(self._runs)
+        logStr += ", maxTime = " + str(self._maxTime)
+        logStr += ", randomSeed = " + str(self._randomSeed)
+#       todo: Following commented lines are ready to implement issue #95
+#         if self._visualisationType == 'final':
+#             # these loops are necessary to return the latex() format of the reactant 
+#             for reactant in self._mumotModel._getAllReactants()[0]:
+#                 if str(reactant) == self._finalViewAxes[0]:
+#                     logStr += ", final_x = '" + latex(reactant).replace('\\', '\\\\') + "'"
+#                     break
+#             for reactant in self._mumotModel._getAllReactants()[0]:
+#                 if str(reactant) == self._finalViewAxes[1]:
+#                     logStr += ", final_y = '" + latex(reactant).replace('\\', '\\\\') + "'"
+#                     break
+        #logStr += ", plotProportions = " + str(self._plotProportions) todo: ready to implement issue #283
+        logStr += ", aggregateResults = " + str(self._aggregateResults)
+        logStr += ", silent = " + str(self._silent)
+        logStr += ", bookmark = False"
         logStr += ")"
         logStr = _greekPrependify(logStr)
         logStr = logStr.replace('\\', '\\\\')
@@ -4496,6 +4616,7 @@ class MuMoTfieldView(MuMoTview):
     
     
     def _plot_field(self):
+        self._update_params()
         self._show_computation_start()
         if not(self._silent):  # @todo is this necessary?
             plt.figure(self._figureNum)          
@@ -4729,9 +4850,9 @@ class MuMoTfieldView(MuMoTview):
                         getParams.append((_greekPrependify(set_item[0].replace('{', '').replace('}', '')), set_item[1]))
                     SSAView = MuMoTSSAView(self._mumotModel, None,
                                      params=getParams,
-                                     SSParams={'maxTime': 2, 'runs': 20, 'realtimePlot': False, 'plotProportions': True, 'aggregateResults': True, 'visualisationType': 'final',
+                                     SSParams={'maxTime': self._maxTime, 'runs': self._runs, 'realtimePlot': False, 'plotProportions': True, 'aggregateResults': self._aggregateResults, 'visualisationType': 'final',
                                                  'final_x': _greekPrependify(latex(self._stateVariable1)), 'final_y': _greekPrependify(latex(self._stateVariable2)), 
-                                                 'initialState': initState, 'randomSeed': np.random.randint(MAX_RANDOM_SEED)}, silent=True)
+                                                 'initialState': initState, 'randomSeed': self._randomSeed}, silent=True)
                     #print(SSAView._printStandaloneViewCmd())
                     SSAView._figure = self._figure
                     SSAView._computeAndPlotSimulation()
@@ -4918,14 +5039,13 @@ class MuMoTvectorView(MuMoTfieldView):
     ## set of all constant reactants to get intersection with _checkReactants
     _checkConstReactants = None
     
-    def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
+    def __init__(self, model, controller, fieldParams, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
         #if model._systemSize is None and model._constantSystemSize == True:
         #    self._showErrorMessage("Cannot construct field-based plot until system size is set, using substitute()")
         #    return
         #if self._SOL_2ndOrdMomDict is None:
         #    self._showErrorMessage('Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
-        silent = kwargs.get('silent', False)
-        super().__init__(model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3, figure, params, **kwargs) 
+        super().__init__(model=model, controller=controller, fieldParams=fieldParams, SOL_2ndOrd=SOL_2ndOrd, stateVariable1=stateVariable1, stateVariable2=stateVariable2, stateVariable3=stateVariable3, figure=figure, params=params, **kwargs)
         self._generatingCommand = "vector"
 
     def _plot_field(self, _=None):
@@ -5011,7 +5131,7 @@ class MuMoTstreamView(MuMoTfieldView):
     ## set of all constant reactants to get intersection with _checkReactants
     _checkConstReactants = None
     
-    def __init__(self, model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
+    def __init__(self, model, controller, fieldParams, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
         #if model._systemSize is None and model._constantSystemSize == True:
         #    self._showErrorMessage("Cannot construct field-based plot until system size is set, using substitute()")
         #    return
@@ -5023,8 +5143,7 @@ class MuMoTstreamView(MuMoTfieldView):
             self._checkConstReactants = model._constantReactants
         else:
             self._checkConstReactants = None
-        silent = kwargs.get('silent', False)
-        super().__init__(model, controller, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3, figure, params, **kwargs) 
+        super().__init__(model=model, controller=controller, fieldParams=fieldParams, SOL_2ndOrd=SOL_2ndOrd, stateVariable1=stateVariable1, stateVariable2=stateVariable2, stateVariable3=stateVariable3, figure=figure, params=params, **kwargs)
         self._generatingCommand = "stream"
 
     def _plot_field(self, _=None):
@@ -5042,7 +5161,7 @@ class MuMoTstreamView(MuMoTfieldView):
         
         super()._plot_field()                   
         
-        if self._stateVariable3 is None:   
+        if self._stateVariable3 is None:
             self._get_field2d("2d stream plot", 100)  # @todo: allow user to set mesh points with keyword
             
             if self._speed is not None:
@@ -9430,7 +9549,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
         #print("Initial State is " + str(initialState) )
     if (optionName == 'maxTime'):
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
-                                    defaultValueRangeStep=[MuMoTdefault._maxTime, MuMoTdefault._timeLimits[0], MuMoTdefault._timeLimits[1], MuMoTdefault._timeStep], 
+                                    defaultValueRangeStep=[2, 0.1, 3, 0.1] if extraParam is 'asNoise' else [MuMoTdefault._maxTime, MuMoTdefault._timeLimits[0], MuMoTdefault._timeLimits[1], MuMoTdefault._timeStep], 
                                     initValueRangeStep=initValues, 
                                     validRange=(0, float("inf")))
     if (optionName == 'randomSeed'):
@@ -9573,7 +9692,7 @@ def _format_advanced_option(optionName, inputValue, initValues, extraParam=None,
                 
     if (optionName == 'runs'):
         return _parse_input_keyword_for_numeric_widgets(inputValue=inputValue,
-                                defaultValueRangeStep=[1, 1, 20, 1], 
+                                defaultValueRangeStep=[20, 5, 100, 5] if extraParam is 'asNoise' else [1, 1, 20, 1], 
                                 initValueRangeStep=initValues,
                                 validRange=(1, float("inf"))) 
     
