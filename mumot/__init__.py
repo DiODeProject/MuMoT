@@ -981,7 +981,7 @@ class MuMoTmodel:
         -----
         Plotting keywords are also described in the `user manual`_.
 
-        .. _user manual: https://diodeproject.github.io/MuMoT/getting_started.html
+        .. _user manual: https://mumot.readthedocs.io/en/latest/getting_started.html
 
         """
         if initWidgets is None:
@@ -1077,7 +1077,7 @@ class MuMoTmodel:
         -----
         Plotting keywords are also described in the `user manual`_.
 
-        .. _user manual: https://diodeproject.github.io/MuMoT/getting_started.html
+        .. _user manual: https://mumot.readthedocs.io/en/latest/getting_started.html
 
         """
         if initWidgets is None:
@@ -1193,7 +1193,7 @@ class MuMoTmodel:
         -----
         Plotting keywords are also described in the `user manual`_.
 
-        .. _user manual: https://diodeproject.github.io/MuMoT/getting_started.html
+        .. _user manual: https://mumot.readthedocs.io/en/latest/getting_started.html
 
         """
         if initWidgets is None:
@@ -1299,7 +1299,7 @@ class MuMoTmodel:
         -----
         Plotting keywords are also described in the `user manual`_.
 
-        .. _user manual: https://diodeproject.github.io/MuMoT/getting_started.html
+        .. _user manual: https://mumot.readthedocs.io/en/latest/getting_started.html
 
         """
         if initWidgets is None:
@@ -1415,7 +1415,7 @@ class MuMoTmodel:
         -----
         Plotting keywords are also described in the `user manual`_.
 
-        .. _user manual: https://diodeproject.github.io/MuMoT/getting_started.html
+        .. _user manual: https://mumot.readthedocs.io/en/latest/getting_started.html
 
         """
         if initWidgets is None:
@@ -7425,7 +7425,7 @@ def about():
     """
     print("Multiscale Modelling Tool (MuMoT): Version " + __version__)
     print("Authors: James A. R. Marshall, Andreagiovanni Reina, Thomas Bose")
-    print("Documentation: https://diodeproject.github.io/MuMoT")
+    print("Documentation: https://mumot.readthedocs.io/")
 
 def setVerboseExceptions(verbose=True):
     """Set the verbosity of exception handling.

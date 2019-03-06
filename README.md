@@ -10,7 +10,7 @@ MuMoT (Multiscale Modelling Tool) is a tool designed to allow sophisticated math
 
 ## Documentation
 
-See [https://diodeproject.github.io/MuMoT/](https://diodeproject.github.io/MuMoT/) for
+See [https://mumot.readthedocs.io](https://mumot.readthedocs.io) for
 
 * How to **get started** with MuMoT, including how to **use MuMoT online** without installing anything on your own machine.
 * **Installation instructions**, should you want to instal it on your own machine.
