@@ -200,8 +200,8 @@ The Sphinx documentation is / can be built under several different circumstances
 * Automatically whenever :ref:`tox is run <test_local>`;
 * Automatically whenever :ref:`a CI job is run <test_ci>`;
 * Automatically following a push to the master branch of the MuMoT repository, 
-  which causes an additional final step of the CI job to deploy the built documentation to the ``gh-pages`` branch of the repository
-  (for viewing at `https://diodeproject.github.io/MuMoT/ <https://diodeproject.github.io/MuMoT/>`__).
+  which causes the `ReadTheDocs <https://readthedocs.org/projects/mumot/>`__ service to 
+  rebuild and publish the documentation at `https://mumot.readthedocs.io <https://mumot.readthedocs.io/>`__.
 
 Building the docs locally 
 ^^^^^^^^^^^^^^^^^^^^^^^^^
