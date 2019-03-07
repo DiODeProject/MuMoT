@@ -1,6 +1,7 @@
 # MuMoT: Multiscale Modelling Tool
 
 [![Build Status](https://api.travis-ci.org/DiODeProject/MuMoT.svg?branch=master)](https://travis-ci.org/DiODeProject/MuMoT/branches)
+[![Documentation Status](https://readthedocs.org/projects/mumot/badge/?version=latest)](https://mumot.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://codecov.io/github/DiODeProject/MuMoT/coverage.svg?branch=master)](https://codecov.io/gh/DiODeProject/MuMoT)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=docs%2FMuMoTuserManual.ipynb)
 
