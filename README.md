@@ -7,14 +7,22 @@
 
 ## Introduction / overview
 
-MuMoT (Multiscale Modelling Tool) is a tool designed to allow sophisticated mathematical modelling and analysis, without writing equations - the class of models that can be represented is broad, ranging from chemical reaction kinetics to demography and collective behaviour - by using a web-based interactive interface with minimal coding, rapid development and exploration of models is facilitated - the tool may also be particularly useful for pedagogical demonstrations
+MuMoT (Multiscale Modelling Tool) is a tool designed to allow sophisticated mathematical modelling and analysis, 
+without writing equations - 
+the class of models that can be represented is broad, 
+ranging from chemical reaction kinetics to 
+demography and collective behaviour - 
+by using a web-based interactive interface with minimal coding, 
+rapid development and exploration of models is facilitated - 
+the tool may also be particularly useful for pedagogical demonstrations.
 
 ## Documentation
 
 See [https://mumot.readthedocs.io](https://mumot.readthedocs.io) for
 
-* How to **get started** with MuMoT, including how to **use MuMoT online** without installing anything on your own machine.
-* **Installation instructions**, should you want to instal it on your own machine.
-* **Development**: how to report issues and how to contribute to the project.
-* Information about MuMoT inc. contributors and acknowledgements.
-* API documentation.
+  * How to **get started** with MuMoT, 
+    including how to **use MuMoT online** without installing anything on your own machine.
+  * **Installation instructions**, should you want to instal it on your own machine.
+  * **Development**: how to report issues and how to contribute to the project.
+  * Information about MuMoT inc. contributors and acknowledgements.
+  * API documentation.
