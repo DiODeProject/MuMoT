@@ -1,0 +1,7 @@
+# Do not report coverage of third-party code.  
+# (NB here this is the _installed_ code 
+# in the hidden virtualenv created by tox, 
+# not the source code of the package)
+ignore:
+  - "**/site-packages/mumot/process_latex/*"
+  - "**/site-packages/mumot/gen/*"
