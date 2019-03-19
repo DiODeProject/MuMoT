@@ -24,6 +24,8 @@ import warnings
 from bisect import bisect_left
 from enum import Enum
 from math import floor, log10
+import base64
+from ipywidgets import HTML
 
 #if operating system is macOS
 #use non-default matplotlib backend
@@ -2101,8 +2103,18 @@ class MuMoTcontroller:
         self._bookmarkWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Paste bookmark to log', icon='fa-bookmark')
         self._bookmarkWidget.on_click(self._print_standalone_view_cmd)
         bookmark = kwargs.get('bookmark', True)
+        
+        # self._downloadWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Download results', icon='fa-download')
+        self._downloadWidget =  HTML(self._create_download_link("","",""))
         if not self._silent and bookmark:
-            display(self._bookmarkWidget)
+            #display(self._bookmarkWidget)
+        
+            box_layout = widgets.Layout(display='flex',
+                                        flex_flow='row',
+                                        align_items='stretch',
+                                        width='70%')
+            twoButtons = widgets.Box(children=[self._bookmarkWidget, self._downloadWidget], layout=box_layout)
+            display(twoButtons)
 
         widget = widgets.HTML()
         widget.value = ''
@@ -2222,7 +2234,7 @@ class MuMoTcontroller:
         self._errorMessage = errorWidget
 
             
-    def _downloadFile(self, data_to_download):
+    def _downloadFileWithJavascript(self, data_to_download):
         js_download = """
         var csv = '%s';
         
@@ -2248,7 +2260,14 @@ class MuMoTcontroller:
         #data_to_download.to_csv(index=False).replace('\n','\\n').replace("'","\'")
         
         return Javascript(js_download)
-
+    
+    def _create_download_link(self, text, title="Download file", filename="file.txt"):
+        """Create a download link"""  
+        b64 = base64.b64encode(text.encode())
+        payload = b64.decode()
+        html = '<a download="{filename}" href="data:text/text;base64,{payload}" target="_blank">{title}</a>'
+        html = html.format(payload=payload,title=title,filename=filename)
+        return html
 
 class MuMoTbifurcationController(MuMoTcontroller):
     """Controller to enable Advanced options widgets for bifurcation view."""
@@ -2780,9 +2799,6 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
 
         """
         if self._view: self._view._update_net_params(True)
-    
-    def downloadTimeEvolution(self):
-        return self._downloadFile(self._view._latestResults[0])
     
 
 class MuMoTview:
@@ -6028,6 +6044,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             
             self._show_computation_stop()
         self._logs.append(log)
+        if self._controller is not None: self._updateDownloadLink()
 
 
     def _update_view_specific_params(self, freeParamDict=None):
@@ -6374,6 +6391,24 @@ class MuMoTstochasticSimulationView(MuMoTview):
             #plt.axes().set_aspect('equal') #for piechart
             #plt.axes().set_aspect('auto') # for barchart
             pass
+    
+    def _updateDownloadLink(self):
+        """Update the link with the latest results"""
+        csv_results = ""
+        line = 'runID' + '\t' + 'time'
+        for state in sorted(self._initialState.keys(), key=str):
+            line += '\t' + str(state)
+        line += '\n'
+        csv_results += line
+        for runID,runData in enumerate(self._latestResults):
+            for t, timestep in enumerate(runData['time']):            
+                line = str(runID) + '\t' + str(timestep) 
+                for state in sorted(self._initialState.keys(), key=str):
+                    if state in self._mumotModel._constantReactants: continue
+                    line += '\t' + str(runData[state][t])
+                line +=  '\n'
+                csv_results += line
+        self._controller._downloadWidget.value = self._controller._create_download_link(csv_results, title="Download simulation data", filename="simulationData.txt")
 
 class MuMoTmultiagentView(MuMoTstochasticSimulationView):
     """Agent on networks view on model."""
