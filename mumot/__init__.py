@@ -2195,6 +2195,12 @@ class MuMoTcontroller:
         sumNonConstReactants = 0
         for state in allReactants:
             sumNonConstReactants += self._widgetsExtraParams['init'+str(state)].value
+        substitutedReactant = [react for react in allReactants if react not in self._view._mumotModel._reactants][0] if self._view._mumotModel._systemSize is not None else None
+        disabledValue = 1
+        for i, state in enumerate(sorted(allReactants, key=str)):
+            if (substitutedReactant is None and i == 0) or (substitutedReactant is not None and state == substitutedReactant):
+                disabledValue = 1-(sumNonConstReactants-self._widgetsExtraParams['init'+str(state)].value)
+                break
             
         for i, state in enumerate(sorted(allReactants, key=str)):
             # oder of assignment is important (first, update the min and max, later, the value)
@@ -2208,12 +2214,11 @@ class MuMoTcontroller:
                     toLinkPlotFunction = True
                 except ValueError:
                     pass
-                
-
-            if i == 0:
-                disabledValue = 1-(sumNonConstReactants-self._widgetsExtraParams['init'+str(state)].value)
+             
+            disabledState = (substitutedReactant is None and i == 0) or (substitutedReactant is not None and state == substitutedReactant)
+            if disabledState:
                 #print(str(state) + ": sum is " + str(sumNonConstReactants) + " - val " + str(disabledValue))
-                self._widgetsExtraParams['init'+str(state)].value = disabledValue  
+                self._widgetsExtraParams['init'+str(state)].value = disabledValue   
             else:
                 #maxVal = 1-disabledValue if 1-disabledValue > self._widgetsExtraParams['init'+str(state)].min else self._widgetsExtraParams['init'+str(state)].min
                 maxVal = disabledValue + self._widgetsExtraParams['init'+str(state)].value
@@ -2297,8 +2302,8 @@ class MuMoTbifurcationController(MuMoTcontroller):
                             widget.disabled = True
                         elif BfcParams['substitutedReactant'][0] is not None and state == BfcParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
                             widget.disabled = True
-                    else:
-                        widget.observe(self._updateInitialStateWidgets, 'value')
+                        else:
+                            widget.observe(self._updateInitialStateWidgets, 'value')
                         
                 self._widgetsExtraParams['init'+str(state)] = widget
             
@@ -2352,8 +2357,8 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
                             widget.disabled = True
                         elif tEParams['substitutedReactant'][0] is not None and state == tEParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
                             widget.disabled = True
-                    else:
-                        widget.observe(self._updateInitialStateWidgets, 'value')
+                        else:
+                            widget.observe(self._updateInitialStateWidgets, 'value')
                         
                 self._widgetsExtraParams['init'+str(state)] = widget
             
@@ -2518,8 +2523,8 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                         widget.disabled = True
                     elif SSParams['substitutedReactant'][0] is not None and state == SSParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
                         widget.disabled = True
-                else:
-                    widget.observe(self._updateInitialStateWidgets, 'value')
+                    else:
+                        widget.observe(self._updateInitialStateWidgets, 'value')
                         
                 self._widgetsExtraParams['init'+str(state)] = widget
             
