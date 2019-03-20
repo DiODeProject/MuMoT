@@ -6398,6 +6398,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             pass
     
     def _convertLatestDataIntoCSV(self):
+        """Formatting of the latest simulation data in the CSV format"""
         csv_results = ""
         line = 'runID' + ',' + 'time'
         for state in sorted(self._initialState.keys(), key=str):
@@ -6419,6 +6420,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
         self._controller._downloadWidget.value = self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download simulation data", filename="simulationData.txt")
     
     def downloadSimulationData(self):
+        """Create a download link to access the latest results"""
         return HTML(self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download simulation data", filename="simulationData.txt"))
 
 class MuMoTmultiagentView(MuMoTstochasticSimulationView):
