@@ -6397,23 +6397,29 @@ class MuMoTstochasticSimulationView(MuMoTview):
             #plt.axes().set_aspect('auto') # for barchart
             pass
     
-    def _updateDownloadLink(self):
-        """Update the link with the latest results"""
+    def _convertLatestDataIntoCSV(self):
         csv_results = ""
-        line = 'runID' + '\t' + 'time'
+        line = 'runID' + ',' + 'time'
         for state in sorted(self._initialState.keys(), key=str):
-            line += '\t' + str(state)
+            line += ',' + str(state)
         line += '\n'
         csv_results += line
         for runID,runData in enumerate(self._latestResults):
             for t, timestep in enumerate(runData['time']):            
-                line = str(runID) + '\t' + str(timestep) 
+                line = str(runID) + ',' + str(timestep) 
                 for state in sorted(self._initialState.keys(), key=str):
                     if state in self._mumotModel._constantReactants: continue
-                    line += '\t' + str(runData[state][t])
+                    line += ',' + str(runData[state][t])
                 line +=  '\n'
                 csv_results += line
-        self._controller._downloadWidget.value = self._controller._create_download_link(csv_results, title="Download simulation data", filename="simulationData.txt")
+        return csv_results
+    
+    def _updateDownloadLink(self):
+        """Update the link with the latest results"""
+        self._controller._downloadWidget.value = self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download simulation data", filename="simulationData.txt")
+    
+    def downloadSimulationData(self):
+        return HTML(self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download simulation data", filename="simulationData.txt"))
 
 class MuMoTmultiagentView(MuMoTstochasticSimulationView):
     """Agent on networks view on model."""
