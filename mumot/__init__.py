@@ -2045,6 +2045,10 @@ class MuMoTcontroller:
     _bookmarkWidget = None
     ## advanced tab widget
     _advancedTabWidget = None
+    ## download button widget
+    _downloadWidget = None
+    ## download link widget
+    _downloadWidgetLink = None
 
     def __init__(self, paramValuesDict, paramLabelDict=None, continuousReplot=False, showPlotLimits=False, showSystemSize=False, advancedOpts=None, **kwargs):
         self._silent = kwargs.get('silent', False)
@@ -2104,8 +2108,11 @@ class MuMoTcontroller:
         self._bookmarkWidget.on_click(self._print_standalone_view_cmd)
         bookmark = kwargs.get('bookmark', True)
         
-        # self._downloadWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Download results', icon='fa-download')
-        self._downloadWidget =  HTML(self._create_download_link("","",""))
+        self._downloadWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Download results', icon='fa-download')
+        self._downloadWidgetLink =  HTML(self._create_download_link("","",""), visible=False)
+        self._downloadWidgetLink.layout.visibility = 'hidden'
+        self._downloadWidget.on_click(self._download_link_unsupported)
+
         if not self._silent and bookmark:
             #display(self._bookmarkWidget)
         
@@ -2113,8 +2120,8 @@ class MuMoTcontroller:
                                         flex_flow='row',
                                         align_items='stretch',
                                         width='70%')
-            twoButtons = widgets.Box(children=[self._bookmarkWidget, self._downloadWidget], layout=box_layout)
-            display(twoButtons)
+            threeButtons = widgets.Box(children=[self._bookmarkWidget, self._downloadWidget, self._downloadWidgetLink], layout=box_layout)
+            display(threeButtons)
 
         widget = widgets.HTML()
         widget.value = ''
@@ -2273,6 +2280,14 @@ class MuMoTcontroller:
         html = '<a download="{filename}" href="data:text/text;base64,{payload}" target="_blank">{title}</a>'
         html = html.format(payload=payload,title=title,filename=filename)
         return html
+
+    def _reveal_download_link(self, _includeParams):
+        """Make download link visible"""
+        self._downloadWidgetLink.layout.visibility='visible'
+
+    def _download_link_unsupported(self, _includeParams):
+        """Report that results download is unsupported"""
+        self._view._showErrorMessage("Results download for this view is currently unsupported")
 
 class MuMoTbifurcationController(MuMoTcontroller):
     """Controller to enable Advanced options widgets for bifurcation view."""
@@ -2500,7 +2515,13 @@ class MuMoTfieldController(MuMoTcontroller):
         
 class MuMoTstochasticSimulationController(MuMoTcontroller):
     """Controller for stochastic simulations (base class of MuMoTmultiagentController)."""
-    
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._downloadWidget.on_click(self._download_link_unsupported, remove = True)
+        self._downloadWidget.on_click(self._reveal_download_link)
+
+
     def _createAdvancedWidgets(self, SSParams, continuousReplot=False):
         initialState = SSParams['initialState'][0]
         if not SSParams['initialState'][-1]:
@@ -6417,11 +6438,11 @@ class MuMoTstochasticSimulationView(MuMoTview):
     
     def _updateDownloadLink(self):
         """Update the link with the latest results"""
-        self._controller._downloadWidget.value = self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download simulation data", filename="simulationData.txt")
+        self._controller._downloadWidgetLink.value = self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download results", filename="simulationData.txt")
     
-    def downloadSimulationData(self):
+    def downloadResults(self):
         """Create a download link to access the latest results"""
-        return HTML(self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download simulation data", filename="simulationData.txt"))
+        return HTML(self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download results", filename="simulationData.txt"))
 
 class MuMoTmultiagentView(MuMoTstochasticSimulationView):
     """Agent on networks view on model."""
