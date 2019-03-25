@@ -24,6 +24,8 @@ import warnings
 from bisect import bisect_left
 from enum import Enum
 from math import floor, log10
+import base64
+from ipywidgets import HTML
 
 #if operating system is macOS
 #use non-default matplotlib backend
@@ -2043,6 +2045,10 @@ class MuMoTcontroller:
     _bookmarkWidget = None
     ## advanced tab widget
     _advancedTabWidget = None
+    ## download button widget
+    _downloadWidget = None
+    ## download link widget
+    _downloadWidgetLink = None
 
     def __init__(self, paramValuesDict, paramLabelDict=None, continuousReplot=False, showPlotLimits=False, showSystemSize=False, advancedOpts=None, **kwargs):
         self._silent = kwargs.get('silent', False)
@@ -2101,8 +2107,21 @@ class MuMoTcontroller:
         self._bookmarkWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Paste bookmark to log', icon='fa-bookmark')
         self._bookmarkWidget.on_click(self._print_standalone_view_cmd)
         bookmark = kwargs.get('bookmark', True)
+        
+        self._downloadWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Download results', icon='fa-download')
+        self._downloadWidgetLink =  HTML(self._create_download_link("","",""), visible=False)
+        self._downloadWidgetLink.layout.visibility = 'hidden'
+        self._downloadWidget.on_click(self._download_link_unsupported)
+
         if not self._silent and bookmark:
-            display(self._bookmarkWidget)
+            #display(self._bookmarkWidget)
+        
+            box_layout = widgets.Layout(display='flex',
+                                        flex_flow='row',
+                                        align_items='stretch',
+                                        width='70%')
+            threeButtons = widgets.Box(children=[self._bookmarkWidget, self._downloadWidget, self._downloadWidgetLink], layout=box_layout)
+            display(threeButtons)
 
         widget = widgets.HTML()
         widget.value = ''
@@ -2183,6 +2202,12 @@ class MuMoTcontroller:
         sumNonConstReactants = 0
         for state in allReactants:
             sumNonConstReactants += self._widgetsExtraParams['init'+str(state)].value
+        substitutedReactant = [react for react in allReactants if react not in self._view._mumotModel._reactants][0] if self._view._mumotModel._systemSize is not None else None
+        disabledValue = 1
+        for i, state in enumerate(sorted(allReactants, key=str)):
+            if (substitutedReactant is None and i == 0) or (substitutedReactant is not None and state == substitutedReactant):
+                disabledValue = 1-(sumNonConstReactants-self._widgetsExtraParams['init'+str(state)].value)
+                break
             
         for i, state in enumerate(sorted(allReactants, key=str)):
             # oder of assignment is important (first, update the min and max, later, the value)
@@ -2196,12 +2221,11 @@ class MuMoTcontroller:
                     toLinkPlotFunction = True
                 except ValueError:
                     pass
-                
-
-            if i == 0:
-                disabledValue = 1-(sumNonConstReactants-self._widgetsExtraParams['init'+str(state)].value)
+             
+            disabledState = (substitutedReactant is None and i == 0) or (substitutedReactant is not None and state == substitutedReactant)
+            if disabledState:
                 #print(str(state) + ": sum is " + str(sumNonConstReactants) + " - val " + str(disabledValue))
-                self._widgetsExtraParams['init'+str(state)].value = disabledValue  
+                self._widgetsExtraParams['init'+str(state)].value = disabledValue   
             else:
                 #maxVal = 1-disabledValue if 1-disabledValue > self._widgetsExtraParams['init'+str(state)].min else self._widgetsExtraParams['init'+str(state)].min
                 maxVal = disabledValue + self._widgetsExtraParams['init'+str(state)].value
@@ -2222,7 +2246,7 @@ class MuMoTcontroller:
         self._errorMessage = errorWidget
 
             
-    def _downloadFile(self, data_to_download):
+    def _downloadFileWithJavascript(self, data_to_download):
         js_download = """
         var csv = '%s';
         
@@ -2248,7 +2272,22 @@ class MuMoTcontroller:
         #data_to_download.to_csv(index=False).replace('\n','\\n').replace("'","\'")
         
         return Javascript(js_download)
+    
+    def _create_download_link(self, text, title="Download file", filename="file.txt"):
+        """Create a download link"""  
+        b64 = base64.b64encode(text.encode())
+        payload = b64.decode()
+        html = '<a download="{filename}" href="data:text/text;base64,{payload}" target="_blank">{title}</a>'
+        html = html.format(payload=payload,title=title,filename=filename)
+        return html
 
+    def _reveal_download_link(self, _includeParams):
+        """Make download link visible"""
+        self._downloadWidgetLink.layout.visibility='visible'
+
+    def _download_link_unsupported(self, _includeParams):
+        """Report that results download is unsupported"""
+        self._view._showErrorMessage("Results download for this view is currently unsupported")
 
 class MuMoTbifurcationController(MuMoTcontroller):
     """Controller to enable Advanced options widgets for bifurcation view."""
@@ -2278,8 +2317,8 @@ class MuMoTbifurcationController(MuMoTcontroller):
                             widget.disabled = True
                         elif BfcParams['substitutedReactant'][0] is not None and state == BfcParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
                             widget.disabled = True
-                    else:
-                        widget.observe(self._updateInitialStateWidgets, 'value')
+                        else:
+                            widget.observe(self._updateInitialStateWidgets, 'value')
                         
                 self._widgetsExtraParams['init'+str(state)] = widget
             
@@ -2333,8 +2372,8 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
                             widget.disabled = True
                         elif tEParams['substitutedReactant'][0] is not None and state == tEParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
                             widget.disabled = True
-                    else:
-                        widget.observe(self._updateInitialStateWidgets, 'value')
+                        else:
+                            widget.observe(self._updateInitialStateWidgets, 'value')
                         
                 self._widgetsExtraParams['init'+str(state)] = widget
             
@@ -2476,7 +2515,13 @@ class MuMoTfieldController(MuMoTcontroller):
         
 class MuMoTstochasticSimulationController(MuMoTcontroller):
     """Controller for stochastic simulations (base class of MuMoTmultiagentController)."""
-    
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._downloadWidget.on_click(self._download_link_unsupported, remove = True)
+        self._downloadWidget.on_click(self._reveal_download_link)
+
+
     def _createAdvancedWidgets(self, SSParams, continuousReplot=False):
         initialState = SSParams['initialState'][0]
         if not SSParams['initialState'][-1]:
@@ -2499,8 +2544,8 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
                         widget.disabled = True
                     elif SSParams['substitutedReactant'][0] is not None and state == SSParams['substitutedReactant'][0]: # if there is a 'substituted' reactant, this is the chosen one as the disabled pop 
                         widget.disabled = True
-                else:
-                    widget.observe(self._updateInitialStateWidgets, 'value')
+                    else:
+                        widget.observe(self._updateInitialStateWidgets, 'value')
                         
                 self._widgetsExtraParams['init'+str(state)] = widget
             
@@ -2780,9 +2825,6 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
 
         """
         if self._view: self._view._update_net_params(True)
-    
-    def downloadTimeEvolution(self):
-        return self._downloadFile(self._view._latestResults[0])
     
 
 class MuMoTview:
@@ -6028,6 +6070,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             
             self._show_computation_stop()
         self._logs.append(log)
+        if self._controller is not None: self._updateDownloadLink()
 
 
     def _update_view_specific_params(self, freeParamDict=None):
@@ -6374,6 +6417,32 @@ class MuMoTstochasticSimulationView(MuMoTview):
             #plt.axes().set_aspect('equal') #for piechart
             #plt.axes().set_aspect('auto') # for barchart
             pass
+    
+    def _convertLatestDataIntoCSV(self):
+        """Formatting of the latest simulation data in the CSV format"""
+        csv_results = ""
+        line = 'runID' + ',' + 'time'
+        for state in sorted(self._initialState.keys(), key=str):
+            line += ',' + str(state)
+        line += '\n'
+        csv_results += line
+        for runID,runData in enumerate(self._latestResults):
+            for t, timestep in enumerate(runData['time']):            
+                line = str(runID) + ',' + str(timestep) 
+                for state in sorted(self._initialState.keys(), key=str):
+                    if state in self._mumotModel._constantReactants: continue
+                    line += ',' + str(runData[state][t])
+                line +=  '\n'
+                csv_results += line
+        return csv_results
+    
+    def _updateDownloadLink(self):
+        """Update the link with the latest results"""
+        self._controller._downloadWidgetLink.value = self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download results", filename="simulationData.txt")
+    
+    def downloadResults(self):
+        """Create a download link to access the latest results"""
+        return HTML(self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download results", filename="simulationData.txt"))
 
 class MuMoTmultiagentView(MuMoTstochasticSimulationView):
     """Agent on networks view on model."""
