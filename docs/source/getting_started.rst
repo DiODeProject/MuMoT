@@ -32,6 +32,14 @@ mybinder.org will `use a cached MuMoT environment <https://binderhub.readthedocs
 but this may not always be the case
 (e.g. immediately after an update to the MuMoT package).
 
+Demo notebooks
+--------------
+The following demo notebooks are also available online:
+
+* _Paper: https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=docs%2\
+FMuMoTpaperResults.ipynb (MuMoT authors, University of Sheffield)
+* _Epidemics:  https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=DemoNotebooks%2FEpidemicsDemo_SIRI.ipynb (Renato Pagliara, Princeton University)
+
 On your own machine
 -------------------
 
@@ -47,7 +55,7 @@ On your own machine
    browse to a clone of this Git repository, 
    find the ``docs`` subdirectory then 
    open ``docs/MuMoTuserManual.ipynb``, 
-   which is the MuMoT User Manual.
+   which is the MuMoT User Manual. To view demo notebooks navigate to ``DemoNotebooks``.
 
 
 .. _nbsphinx: https://nbsphinx.readthedocs.io/en/0.3.3/

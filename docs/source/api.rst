@@ -11,9 +11,9 @@ Functions
 .. autosummary::
    :toctree: autosummary
 
+   about
    parseModel
    setVerboseExceptions
-   _round_to_1
 
 Model classes
 -------------
