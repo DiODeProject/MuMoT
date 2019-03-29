@@ -33,7 +33,7 @@ If you want to contribute a feature or fix a bug then:
        to ``TestNotebooks/MuMoTtest.ipynb`` (or to/as Notebooks in the ``TestNotebooks/MiscTests/`` directory).
 
    * Documentation: include Python docstrings documentation in the numpydoc_ format for all modules, functions, classes, methods and (if applicable) attributes.
-   * Do not commit an updated User Manual Notebook containing output cells; all output cells should be stripped first using:
+   * Do not commit an updated User Manual Notebook or test notebooks containing output cells; all output cells should be stripped first using:
 
      .. code:: sh
 

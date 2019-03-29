@@ -22,7 +22,7 @@ See [https://mumot.readthedocs.io](https://mumot.readthedocs.io) for
 
   * How to **get started** with MuMoT, 
     including how to **use MuMoT online** without installing anything on your own machine.
-  * **Installation instructions**, should you want to instal it on your own machine.
+  * **Installation instructions**, should you want to install it on your own machine.
   * **Development**: how to report issues and how to contribute to the project.
-  * Information about MuMoT inc. contributors and acknowledgements.
+  * Information about MuMoT including contributors, acknowledgements, and citation details.
   * API documentation.

@@ -21,6 +21,11 @@ Windows Compatibility:
 Citation
 --------
 
+If you use MuMoT in your own work please cite the original paper describing MuMoT, as well as the DOI for the version of MuMoT you used (to credit developers involved in that version):
+
+* Marshall, J. A. R., Reina, A., Bose, T. (2019) Multiscale Modelling Tool: Mathematical modelling of collective behaviour without the maths. *In submission*
+* Marshall, J. A. R., Reina, A., Bose, T. (2019) MuMoT 1.0.0-release doi:
+
 .. todo:: Add formatted citation and BibTeX entry inc ORDA_ (FigShare) / Zenodo_ DOI.
 
 Acknowledgments

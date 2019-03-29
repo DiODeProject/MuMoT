@@ -76,18 +76,26 @@ except NameError as e:
 
 
 class MuMoTWarning(Warning):
+    """Class to report MuMoT-specific warnings.
+    """
     pass
 
 
 class MuMoTError(Exception):
+    """Class to report MuMoT-specific errors.
+    """
     pass
 
 
 class MuMoTValueError(MuMoTError):
+    """Class to report MuMoT-specific errors arising from incorrect input.
+    """
     pass
 
 
 class MuMoTSyntaxError(MuMoTError):
+    """Class to report MuMoT-specific errors arising from incorrectly-structured input.
+    """
     pass
 
 
@@ -432,21 +440,6 @@ class MuMoTmodel:
                 out = self._ratesLaTeX[repr(reactant)]
                 out = _doubleUnderscorify(_greekPrependify(out))
                 display(Math(out))
-#         if self._constantReactantsLaTeX is None:
-#             self._constantReactantsLaTeX = []
-#             reactants = map(latex, list(self._constantReactants))
-#             for reactant in reactants:
-#                 self._constantReactantsLaTeX.append(reactant)
-#             self._constantReactantsLaTeX.sort()
-#         for reactant in self._constantReactantsLaTeX:
-#             display(Math(reactant))
-        #reactant_list = []
-        #for reaction in self._stoichiometry:
-        #    for reactant in self._stoichiometry[reaction]:
-        #        if not reactant in reactant_list:
-        #            if not reactant == 'rate':
-        #                display(Math(latex(reactant)))
-        #                reactant_list.append(reactant)
 
     def showReactants(self):
         """Show a sorted LaTeX representation of the model's reactants.
@@ -467,13 +460,6 @@ class MuMoTmodel:
         for reactant in self._reactantsLaTeX:
             out = _doubleUnderscorify(_greekPrependify(reactant))
             display(Math(out))
-        #reactant_list = []
-        #for reaction in self._stoichiometry:
-        #    for reactant in self._stoichiometry[reaction]:
-        #        if not reactant in reactant_list:
-        #            if not reactant == 'rate':
-        #                display(Math(latex(reactant)))
-        #                reactant_list.append(reactant)
 
     def showRates(self):
         """Show a sorted LaTeX representation of the model's rate parameters.
@@ -490,9 +476,6 @@ class MuMoTmodel:
             out = _doubleUnderscorify(_greekPrependify(out))
             display(Math(out))
 
-#    def showRatesOLD(self):
-#        for rate in self._ratesLaTeX:
-#            display(Math(self._ratesLaTeX[rate]))
 
     def showSingleAgentRules(self):
         """Show the probabilistic transitions of the agents in each possible reactant-state.
@@ -579,15 +562,6 @@ class MuMoTmodel:
         else:
             print('Invalid input for method. Choose either method = \'massAction\' or method = \'vanKampen\'. Default is \'massAction\'.')
 
-#     
-#     ## shows ODEs derived from the leading term in van Kampen expansion
-#     def showODEs_vKE(self):
-#         ODEdict = _getODEs_vKE(_get_orderedLists_vKE, self._stoichiometry)
-#         for ode in ODEdict:
-#             out = latex(ode) + " := " + latex(ODEdict[ode])
-#             out = _doubleUnderscorify(_greekPrependify(out))
-#             display(Math(out))
-#     
 
     def getStoichiometry(self):
         """Get stoichiometry as a dictionary
@@ -935,8 +909,8 @@ class MuMoTmodel:
             parameter, and values are four values, e.g.
             ``'parameter':[initial-value, min-value, max-value, step-size]``
 
-        Other Parameters
-        ----------------
+        Keywords
+        --------
         maxTime : float, optional
             Simulation time for noise correlations.  Must be strictly positive.
             Defaults to 3.0.
@@ -1009,7 +983,7 @@ class MuMoTmodel:
         #    showStateVars = [r'' + showStateVars[kk] for kk in range(len(showStateVars))]
         
         modelView = MuMoTintegrateView(self, viewController, IntParams, showStateVars, **kwargs)
-        viewController.setView(modelView)
+        viewController._setView(modelView)
         
         viewController._setReplotFunction(modelView._plot_NumSolODE, modelView._redrawOnly)
         
@@ -1027,8 +1001,8 @@ class MuMoTmodel:
             parameter, and values are four values, e.g.
             ``'parameter': [initial-value, min-value, max-value, step-size]``.
 
-        Other Parameters
-        ----------------
+        Keywords
+        --------
         maxTime : float, optional
             Simulation time for noise correlations.  Must be strictly positive.
             Defaults to 3.0.
@@ -1104,7 +1078,7 @@ class MuMoTmodel:
         
         modelView = MuMoTnoiseCorrelationsView(self, viewController, NCParams, EOM_1stOrderMom, EOM_2ndOrderMom, **kwargs)
         
-        viewController.setView(modelView)
+        viewController._setView(modelView)
         
         viewController._setReplotFunction(modelView._plot_NumSolODE)
         
@@ -1164,12 +1138,16 @@ class MuMoTmodel:
              values each a list of ``[initial-value, min-value, max-value,
              step-size]``.  
 
-        Other Parameters
-        ----------------
+        Keywords
+        --------
         showFixedPoints : bool, optional
              Plot fixed points.  Defaults to False.
         showNoise : bool, optional
              Plot noise around fixed points.  Defaults to False.
+        runs : int, optional
+           Number of simulation runs to be executed. Must be strictly positive. Defaults to 1.
+        aggregateResults : bool, optional
+           Flag to aggregate or not the results from several runs. Defaults to True.
         fontsize : int, optional
              Font size for axis-labels.
         xlab : str, optional
@@ -1237,7 +1215,7 @@ class MuMoTmodel:
             # construct view
             modelView = MuMoTstreamView(self, viewController, advancedOpts, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params=params, **kwargs)
 
-            viewController.setView(modelView)
+            viewController._setView(modelView)
             viewController._setReplotFunction(modelView._plot_field)
 
             return viewController
@@ -1268,12 +1246,16 @@ class MuMoTmodel:
              values each a list of ``[initial-value, min-value, max-value,
              step-size]``.  
 
-        Other Parameters
-        ----------------
+        Keywords
+        --------
         showFixedPoints : bool, optional
              Plot fixed points.  Defaults to False.
         showNoise : bool, optional
              Plot noise around fixed points.  Defaults to False.
+        runs : int, optional
+           Number of simulation runs to be executed. Must be strictly positive. Defaults to 1.
+        aggregateResults : bool, optional
+           Flag to aggregate or not the results from several runs. Defaults to True.
         fontsize : int, optional
              Font size for axis-labels.
         xlab : str, optional
@@ -1341,7 +1323,7 @@ class MuMoTmodel:
             # construct view
             modelView = MuMoTvectorView(self, viewController, advancedOpts, SOL_2ndOrdMomDict, stateVariable1, stateVariable2, stateVariable3, params=params, **kwargs)
                     
-            viewController.setView(modelView)
+            viewController._setView(modelView)
             viewController._setReplotFunction(modelView._plot_field)         
             
             return viewController
@@ -1372,8 +1354,8 @@ class MuMoTmodel:
             values are four values, e.g. ``'parameter': [initial-value,
             min-value, max-value, step-size]``.  
 
-        Other Parameters
-        ----------------
+        Keywords
+        --------
         initialState : dict, optional
             Initial proportions of the reactants. State variables are the keys the
             values of which must be in range [0, 1].
@@ -1467,7 +1449,7 @@ class MuMoTmodel:
         #    showStateVars = [r'' + showStateVars[kk] for kk in range(len(showStateVars))]
         
         modelView = MuMoTbifurcationView(self, viewController, BfcParams, bifurcationParameter, stateVariable1, stateVariable2, **kwargs)
-        viewController.setView(modelView)
+        viewController._setView(modelView)
         
         viewController._setReplotFunction(modelView._plot_bifurcation)
         
@@ -1482,13 +1464,13 @@ class MuMoTmodel:
         initWidgets : dict {str,list}, optional
            Keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
 
-        Other Parameters
-        ----------------
+        Keywords
+        --------
         params: list [(str,num)], optional
             List of parameters defined as pairs ('parameter name', value). See 'Partial controllers' in the docs/MuMoTuserManual.ipynb. Rates defaults to mumot.MuMoTdefault._initialRateValue. System size defaults to mumot.MuMoTdefault._systemSize. 
         initialState : dictionary {str:float}, optional
            Initial proportions of the reactants (type: dictionary with reactants as keys and floats in range [0,1] as values).
-           See the bookmark of and example. Defaults to a dictionaly with the (alphabetically) first reactant to 1 and the rest to 0.
+           See the bookmark of and example. Defaults to a dictionary with the (alphabetically) first reactant to 1 and the rest to 0.
         maxTime : float, optional
            Simulation time. Must be strictly positive. Defaults to mumot.MuMoTdefault._maxTime.
         randomSeed : int, optional
@@ -1571,7 +1553,7 @@ class MuMoTmodel:
         viewController = MuMoTmultiagentController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=MAParams, showSystemSize=True, **kwargs)
         # Get the default network values assigned from the controller
         modelView = MuMoTmultiagentView(self, viewController, MAParams, **kwargs)
-        viewController.setView(modelView)
+        viewController._setView(modelView)
 #         viewController._setReplotFunction(modelView._computeAndPlotSimulation(self._reactants, self._rules))
         viewController._setReplotFunction(modelView._computeAndPlotSimulation, modelView._redrawOnly)
         #viewController._widgetsExtraParams['netType'].value.observe(modelView._update_net_params, 'value') #netType is special
@@ -1586,13 +1568,13 @@ class MuMoTmodel:
         initWidgets : dict {str,list}, optional
            Keys are the free-parameter or any other specific parameter, and values are four values as [initial-value, min-value, max-value, step-size]
 
-        Other Parameters
-        ----------------
+        Keywords
+        --------
         params: list [(str,num)], optional
             List of parameters defined as pairs ('parameter name', value). See 'Partial controllers' in the docs/MuMoTuserManual.ipynb. Rates defaults to mumot.MuMoTdefault._initialRateValue. System size defaults to mumot.MuMoTdefault._systemSize. 
         initialState : dictionary {str:float}, optional
            Initial proportions of the reactants (type: dictionary with reactants as keys and floats in range [0,1] as values).
-           See the bookmark of and example. Defaults to a dictionaly with the (alphabetically) first reactant to 1 and the rest to 0.
+           See the bookmark of and example. Defaults to a dictionary with the (alphabetically) first reactant to 1 and the rest to 0.
         maxTime : float, optional
            Simulation time. Must be strictly positive. Defaults to mumot.MuMoTdefault._maxTime.
         randomSeed : int, optional
@@ -1646,88 +1628,12 @@ class MuMoTmodel:
         viewController = MuMoTstochasticSimulationController(paramValuesDict=paramValuesDict, paramLabelDict=self._ratesLaTeX, continuousReplot=False, advancedOpts=ssaParams, showSystemSize=True, **kwargs)
 
         modelView = MuMoTSSAView(self, viewController, ssaParams, **kwargs)
-        viewController.setView(modelView)
+        viewController._setView(modelView)
         
         viewController._setReplotFunction(modelView._computeAndPlotSimulation, modelView._redrawOnly)
         
         return viewController
 
-#         if stateVariable2 is None:
-#             # 2-d bifurcation diagram
-#             # create widgets
-# 
-#             if self._systemSize is not None:
-#                 ## @todo: shouldn't allow system size to be varied?
-#                 pass
-# #                self._paramValues.append(1)
-# #                self._paramNames.append(str(self._systemSize))
-# #                widget = widgets.FloatSlider(value = 1, min = _rateLimits[0], max = _rateLimits[1], step = _rateStep, description = str(self._systemSize), continuous_update = False)
-# #                widget.on_trait_change(self._replot_bifurcation2D, 'value')
-# #                self._widgets.append(widget)
-# #                display(widget)
-#             else:
-#                 print('Cannot attempt bifurcation plot until system size is set, using substitute()')
-#                 return
-#             for rate in self._rates:
-#                 if str(rate) != bifurcationParameter:
-#                     self._paramValues.append(_initialRateValue)
-#                     self._paramNames.append(str(rate))
-#                     widget = widgets.FloatSlider(value = _initialRateValue, min = _rateLimits[0], max = _rateLimits[1], step = _rateStep, description = str(rate), continuous_update = False)
-#                     widget.on_trait_change(self._replot_bifurcation2D, 'value')
-#                     self._widgets.append(widget)
-#                     display(widget)
-#             widget = widgets.HTML(value = '')
-#             self._errorMessage = widget                                ## @todo: add to __init__()
-#             display(self._errorMessage)
-#             
-#             # Prepare the system to start close to a steady state
-#             self._bifurcationParameter = bifurcationParameter          ## @todo: remove hack (bifurcation parameter for multiple possible bifurcations needs to be stored in self)
-#             self._stateVariable1 = stateVariable1                      ## @todo: remove hack (state variable for multiple possible bifurcations needs to be stored in self)
-# #            self._pyDSode.set(pars = {bifurcationParameter: 0} )       # Lower bound of the bifurcation parameter (@todo: set dynamically)
-# #            self._pyDSode.set(pars = self._pyDSmodel.pars )       # Lower bound of the bifurcation parameter (@todo: set dynamically)
-# #            self._pyDSode.pars = {bifurcationParameter: 0}             # Lower bound of the bifurcation parameter (@todo: set dynamically?)
-#             initconds = {stateVariable1: self._paramDict[str(self._systemSize)] / len(self._reactants)} ## @todo: guess where steady states are?
-#             for reactant in self._reactants:
-#                 if str(reactant) != stateVariable1:
-#                     initconds[str(reactant)] = self._paramDict[str(self._systemSize)] / len(self._reactants)
-# #            self._pyDSmodel.ics = initconds
-#             self._pyDSmodel.ics      = {'A': 0.1, 'B': 0.9 }    ## @todo: replace            
-# #            self._pyDSode.set(ics = initconds)
-#             self._pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)  ## @todo: add to __init__()
-#             self._pyDSode.set(pars = {bifurcationParameter: 5} )                       ## @todo remove magic number
-#             self._pyDScont = dst.ContClass(pyDSode)              # Set up continuation class (@todo: add to __init__())
-#             ## @todo: add self._pyDScontArgs to __init__()
-#             self._pyDScontArgs = dst.args(name='EQ1', type='EP-C')     # 'EP-C' stands for Equilibrium Point Curve. The branch will be labeled 'EQ1'.
-#             self._pyDScontArgs.freepars     = [bifurcationParameter]   # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
-#             self._pyDScontArgs.MaxNumPoints = 450                      # The following 3 parameters are set after trial-and-error @todo: how to automate this?
-#             self._pyDScontArgs.MaxStepSize  = 1e-1
-#             self._pyDScontArgs.MinStepSize  = 1e-5
-#             self._pyDScontArgs.StepSize     = 2e-3
-#             self._pyDScontArgs.LocBifPoints = ['LP', 'BP']                    ## @todo WAS 'LP' (detect limit points / saddle-node bifurcations)
-#             self._pyDScontArgs.SaveEigen    = True                     # to tell unstable from stable branches
-# #            self._pyDScontArgs.CalcStab     = True
-# 
-#             plt.ion()
-# #            self._bifurcation2Dfig = plt.figure(1)                     ## @todo: add to __init__()
-#             self._pyDScont.newCurve(self._pyDScontArgs)
-#             try:
-#                 try:
-#                     self._pyDScont['EQ1'].backward()
-#                 except:
-#                     self._errorMessage.value = 'Continuation failure'
-#                 try:
-#                     self._pyDScont['EQ1'].forward()                                  ## @todo: how to choose direction?
-#                 except:
-#                     self._errorMessage.value = 'Continuation failure'
-#                     self._errorMessage.value = ''
-#             except ZeroDivisionError:
-#                 self._errorMessage.value = 'Division by zero'
-# #            self._pyDScont['EQ1'].info()
-#             self._pyDScont.display([bifurcationParameter, stateVariable1], stability = True, figure = 1)
-#             self._pyDScont.plot.fig1.axes1.axes.set_title('Bifurcation Diagram')
-#         else:
-#             # 3-d bifurcation diagram
-#             assert false
 
     ## get the pair of set (reactants, constantReactants). This method is necessary to have all reactants (to set the system size) also after a substitution has occurred
     def _getAllReactants(self):
@@ -1947,35 +1853,6 @@ class MuMoTmodel:
 
         return tmpfile.name[tmpfile.name.find(self._tmpdirpath):]  
 
-#     def _toHTML(self, label):
-#         # DEPRECATED
-#         errorLabel = label
-#         htmlLabel = r'<<I>'
-#         parts = label.split('_')
-#         label = parts[0]
-#         if label[0] == '\\':
-#             label = label.replace('\\','&')
-#             label += ';'
-# 
-#         if len(parts) > 1:
-#             subscript = parts[1]
-#             if len(parts) > 2:
-#                 raise MuMoTSyntaxError("Nested subscripts not currently supported: " + subscript + " in " + errorLabel)
-#                 return
-#             if len(subscript) > 1:
-#                 if  subscript[0] == '{' and subscript[len(subscript) - 1] == '}':
-#                     subscript = subscript[1:-1]
-#                     if '{' in subscript or '}' in subscript:
-#                         raise MuMoTSyntaxError("Malformed subscript: {" + subscript + "} in " + errorLabel)
-#                         return
-#                 else:
-#                     raise MuMoTSyntaxError("Non single-character subscript not {} delimited: " + subscript + " in " + errorLabel)
-#                     return
-#             htmlLabel += label + "<SUB>" + subscript + "</SUB>" + r'</I>>'
-#         else:
-#             htmlLabel += label + r'</I>>'
-#         
-#         return htmlLabel
     
 
     def __init__(self):
@@ -2108,7 +1985,7 @@ class MuMoTcontroller:
         self._bookmarkWidget.on_click(self._print_standalone_view_cmd)
         bookmark = kwargs.get('bookmark', True)
         
-        self._downloadWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Download results', icon='fa-download')
+        self._downloadWidget = widgets.Button(description='', disabled=False, button_style='', tooltip='Download results', icon='fa-save')
         self._downloadWidgetLink =  HTML(self._create_download_link("","",""), visible=False)
         self._downloadWidgetLink.layout.visibility = 'hidden'
         self._downloadWidget.on_click(self._download_link_unsupported)
@@ -2190,10 +2067,17 @@ class MuMoTcontroller:
             if atLeastOneAdvancedWidget: display(self._advancedTabWidget)
 
 
-    def setView(self, view):
+    def _setView(self, view):
         self._view = view
 
     def showLogs(self, tail=False):
+        """Show logs from associated view.
+
+        Parameters
+        ----------
+        tail : bool, optional
+           Flag to show only tail entries from logs. Defaults to False.
+        """
         self._view.showLogs(tail)
         
     def _updateInitialStateWidgets(self, _=None):
@@ -2899,14 +2783,6 @@ class MuMoTview:
 
 
     def _show_computation_start(self):
-        # ax = plt.gca()
-        # ax.set_facecolor('xkcd:salmon')
-        # try:
-        #     plt.pause(0.0000001)
-        #     #ax.redraw_in_frame()
-        #     print("pink on")
-        # except:
-        #     pass
         if self._controller is not None:
             self._controller._bookmarkWidget.style.button_color = 'pink'
         
@@ -3255,6 +3131,13 @@ class MuMoTview:
             return Symbol(item)
                         
     def showLogs(self, tail=False):
+        """Show logs from view.
+
+        Parameters
+        ----------
+        tail : bool, optional
+           Flag to show only tail entries from logs. Defaults to False.
+        """
         if tail:
             tailLength = 5
             print("Showing last " + str(min(tailLength, len(self._logs))) + " of " + str(len(self._logs)) + " log entries:")
@@ -3801,30 +3684,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
                 self._plotProportions = self._getWidgetParamValue('plotProportions', self._controller._widgetsPlotOnly) # self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
             self._maxTime = self._getWidgetParamValue('maxTime', self._controller._widgetsExtraParams) # self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
                
-#      
-#     def _get_tEParams(self):
-#         freeParamDict=self._get_argDict()
-#         if self._controller is None:  
-#             # storing the initial state
-#             initialState = {}
-#             for state,pop in self._tEParams["initialState"].items():
-#                 if isinstance(state, str):
-#                     initialState[process_sympy(state)] = pop # convert string into SymPy symbol
-#                 else:
-#                     initialState[state] = pop
-#          
-#         else:
-#             # storing the initial state
-#             initialState = {}
-#             for state,pop in self._tEParams["initialState"][0].items():
-#                 if isinstance(state, str):
-#                     initialState[process_sympy(state)] = pop[0] # convert string into SymPy symbol
-#                 else:
-#                     initialState[state] = pop[0]
-#                          
-#         return initialState
-#             
-
  
 class MuMoTintegrateView(MuMoTtimeEvolutionView):
     """Numerical solution of ODEs plot view on model."""
@@ -4778,35 +4637,6 @@ class MuMoTfieldView(MuMoTview):
                     #Ell_height = [SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)] for kk in range(len(SOL_2ndOrdMomDictList))] 
                
                 FixedPoints.append(EVplot)
-#                 
-#                 with io.capture_output() as log:
-#                     for kk in range(len(self._realEQsol)):
-#                         realEQsolStr = ""
-#                         for key, val in self._realEQsol[kk].items():
-#                             realEQsolStr += str(key) + ' = ' + str(_roundNumLogsOut(val)) + ', '
-#                         evalString = ""
-#                         for val in self._EV[kk]:
-#                             evalString +=  str(_roundNumLogsOut(val)) + ', ' 
-#                         evecString = ""
-#                         for matrix in self._Evects[kk]:
-#                             evecStringPart = "["
-#                             for entry in matrix.col(0):
-#                                 if evecStringPart == "[":
-#                                     evecStringPart +=  str(_roundNumLogsOut(entry))
-#                                 else:
-#                                     evecStringPart +=  ', '  + str(_roundNumLogsOut(entry)) 
-#                             evecStringPart += "]"
-#                             if evecString == "":
-#                                 evecString += evecStringPart 
-#                             else:
-#                                 evecString += ' and ' + evecStringPart   
-#                         print('Fixed point'+str(kk+1)+': ', realEQsolStr, 'with eigenvalues: ', evalString,
-#                               'and eigenvectors: ', evecString)
-#                         #print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]),
-#                         #      'and eigenvectors:', str(Evects[kk]))
-#                 self._logs.append(log)
-#                 
-            
             else:
                 FixedPoints = None
             
@@ -5134,33 +4964,6 @@ class MuMoTvectorView(MuMoTfieldView):
         with io.capture_output() as log:
             self._appendFixedPointsToLogs(self._realEQsol, self._EV, self._Evects)
         self._logs.append(log)
-# 
-#         with io.capture_output() as log:
-#             for kk in range(len(self._realEQsol)):
-#                 realEQsolStr = ""
-#                 for key, val in self._realEQsol[kk].items():
-#                     realEQsolStr += str(key) + ' = ' + str(_roundNumLogsOut(val)) + ', '
-#                 evalString = ""
-#                 for val in self._EV[kk]:
-#                     evalString +=  str(_roundNumLogsOut(val)) + ', ' 
-#                 evecString = ""
-#                 for matrix in self._Evects[kk]:
-#                     evecStringPart = "["
-#                     for entry in matrix.col(0):
-#                         if evecStringPart == "[":
-#                             evecStringPart +=  str(_roundNumLogsOut(entry))
-#                         else:
-#                             evecStringPart +=  ', '  + str(_roundNumLogsOut(entry)) 
-#                     evecStringPart += "]"
-#                     if evecString == "":
-#                         evecString += evecStringPart 
-#                     else:
-#                         evecString += ' and ' + evecStringPart   
-#                 print('Fixed point'+str(kk+1)+': ', realEQsolStr, 'with eigenvalues: ', evalString,
-#                       'and eigenvectors: ', evecString)
-#                 #print('Fixed point'+str(kk+1)+':', realEQsol[kk], 'with eigenvalues:', str(EV[kk]),
-#                 #      'and eigenvectors:', str(Evects[kk]))
-#         self._logs.append(log)
 
 
 class MuMoTstreamView(MuMoTfieldView):
@@ -6441,7 +6244,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
         self._controller._downloadWidgetLink.value = self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download results", filename="simulationData.txt")
     
     def downloadResults(self):
-        """Create a download link to access the latest results"""
+        """Create a download link to access the latest results."""
         return HTML(self._controller._create_download_link(self._convertLatestDataIntoCSV(), title="Download results", filename="simulationData.txt"))
 
 class MuMoTmultiagentView(MuMoTstochasticSimulationView):
@@ -7501,7 +7304,7 @@ def setVerboseExceptions(verbose=True):
 
     Parameters
     ----------
-    verbose : boolean, optional
+    verbose : bool, optional
         Whether to show a exception traceback.  Defaults to True.
 
     """
@@ -8153,192 +7956,6 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
     return SOL_1stOrderMom[0], NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder 
  
 
-# def _getNoise(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
-#     P, M_1, M_2, t = symbols('P M_1 M_2 t')
-#     
-#     nvec = []
-#     for key1 in stoich:
-#         for key2 in stoich[key1]:
-#             if not key2 == 'rate':
-#                 if not key2 in nvec:
-#                     nvec.append(key2)
-#     nvec = sorted(nvec, key=default_sort_key)
-#     assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
-# 
-#     NoiseDict = {}
-#     for kk in range(len(nvec)):
-#         NoiseDict[nvec[kk]] = Symbol('eta_'+str(nvec[kk]))
-#     FPEdict, substring = _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich)
-#     print(len(NoiseDict))
-#     
-#     NoiseSub1stOrder = {}
-#     NoiseSub2ndOrder = {}
-#     
-#     if len(NoiseDict)==2:
-#         Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],t)
-#     elif len(NoiseDict)==3:
-#         Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],t)
-#     else:
-#         Pdim = P(NoiseDict[nvec[0]],NoiseDict[nvec[1]],NoiseDict[nvec[2]],NoiseDict[nvec[3]],t)
-#         
-#     for noise1 in NoiseDict:
-#         NoiseSub1stOrder[NoiseDict[noise1]*Pdim] = M_1(NoiseDict[noise1])
-#         for noise2 in NoiseDict:
-#             for noise3 in NoiseDict:
-#                 key = NoiseDict[noise1]*NoiseDict[noise2]*Derivative(Pdim,NoiseDict[noise3])
-#                 if key not in NoiseSub1stOrder:
-#                     if NoiseDict[noise1] == NoiseDict[noise2] and NoiseDict[noise3] == NoiseDict[noise1]:
-#                         NoiseSub1stOrder[key] = -2*M_1(NoiseDict[noise1])
-#                     elif NoiseDict[noise1] != NoiseDict[noise2] and NoiseDict[noise3] == NoiseDict[noise1]:
-#                         NoiseSub1stOrder[key] = -M_1(NoiseDict[noise2])
-#                     elif NoiseDict[noise1] != NoiseDict[noise2] and NoiseDict[noise3] == NoiseDict[noise2]:
-#                         NoiseSub1stOrder[key] = -M_1(NoiseDict[noise1])
-#                     elif NoiseDict[noise1] != NoiseDict[noise3] and NoiseDict[noise3] != NoiseDict[noise2]:
-#                         NoiseSub1stOrder[key] = 0
-#                     else:
-#                         NoiseSub1stOrder[key] = 0 
-#                 key2 = NoiseDict[noise1]*Derivative(Pdim,NoiseDict[noise2],NoiseDict[noise3])
-#                 if key2 not in NoiseSub1stOrder:
-#                     NoiseSub1stOrder[key2] = 0   
-#     
-#     for noise1 in NoiseDict:
-#         for noise2 in NoiseDict:
-#             key = NoiseDict[noise1]*NoiseDict[noise2]*Pdim
-#             if key not in NoiseSub2ndOrder:
-#                 NoiseSub2ndOrder[key] = M_2(NoiseDict[noise1]*NoiseDict[noise2])
-#             for noise3 in NoiseDict:
-#                 for noise4 in NoiseDict:
-#                     key2 = NoiseDict[noise1]*NoiseDict[noise2]*NoiseDict[noise3]*Derivative(Pdim,NoiseDict[noise4])
-#                     if key2 not in NoiseSub2ndOrder:
-#                         if noise1 == noise2 and noise2 == noise3 and noise3 == noise4:
-#                             NoiseSub2ndOrder[key2] = -3*M_2(NoiseDict[noise1]*NoiseDict[noise1])
-#                         elif noise1 == noise2 and noise2 != noise3 and noise1 == noise4:
-#                             NoiseSub2ndOrder[key2] = -2*M_2(NoiseDict[noise1]*NoiseDict[noise3])
-#                         elif noise1 == noise2 and noise2 != noise3 and noise3 == noise4:
-#                             NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise1]*NoiseDict[noise2])
-#                         elif noise1 != noise2 and noise2 == noise3 and noise1 == noise4:
-#                             NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise2]*NoiseDict[noise3])
-#                         elif noise1 != noise2 and noise2 == noise3 and noise3 == noise4:
-#                             NoiseSub2ndOrder[key2] = -2*M_2(NoiseDict[noise1]*NoiseDict[noise2])
-#                         elif noise1 != noise2 and noise2 != noise3 and noise1 != noise3:
-#                             if noise1 == noise4:
-#                                 NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise2]*NoiseDict[noise3])
-#                             elif noise2 == noise4:
-#                                 NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise1]*NoiseDict[noise3])
-#                             elif noise3 == noise4:
-#                                 NoiseSub2ndOrder[key2] = -M_2(NoiseDict[noise1]*NoiseDict[noise2])
-#                             else:
-#                                 NoiseSub2ndOrder[key2] = 0
-#                         else:
-#                             NoiseSub2ndOrder[key2] = 0
-#                     key3 = NoiseDict[noise1]*NoiseDict[noise2]*Derivative(Pdim,NoiseDict[noise3],NoiseDict[noise4])
-#                     if key3 not in NoiseSub2ndOrder:
-#                         if noise1 == noise3 and noise2 == noise4:
-#                             if noise1 == noise2:
-#                                 NoiseSub2ndOrder[key3] = 2
-#                             else:
-#                                  NoiseSub2ndOrder[key3] = 1
-#                         elif noise1 == noise4 and noise2 == noise3:
-#                             if noise1 == noise2:
-#                                 NoiseSub2ndOrder[key3] = 2
-#                             else:
-#                                 NoiseSub2ndOrder[key3] = 1
-#                         else:
-#                             NoiseSub2ndOrder[key3] = 0
-#     NoiseSubs1stOrder = {}                   
-#     EQsys1stOrdMom = []
-#     EOM_1stOrderMom = {}
-#     for fpe_lhs in FPEdict: 
-#         for noise in NoiseDict:
-#             eq1stOrderMoment = (NoiseDict[noise]*FPEdict[fpe_lhs]).expand() 
-#             eq1stOrderMoment = eq1stOrderMoment.subs(NoiseSub1stOrder)
-#             EQsys1stOrdMom.append(eq1stOrderMoment)
-#             if M_1(NoiseDict[noise]) not in EOM_1stOrderMom:
-#                 EOM_1stOrderMom[M_1(NoiseDict[noise])] = eq1stOrderMoment
-#                 NoiseSubs1stOrder[M_1(NoiseDict[noise])] = r'<'+latex(NoiseDict[noise])+'>'
-#     print(EOM_1stOrderMom)
-#             
-#     if len(NoiseDict)==2:
-#         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]])], dict=True)
-#     elif len(NoiseDict)==3:
-#         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]]),M_1(NoiseDict[nvec[2]])], dict=True)
-#     else:
-#         SOL_1stOrderMom = solve(EQsys1stOrdMom, [M_1(NoiseDict[nvec[0]]),M_1(NoiseDict[nvec[1]]),M_1(NoiseDict[nvec[2]]),M_1(NoiseDict[nvec[3]])], dict=True)
-#     print(SOL_1stOrderMom)
-#     
-#     NoiseSubs2ndOrder = {}
-#     EQsys2ndOrdMom = []
-#     EOM_2ndOrderMom = {}
-#     for fpe_lhs in FPEdict: 
-#         for noise1 in NoiseDict:
-#             for noise2 in NoiseDict:
-#                 eq2ndOrderMoment = (NoiseDict[noise1]*NoiseDict[noise2]*FPEdict[fpe_lhs]).expand() 
-#                 eq2ndOrderMoment = eq2ndOrderMoment.subs(NoiseSub2ndOrder)
-#                 eq2ndOrderMoment = eq2ndOrderMoment.subs(NoiseSub1stOrder)
-#                 eq2ndOrderMoment = eq2ndOrderMoment.subs(SOL_1stOrderMom[0])
-#                 if len(NoiseDict)==2:
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]))
-#                 elif len(NoiseDict)==3:
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]]))
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]))
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]]))
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]]))
-#                 else:
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]))
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]))
-#                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]))
-#                 eq2ndOrderMoment = eq2ndOrderMoment.simplify()
-#                 if eq2ndOrderMoment not in EQsys2ndOrdMom:
-#                     EQsys2ndOrdMom.append(eq2ndOrderMoment)
-#                 if M_2(NoiseDict[noise1]*NoiseDict[noise2]) not in EOM_2ndOrderMom:
-#                     EOM_2ndOrderMom[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = eq2ndOrderMoment
-#                     NoiseSubs2ndOrder[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = r'<'+latex(NoiseDict[noise1]*NoiseDict[noise2])+'>'
-#     print(EOM_2ndOrderMom)
-#                     
-#     SOL_2ndOrdMomDict = {} 
-#     if len(NoiseDict)==2:
-#         SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])]))[0] #only one set of solutions (if any) in linear system of equations
-#         
-#         if M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]) in SOL_2ndOrderMom:
-#             ZsubDict = {M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]): 0}
-#             SOL_2ndOrderMomMod = []
-#             for nn in range(len(SOL_2ndOrderMom)):
-#                 SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
-#             SOL_2ndOrderMom = SOL_2ndOrderMomMod
-#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
-#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[1]
-#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[2]
-#     
-#     elif len(NoiseDict)==3:
-#         SOL_2ndOrderMom = list(linsolve(EQsys2ndOrdMom, [M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]]), 
-#                                                          M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]]), 
-#                                                          M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]]), 
-#                                                          M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]]), 
-#                                                          M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]]), 
-#                                                          M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]])]))[0] #only one set of solutions (if any) in linear system of equations; hence index [0]
-#         ZsubDict = {}
-#         for noise1 in NoiseDict:
-#             for noise2 in NoiseDict:
-#                 if M_2(NoiseDict[noise1]*NoiseDict[noise2]) in SOL_2ndOrderMom:
-#                     ZsubDict[M_2(NoiseDict[noise1]*NoiseDict[noise2])] = 0
-#         if len(ZsubDict) > 0:
-#             SOL_2ndOrderMomMod = []
-#             for nn in range(len(SOL_2ndOrderMom)):
-#                 SOL_2ndOrderMomMod.append(SOL_2ndOrderMom[nn].subs(ZsubDict))
-#         SOL_2ndOrderMom = SOL_2ndOrderMomMod
-#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[0]])] = SOL_2ndOrderMom[0]
-#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[1]
-#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[2]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[2]
-#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[1]])] = SOL_2ndOrderMom[3]
-#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[0]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[4]
-#         SOL_2ndOrdMomDict[M_2(NoiseDict[nvec[1]]*NoiseDict[nvec[2]])] = SOL_2ndOrderMom[5]
-#     print(SOL_2ndOrdMomDict)    
-#       
-#     return EOM_1stOrderMom, SOL_1stOrderMom[0], NoiseSubs1stOrder, EOM_2ndOrderMom, SOL_2ndOrdMomDict, NoiseSubs2ndOrder 
     
 
 def _getODEs_vKE(_get_orderedLists_vKE, stoich):
@@ -9846,27 +9463,3 @@ def _roundNumLogsOut(number):
     # if number is real
     else:
         return str(number.round(4))
-
-#def _roundNumLogsOutOLD(number):
-#    """ Round numerical output in Logs to 3 decimal places. """
-#    # if number is complex
-#    if type(number) == sympy.Add:
-#        return str(round(sympy.re(number), 3)) + str(round(sympy.im(number), 3)) + 'j'
-#    # if number is real
-#    else:
-#        return str(round(number, 3))
-
-
-
-# import gc, inspect
-# def _find_obj_names(obj):
-#     frame = inspect.currentframe()
-#     for frame in iter(lambda: frame.f_back, None):
-#         frame.f_locals
-#     obj_names = []
-#     for referrer in gc.get_referrers(obj):
-#         if isinstance(referrer, dict):
-#             for k, v in referrer.items():
-#                 if v is obj:
-#                     obj_names.append(k)
-#     return obj_names
