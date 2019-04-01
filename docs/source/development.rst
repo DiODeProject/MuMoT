@@ -22,6 +22,7 @@ If you want to contribute a feature or fix a bug then:
    so you have your own personal MuMoT repository on GitHub.
 #. Create a `feature branch <https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow>`__ 
    off the master branch within your personal MuMoT repository.
+   See the *branch and versioning policy* below for more information about how branches, tags and versions are managed in this project.
 #. Make commits to that branch:
 
    * Style: write code using `standard Python naming conventions <pep8>`.
@@ -43,7 +44,7 @@ If you want to contribute a feature or fix a bug then:
 
    * Use comments containing ``@todo`` in Python code for reminders.
 
-#. When you are ready to merge your feature branch into the master branch of the 'upstream' repository: 
+#. When you are ready to merge your feature branch into the ``master`` branch of the 'upstream' repository: 
 
    #. Run all tests using tox (see Testing_) first.
    #. Create a `Pull Request`_ to request that 
@@ -277,30 +278,62 @@ which will increase mybinder.org startup times from seconds to ~15 mins.
 **Button**: A mybinder.org session for the User Manual as of the tip of the master branch can be started by 
 following the link in the instructions for :ref:`getting started online <mybinder_usage>`.
 
-Creating a new release
-----------------------
+Branch, tag and version policy, inc. how to create a new release
+----------------------------------------------------------------
 
-#. Update the file ``CHANGELOG.md`` with changes since the last release.
-   You can derive this list of changes from commits made since the last release; 
-   if the last release was tagged in git with ``v0.8.0`` 
-   then you can see the first line of all commit commnets since then with: ::
+The project uses `semantic versioning`_ e.g. compared to version ``0.8.0``:
+   
+    - ``0.8.1`` is a *patch* version increase - backwards-compatible bugfixes *only*
+    - ``0.9.0`` is *minor* version increase - new functionality added in backwards-compatible manner
+    - ``1.0.0`` is a *major* version increase - introduces incompatible API changes
 
-      $ git checkout master
-      $ git log --pretty=oneline --abbrev-commit v0.9.0..HEAD
+In this project the use of branches and git tags is as follows:
 
-#. Ensure all GitHub Issues tagged with the pending release (*Milestone*) 
+ - The ``master`` branch is the only long-lived *active* branch
+ - New features are developed by creating **feature branches** from the ``master`` branch;
+   these feature branches are then ultimately merged back into ``master`` via Pull Requests then deleted.
+ - A *maintenance* branch is created per minor release
+ - The only commits added to maintenance branches are:
+
+   - Fixes for critical bugs
+   - Source changes that update the version number in ``mumot/_version.py`` or the changelog.
+
+To illustrate this:
+
+.. image:: /_static/branch_model.png
+
+To create a release:
+
+#. Decide on the type of the next release (patch, major or minor), 
+   which depends on the nature of the changes.
+
+#. (Related) determine the appropriate version number for this pending release.
+
+#. *Major/minor release only*:
+   ensure all GitHub Issues tagged with the pending release (*Milestone*) 
    have either been addressed or 
    are reassigned to a different Milestone.
    Ensure all pull requests against ``master`` relating to the pendiing Milestone have been merged and all CI tests pass.
 
-#. Create a *release branch*: ::
+#. *Major/minor release only*: create a new maintenance branch with an appropriate name.  E.g.::
    
-      $ git checkout -b release-0.9.0 master
-      Switched to a new branch "release-0.9.0"
+      $ git checkout -b 0.9.x master
+      Switched to a new branch "0.9.x"
+      
+#. *Patch release only*: merge critical fixes into the appropriate maintenance branch.  E.g.::
 
-#. Decide on the version of the next release.  
-   Do this once you are familiar with the principles of `semantic versioning`_; 
-   this will help you decide whether the next release after ``0.8.0`` should be ``0.8.1``, ``0.9.0`` or ``1.0.0``.
+      $ git checkout -b 0.9.x master
+      Switched to a new branch "0.9.x"
+      git merge fixed_critical_bug_1
+      git merge fixed_critical_bug_2
+
+#. Update the file ``CHANGELOG.md`` with changes since the last release.
+   You can derive this list of changes from commits made since the last release; 
+   if the last release was tagged in git with ``v0.8.0`` 
+   then you can see the first line of all commit comments since then with: ::
+
+      $ git checkout master
+      $ git log --pretty=oneline --abbrev-commit v0.9.0..HEAD
 
 #. Bump the version in ``mumot/_version`` from e.g.
 
@@ -316,8 +349,9 @@ Creating a new release
       version_info = (0, 9, 0)
         __version__ = "{}.{}.{}".format(*version_info)
 
-   Package versions (``setup.py``) and Sphinx docs versions are automatically
-   set using this variable.
+   Package versions (``setup.py``) and 
+   the version info in rendered Sphinx docs 
+   are automatically set using this variable.
 
    Don't forget to: ::
 
