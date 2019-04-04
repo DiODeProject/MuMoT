@@ -108,7 +108,7 @@ Installing MuMoT within a VirtualEnv
 
    .. code:: sh
 
-      python -m pip install path/to/clone/of/MuMoT/repository
+      python3 -m pip install path/to/clone/of/MuMoT/repository
       jupyter nbextension enable --py widgetsnbextension --sys-prefix
 
 Installing MuMoT from PyPI
@@ -118,13 +118,13 @@ Follow the instructions as above for 'Installing MuMoT within a VirtualEnv', but
 
 .. code:: sh
 
-      python -m pip install path/to/clone/of/MuMoT/repository
+      python3 -m pip install path/to/clone/of/MuMoT/repository
 
 with
 
 .. code:: sh
 
-      python -m pip install mumot
+      python3 -m pip install mumot
 
 (Optional) Enable tables of contents for individual Notebooks
 -------------------------------------------------------------
