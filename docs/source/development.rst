@@ -63,9 +63,9 @@ Follow the :ref:`install instructions <install>` but ensure you run:
 
 .. code:: sh
 
-   python -m pip install path/to/clone/of/MuMoT/repository[test,docs]
+   python3 -m pip install path/to/clone/of/MuMoT/repository[test,docs]
 
-instead of just ``python -m pip install path/to/clone/of/MuMoT/repository``.
+instead of just ``python3 -m pip install path/to/clone/of/MuMoT/repository``.
 The '``[test,docs]``' bit ensures that the optional dependencies required to run tests and build the documentation are installed.
 
 If you make local changes to the MuMoT Python package and want to use the the updated package you should
@@ -74,7 +74,7 @@ If you make local changes to the MuMoT Python package and want to use the the up
 
    .. code:: sh
 
-      python -m pip install --upgrade --no-deps path/to/clone/of/MuMoT/repository[test,docs]
+      python3 -m pip install --upgrade --no-deps path/to/clone/of/MuMoT/repository[test,docs]
 
 #. Restart any running IPython kernels within which you have imported the MuMoT package.
 
@@ -212,13 +212,20 @@ Building the docs locally
 
    .. code::
 
-      python -m pip install path/to/clone/of/MuMoT/repository[docs]
+      python3 -m pip install path/to/clone/of/MuMoT/repository[docs]
+
 #. Move into the ``docs`` subdirectory within your MuMoT git repository:
 
    .. code::
 
       cd path/to/clone/of/MuMoT/repository
       cd docs
+
+#. Install Sphinx:
+
+   .. code::
+
+      python3 -m pip install sphinx
 
 #. Use Sphinx to build HTML documentation:
 
@@ -351,16 +358,17 @@ To create a release:
 
    Package versions (``setup.py``) and 
    the version info in rendered Sphinx docs 
-   are automatically set using this variable.
+   are automatically set using this variable. Ensure that the version number uses only digits, to comply with PyPI naming restrictions.
 
    Don't forget to: ::
 
       $ git commit -a -m "Bumped version number to 0.9.0"
 
-   and add an `annotated tag`_ to this commit: ::
+   and add an `annotated tag`_ to this commit and push the branch: ::
 
       $ git tag -a v0.9.0 -m "Release 0.9.0"
       $ git push upstream --tags
+      $ git push
 
    Here we assume that you've set up your local git repository with a remote called ``upstream`` that points at ``github.com/DiODeProject/MuMoT.git`` e.g. ::
 
@@ -400,7 +408,7 @@ To create a release:
 #. Follow the :ref:`MuMoT installation instructions <install>` but at the relevant point
    try to install ``mumot`` from Test PyPI instead of from the MuMoT git repository. ::
 
-      $ python3 -m pip install --index-url https://test.pypi.org/simple/ mumot
+      $ python3 -m pip install --extra-index-url https://testpypi.python.org/pypi mumot
 
 #. If uploading to Test PyPI then downloading and installing from Test PyPI was successful, then do the same for the main PyPI:
 
@@ -424,13 +432,13 @@ To create a release:
       version_info = (0, 9, 0, 'dev')
         __version__ = "{}.{}.{}-{}".format(*version_info)
 
-#. Ensure there is an item in ORDA_ (The University of Sheffield's Research Data Catalogue and Repository) for this release. 
+#. Ensure there is an item in ORDA_ (The University of Sheffield's Research Data Catalogue and Repository) for this release, listing all substantive contributors. 
    This results in 
    
    * The release being referenceable/citable by DOI_.
    * The release being discoverable via the University's Library Catalogue.
 
-#. Add citation info (including the DOI) for the latest stable release to ``docs/source/about.rst``.
+#. Add citation info (including the DOI and contributors) for the latest stable release to ``docs/source/about.rst``.
 
 .. 
    https://github.com/scikit-learn/scikit-learn/wiki/How-to-make-a-release
