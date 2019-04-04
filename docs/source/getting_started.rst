@@ -36,9 +36,8 @@ Demo notebooks
 --------------
 The following demo notebooks are also available online:
 
-* _Paper: https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=docs%2\
-FMuMoTpaperResults.ipynb (MuMoT authors, University of Sheffield)
-* _Epidemics:  https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=DemoNotebooks%2FEpidemicsDemo_SIRI.ipynb (Renato Pagliara, Princeton University)
+* `Paper <https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=docs%2FMuMoTpaperResults.ipynb>`_: (*MuMoT authors, University of Sheffield*)
+* `Epidemics <https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=DemoNotebooks%2FEpidemicsDemo_SIRI.ipynb>`_: (*Renato Pagliara, Princeton University*)
 
 On your own machine
 -------------------
