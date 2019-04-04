@@ -72,7 +72,7 @@ Installing MuMoT within a VirtualEnv
    `this repository <https://github.com/DiODeProject/MuMoT/>`__.
 2. Ensure you have the following installed:
 
-   -  `Python >= 3.4 <https://www.python.org/downloads/>`__
+   -  `Python >= 3.4 and <= 3.6 <https://www.python.org/downloads/>`__
    -  the pip_ package
       manager (usually comes with Python 3.x but might not for certain
       flavours of Linux)
@@ -111,6 +111,20 @@ Installing MuMoT within a VirtualEnv
       python -m pip install path/to/clone/of/MuMoT/repository
       jupyter nbextension enable --py widgetsnbextension --sys-prefix
 
+Installing MuMoT from PyPI
+--------------------------
+
+Follow the instructions as above for 'Installing MuMoT within a VirtualEnv', but at stage 5 replace
+
+.. code:: sh
+
+      python -m pip install path/to/clone/of/MuMoT/repository
+
+with
+
+.. code:: sh
+
+      python -m pip install mumot
 
 (Optional) Enable tables of contents for individual Notebooks
 -------------------------------------------------------------

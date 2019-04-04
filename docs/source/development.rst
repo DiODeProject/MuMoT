@@ -351,7 +351,7 @@ To create a release:
 
    Package versions (``setup.py``) and 
    the version info in rendered Sphinx docs 
-   are automatically set using this variable.
+   are automatically set using this variable. Ensure that the version number uses only digits, to comply with PyPI naming restrictions.
 
    Don't forget to: ::
 
@@ -400,7 +400,7 @@ To create a release:
 #. Follow the :ref:`MuMoT installation instructions <install>` but at the relevant point
    try to install ``mumot`` from Test PyPI instead of from the MuMoT git repository. ::
 
-      $ python3 -m pip install --index-url https://test.pypi.org/simple/ mumot
+      $ python3 -m pip install --extra-index-url https://testpypi.python.org/pypi mumot
 
 #. If uploading to Test PyPI then downloading and installing from Test PyPI was successful, then do the same for the main PyPI:
 
