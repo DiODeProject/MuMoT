@@ -1187,9 +1187,7 @@ class MuMoTmodel:
             if stateVariable3 is None:
                 SOL_2ndOrdMomDict = self._check2ndOrderMom(showNoise=kwargs.get('showNoise', False))
             else:
-                print('3D stream plot not yet implemented.')
-                #SOL_2ndOrdMomDict = None
-                return None
+                SOL_2ndOrdMomDict = None
             
             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
             showNoise = kwargs.get('showNoise', False)                 
@@ -1226,9 +1224,8 @@ class MuMoTmodel:
     # fixed points
     def vector(self, stateVariable1, stateVariable2, stateVariable3=None,
                params=None, initWidgets=None, **kwargs):
-        """Display interactive stream plot of ``stateVariable1`` (x-axis),
-        ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis;
-        not currently supported - see below)
+        """Display interactive vector plot of ``stateVariable1`` (x-axis),
+        ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis)
 
         Parameters
         ----------
@@ -1806,7 +1803,7 @@ class MuMoTmodel:
                     raise MuMoTValueError('Unexpected reactant \'' + str(arg) + '\': system size > 2?')
         return tuple(argList)
 
-    ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
+    ## get tuple to evalute functions returned by _getFuncs with, for 3d field-based plots
     def _getArgTuple3d(self, argDict, stateVariable1, stateVariable2, stateVariable3, X, Y, Z):
         argList = []
         for arg in self._args:
@@ -4837,7 +4834,7 @@ class MuMoTfieldView(MuMoTview):
         self._logs.append(log)
 
     ## get 3-dimensional field for plotting        
-    def _get_field3d(self, kind, meshPoints, plotLimits=1):
+    def _get_field3d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
             (funcs, argDict, plotLimits) = self._get_field()
@@ -4910,7 +4907,7 @@ class MuMoTvectorView(MuMoTfieldView):
     _checkReactants = None
     ## set of all constant reactants to get intersection with _checkReactants
     _checkConstReactants = None
-    
+
     def __init__(self, model, controller, fieldParams, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
         #if model._systemSize is None and model._constantSystemSize == True:
         #    self._showErrorMessage("Cannot construct field-based plot until system size is set, using substitute()")
@@ -4921,9 +4918,9 @@ class MuMoTvectorView(MuMoTfieldView):
         self._generatingCommand = "vector"
 
     def _plot_field(self, _=None):
-        
+
         super()._plot_field()                   
-        
+
         if self._stateVariable3 is None:   
             self._get_field2d("2d vector plot", 10)  # @todo: allow user to set mesh points with keyword
             fig_vector = plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color='black')  # @todo: define colormap by user keyword
@@ -5047,8 +5044,56 @@ class MuMoTstreamView(MuMoTfieldView):
             self._logs.append(log)
                 
         else:
-            print('3d stream plot not yet implemented.')
-        
+            self._get_field3d("3d stream plot", 10)
+            ax = self._figure.gca(projection='3d')
+
+            eqA_temp = str(self._mumotModel._equations[self._stateVariable1])
+            eqA_temp = eqA_temp.replace('_{', '')
+            eqA = eqA_temp.replace('}', '')
+
+            eqB_temp = str(self._mumotModel._equations[self._stateVariable2])
+            eqB_temp = eqB_temp.replace('_{', '')
+            eqB= eqB_temp.replace('}', '')
+
+            eqC_temp = str(self._mumotModel._equations[self._stateVariable3])
+            eqC_temp = eqC_temp.replace('_{', '')
+            eqC= eqC_temp.replace('}', '')
+
+            def modelODEs(states, t, eqA, eqB, eqC, N):
+                A = states[0]
+                B = states[1]
+                C = states[2]
+
+                a1 = self._ratesDict['a_{1}']
+                a2 = self._ratesDict['a_{2}']
+                a3 = self._ratesDict['a_{3}']
+                g1 = self._ratesDict['g_{1}']
+                g2 = self._ratesDict['g_{2}']
+                g3 = self._ratesDict['g_{3}']
+                r1 = self._ratesDict['r_{1}']
+                r2 = self._ratesDict['r_{2}']
+                r3 = self._ratesDict['r_{3}']
+                s = self._ratesDict['s']
+
+                dAdt = eval(eqA)
+                dBdt = eval(eqB)
+                dCdt = eval(eqC)
+
+                return [dAdt, dBdt, dCdt]
+
+            N = 1    # @todo: make N not a hardcoded value
+
+            t = np.linspace(0,0.1,100)   # @todo: make t not a hard coded value
+            for x in self._X[0,0,:]:
+                for y in self._Y[0,:,0]:
+                    for z in self._Z[:,0,0]:
+                        if (x + y + z < N):
+                            state0 = [x, y, z]
+                            state = odeint(modelODEs, state0, t, args=(eqA, eqB, eqC, N))
+                            fig_stream3d = ax.plot(state[:,0],state[:,1],state[:,2])
+
+            _fig_formatting_3D(figure=fig_stream3d, xlab=self._xlab, ylab=self._ylab, zlab=self._zlab, specialPoints=self._FixedPoints,
+                               showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=self._mumotModel._constantSystemSize, fontsize=self._chooseFontSize)
 
 class MuMoTbifurcationView(MuMoTview):
     """Bifurcation view on model."""
@@ -8266,13 +8311,13 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
                        specialPoints=None, showFixedPoints=False, **kwargs):
     """Function for editing properties of 3D plots. 
 
-    Called by :class:`MuMoTvectorView`.
+    Called by :class:`MuMoTvectorView` and :class:`MuMoTstreamView`
 
     """
     fig = plt.gcf()
     #fig.set_size_inches(10,8) 
     ax = fig.gca(projection='3d')
-    
+
     if kwargs.get('showPlane', False) == True:
         #pointsMesh = np.linspace(0, 1, 11)
         #Xdat, Ydat = np.meshgrid(pointsMesh, pointsMesh)
@@ -8281,7 +8326,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
         #ax.plot_surface(Xdat, Ydat, Zdat, rstride=20, cstride=20, color='grey', alpha=0.25)
         #ax.plot_wireframe(Xdat, Ydat, Zdat, rstride=1, cstride=1, color='grey', alpha=0.5)
         ax.plot([1, 0, 0, 1], [0, 1, 0, 0], [0, 0, 1, 0], linewidth=2, c='k')
-        
+
     if xlab is None:
         try:
             xlabelstr = ax.xaxis.get_label_text()
