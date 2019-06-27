@@ -5078,19 +5078,24 @@ class MuMoTstreamView(MuMoTfieldView):
                 dAdt = eval(eqA)
                 dBdt = eval(eqB)
                 dCdt = eval(eqC)
+                time = 1
 
-                return [dAdt, dBdt, dCdt]
+                return [dAdt, dBdt, dCdt, time]
 
             N = 1    # @todo: make N not a hardcoded value
+            
+            
 
             t = np.linspace(0,0.1,100)   # @todo: make t not a hard coded value
             for x in self._X[0,0,:]:
                 for y in self._Y[0,:,0]:
                     for z in self._Z[:,0,0]:
                         if (x + y + z < N):
-                            state0 = [x, y, z]
+                            state0 = [x, y, z, 0.0]
                             state = odeint(modelODEs, state0, t, args=(eqA, eqB, eqC, N))
-                            fig_stream3d = ax.plot(state[:,0],state[:,1],state[:,2])
+                            fig_stream3d = ax.plot(state[:,0],state[:,1],state[:,2], color='red')
+#                            for i in range(t.shape[0]):
+#                                fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(i/t.shape[0]))
 
             _fig_formatting_3D(figure=fig_stream3d, xlab=self._xlab, ylab=self._ylab, zlab=self._zlab, specialPoints=self._FixedPoints,
                                showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=self._mumotModel._constantSystemSize, fontsize=self._chooseFontSize)
