@@ -5047,6 +5047,8 @@ class MuMoTstreamView(MuMoTfieldView):
             self._get_field3d("3d stream plot", 10)
             ax = self._figure.gca(projection='3d')
 
+            # At the moment these are recalculated every time plot is redrawn
+            # Call this method somewhere else and pass them to MuMoTstreamView?
             eqA_temp = str(self._mumotModel._equations[self._stateVariable1])
             eqA_temp = eqA_temp.replace('_{', '')
             eqA = eqA_temp.replace('}', '')
@@ -5059,11 +5061,13 @@ class MuMoTstreamView(MuMoTfieldView):
             eqC_temp = eqC_temp.replace('_{', '')
             eqC= eqC_temp.replace('}', '')
 
+            
             def modelODEs(states, t, eqA, eqB, eqC, N):
                 A = states[0]
                 B = states[1]
                 C = states[2]
 
+                # Get all the parameter values from the slider values
                 a1 = self._ratesDict['a_{1}']
                 a2 = self._ratesDict['a_{2}']
                 a3 = self._ratesDict['a_{3}']
@@ -5075,29 +5079,57 @@ class MuMoTstreamView(MuMoTfieldView):
                 r3 = self._ratesDict['r_{3}']
                 s = self._ratesDict['s']
 
-                dAdt = eval(eqA)
+                # eval is needed to run the derived equation as a mathematical formula rather than a string
+                dAdt = eval(eqA) 
                 dBdt = eval(eqB)
                 dCdt = eval(eqC)
-                time = 1
 
-                return [dAdt, dBdt, dCdt, time]
+                return [dAdt, dBdt, dCdt]
 
             N = 1    # @todo: make N not a hardcoded value
             # Is N the same value as the plotLimits in _get_field3d?
             # If so, how can we access value?
 
-            t = np.linspace(0,0.1,100)   # @todo: make t not a hard coded value, could add an advanced widget option?
-            for x in self._X[0,0,:]:
-                for y in self._Y[0,:,0]:
-                    for z in self._Z[:,0,0]:
-                        if (x + y + z < N):
-                            state0 = [x, y, z, 0.0]
-                            state = odeint(modelODEs, state0, t, args=(eqA, eqB, eqC, N))
-                            fig_stream3d = ax.plot(state[:,0],state[:,1],state[:,2], color='red')
-                            # Follwing replaces above line to include colour streams
-                            # Current implementation using for loop is very slow
-#                            for i in range(t.shape[0]):
-#                                fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(i/t.shape[0]))
+            t = np.linspace(0,0.75,20)   # @todo: make t not a hard coded value, could add a widget option? e.g. stream length?
+            # This empty array will store start points of streams
+            start_points = np.empty([0,3])
+            
+            i = 0
+            while i < 30:
+                # Randomly choose points
+                p = np.random.choice(self._X[0,0,:])
+                q = np.random.choice(self._Y[0,:,0])
+                r = np.random.choice(self._Z[:,0,0])
+                # Use selected point as start point if they meet following criteria
+                # If not, then reselect start point
+                # Method is ineffecient for high number of start points
+                if (p + q + r <= 1):
+                    temp = np.array([[p,q,r]])
+                    start_points = np.concatenate((start_points, temp), axis = 0)
+                    i += 1
+            
+#            for x in self._X[0,0,:]:
+#                for y in self._Y[0,:,0]:
+#                    for z in self._Z[:,0,0]:
+            for i in range(start_points[:,0].shape[0]):
+                x = start_points[i,0]
+                y = start_points[i,1]
+                z = start_points[i,2]
+                if (x + y + z < N):
+                    state0 = [x, y, z]
+                    state = odeint(modelODEs, state0, t, args=(eqA, eqB, eqC, N))
+#                    fig_stream3d = ax.plot(state[:,0],state[:,1],state[:,2], color='red')
+                            # Following replaces above line to include colour streams
+                    for i in range(t.shape[0]):
+                        A_diff = np.diff(state[:,0][i:i+2])
+                        B_diff = np.diff(state[:,1][i:i+2])
+                        C_diff = np.diff(state[:,0][i:i+2])
+                        line_length = np.sqrt(np.square(A_diff) + np.square(B_diff) + np.square(C_diff))
+                        if (line_length.size == 0):
+                            line_length = np.zeros([1])
+
+                        fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(1 - line_length[0] * 10))
+                        #fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(0.25 + i/t.shape[0]))
 
             _fig_formatting_3D(figure=fig_stream3d, xlab=self._xlab, ylab=self._ylab, zlab=self._zlab, specialPoints=self._FixedPoints,
                                showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=self._mumotModel._constantSystemSize, fontsize=self._chooseFontSize)
