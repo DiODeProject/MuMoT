@@ -5128,7 +5128,7 @@ class MuMoTstreamView(MuMoTfieldView):
                         if (line_length.size == 0):
                             line_length = np.zeros([1])
 
-                        fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(1 - line_length[0] * 10))
+                        fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(0.95 - line_length[0] * 10))
                         #fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(0.25 + i/t.shape[0]))
 
             _fig_formatting_3D(figure=fig_stream3d, xlab=self._xlab, ylab=self._ylab, zlab=self._zlab, specialPoints=self._FixedPoints,
