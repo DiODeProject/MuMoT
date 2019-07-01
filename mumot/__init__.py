@@ -47,7 +47,9 @@ from IPython.display import Javascript, Math, display
 from IPython.utils import io
 from matplotlib import pyplot as plt
 from matplotlib.cbook import MatplotlibDeprecationWarning
+from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import axes3d  # @UnresolvedImport
+from mpl_toolkits.mplot3d import proj3d
 from pyexpat import model  # @UnresolvedImport
 from scipy.integrate import odeint
 from sympy import (Derivative, Matrix, Symbol, collect, default_sort_key,
@@ -5044,6 +5046,18 @@ class MuMoTstreamView(MuMoTfieldView):
             self._logs.append(log)
                 
         else:
+            
+            class Arrow3D(FancyArrowPatch):
+                def __init__(self, xs, ys, zs, *args, **kwargs):
+                    FancyArrowPatch.__init__(self, (0,0), (0,0), *args, **kwargs)
+                    self._verts3d = xs, ys, zs
+
+                def draw(self, renderer):
+                    xs3d, ys3d, zs3d = self._verts3d
+                    xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
+                    self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
+                    FancyArrowPatch.draw(self, renderer)
+                
             self._get_field3d("3d stream plot", 10)
             ax = self._figure.gca(projection='3d')
 
@@ -5128,8 +5142,11 @@ class MuMoTstreamView(MuMoTfieldView):
                         if (line_length.size == 0):
                             line_length = np.zeros([1])
 
-                        fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(0.95 - line_length[0] * 10))
-                        #fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(0.25 + i/t.shape[0]))
+                        fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(0.95 - line_length[0]*10))
+                        
+                        arrow_point = int(t.shape[0]/2)
+                        a = Arrow3D([state[:,0][arrow_point], state[:,0][arrow_point+2]], [state[:,1][arrow_point], state[:,1][arrow_point+2]], [state[:,2][arrow_point], state[:,2][arrow_point+2]], mutation_scale=7)
+                        ax.add_artist(a)
 
             _fig_formatting_3D(figure=fig_stream3d, xlab=self._xlab, ylab=self._ylab, zlab=self._zlab, specialPoints=self._FixedPoints,
                                showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=self._mumotModel._constantSystemSize, fontsize=self._chooseFontSize)
