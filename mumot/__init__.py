@@ -4974,6 +4974,10 @@ class MuMoTstreamView(MuMoTfieldView):
     _checkReactants = None
     ## set of all constant reactants to get intersection with _checkReactants
     _checkConstReactants = None
+    ## set number of 3d streams
+    setNumPoints = None
+    ## number of 3d streams
+    _numPoints = None
     
     def __init__(self, model, controller, fieldParams, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
         #if model._systemSize is None and model._constantSystemSize == True:
@@ -4981,6 +4985,8 @@ class MuMoTstreamView(MuMoTfieldView):
         #    return
         #if self._SOL_2ndOrdMomDict is None:
         #    self._showErrorMessage('Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
+        
+        self._numPoints = kwargs.get('setNumPoints', 30)
 
         self._checkReactants = model._reactants
         if model._constantReactants:
@@ -5047,6 +5053,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 
         else:
             
+            ## Class enables arrows to be added to 3d stream plot
             class Arrow3D(FancyArrowPatch):
                 def __init__(self, xs, ys, zs, *args, **kwargs):
                     FancyArrowPatch.__init__(self, (0,0), (0,0), *args, **kwargs)
@@ -5057,7 +5064,7 @@ class MuMoTstreamView(MuMoTfieldView):
                     xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
                     self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
                     FancyArrowPatch.draw(self, renderer)
-                
+            
             self._get_field3d("3d stream plot", 10)
             ax = self._figure.gca(projection='3d')
 
@@ -5075,7 +5082,7 @@ class MuMoTstreamView(MuMoTfieldView):
             eqC_temp = eqC_temp.replace('_{', '')
             eqC= eqC_temp.replace('}', '')
 
-            
+            ## Model of ODEs from model equations and with rates derived from widgets
             def modelODEs(states, t, eqA, eqB, eqC, N):
                 A = states[0]
                 B = states[1]
@@ -5108,8 +5115,11 @@ class MuMoTstreamView(MuMoTfieldView):
             # This empty array will store start points of streams
             start_points = np.empty([0,3])
             
-            i = 0
-            while i < 30:
+            # This is used to calculate speed value at each randomyl selected point
+            speed_points = self._X[0,0,:]
+            
+            j = 0
+            while j < self._numPoints:
                 # Randomly choose points
                 p = np.random.choice(self._X[0,0,:])
                 q = np.random.choice(self._Y[0,:,0])
@@ -5117,36 +5127,30 @@ class MuMoTstreamView(MuMoTfieldView):
                 # Use selected point as start point if they meet following criteria
                 # If not, then reselect start point
                 # Method is ineffecient for high number of start points
-                if (p + q + r <= 1):
+                if (p + q + r <= N):
                     temp = np.array([[p,q,r]])
                     start_points = np.concatenate((start_points, temp), axis = 0)
-                    i += 1
+                    j += 1
             
-#            for x in self._X[0,0,:]:
-#                for y in self._Y[0,:,0]:
-#                    for z in self._Z[:,0,0]:
             for i in range(start_points[:,0].shape[0]):
                 x = start_points[i,0]
                 y = start_points[i,1]
                 z = start_points[i,2]
-                if (x + y + z < N):
-                    state0 = [x, y, z]
-                    state = odeint(modelODEs, state0, t, args=(eqA, eqB, eqC, N))
-#                    fig_stream3d = ax.plot(state[:,0],state[:,1],state[:,2], color='red')
-                            # Following replaces above line to include colour streams
-                    for i in range(t.shape[0]):
-                        A_diff = np.diff(state[:,0][i:i+2])
-                        B_diff = np.diff(state[:,1][i:i+2])
-                        C_diff = np.diff(state[:,0][i:i+2])
-                        line_length = np.sqrt(np.square(A_diff) + np.square(B_diff) + np.square(C_diff))
-                        if (line_length.size == 0):
-                            line_length = np.zeros([1])
+                
+                speed_x = np.where(speed_points == x)[0]
+                speed_y = np.where(speed_points == y)[0]
+                speed_z = np.where(speed_points == z)[0]
+                speed = np.absolute(self._speed[speed_x, speed_y, speed_z])[0]
+                
+                state0 = [x, y, z]
+                state = odeint(modelODEs, state0, t, args=(eqA, eqB, eqC, N))
 
-                        fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(0.95 - line_length[0]*10))
+                for i in range(t.shape[0]):
+                    fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(speed))
                         
-                        arrow_point = int(t.shape[0]/2)
-                        a = Arrow3D([state[:,0][arrow_point], state[:,0][arrow_point+2]], [state[:,1][arrow_point], state[:,1][arrow_point+2]], [state[:,2][arrow_point], state[:,2][arrow_point+2]], mutation_scale=7)
-                        ax.add_artist(a)
+                    arrow_point = int(t.shape[0]/2)
+                    arrow = Arrow3D([state[:,0][arrow_point], state[:,0][arrow_point+2]], [state[:,1][arrow_point], state[:,1][arrow_point+2]], [state[:,2][arrow_point], state[:,2][arrow_point+2]], mutation_scale=7, color=plt.cm.Greys(speed))
+                    ax.add_artist(arrow)
 
             _fig_formatting_3D(figure=fig_stream3d, xlab=self._xlab, ylab=self._ylab, zlab=self._zlab, specialPoints=self._FixedPoints,
                                showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=self._mumotModel._constantSystemSize, fontsize=self._chooseFontSize)
