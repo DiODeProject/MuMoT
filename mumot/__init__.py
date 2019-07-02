@@ -5047,27 +5047,37 @@ class MuMoTstreamView(MuMoTfieldView):
         
         super()._plot_field()
         
+        
+        ## if model has 1 dimension
         if self._stateVariable2 is None:
-            self._get_field1d("1d stream plot", 100)
+            _mesh_points = 100
+            self._get_field1d("1d stream plot", _mesh_points)
+            
+            ## reduces height of 2d plot
             self._figure.set_size_inches(8, 2)
             
+            ## Since plot is 2d, need every element of x-data to be plotted against 0
             ys = np.zeros(self._X.shape)
             
+            ## length of negative section of stream
             _neg_length = 0
+            ## length of positive section of stream
             _pos_length = 0
+            ## point along line where sign changes
             _sign_change_point = 0.0
+            ## represents whether previous point was positive or negative
             _prev_point = 0
+            ## has the sign of the point changed from the previous point
             _sign_change = False
             
             for i in range(self._X.shape[0]):
-                _Xdot_temp = np.absolute(self._Xdot[i])
+                _Xdot_temp = np.absolute(self._Xdot[i])    ## used for line shading
                 if self._Xdot[i] < 0:
                     if (_prev_point == 0):
                         _prev_point = -1
                     elif (_prev_point == 1):
                         _prev_point = -1
                         _sign_change = True
-                        
                         
                     fig_stream_1d = plt.plot(self._X[i:i+2], ys[i:i+2], color = plt.cm.Reds(_Xdot_temp))
                     _neg_length += 1
@@ -5082,19 +5092,21 @@ class MuMoTstreamView(MuMoTfieldView):
                     fig_stream_1d = plt.plot(self._X[i:i+2], ys[i:i+2], color = plt.cm.Blues(_Xdot_temp))
                     _pos_length += 1
                     
+                ## if sign has changed, record where sign changed
                 if _sign_change:
                     _sign_change_point = self._X[i]
                     _sign_change = False    
-                    
+            
+            ## calculates where arrows of streams should start by calculating the middle of each line section
             _neg_arrow_start = 0.0
             _pos_arrow_start = 0.0
             
             if (_prev_point == 1):
-                _pos_arrow_start = _sign_change_point + (_pos_length/200)
-                _neg_arrow_start = (_neg_length/200)
+                _pos_arrow_start = _sign_change_point + (_pos_length/(2*_mesh_points))
+                _neg_arrow_start = (_neg_length/(2*_mesh_points))
             else:
-                _neg_arrow_start = _sign_change_point + (_neg_length/200)
-                _pos_arrow_start = (_pos_length/200)
+                _neg_arrow_start = _sign_change_point + (_neg_length/(2*_mesh_points))
+                _pos_arrow_start = (_pos_length/(2*_mesh_points))
             
             if _neg_length != 0:
                 plt.arrow(_neg_arrow_start+0.05, 0, -0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = 'red')
@@ -5108,7 +5120,8 @@ class MuMoTstreamView(MuMoTfieldView):
             _fig_formatting_1D(figure=fig_stream_1d , choose_xrange= [0,1], 
                        curve_replot=False, ax_reformat=False, showFixedPoints=self._showFixedPoints, specialPoints=self._FixedPoints,
                        xlab=self._xlab, aspectRatioEqual=False)
-            
+        
+        ## elif model has 2 dimensions
         elif self._stateVariable3 is None:
             self._get_field2d("2d stream plot", 100)  # @todo: allow user to set mesh points with keyword
             
@@ -5148,7 +5161,8 @@ class MuMoTstreamView(MuMoTfieldView):
             with io.capture_output() as log:
                 self._appendFixedPointsToLogs(self._realEQsol, self._EV, self._Evects)
             self._logs.append(log)
-                
+        
+        ## else model has 3 dimensions
         else:
             print('3d stream plot not yet implemented.')
         
