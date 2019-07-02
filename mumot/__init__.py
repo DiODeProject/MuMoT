@@ -4418,11 +4418,11 @@ class MuMoTfieldView(MuMoTview):
                 self._showSSANoise = True
             else:
                 self._showSSANoise = False
-            
+
             if stateVariable3 is None:    
                 self._chooseXrange = kwargs.get('choose_xrange', None)
                 self._chooseYrange = kwargs.get('choose_yrange', None)
-            
+
             if self._controller is None:
                 # storing all values of MA-specific parameters
                 self._maxTime = fieldParams["maxTime"]
@@ -4433,7 +4433,7 @@ class MuMoTfieldView(MuMoTview):
 #                self._plotProportions = fieldParams["plotProportions"]
                 self._runs = fieldParams.get('runs', 20)
                 self._aggregateResults = fieldParams.get('aggregateResults', True)
-            
+
             else:
                 # storing fixed params
                 for key, value in fieldParams.items():
@@ -5046,7 +5046,7 @@ class MuMoTstreamView(MuMoTfieldView):
             self._showErrorMessage("Not implemented: This feature is available only for systems with exactly 2 time-dependent reactants!")
         
         super()._plot_field()
-        
+
         
         ## if model has 1 dimension
         if self._stateVariable2 is None:
@@ -5069,7 +5069,7 @@ class MuMoTstreamView(MuMoTfieldView):
             _prev_point = 0
             ## has the sign of the point changed from the previous point
             _sign_change = False
-            
+
             for i in range(self._X.shape[0]):
                 _Xdot_temp = np.absolute(self._Xdot[i])    ## used for line shading
                 if self._Xdot[i] < 0:
@@ -5119,7 +5119,7 @@ class MuMoTstreamView(MuMoTfieldView):
             plt.tight_layout()
             
             _fig_formatting_1D(figure=fig_stream_1d , choose_xrange= [0,1], 
-                       curve_replot=False, ax_reformat=False, showFixedPoints=self._showFixedPoints, specialPoints=self._FixedPoints,
+                       curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=self._FixedPoints,
                        xlab=self._xlab, aspectRatioEqual=False)
         
         ## elif model has 2 dimensions
@@ -8982,9 +8982,9 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, eigenvalues=
 
     """
     showLegend = kwargs.get('showLegend', False)
-    
+
     linestyle_list = ['solid', 'dashed', 'dashdot', 'dotted', 'solid', 'dashed', 'dashdot', 'dotted', 'solid']
-    
+
     if xdata:
         ax = plt.gca()
         data_x = xdata
@@ -8993,11 +8993,11 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, eigenvalues=
         plt.gcf()
         ax = plt.gca()
         data_x = [ax.lines[kk].get_xdata() for kk in range(len(ax.lines))]
-        
+
     else:
         print('Choose either figure or dataset(s)')
     #print(data_x)
-    
+
     if xlab is None:
         try:
             xlabelstr = ax.xaxis.get_label_text()
