@@ -1115,7 +1115,7 @@ class MuMoTmodel:
 
     # construct interactive stream plot with the option to show noise around
     # fixed points
-    def stream(self, stateVariable1, stateVariable2, stateVariable3=None,
+    def stream(self, stateVariable1, stateVariable2=None, stateVariable3=None,
                params=None, initWidgets=None, **kwargs):
         """Display interactive stream plot of ``stateVariable1`` (x-axis),
         ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis;
@@ -1184,7 +1184,9 @@ class MuMoTmodel:
             return None
 
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
-            if stateVariable3 is None:
+            if stateVariable2 is None:
+                SOL_2ndOrdMomDict = None
+            elif stateVariable3 is None:
                 SOL_2ndOrdMomDict = self._check2ndOrderMom(showNoise=kwargs.get('showNoise', False))
             else:
                 print('3D stream plot not yet implemented.')
@@ -1756,8 +1758,8 @@ class MuMoTmodel:
         #print( self._agentProbabilities )
 
     def _check_state_variables(self, stateVariable1, stateVariable2, stateVariable3=None):
-        if process_sympy(stateVariable1) in self._reactants and process_sympy(stateVariable2) in self._reactants and (stateVariable3 is None or process_sympy(stateVariable3) in self._reactants):
-            if stateVariable1 != stateVariable2 and stateVariable1 != stateVariable3 and stateVariable2 != stateVariable3:
+        if process_sympy(stateVariable1) in self._reactants and (stateVariable2 is None or process_sympy(stateVariable2) in self._reactants) and (stateVariable3 is None or process_sympy(stateVariable3) in self._reactants):
+            if (stateVariable1 != stateVariable2 and stateVariable1 != stateVariable3 and stateVariable2 != stateVariable3) or (stateVariable2 is None and stateVariable3 is None):
                 return True
             else:
                 print('State variables cannot be the same')
@@ -1790,6 +1792,21 @@ class MuMoTmodel:
         return self._funcs
     
     ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
+    def _getArgTuple1d(self, argDict, stateVariable1, X):
+        argList = []
+        for arg in self._args:
+            if arg == stateVariable1:
+                argList.append(X)
+            elif arg == self._systemSize:
+                argList.append(1)  # @todo: system size set to 1
+            else:
+                try:
+                    argList.append(argDict[arg])
+                except KeyError:
+                    raise MuMoTValueError('Unexpected reactant \'' + str(arg) + '\': system size > 1?')
+        return tuple(argList)
+    
+    ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
     def _getArgTuple2d(self, argDict, stateVariable1, stateVariable2, X, Y):
         argList = []
         for arg in self._args:
@@ -1806,7 +1823,7 @@ class MuMoTmodel:
                     raise MuMoTValueError('Unexpected reactant \'' + str(arg) + '\': system size > 2?')
         return tuple(argList)
 
-    ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
+    ## get tuple to evalute functions returned by _getFuncs with, for 3d field-based plots
     def _getArgTuple3d(self, argDict, stateVariable1, stateVariable2, stateVariable3, X, Y, Z):
         argList = []
         for arg in self._args:
@@ -4380,12 +4397,14 @@ class MuMoTfieldView(MuMoTview):
                 self._chooseFontSize = None
             self._showFixedPoints = kwargs.get('showFixedPoints', False)
             self._xlab = r'' + kwargs.get('xlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable1)))+'}$')
-            self._ylab = r'' + kwargs.get('ylab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable2)))+'}$')
+            if stateVariable2:
+                self._ylab = r'' + kwargs.get('ylab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable2)))+'}$')
             if stateVariable3:
                 self._zlab = r'' + kwargs.get('zlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable3))) + '}$') 
             
             self._stateVariable1 = process_sympy(stateVariable1)
-            self._stateVariable2 = process_sympy(stateVariable2)
+            if stateVariable2 is not None:
+                self._stateVariable2 = process_sympy(stateVariable2)
             if stateVariable3 is not None:
                 self._axes3d = True
                 self._stateVariable3 = process_sympy(stateVariable3)
@@ -4803,6 +4822,29 @@ class MuMoTfieldView(MuMoTview):
         funcs = self._mumotModel._getFuncs()
         
         return (funcs, argDict, plotLimits)
+    
+    ## get 1-dimensional field for plotting
+    def _get_field1d(self, kind, meshPoints, plotLimits=1):
+
+        (funcs, argDict, plotLimits) = self._get_field()
+        self._X = np.mgrid[0:plotLimits:complex(0, meshPoints)]
+        if self._mumotModel._constantSystemSize:
+            mask = self._mask.get((meshPoints, 2))
+            if mask is None:
+                mask = np.zeros(self._X.shape, dtype=bool)
+                upperright = np.triu_indices(meshPoints, m=1)  # @todo: allow user to set mesh points with keyword 
+                mask[upperright[0]] = True
+                mask = np.flipud(mask)
+                self._mask[(meshPoints, 2)] = mask
+        self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple1d(argDict, self._stateVariable1, self._X))
+        try:
+#            self._speed = np.log(self._Xdot)
+#            if np.isnan(self._speed).any():
+            self._speed = None
+        except:
+            self._speed = None
+        if self._mumotModel._constantSystemSize:
+            self._Xdot = np.ma.array(self._Xdot, mask=mask)       
 
     ## get 2-dimensional field for plotting
     def _get_field2d(self, kind, meshPoints, plotLimits=1):
@@ -5003,10 +5045,71 @@ class MuMoTstreamView(MuMoTfieldView):
         if len(checkReactants) != 2:
             self._showErrorMessage("Not implemented: This feature is available only for systems with exactly 2 time-dependent reactants!")
         
+        super()._plot_field()
         
-        super()._plot_field()                   
-        
-        if self._stateVariable3 is None:
+        if self._stateVariable2 is None:
+            self._get_field1d("1d stream plot", 100)
+            self._figure.set_size_inches(8, 2)
+            
+            ys = np.zeros(self._X.shape)
+            
+            _neg_length = 0
+            _pos_length = 0
+            _sign_change_point = 0.0
+            _prev_point = 0
+            _sign_change = False
+            
+            for i in range(self._X.shape[0]):
+                _Xdot_temp = np.absolute(self._Xdot[i])
+                if self._Xdot[i] < 0:
+                    if (_prev_point == 0):
+                        _prev_point = -1
+                    elif (_prev_point == 1):
+                        _prev_point = -1
+                        _sign_change = True
+                        
+                        
+                    fig_stream_1d = plt.plot(self._X[i:i+2], ys[i:i+2], color = plt.cm.Reds(_Xdot_temp))
+                    _neg_length += 1
+                        
+                elif self._Xdot[i] >= 0:
+                    if (_prev_point == 0):
+                        _prev_point = 1
+                    elif (_prev_point == -1):
+                        _prev_point = 1
+                        _sign_change = True
+                        
+                    fig_stream_1d = plt.plot(self._X[i:i+2], ys[i:i+2], color = plt.cm.Blues(_Xdot_temp))
+                    _pos_length += 1
+                    
+                if _sign_change:
+                    _sign_change_point = self._X[i]
+                    _sign_change = False    
+                    
+            _neg_arrow_start = 0.0
+            _pos_arrow_start = 0.0
+            
+            if (_prev_point == 1):
+                _pos_arrow_start = _sign_change_point + (_pos_length/200)
+                _neg_arrow_start = (_neg_length/200)
+            else:
+                _neg_arrow_start = _sign_change_point + (_neg_length/200)
+                _pos_arrow_start = (_pos_length/200)
+            
+            if _neg_length != 0:
+                plt.arrow(_neg_arrow_start+0.05, 0, -0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = 'red')
+            if _pos_length != 0:
+                plt.arrow(_pos_arrow_start-0.05, 0, 0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = 'blue')
+            
+            plt.yticks([0])
+            plt.ylim(-0.1, 0.1)
+            plt.tight_layout()
+            
+            _fig_formatting_1D(figure=fig_stream_1d , choose_xrange= [0,1], 
+                       curve_replot=False, ax_reformat=False, showFixedPoints=self._showFixedPoints, specialPoints=self._FixedPoints,
+                       xlab=self._xlab, aspectRatioEqual=False)
+            
+        elif self._stateVariable3 is None:
             self._get_field2d("2d stream plot", 100)  # @todo: allow user to set mesh points with keyword
             
             if self._speed is not None:
@@ -8852,6 +8955,338 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     
     if aspectRatioEqual:
         ax.set_aspect('equal')
+    
+    
+def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, eigenvalues=None, 
+                       curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
+                       xlab=None, curvelab=None, aspectRatioEqual=False, line_color_list=LINE_COLOR_LIST, 
+                       **kwargs):
+    """Format 1D plots.
+
+    Called by :class:`MuMoTstreamView``
+
+    """
+    showLegend = kwargs.get('showLegend', False)
+    
+    linestyle_list = ['solid', 'dashed', 'dashdot', 'dotted', 'solid', 'dashed', 'dashdot', 'dotted', 'solid']
+    
+    if xdata:
+        ax = plt.gca()
+        data_x = xdata
+
+    elif figure:
+        plt.gcf()
+        ax = plt.gca()
+        data_x = [ax.lines[kk].get_xdata() for kk in range(len(ax.lines))]
+        
+    else:
+        print('Choose either figure or dataset(s)')
+    #print(data_x)
+    
+    if xlab is None:
+        try:
+            xlabelstr = ax.xaxis.get_label_text()
+            if len(ax.xaxis.get_label_text()) == 0:
+                xlabelstr = 'choose x-label'
+        except:
+            xlabelstr = 'choose x-label'
+    else:
+        xlabelstr = xlab
+    
+    if ax_reformat == False and figure is not None:
+        xmajortickslocs = ax.xaxis.get_majorticklocs()
+        xminortickslocs = ax.xaxis.get_minorticklocs()
+        x_lim_left = ax.get_xbound()[0]  # ax.xaxis.get_data_interval()[0]
+        x_lim_right = ax.get_xbound()[1]  # ax.xaxis.get_data_interval()[1]
+        
+    if curve_replot == True:
+        plt.cla()
+    
+    if ax_reformat == False and figure is not None:
+        ax.set_xticks(xmajortickslocs)
+        ax.set_xticks(xminortickslocs, minor=True)
+        ax.tick_params(axis='both', which='major', length=5, width=2)
+        ax.tick_params(axis='both', which='minor', length=3, width=1)
+        plt.xlim(x_lim_left, x_lim_right)
+        
+    if figure is None or curve_replot == True:
+
+        if 'LineThickness' in kwargs:
+            LineThickness = kwargs['LineThickness']
+        else:
+            LineThickness = 4
+        
+        if eigenvalues:
+            showLegend = False
+            round_digit = 10
+#             solX_dict={} #bifurcation parameter
+#             solY_dict={} #state variable 1
+#             solX_dict['solX_unst']=[] 
+#             solY_dict['solY_unst']=[]
+#             solX_dict['solX_stab']=[]
+#             solY_dict['solY_stab']=[]
+#             solX_dict['solX_saddle']=[]
+#             solY_dict['solY_saddle']=[]
+#             
+#             nr_sol_unst=0
+#             nr_sol_saddle=0
+#             nr_sol_stab=0
+#             data_x_tmp=[]
+#             data_y_tmp=[]
+#             #print(specialPoints)
+            
+            Nr_unstable = 0 
+            Nr_stable = 0 
+            Nr_saddle = 0 
+            
+            for nn in range(len(data_x)):
+                solX_dict = {}  # bifurcation parameter
+                solX_dict['solX_unst'] = [] 
+                solX_dict['solX_stab'] = []
+                solX_dict['solX_saddle'] = []
+                
+                nr_sol_unst = 0
+                nr_sol_saddle = 0
+                nr_sol_stab = 0
+                data_x_tmp = []
+                #sign_change=0
+                for kk in range(len(eigenvalues[nn])):
+                    if kk > 0:
+                        if len(eigenvalues[0][0]) == 1:
+                            if (np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][0]), round_digit)) <= 0):
+                                #print('sign change')
+                                #sign_change+=1
+                                #print(sign_change)
+                                #if specialPoints is not None and specialPoints[0]!=[]:
+                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
+                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
+                                
+                                if nr_sol_unst == 1:
+                                    solX_dict['solX_unst'].append(data_x_tmp)
+                                elif nr_sol_saddle == 1:
+                                    solX_dict['solX_saddle'].append(data_x_tmp)
+                                elif nr_sol_stab == 1:
+                                    solX_dict['solX_stab'].append(data_x_tmp)
+                                else:
+                                    print('Something went wrong!')
+                                
+                                data_x_tmp_first = data_x_tmp[-1]
+                                nr_sol_stab = 0
+                                nr_sol_saddle = 0
+                                nr_sol_unst = 0
+                                data_x_tmp = []
+                                data_x_tmp.append(data_x_tmp_first)
+                                #if specialPoints is not None and specialPoints[0]!=[]:
+                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
+                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
+                        elif len(eigenvalues[0][0]) == 2:
+                            if (np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][0]), round_digit)) <= 0
+                                or np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][1]), round_digit)) <= 0):
+                                #print('sign change')
+                                #sign_change+=1
+                                #print(sign_change)
+                                #if specialPoints is not None and specialPoints[0]!=[]:
+                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
+                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
+                                
+                                if nr_sol_unst == 1:
+                                    solX_dict['solX_unst'].append(data_x_tmp)
+                                elif nr_sol_saddle == 1:
+                                    solX_dict['solX_saddle'].append(data_x_tmp)
+                                elif nr_sol_stab == 1:
+                                    solX_dict['solX_stab'].append(data_x_tmp)
+                                else:
+                                    print('Something went wrong!')
+                                
+                                data_x_tmp_first = data_x_tmp[-1]
+                                nr_sol_stab = 0
+                                nr_sol_saddle = 0
+                                nr_sol_unst = 0
+                                data_x_tmp = []
+                                data_x_tmp.append(data_x_tmp_first)
+                                #if specialPoints is not None and specialPoints[0]!=[]:
+                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
+                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
+                    
+                    if len(eigenvalues[0][0]) == 1:
+                        if np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1:  
+                            nr_sol_stab = 1
+                        else:
+                            nr_sol_unst = 1    
+                    
+                    elif len(eigenvalues[0][0]) == 2:
+                        if np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:  
+                            nr_sol_stab = 1
+                        elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) in [0, 1] and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:
+                            nr_sol_saddle = 1
+                        elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) in [0, 1]:
+                            nr_sol_saddle = 1
+                        else:
+                            nr_sol_unst = 1                
+    #                     if np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) < 0:  
+    #                         nr_sol_stab=1
+    #                     elif np.real(eigenvalues[nn][kk][0]) >= 0 and np.real(eigenvalues[nn][kk][1]) < 0:
+    #                         nr_sol_saddle=1
+    #                     elif np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) >= 0:
+    #                         nr_sol_saddle=1
+    #                     else:
+    #                         nr_sol_unst=1
+                         
+                    data_x_tmp.append(data_x[nn][kk])
+                
+                    if kk == len(eigenvalues[nn])-1:
+                        if nr_sol_unst == 1:
+                            solX_dict['solX_unst'].append(data_x_tmp)
+                        elif nr_sol_saddle == 1:
+                            solX_dict['solX_saddle'].append(data_x_tmp)
+                        elif nr_sol_stab == 1:
+                            solX_dict['solX_stab'].append(data_x_tmp)
+                        else:
+                            print('Something went wrong!')
+                        
+                if not solX_dict['solX_unst'] == []:           
+                    for jj in range(len(solX_dict['solX_unst'])):
+                        if jj == 0 and Nr_unstable == 0:
+                            label_description = r'unstable'
+                            Nr_unstable = 1 
+                        else:
+                            label_description = '_nolegend_'
+                        plt.plot(solX_dict['solX_unst'][jj], 
+                                 c=line_color_list[2], 
+                                 ls=linestyle_list[1], lw=LineThickness, label=label_description)
+                if not solX_dict['solX_stab'] == []:           
+                    for jj in range(len(solX_dict['solX_stab'])):
+                        if jj == 0 and Nr_stable == 0:
+                            label_description = r'stable'
+                            Nr_stable = 1
+                        else:
+                            label_description = '_nolegend_'
+                        plt.plot(solX_dict['solX_stab'][jj], 
+                                 c=line_color_list[1], 
+                                 ls=linestyle_list[0], lw=LineThickness, label=label_description)
+                if not solX_dict['solX_saddle'] == []:           
+                    for jj in range(len(solX_dict['solX_saddle'])):
+                        if jj == 0 and Nr_saddle == 0:
+                            label_description = r'saddle'
+                            Nr_saddle = 1
+                        else:
+                            label_description = '_nolegend_'
+                        plt.plot(solX_dict['solX_saddle'][jj],
+                                 c=line_color_list[0], 
+                                 ls=linestyle_list[3], lw=LineThickness, label=label_description)
+                
+                
+                
+#             if not solX_dict['solX_unst'] == []:            
+#                 for jj in range(len(solX_dict['solX_unst'])):
+#                     plt.plot(solX_dict['solX_unst'][jj], 
+#                              solY_dict['solY_unst'][jj], 
+#                              c = line_color_list[2], 
+#                              ls = linestyle_list[3], lw = LineThickness, label = r'unstable')
+#             if not solX_dict['solX_stab'] == []:            
+#                 for jj in range(len(solX_dict['solX_stab'])):
+#                     plt.plot(solX_dict['solX_stab'][jj], 
+#                              solY_dict['solY_stab'][jj], 
+#                              c = line_color_list[1], 
+#                              ls = linestyle_list[0], lw = LineThickness, label = r'stable')
+#             if not solX_dict['solX_saddle'] == []:            
+#                 for jj in range(len(solX_dict['solX_saddle'])):
+#                     plt.plot(solX_dict['solX_saddle'][jj], 
+#                              solY_dict['solY_saddle'][jj], 
+#                              c = line_color_list[0], 
+#                              ls = linestyle_list[1], lw = LineThickness, label = r'saddle')
+                                    
+                            
+        else:
+            data_y = np.zeros(data_y.shape[0])
+            for nn in range(len(data_x)):
+                try:
+                    plt.plot(data_x[nn], data_y[nn], c=line_color_list[nn], 
+                             ls=linestyle_list[nn], lw=LineThickness, label=r''+str(curvelab[nn]))
+                except:
+                    plt.plot(data_x[nn], data_y[nn], c=line_color_list[nn], 
+                             ls=linestyle_list[nn], lw=LineThickness)
+        
+        
+    if len(xlabelstr) > 40:
+        chooseFontSize = 10  # 16
+    elif 31 <= len(xlabelstr) <= 40:
+        chooseFontSize = 14  # 20
+    elif 26 <= len(xlabelstr) <= 30:
+        chooseFontSize = 18  # 26
+    else:
+        chooseFontSize = 24  # 30
+        
+    if 'fontsize' in kwargs:
+        if not kwargs['fontsize'] is None:
+            chooseFontSize = kwargs['fontsize']
+
+    plt.xlabel(r''+str(xlabelstr), fontsize=chooseFontSize)
+    #ax.set_xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
+     
+    if figure is None or ax_reformat == True or choose_xrange is not None:
+        if choose_xrange:
+            max_xrange = choose_xrange[1]-choose_xrange[0]
+        else:
+            #xrange = [np.max(data_x[kk]) - np.min(data_x[kk]) for kk in range(len(data_x))]
+            XaxisMax = np.max([np.max(data_x[kk]) for kk in range(len(data_x))])
+            XaxisMin = np.min([np.min(data_x[kk]) for kk in range(len(data_x))])
+            max_xrange = XaxisMax - XaxisMin  # max(xrange)
+        
+        if max_xrange < 1.0:
+            xMLocator_major = _round_to_1(max_xrange/5)
+        else:
+            xMLocator_major = _round_to_1(max_xrange/10)
+        xMLocator_minor = xMLocator_major/2
+        
+        if choose_xrange:
+            plt.xlim(choose_xrange[0]-xMLocator_minor/10.0, choose_xrange[1]+xMLocator_minor/10.0)
+        else:
+            plt.xlim(XaxisMin-xMLocator_minor/10.0, XaxisMax+xMLocator_minor/10.0)
+
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(xMLocator_major))
+        ax.xaxis.set_minor_locator(ticker.MultipleLocator(xMLocator_minor))
+        for axis in ['top', 'bottom', 'left', 'right']:
+            ax.spines[axis].set_linewidth(2)
+        
+        ax.tick_params('both', length=5, width=2, which='major')
+        ax.tick_params('both', length=3, width=1, which='minor')
+    
+    if eigenvalues:
+        if specialPoints != []:
+            if specialPoints[0] != []:
+                for jj in range(len(specialPoints[0])):
+                    plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=8, 
+                             c=line_color_list[-1])    
+                for a, b, c in zip(specialPoints[0], specialPoints[1], specialPoints[2]): 
+                    if a > plt.xlim()[0]+(plt.xlim()[1]-plt.xlim()[0])/2:
+                        x_offset = -(plt.xlim()[1]-plt.xlim()[0])*0.02
+                    else:
+                        x_offset = (plt.xlim()[1]-plt.xlim()[0])*0.02
+                    plt.text(a+x_offset, b+y_offset, c, fontsize=18)
+    
+    if showFixedPoints == True:
+        print("Fixed points not currently supported for 1d stream plots")
+                
+    plt.grid(kwargs.get('grid', False))
+        
+    if curvelab is not None or showLegend == True:
+        #if 'legend_loc' in kwargs:
+        #    legend_loc = kwargs['legend_loc']
+        #else:
+        #    legend_loc = 'upper left'
+        legend_fontsize = kwargs.get('legend_fontsize', 14)
+        legend_loc = kwargs.get('legend_loc', 'upper left')
+        plt.legend(loc=str(legend_loc), fontsize=legend_fontsize, ncol=2)
+        
+    for tick in ax.xaxis.get_major_ticks():
+                    tick.label.set_fontsize(13)               
+    
+    plt.tight_layout()
+    
+    if aspectRatioEqual:
+        ax.set_aspect('equal')
+    
     
 
 def _decodeNetworkTypeFromString(netTypeStr):
