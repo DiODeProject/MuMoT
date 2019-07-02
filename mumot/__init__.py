@@ -5113,7 +5113,8 @@ class MuMoTstreamView(MuMoTfieldView):
             if _pos_length != 0:
                 plt.arrow(_pos_arrow_start-0.05, 0, 0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = 'blue')
             
-            plt.yticks([0])
+            
+            plt.yticks([])
             plt.ylim(-0.1, 0.1)
             plt.tight_layout()
             
