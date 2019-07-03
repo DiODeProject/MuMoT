@@ -5053,6 +5053,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 
         else:
             
+            ## Currently no existing class to plot arrows in 3D
             ## Class enables arrows to be added to 3d stream plot
             class Arrow3D(FancyArrowPatch):
                 def __init__(self, xs, ys, zs, *args, **kwargs):
@@ -5067,90 +5068,83 @@ class MuMoTstreamView(MuMoTfieldView):
             
             self._get_field3d("3d stream plot", 10)
             ax = self._figure.gca(projection='3d')
+            
+            argDict = self._get_argDict()
+            
+            ## Derived model equations stored with parameter values substituted in from widgets
+            eqA = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+            eqB = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+            eqC = self._mumotModel._equations[self._stateVariable3].subs(argDict)
 
-            # At the moment these are recalculated every time plot is redrawn
-            # Call this method somewhere else and pass them to MuMoTstreamView?
-            eqA_temp = str(self._mumotModel._equations[self._stateVariable1])
-            eqA_temp = eqA_temp.replace('_{', '')
-            eqA = eqA_temp.replace('}', '')
-
-            eqB_temp = str(self._mumotModel._equations[self._stateVariable2])
-            eqB_temp = eqB_temp.replace('_{', '')
-            eqB= eqB_temp.replace('}', '')
-
-            eqC_temp = str(self._mumotModel._equations[self._stateVariable3])
-            eqC_temp = eqC_temp.replace('_{', '')
-            eqC= eqC_temp.replace('}', '')
-
-            ## Model of ODEs from model equations and with rates derived from widgets
+            ## Model of ODEs from model equations
+            ## Needed for odeint() method to integrate streams from start points
+            ## N is needed for the equations
             def modelODEs(states, t, eqA, eqB, eqC, N):
                 A = states[0]
                 B = states[1]
                 C = states[2]
 
-                # Get all the parameter values from the slider values
-                a1 = self._ratesDict['a_{1}']
-                a2 = self._ratesDict['a_{2}']
-                a3 = self._ratesDict['a_{3}']
-                g1 = self._ratesDict['g_{1}']
-                g2 = self._ratesDict['g_{2}']
-                g3 = self._ratesDict['g_{3}']
-                r1 = self._ratesDict['r_{1}']
-                r2 = self._ratesDict['r_{2}']
-                r3 = self._ratesDict['r_{3}']
-                s = self._ratesDict['s']
-
-                # eval is needed to run the derived equation as a mathematical formula rather than a string
-                dAdt = eval(eqA) 
-                dBdt = eval(eqB)
-                dCdt = eval(eqC)
+                ## eval is needed to run the derived equation as a mathematical formula rather than a string
+                dAdt = eval(str(eqA))
+                dBdt = eval(str(eqB))
+                dCdt = eval(str(eqC))
 
                 return [dAdt, dBdt, dCdt]
 
-            N = 1    # @todo: make N not a hardcoded value
-            # Is N the same value as the plotLimits in _get_field3d?
-            # If so, how can we access value?
-
-            t = np.linspace(0,0.75,20)   # @todo: make t not a hard coded value, could add a widget option? e.g. stream length?
-            # This empty array will store start points of streams
-            start_points = np.empty([0,3])
+            ## time over which streams are integrated, longer time gives a longer stream
+            t = np.linspace(0,0.75,20)   # @todo: make t not a hard coded value
             
-            # This is used to calculate speed value at each randomyl selected point
+            ## This empty array will store start points of streams
+            start_points = np.empty([0,3])
+            ## This is used to calculate speed value at each randomly selected point
+            ## Each column and row in self._X contains the same values so we only need 1
+            ## Used to find corresponding speed value for each starting point
             speed_points = self._X[0,0,:]
             
+            ## N is the size of the 3d grid that points are plotted on 
+            N = 1    # @todo: make N not a hardcoded value
             j = 0
+            
+            ## Builds array start_points of starting points for streams
+            ## _numPoints is a keyword for the number of start points (number of streams)
             while j < self._numPoints:
-                # Randomly choose points
+                ## Randomly choose points to start streams from
                 p = np.random.choice(self._X[0,0,:])
                 q = np.random.choice(self._Y[0,:,0])
                 r = np.random.choice(self._Z[:,0,0])
-                # Use selected point as start point if they meet following criteria
-                # If not, then reselect start point
-                # Method is ineffecient for high number of start points
+                ## Use selected point as start point if they meet following criteria
+                ## If not, then reselect start point
+                ## Method is ineffecient for high number of start points
                 if (p + q + r <= N):
                     temp = np.array([[p,q,r]])
                     start_points = np.concatenate((start_points, temp), axis = 0)
                     j += 1
             
+            ## Plot streams from each start point
             for i in range(start_points[:,0].shape[0]):
                 x = start_points[i,0]
                 y = start_points[i,1]
                 z = start_points[i,2]
                 
+                ## Finds the speed of stream at each start point
+                ## Finds index of each start point in speed_points
+                ## Uses indexes to find corresponding speed for start point in self._speed
                 speed_x = np.where(speed_points == x)[0]
                 speed_y = np.where(speed_points == y)[0]
                 speed_z = np.where(speed_points == z)[0]
                 speed = np.absolute(self._speed[speed_x, speed_y, speed_z])[0]
                 
+                ## Initial conditions for integrations
                 state0 = [x, y, z]
                 state = odeint(modelODEs, state0, t, args=(eqA, eqB, eqC, N))
 
-                for i in range(t.shape[0]):
-                    fig_stream3d = ax.plot(state[:,0][i:i+2],state[:,1][i:i+2],state[:,2][i:i+2], color=plt.cm.Greys(speed))
-                        
-                    arrow_point = int(t.shape[0]/2)
-                    arrow = Arrow3D([state[:,0][arrow_point], state[:,0][arrow_point+2]], [state[:,1][arrow_point], state[:,1][arrow_point+2]], [state[:,2][arrow_point], state[:,2][arrow_point+2]], mutation_scale=7, color=plt.cm.Greys(speed))
-                    ax.add_artist(arrow)
+                fig_stream3d = ax.plot(state[:,0],state[:,1],state[:,2], color=plt.cm.Greys(speed))
+                
+                ## Adds arrow halfway along the length of each stream
+                ## mutation_scale is the size of the arrow head
+                arrow_point = int(t.shape[0]/2)
+                arrow = Arrow3D([state[:,0][arrow_point], state[:,0][arrow_point+2]], [state[:,1][arrow_point], state[:,1][arrow_point+2]], [state[:,2][arrow_point], state[:,2][arrow_point+2]], mutation_scale=7, color=plt.cm.Greys(speed))
+                ax.add_artist(arrow)
 
             _fig_formatting_3D(figure=fig_stream3d, xlab=self._xlab, ylab=self._ylab, zlab=self._zlab, specialPoints=self._FixedPoints,
                                showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=self._mumotModel._constantSystemSize, fontsize=self._chooseFontSize)
