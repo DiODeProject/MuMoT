@@ -2979,18 +2979,8 @@ class MuMoTview:
         
         MAT = Matrix([EQ1])
         JAC = MAT.jacobian([self._stateVariable1])
-        
-        eigList = []
-        
-        for nn in range(len(realEQsol)): 
-            evSet = {}
-            JACsub = JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1])])
-            #evSet = JACsub.eigenvals()
-            eigVects = JACsub.eigenvects()
-            for kk in range(len(eigVects)):
-                evSet[eigVects[kk][0]] = (eigVects[kk][1])
-            eigList.append(evSet)
-        return realEQsol, eigList  # returns two lists of dictionaries
+
+        return realEQsol
     
     
     
@@ -4548,7 +4538,21 @@ class MuMoTfieldView(MuMoTview):
         EV = None
         Evects = None
         
-        if self._stateVariable3 is None:
+        if self._stateVariable2 is None:
+            if self._showNoise == True:
+                print('Please note: Currently \'showNoise\' only available for 2D stream and vector plots.')
+            if self._showFixedPoints == True:
+                FixedPoints = []
+                realEQsol = self._get_fixedPoints1d()
+                for i in range(len(realEQsol)):
+                    for key in realEQsol[i]:
+                        FixedPoints.append(realEQsol[i][key])
+            else:
+                FixedPoints = None
+            
+            self._FixedPoints = FixedPoints
+            
+        elif self._stateVariable3 is None:
             if self._showFixedPoints == True or self._SOL_2ndOrdMomDict is not None or self._showSSANoise:
                 Phi_stateVar1 = Symbol('Phi_'+str(self._stateVariable1)) 
                 Phi_stateVar2 = Symbol('Phi_'+str(self._stateVariable2))
@@ -5053,9 +5057,6 @@ class MuMoTstreamView(MuMoTfieldView):
             _mesh_points = 100
             self._get_field1d("1d stream plot", _mesh_points)
             
-            ## reduces height of 2d plot
-            self._figure.set_size_inches(8, 2)
-            
             ## Since plot is 2d, need every element of x-data to be plotted against 0
             ys = np.zeros(self._X.shape)
             
@@ -5065,6 +5066,8 @@ class MuMoTstreamView(MuMoTfieldView):
             _pos_length = 0
             ## point along line where sign changes
             _sign_change_point = 0.0
+            ## index where sign changes
+            _sign_change_index = 0
             ## represents whether previous point was positive or negative
             _prev_point = 0
             ## has the sign of the point changed from the previous point
@@ -5073,54 +5076,77 @@ class MuMoTstreamView(MuMoTfieldView):
             for i in range(self._X.shape[0]):
                 _Xdot_temp = np.absolute(self._Xdot[i])    ## used for line shading
                 if self._Xdot[i] < 0:
+                    ## if this is the first point, set prev point to -1
                     if (_prev_point == 0):
                         _prev_point = -1
+                    ## if previous _Xdot value was > 0, the sign has changed
                     elif (_prev_point == 1):
                         _prev_point = -1
                         _sign_change = True
-                        
+                    ## plot line segment, with color based on absolute value of _Xdot
                     fig_stream_1d = plt.plot(self._X[i:i+2], ys[i:i+2], color = plt.cm.Reds(_Xdot_temp))
+                    
                     _neg_length += 1
                         
                 elif self._Xdot[i] >= 0:
+                    ## if this is the first point, set prev point to 1
                     if (_prev_point == 0):
                         _prev_point = 1
+                    ## if previous _Xdot value was < 0, the sign has changed
                     elif (_prev_point == -1):
                         _prev_point = 1
                         _sign_change = True
-                        
+                    ## plot line segment, with color based on absolute value of _Xdot    
                     fig_stream_1d = plt.plot(self._X[i:i+2], ys[i:i+2], color = plt.cm.Blues(_Xdot_temp))
                     _pos_length += 1
-                    
+
                 ## if sign has changed, record where sign changed
                 if _sign_change:
+                    _sign_change_index = i
                     _sign_change_point = self._X[i]
                     _sign_change = False    
             
-            ## calculates where arrows of streams should start by calculating the middle of each line section
+            ## These values are used to plot each arrows start point
             _neg_arrow_start = 0.0
             _pos_arrow_start = 0.0
             
+            ## These values are used for the color of each arrow so it matches the color of the point of line its on
+            _neg_arrow_color = 0.0
+            _pos_arrow_color = 0.0
+            
+            ##Currently only works if there is one fixed point within the range 0 - 1
+            ## If _prev_point == 1, then the last point was positive and so the pos arrow goes on the right
             if (_prev_point == 1):
                 _pos_arrow_start = _sign_change_point + (_pos_length/(2*_mesh_points))
                 _neg_arrow_start = (_neg_length/(2*_mesh_points))
+                _pos_arrow_color = self._Xdot[_sign_change_index + int(_pos_length/2)]
+                _neg_arrow_color = self._Xdot[int(_neg_length/2)]
+            ## If _prev_point == -1, then the last point was negative and so the neg arrow goes on the right
             else:
                 _neg_arrow_start = _sign_change_point + (_neg_length/(2*_mesh_points))
                 _pos_arrow_start = (_pos_length/(2*_mesh_points))
+                _neg_arrow_color = self._Xdot[_sign_change_index + int(_neg_length/2)]
+                _pos_arrow_color = self._Xdot[int(_pos_length/2)]
             
+            ## Need to get absolute values so color value isn't negative
+            _neg_arrow_color = np.absolute(_neg_arrow_color)
+            _pos_arrow_color = np.absolute(_pos_arrow_color)
+            
+            ## if either length segment is zero, no arrow will be plotted
             if _neg_length != 0:
-                plt.arrow(_neg_arrow_start+0.05, 0, -0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = 'red')
+                plt.arrow(_neg_arrow_start+0.05, 0, -0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = plt.cm.Reds(_neg_arrow_color))
             if _pos_length != 0:
-                plt.arrow(_pos_arrow_start-0.05, 0, 0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = 'blue')
+                plt.arrow(_pos_arrow_start-0.05, 0, 0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = plt.cm.Blues(_pos_arrow_color))
             
+            ##Format the plot
+            _fig_formatting_1D(figure=fig_stream_1d , choose_xrange= [0,1], 
+                       curve_replot=False, ax_reformat=False, showFixedPoints=self._showFixedPoints, specialPoints=self._FixedPoints, xlab=self._xlab, aspectRatioEqual=False)
             
+            ## Extra formatting of the plot
+            self._figure.set_size_inches(8, 2)
             plt.yticks([])
             plt.ylim(-0.1, 0.1)
             plt.tight_layout()
-            
-            _fig_formatting_1D(figure=fig_stream_1d , choose_xrange= [0,1], 
-                       curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=self._FixedPoints,
-                       xlab=self._xlab, aspectRatioEqual=False)
         
         ## elif model has 2 dimensions
         elif self._stateVariable3 is None:
@@ -9281,10 +9307,26 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, eigenvalues=
                     plt.text(a+x_offset, b+y_offset, c, fontsize=18)
     
     if showFixedPoints == True:
-        print("Fixed points not currently supported for 1d stream plots")
+        if not specialPoints[0] == []:
+            for jj in range(len(specialPoints)):
+                try:
+                    lam1 = specialPoints[jj]
+                    if sympy.re(lam1) < 0:
+                        FPfill = 'full'
+                    elif sympy.re(lam1) > 0:
+                        FPfill = 'none'
+                    else:
+                        FPfill = 'none'
+                        
+                except:
+                    print('Check input!') 
+                    FPfill = 'none'
+                if sympy.re(lam1) != 0:
+                    plt.plot([specialPoints[jj]], 0.0, marker='o', markersize=9, 
+                             c='green', fillstyle=FPfill, mew=3)
                 
     plt.grid(kwargs.get('grid', False))
-        
+           
     if curvelab is not None or showLegend == True:
         #if 'legend_loc' in kwargs:
         #    legend_loc = kwargs['legend_loc']
