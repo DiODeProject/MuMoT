@@ -1165,6 +1165,8 @@ class MuMoTmodel:
         silent : bool, optional
              Switch on/off widgets and plot.  Important for use with multi
              controllers.  Defaults to False.
+         setNumPoints : int, optional
+             Used for 3d stream plots to specify the number of streams plotted
 
         Returns
         -------
@@ -3028,16 +3030,14 @@ class MuMoTview:
     
     ## calculate stationary states of 3d system
     def _get_fixedPoints3d(self):
-        
         argDict = self._get_argDict()
         
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
         EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
-        
+
         eps = 1e-8
         EQsolA = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
-        
         EQsol = []
         addIndexToSolList = []
         for nn in range(len(EQsolA)):
@@ -4738,7 +4738,6 @@ class MuMoTfieldView(MuMoTview):
                 realEQsol, eigList = self._get_fixedPoints3d()
                 EV = []
                 EVplot = []
-                
                 for kk in range(len(eigList)):
                     EVsub = []
                     for key in eigList[kk]:
@@ -4754,7 +4753,6 @@ class MuMoTfieldView(MuMoTview):
                             EVplot.append(EVsub)
                     else:
                         EVplot.append(EVsub)
-                    
                 if self._mumotModel._constantSystemSize == True:
                     FixedPoints = [[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)], 
                                  [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)],
@@ -4772,7 +4770,6 @@ class MuMoTfieldView(MuMoTview):
 #                 
             else:
                 FixedPoints = None
-        
             self._FixedPoints = FixedPoints
             
         self._realEQsol = realEQsol
@@ -5065,7 +5062,6 @@ class MuMoTstreamView(MuMoTfieldView):
                     xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
                     self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
                     FancyArrowPatch.draw(self, renderer)
-            
             self._get_field3d("3d stream plot", 10)
             ax = self._figure.gca(projection='3d')
             
