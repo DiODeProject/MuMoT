@@ -4971,6 +4971,10 @@ class MuMoTstreamView(MuMoTfieldView):
     _checkReactants = None
     ## set of all constant reactants to get intersection with _checkReactants
     _checkConstReactants = None
+    ## sets time of integration for 3d streams
+    setIntegrationTime = None
+    ## time of integration for 3d streams
+    _integrationTime = None
     ## set number of 3d streams
     setNumPoints = None
     ## number of 3d streams
@@ -4983,7 +4987,10 @@ class MuMoTstreamView(MuMoTfieldView):
         #if self._SOL_2ndOrdMomDict is None:
         #    self._showErrorMessage('Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
         
+        ## These might be better somewhere else?
         self._numPoints = kwargs.get('setNumPoints', 30)
+        self._integrationTime = kwargs.get('setIntegrationTime', 0.75)
+        
 
         self._checkReactants = model._reactants
         if model._constantReactants:
@@ -5062,6 +5069,7 @@ class MuMoTstreamView(MuMoTfieldView):
                     xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
                     self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
                     FancyArrowPatch.draw(self, renderer)
+                    
             self._get_field3d("3d stream plot", 10)
             ax = self._figure.gca(projection='3d')
             
@@ -5075,7 +5083,7 @@ class MuMoTstreamView(MuMoTfieldView):
             ## Model of ODEs from model equations
             ## Needed for odeint() method to integrate streams from start points
             ## N is needed for the equations
-            def modelODEs(states, t, eqA, eqB, eqC, N):
+            def modelODEs(states, t, eqA, eqB, eqC):
                 A = states[0]
                 B = states[1]
                 C = states[2]
@@ -5088,17 +5096,15 @@ class MuMoTstreamView(MuMoTfieldView):
                 return [dAdt, dBdt, dCdt]
 
             ## time over which streams are integrated, longer time gives a longer stream
-            t = np.linspace(0,0.75,20)   # @todo: make t not a hard coded value
-            
+            t = np.linspace(0, self._integrationTime ,20)
+             
             ## This empty array will store start points of streams
             start_points = np.empty([0,3])
             ## This is used to calculate speed value at each randomly selected point
             ## Each column and row in self._X contains the same values so we only need 1
             ## Used to find corresponding speed value for each starting point
             speed_points = self._X[0,0,:]
-            
-            ## N is the size of the 3d grid that points are plotted on 
-            N = 1    # @todo: make N not a hardcoded value
+
             j = 0
             
             ## Builds array start_points of starting points for streams
@@ -5111,7 +5117,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 ## Use selected point as start point if they meet following criteria
                 ## If not, then reselect start point
                 ## Method is ineffecient for high number of start points
-                if (p + q + r <= N):
+                if (p + q + r <= 1):
                     temp = np.array([[p,q,r]])
                     start_points = np.concatenate((start_points, temp), axis = 0)
                     j += 1
@@ -5132,7 +5138,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 
                 ## Initial conditions for integrations
                 state0 = [x, y, z]
-                state = odeint(modelODEs, state0, t, args=(eqA, eqB, eqC, N))
+                state = odeint(modelODEs, state0, t, args=(eqA, eqB, eqC))
 
                 fig_stream3d = ax.plot(state[:,0],state[:,1],state[:,2], color=plt.cm.Greys(speed))
                 
