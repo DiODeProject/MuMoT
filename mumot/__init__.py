@@ -1184,7 +1184,6 @@ class MuMoTmodel:
             return None
 
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
-            print("Check")
             if stateVariable2 is None:
                 SOL_2ndOrdMomDict = self._check2ndOrderMom(showNoise=kwargs.get('showNoise', False))
             elif stateVariable3 is None:
@@ -4380,7 +4379,7 @@ class MuMoTfieldView(MuMoTview):
     _aggregateResults = None
     
     
-    def __init__(self, model, controller, fieldParams, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
+    def __init__(self, model, controller, fieldParams, SOL_2ndOrd, stateVariable1, stateVariable2 = None, stateVariable3=None, figure=None, params=None, **kwargs):
         if model._systemSize is None and model._constantSystemSize == True:
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return
@@ -4547,213 +4546,19 @@ class MuMoTfieldView(MuMoTview):
         Evects = None
         
         if self._stateVariable2 is None:
-#            if self._showNoise == True:
-#                print('Please note: Currently \'showNoise\' only available for 2D stream and vector plots.')
-#            if self._showFixedPoints == True:
-#                FixedPoints = []
-#                realEQsol, eigList = self._get_fixedPoints1d()
-#                for i in range(len(realEQsol)):
-#                    for key in realEQsol[i]:
-#                        FixedPoints.append(realEQsol[i][key])
-#            else:
-#                FixedPoints = None
-#            
-#            self._FixedPoints = FixedPoints
-            if self._showFixedPoints == True or self._SOL_2ndOrdMomDict is not None or self._showSSANoise:
-                Phi_stateVar1 = Symbol('Phi_'+str(self._stateVariable1)) 
-                eta_stateVar1 = Symbol('eta_'+str(self._stateVariable1)) 
-                M_2 = Symbol('M_2')
-                systemSize = Symbol('systemSize')
-                argDict = self._get_argDict()
-                for key in argDict:
-                    if key in self._mumotModel._constantReactants:
-                        argDict[Symbol('Phi_'+str(key))] = argDict.pop(key)
-                
+            if self._showNoise == True:
+                print('Please note: Currently \'showNoise\' only available for 2D stream and vector plots.')
+            if self._showFixedPoints == True:
+                FixedPoints = []
                 realEQsol, eigList = self._get_fixedPoints1d()
-                PhiSubList = []
-                for kk in range(len(realEQsol)):
-                    PhiSubDict = {}
-                    for solXi in realEQsol[kk]:
-                        PhiSubDict[Symbol('Phi_'+str(solXi))] = realEQsol[kk][solXi]
-                    PhiSubList.append(PhiSubDict)
-                
-                Evects = []
-                EvectsPlot = []
-                EV = []
-                EVplot = []
-                for kk in range(len(eigList)):
-                    EVsub = []
-                    EvectsSub = []
-                    for key in eigList[kk]:
-                        for jj in range(len(eigList[kk][key][1])):
-                            EvectsSub.append(eigList[kk][key][1][jj].evalf())
-                        if eigList[kk][key][0] > 1:
-                            for jj in range(eigList[kk][key][0]):
-                                EVsub.append(key.evalf())
-                        else:
-                            EVsub.append(key.evalf())
-                            
-                    EV.append(EVsub)
-                    Evects.append(EvectsSub)
-                    if self._mumotModel._constantSystemSize == True:
-                        if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1):
-                            EVplot.append(EVsub)
-                            EvectsPlot.append(EvectsSub)
-                    else:
-                        EVplot.append(EVsub)
-                        EvectsPlot.append(EvectsSub)
-                #self._EV = EV
-                #self._realEQsol = realEQsol
-                #self._Evects = Evects
-            print(self._SOL_2ndOrdMomDict)
-            if self._SOL_2ndOrdMomDict:
-                for key in self._SOL_2ndOrdMomDict:
-                    if key == self._SOL_2ndOrdMomDict[key] or key in self._SOL_2ndOrdMomDict[key].args:
-                        for key2 in self._SOL_2ndOrdMomDict:
-                            if key2 != key:
-                                self._SOL_2ndOrdMomDict[key] = self._SOL_2ndOrdMomDict[key].subs(key, self._SOL_2ndOrdMomDict[key2])
-                
-                SOL_2ndOrdMomDictList = []
-                for nn in range(len(PhiSubList)):
-                    SOL_2ndOrdMomDict = copy.deepcopy(self._SOL_2ndOrdMomDict)
-                    for sol in SOL_2ndOrdMomDict:
-                        SOL_2ndOrdMomDict[sol] = SOL_2ndOrdMomDict[sol].subs(PhiSubList[nn])
-                        SOL_2ndOrdMomDict[sol] = SOL_2ndOrdMomDict[sol].subs(argDict)
-                    SOL_2ndOrdMomDictList.append(SOL_2ndOrdMomDict)
-            
-                angle_ell_list = []
-                projection_angle_list = []
-                vec1 = Matrix([[0], [1]])
-                for nn in range(len(EvectsPlot)):
-                    vec2 = EvectsPlot[nn][0]
-                    vec2norm = vec2.norm()
-                    vec2 = vec2/vec2norm
-                    vec3 = EvectsPlot[nn][0]
-                    vec3norm = vec3.norm()
-                    vec3 = vec3/vec3norm
-                    if vec2norm >= vec3norm:
-                        angle_ell = sympy.acos(vec1.dot(vec2)/(vec1.norm()*vec2.norm())).evalf()
-                    else:
-                        angle_ell = sympy.acos(vec1.dot(vec3)/(vec1.norm()*vec3.norm())).evalf()
-                    angle_ell = angle_ell.evalf()
-                    projection_angle_list.append(angle_ell)
-                    angle_ell_deg = 180*angle_ell/(sympy.pi).evalf()
-                    angle_ell_list.append(round(angle_ell_deg, 5))
-                projection_angle_list = [abs(projection_angle_list[kk]) if abs(projection_angle_list[kk]) <= sympy.N(sympy.pi/2) else sympy.N(sympy.pi)-abs(projection_angle_list[kk]) for kk in range(len(projection_angle_list))]
-            if self._showFixedPoints == True or self._SOL_2ndOrdMomDict is not None or self._showSSANoise:
-                if self._mumotModel._constantSystemSize == True:
-                    FixedPoints = [[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1)]]
-                    if self._SOL_2ndOrdMomDict:
-                        Ell_width = [sympy.sin(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict)) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1)]
-                        Ell_height = [sympy.sin(projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict)) for kk in range(len(SOL_2ndOrdMomDictList)) if (0 <= sympy.re(PhiSubList[kk][Phi_stateVar1]) <= 1)]
-                    #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)], 
-                    #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1 and 0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1)]]
-                else:
-                    FixedPoints = [[PhiSubList[kk][Phi_stateVar1] for kk in range(len(PhiSubList))]]
-                    if self._SOL_2ndOrdMomDict:
-                        Ell_width = [sympy.sin(sympy.N(sympy.pi/2)-projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict)) for kk in range(len(SOL_2ndOrdMomDictList))]
-                        Ell_height = [sympy.sin(projection_angle_list[kk])*sympy.sqrt(SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)]/systemSize.subs(argDict)) for kk in range(len(SOL_2ndOrdMomDictList))]
-                    #FixedPoints=[[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol))], 
-                    #             [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol))]]
-                    #Ell_width = [SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar1**2)] for kk in range(len(SOL_2ndOrdMomDictList))]
-                    #Ell_height = [SOL_2ndOrdMomDictList[kk][M_2(eta_stateVar2**2)] for kk in range(len(SOL_2ndOrdMomDictList))] 
-               
-                FixedPoints.append(EVplot)
+                for i in range(len(realEQsol)):
+                    for key in realEQsol[i]:
+                        FixedPoints.append(realEQsol[i][key])
             else:
                 FixedPoints = None
             
             self._FixedPoints = FixedPoints
-            
-            skipEllipse=False    
-            if self._SOL_2ndOrdMomDict:   
-                for kk in range(len(Ell_width)):
-                    # remark: nan is imported from sympy
-                    if Ell_width[kk] == nan or Ell_width[kk] == 0 or Ell_height[kk] == nan or Ell_height[kk] == 0:
-                        skipEllipse=True
-                        self._showErrorMessage('Noise could not be calculated analytically. ')
-                        break
-            
-            if self._SOL_2ndOrdMomDict and skipEllipse==False:
-                # swap width and height of ellipse if width > height
-                for kk in range(len(Ell_width)):
-                    #print(Ell_width[kk])
-                    #print(type(Ell_width[kk]))
-                    #print(Ell_height[kk])
-                    #print(type(Ell_height[kk]))
-                    ell_width_temp = Ell_width[kk]
-                    ell_height_temp = Ell_height[kk]
-                    if ell_width_temp > ell_height_temp:
-                        Ell_height[kk] = ell_width_temp
-                        Ell_width[kk] = ell_height_temp
-                        
-                ells = [mpatch.Ellipse(xy=[self._FixedPoints[0][nn], self._FixedPoints[1][nn]], width=Ell_width[nn]/systemSize.subs(argDict), height=Ell_height[nn]/systemSize.subs(argDict), angle=round(angle_ell_list[nn], 5)) for nn in range(len(self._FixedPoints[0]))]
-                ax = plt.gca()
-                for kk in range(len(ells)):
-                    ax.add_artist(ells[kk])
-                    ells[kk].set_alpha(0.5)
-                    if sympy.re(EVplot[kk][0]) < 0 and sympy.re(EVplot[kk][1]) < 0:
-                        Fcolor = LINE_COLOR_LIST[1]
-                    elif sympy.re(EVplot[kk][0]) > 0 and sympy.re(EVplot[kk][1]) > 0:
-                        Fcolor = LINE_COLOR_LIST[2]
-                    else:
-                        Fcolor = LINE_COLOR_LIST[0]
-                    ells[kk].set_facecolor(Fcolor)
-                #self._ells = ells
-            else:
-                if self._showNoise==True:
-                    self._showSSANoise=True   
-                
-            if self._showSSANoise:
-    #             print(FixedPoints)
-    #             print(self._stateVariable1)
-    #             print(self._stateVariable2)
-    #             print(realEQsol)
-                skipList=[]
-                for kk in range(len(realEQsol)):
-                    #print("printing ellipse for point " + str(realEQsol[kk]) )
-                    # skip values out of range [0,1] and unstable equilibria
-                    skip = False
-                    for p in realEQsol[kk].values():
-                        #if p < 0 or p > 1:
-                        if p < 0:
-                            skip = True
-                            #print("Skipping for out range")
-                            break
-                        for eigenV in EV[kk]:
-                            #skip if no stable fixed points detected
-                            if sympy.re(eigenV) >= 0:
-                                skip = True
-                                #print("Skipping for positive eigenvalue")
-                                break
-                        if skip: break
-                    if skip: 
-                        skipList.append('skip')
-                        continue
-                    # generate proper init reactant list
-                    initState = copy.deepcopy(realEQsol[kk])
-                    for reactant in self._mumotModel._getAllReactants()[0]:
-                        if reactant not in initState.keys():
-                            #initState[reactant] = 1 - sum(initState.values())
-                            iniSum = 0
-                            for val in initState.values(): iniSum += np.real(val)
-                            initState[reactant] = 1 - iniSum
-                    #print(initState)
-                    #print("Using params: " + str(self._get_params()))
-                    getParams = []
-                    for set_item in self._get_params():
-                        getParams.append((_greekPrependify(set_item[0].replace('{', '').replace('}', '')), set_item[1]))
-                    SSAView = MuMoTSSAView(self._mumotModel, None,
-                                     params=getParams,
-                                     SSParams={'maxTime': self._maxTime, 'runs': self._runs, 'realtimePlot': False, 'plotProportions': True, 'aggregateResults': self._aggregateResults, 'visualisationType': 'final',
-                                                 'final_x': _greekPrependify(latex(self._stateVariable1)), 
-                                                 'initialState': initState, 'randomSeed': self._randomSeed}, silent=True)
-                    #print(SSAView._printStandaloneViewCmd())
-                    SSAView._figure = self._figure
-                    SSAView._computeAndPlotSimulation()
-                
-                if len(realEQsol) == len(skipList):
-                    self._showErrorMessage('No stable fixed points detected. Noise could not be calculated numerically.')
-            
+
         elif self._stateVariable3 is None:
             if self._showFixedPoints == True or self._SOL_2ndOrdMomDict is not None or self._showSSANoise:
                 Phi_stateVar1 = Symbol('Phi_'+str(self._stateVariable1)) 
@@ -6294,7 +6099,6 @@ class MuMoTstochasticSimulationView(MuMoTview):
             timeInterval, self._currentState = self._simulationStep()
             # increment time
             self._t += timeInterval
-             
             # log step
             for state, pop in self._currentState.items():
                 if state in self._mumotModel._constantReactants: continue
@@ -9509,9 +9313,9 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, eigenvalues=
     
     if showFixedPoints == True:
         if not specialPoints[0] == []:
-            for jj in range(len(specialPoints[0])):
+            for jj in range(len(specialPoints)):
                 try:
-                    lam1 = specialPoints[0][jj]
+                    lam1 = specialPoints[jj]
                     if sympy.re(lam1) < 0:
                         FPfill = 'full'
                     elif sympy.re(lam1) > 0:
@@ -9540,12 +9344,9 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, eigenvalues=
     for tick in ax.xaxis.get_major_ticks():
                     tick.label.set_fontsize(13)               
     
-    plt.tight_layout()
-    
     if aspectRatioEqual:
         ax.set_aspect('equal')
-    
-    
+ 
 
 def _decodeNetworkTypeFromString(netTypeStr):
     # init the network type
