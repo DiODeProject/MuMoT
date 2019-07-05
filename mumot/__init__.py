@@ -5144,14 +5144,22 @@ class MuMoTstreamView(MuMoTfieldView):
                 plt.arrow(_neg_arrow_start+0.05, 0, -0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = plt.cm.Reds(_neg_arrow_color))
             if _pos_length != 0:
                 plt.arrow(_pos_arrow_start-0.05, 0, 0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = plt.cm.Blues(_pos_arrow_color))
+                
+            if self._chooseXrange:
+                choose_xrange = self._chooseXrange
+            else:
+                choose_xrange = [0, 1]
+            if self._chooseYrange:
+                choose_yrange = self._chooseYrange
+            else:
+                choose_yrange = [-0.1, 0.1]
             
             ##Format the plot
-            _fig_formatting_1D(figure=fig_stream_1d , choose_xrange= [0,1], curve_replot=False, ax_reformat=False, showFixedPoints=self._showFixedPoints, specialPoints=self._FixedPoints, xlab=self._xlab, aspectRatioEqual=False)
+            _fig_formatting_1D(figure=fig_stream_1d , choose_xrange= choose_xrange, choose_yrange = choose_yrange, curve_replot=False, ax_reformat=False, showFixedPoints=self._showFixedPoints, specialPoints=self._FixedPoints, xlab=self._xlab, aspectRatioEqual=False)
             
             ## Extra formatting of the plot
+            ## Couldn't find where to put these in _fig_formatting_1D
             self._figure.set_size_inches(8, 2)
-            plt.yticks([])
-            plt.ylim(-0.1, 0.1)
             plt.tight_layout()
         
         ## elif model has 2 dimensions
@@ -9003,7 +9011,7 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         ax.set_aspect('equal')
     
     
-def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, eigenvalues=None, 
+def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None, 
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
                        xlab=None, curvelab=None, aspectRatioEqual=False, line_color_list=LINE_COLOR_LIST, 
                        **kwargs):
@@ -9015,7 +9023,7 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, eigenvalues=
     showLegend = kwargs.get('showLegend', False)
 
     linestyle_list = ['solid', 'dashed', 'dashdot', 'dotted', 'solid', 'dashed', 'dashdot', 'dotted', 'solid']
-
+    
     if xdata:
         ax = plt.gca()
         data_x = xdata
@@ -9054,6 +9062,9 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, eigenvalues=
         ax.tick_params(axis='both', which='major', length=5, width=2)
         ax.tick_params(axis='both', which='minor', length=3, width=1)
         plt.xlim(x_lim_left, x_lim_right)
+        
+        plt.yticks([])
+        
         
     if figure is None or curve_replot == True:
 
@@ -9271,6 +9282,8 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, eigenvalues=
     #ax.set_xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
      
     if figure is None or ax_reformat == True or choose_xrange is not None:
+        if choose_yrange:
+            plt.ylim(choose_yrange[0],choose_yrange[1])
         if choose_xrange:
             max_xrange = choose_xrange[1]-choose_xrange[0]
         else:
