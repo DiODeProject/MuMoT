@@ -1165,8 +1165,10 @@ class MuMoTmodel:
         silent : bool, optional
              Switch on/off widgets and plot.  Important for use with multi
              controllers.  Defaults to False.
-         setNumPoints : int, optional
+        setNumPoints : int, optional
              Used for 3d stream plots to specify the number of streams plotted
+        maxTime : float, optional
+             Must be strictly positive. Used for numerical integration of ODE system in 3d stream plots. Default value is 1.0.
 
         Returns
         -------
@@ -4972,7 +4974,7 @@ class MuMoTstreamView(MuMoTfieldView):
     ## set of all constant reactants to get intersection with _checkReactants
     _checkConstReactants = None
     ## sets time of integration for 3d streams
-    setIntegrationTime = None
+    maxTime = None
     ## time of integration for 3d streams
     _integrationTime = None
     ## set number of 3d streams
@@ -4989,9 +4991,8 @@ class MuMoTstreamView(MuMoTfieldView):
         
         ## These might be better somewhere else?
         self._numPoints = kwargs.get('setNumPoints', 30)
-        self._integrationTime = kwargs.get('setIntegrationTime', 0.75)
+        self._integrationTime = kwargs.get('maxTime', 1.0)
         
-
         self._checkReactants = model._reactants
         if model._constantReactants:
             self._checkConstReactants = model._constantReactants
@@ -5009,8 +5010,8 @@ class MuMoTstreamView(MuMoTfieldView):
             for reactant in checkReactants:
                 if reactant in checkConstReactants:
                     checkReactants.remove(reactant)
-        if len(checkReactants) != 2:
-            self._showErrorMessage("Not implemented: This feature is available only for systems with exactly 2 time-dependent reactants!")
+        if len(checkReactants) > 3:
+            self._showErrorMessage("Not implemented: This feature is available only for systems with 1,2 or 3 time-dependent reactants!")
         
         
         super()._plot_field()                   
@@ -5055,21 +5056,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 self._appendFixedPointsToLogs(self._realEQsol, self._EV, self._Evects)
             self._logs.append(log)
                 
-        else:
-            
-            ## Currently no existing class to plot arrows in 3D
-            ## Class enables arrows to be added to 3d stream plot
-            class Arrow3D(FancyArrowPatch):
-                def __init__(self, xs, ys, zs, *args, **kwargs):
-                    FancyArrowPatch.__init__(self, (0,0), (0,0), *args, **kwargs)
-                    self._verts3d = xs, ys, zs
-
-                def draw(self, renderer):
-                    xs3d, ys3d, zs3d = self._verts3d
-                    xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
-                    self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
-                    FancyArrowPatch.draw(self, renderer)
-                    
+        else:     
             self._get_field3d("3d stream plot", 10)
             ax = self._figure.gca(projection='3d')
             
@@ -9564,3 +9551,15 @@ def _roundNumLogsOut(number):
     # if number is real
     else:
         return str(number.round(4))
+
+## Class enables arrows to be added to 3d stream plot
+## copied from https://stackoverflow.com/questions/22867620/putting-arrowheads-on-vectors-in-matplotlibs-3d-plot        
+class Arrow3D(FancyArrowPatch):
+    def __init__(self, xs, ys, zs, *args, **kwargs):
+        FancyArrowPatch.__init__(self, (0,0), (0,0), *args, **kwargs)
+        self._verts3d = xs, ys, zs
+    def draw(self, renderer):
+        xs3d, ys3d, zs3d = self._verts3d
+        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
+        self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
+        FancyArrowPatch.draw(self, renderer)
