@@ -4549,11 +4549,12 @@ class MuMoTfieldView(MuMoTview):
             if self._showNoise == True:
                 print('Please note: Currently \'showNoise\' only available for 2D stream and vector plots.')
             if self._showFixedPoints == True:
-                FixedPoints = []
+                FixedPoints = [[],[]]
                 realEQsol, eigList = self._get_fixedPoints1d()
-                for i in range(len(realEQsol)):
-                    for key in realEQsol[i]:
-                        FixedPoints.append(realEQsol[i][key])
+                for kk in range(len(realEQsol)):
+                    for val1,key2 in zip(realEQsol[kk].values(), eigList[kk].keys()):
+                        FixedPoints[0].append(val1)
+                        FixedPoints[1].append(key2)
             else:
                 FixedPoints = None
             
@@ -5155,12 +5156,7 @@ class MuMoTstreamView(MuMoTfieldView):
                 choose_yrange = [-0.1, 0.1]
             
             ##Format the plot
-            _fig_formatting_1D(figure=fig_stream_1d , choose_xrange= choose_xrange, choose_yrange = choose_yrange, curve_replot=False, ax_reformat=False, showFixedPoints=self._showFixedPoints, specialPoints=self._FixedPoints, xlab=self._xlab, aspectRatioEqual=False)
-            
-            ## Extra formatting of the plot
-            ## Couldn't find where to put these in _fig_formatting_1D
-            self._figure.set_size_inches(8, 2)
-            plt.tight_layout()
+            _fig_formatting_1D(figure=fig_stream_1d , choose_xrange= choose_xrange, choose_yrange = choose_yrange, showFixedPoints=self._showFixedPoints, specialPoints=self._FixedPoints, xlab=self._xlab)
         
         ## elif model has 2 dimensions
         elif self._stateVariable3 is None:
@@ -9011,31 +9007,27 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         ax.set_aspect('equal')
     
     
-def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None, 
-                       curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
-                       xlab=None, curvelab=None, aspectRatioEqual=False, line_color_list=LINE_COLOR_LIST, 
-                       **kwargs):
+def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None,
+                       showFixedPoints=False, specialPoints=None, xlab=None, **kwargs):
     """Format 1D plots.
 
-    Called by :class:`MuMoTstreamView``
+    Called by :class:`MuMoTstreamView`.
 
     """
-    showLegend = kwargs.get('showLegend', False)
-
-    linestyle_list = ['solid', 'dashed', 'dashdot', 'dotted', 'solid', 'dashed', 'dashdot', 'dotted', 'solid']
     
     if xdata:
         ax = plt.gca()
         data_x = xdata
 
     elif figure:
-        plt.gcf()
+        #plt.gcf()
+        fig1dStream = plt.gcf()
+        fig1dStream.set_size_inches(6, 2)
         ax = plt.gca()
         data_x = [ax.lines[kk].get_xdata() for kk in range(len(ax.lines))]
 
     else:
         print('Choose either figure or dataset(s)')
-    #print(data_x)
 
     if xlab is None:
         try:
@@ -9047,224 +9039,18 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, choose_yrang
     else:
         xlabelstr = xlab
     
-    if ax_reformat == False and figure is not None:
+    if figure is not None:
         xmajortickslocs = ax.xaxis.get_majorticklocs()
         xminortickslocs = ax.xaxis.get_minorticklocs()
         x_lim_left = ax.get_xbound()[0]  # ax.xaxis.get_data_interval()[0]
         x_lim_right = ax.get_xbound()[1]  # ax.xaxis.get_data_interval()[1]
-        
-    if curve_replot == True:
-        plt.cla()
-    
-    if ax_reformat == False and figure is not None:
         ax.set_xticks(xmajortickslocs)
         ax.set_xticks(xminortickslocs, minor=True)
         ax.tick_params(axis='both', which='major', length=5, width=2)
         ax.tick_params(axis='both', which='minor', length=3, width=1)
         plt.xlim(x_lim_left, x_lim_right)
-        
-        plt.yticks([])
-        
-        
-    if figure is None or curve_replot == True:
-
-        if 'LineThickness' in kwargs:
-            LineThickness = kwargs['LineThickness']
-        else:
-            LineThickness = 4
-        
-        if eigenvalues:
-            showLegend = False
-            round_digit = 10
-#             solX_dict={} #bifurcation parameter
-#             solY_dict={} #state variable 1
-#             solX_dict['solX_unst']=[] 
-#             solY_dict['solY_unst']=[]
-#             solX_dict['solX_stab']=[]
-#             solY_dict['solY_stab']=[]
-#             solX_dict['solX_saddle']=[]
-#             solY_dict['solY_saddle']=[]
-#             
-#             nr_sol_unst=0
-#             nr_sol_saddle=0
-#             nr_sol_stab=0
-#             data_x_tmp=[]
-#             data_y_tmp=[]
-#             #print(specialPoints)
+        plt.yticks([])    
             
-            Nr_unstable = 0 
-            Nr_stable = 0 
-            Nr_saddle = 0 
-            
-            for nn in range(len(data_x)):
-                solX_dict = {}  # bifurcation parameter
-                solX_dict['solX_unst'] = [] 
-                solX_dict['solX_stab'] = []
-                solX_dict['solX_saddle'] = []
-                
-                nr_sol_unst = 0
-                nr_sol_saddle = 0
-                nr_sol_stab = 0
-                data_x_tmp = []
-                #sign_change=0
-                for kk in range(len(eigenvalues[nn])):
-                    if kk > 0:
-                        if len(eigenvalues[0][0]) == 1:
-                            if (np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][0]), round_digit)) <= 0):
-                                #print('sign change')
-                                #sign_change+=1
-                                #print(sign_change)
-                                #if specialPoints is not None and specialPoints[0]!=[]:
-                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
-                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
-                                
-                                if nr_sol_unst == 1:
-                                    solX_dict['solX_unst'].append(data_x_tmp)
-                                elif nr_sol_saddle == 1:
-                                    solX_dict['solX_saddle'].append(data_x_tmp)
-                                elif nr_sol_stab == 1:
-                                    solX_dict['solX_stab'].append(data_x_tmp)
-                                else:
-                                    print('Something went wrong!')
-                                
-                                data_x_tmp_first = data_x_tmp[-1]
-                                nr_sol_stab = 0
-                                nr_sol_saddle = 0
-                                nr_sol_unst = 0
-                                data_x_tmp = []
-                                data_x_tmp.append(data_x_tmp_first)
-                                #if specialPoints is not None and specialPoints[0]!=[]:
-                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
-                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
-                        elif len(eigenvalues[0][0]) == 2:
-                            if (np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][0]), round_digit)) <= 0
-                                or np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit))*np.sign(np.round(np.real(eigenvalues[nn][kk-1][1]), round_digit)) <= 0):
-                                #print('sign change')
-                                #sign_change+=1
-                                #print(sign_change)
-                                #if specialPoints is not None and specialPoints[0]!=[]:
-                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
-                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
-                                
-                                if nr_sol_unst == 1:
-                                    solX_dict['solX_unst'].append(data_x_tmp)
-                                elif nr_sol_saddle == 1:
-                                    solX_dict['solX_saddle'].append(data_x_tmp)
-                                elif nr_sol_stab == 1:
-                                    solX_dict['solX_stab'].append(data_x_tmp)
-                                else:
-                                    print('Something went wrong!')
-                                
-                                data_x_tmp_first = data_x_tmp[-1]
-                                nr_sol_stab = 0
-                                nr_sol_saddle = 0
-                                nr_sol_unst = 0
-                                data_x_tmp = []
-                                data_x_tmp.append(data_x_tmp_first)
-                                #if specialPoints is not None and specialPoints[0]!=[]:
-                                #    data_x_tmp.append(specialPoints[0][sign_change-1])
-                                #    data_y_tmp.append(specialPoints[1][sign_change-1])
-                    
-                    if len(eigenvalues[0][0]) == 1:
-                        if np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1:  
-                            nr_sol_stab = 1
-                        else:
-                            nr_sol_unst = 1    
-                    
-                    elif len(eigenvalues[0][0]) == 2:
-                        if np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:  
-                            nr_sol_stab = 1
-                        elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) in [0, 1] and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) == -1:
-                            nr_sol_saddle = 1
-                        elif np.sign(np.round(np.real(eigenvalues[nn][kk][0]), round_digit)) == -1 and np.sign(np.round(np.real(eigenvalues[nn][kk][1]), round_digit)) in [0, 1]:
-                            nr_sol_saddle = 1
-                        else:
-                            nr_sol_unst = 1                
-    #                     if np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) < 0:  
-    #                         nr_sol_stab=1
-    #                     elif np.real(eigenvalues[nn][kk][0]) >= 0 and np.real(eigenvalues[nn][kk][1]) < 0:
-    #                         nr_sol_saddle=1
-    #                     elif np.real(eigenvalues[nn][kk][0]) < 0 and np.real(eigenvalues[nn][kk][1]) >= 0:
-    #                         nr_sol_saddle=1
-    #                     else:
-    #                         nr_sol_unst=1
-                         
-                    data_x_tmp.append(data_x[nn][kk])
-                
-                    if kk == len(eigenvalues[nn])-1:
-                        if nr_sol_unst == 1:
-                            solX_dict['solX_unst'].append(data_x_tmp)
-                        elif nr_sol_saddle == 1:
-                            solX_dict['solX_saddle'].append(data_x_tmp)
-                        elif nr_sol_stab == 1:
-                            solX_dict['solX_stab'].append(data_x_tmp)
-                        else:
-                            print('Something went wrong!')
-                        
-                if not solX_dict['solX_unst'] == []:           
-                    for jj in range(len(solX_dict['solX_unst'])):
-                        if jj == 0 and Nr_unstable == 0:
-                            label_description = r'unstable'
-                            Nr_unstable = 1 
-                        else:
-                            label_description = '_nolegend_'
-                        plt.plot(solX_dict['solX_unst'][jj], 
-                                 c=line_color_list[2], 
-                                 ls=linestyle_list[1], lw=LineThickness, label=label_description)
-                if not solX_dict['solX_stab'] == []:           
-                    for jj in range(len(solX_dict['solX_stab'])):
-                        if jj == 0 and Nr_stable == 0:
-                            label_description = r'stable'
-                            Nr_stable = 1
-                        else:
-                            label_description = '_nolegend_'
-                        plt.plot(solX_dict['solX_stab'][jj], 
-                                 c=line_color_list[1], 
-                                 ls=linestyle_list[0], lw=LineThickness, label=label_description)
-                if not solX_dict['solX_saddle'] == []:           
-                    for jj in range(len(solX_dict['solX_saddle'])):
-                        if jj == 0 and Nr_saddle == 0:
-                            label_description = r'saddle'
-                            Nr_saddle = 1
-                        else:
-                            label_description = '_nolegend_'
-                        plt.plot(solX_dict['solX_saddle'][jj],
-                                 c=line_color_list[0], 
-                                 ls=linestyle_list[3], lw=LineThickness, label=label_description)
-                
-                
-                
-#             if not solX_dict['solX_unst'] == []:            
-#                 for jj in range(len(solX_dict['solX_unst'])):
-#                     plt.plot(solX_dict['solX_unst'][jj], 
-#                              solY_dict['solY_unst'][jj], 
-#                              c = line_color_list[2], 
-#                              ls = linestyle_list[3], lw = LineThickness, label = r'unstable')
-#             if not solX_dict['solX_stab'] == []:            
-#                 for jj in range(len(solX_dict['solX_stab'])):
-#                     plt.plot(solX_dict['solX_stab'][jj], 
-#                              solY_dict['solY_stab'][jj], 
-#                              c = line_color_list[1], 
-#                              ls = linestyle_list[0], lw = LineThickness, label = r'stable')
-#             if not solX_dict['solX_saddle'] == []:            
-#                 for jj in range(len(solX_dict['solX_saddle'])):
-#                     plt.plot(solX_dict['solX_saddle'][jj], 
-#                              solY_dict['solY_saddle'][jj], 
-#                              c = line_color_list[0], 
-#                              ls = linestyle_list[1], lw = LineThickness, label = r'saddle')
-                                    
-                            
-        else:
-            data_y = np.zeros(data_y.shape[0])
-            for nn in range(len(data_x)):
-                try:
-                    plt.plot(data_x[nn], data_y[nn], c=line_color_list[nn], 
-                             ls=linestyle_list[nn], lw=LineThickness, label=r''+str(curvelab[nn]))
-                except:
-                    plt.plot(data_x[nn], data_y[nn], c=line_color_list[nn], 
-                             ls=linestyle_list[nn], lw=LineThickness)
-        
-        
     if len(xlabelstr) > 40:
         chooseFontSize = 10  # 16
     elif 31 <= len(xlabelstr) <= 40:
@@ -9279,15 +9065,14 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, choose_yrang
             chooseFontSize = kwargs['fontsize']
 
     plt.xlabel(r''+str(xlabelstr), fontsize=chooseFontSize)
-    #ax.set_xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
+    plt.ylabel('')
      
-    if figure is None or ax_reformat == True or choose_xrange is not None:
+    if figure is None or choose_xrange is not None:
         if choose_yrange:
             plt.ylim(choose_yrange[0],choose_yrange[1])
         if choose_xrange:
             max_xrange = choose_xrange[1]-choose_xrange[0]
         else:
-            #xrange = [np.max(data_x[kk]) - np.min(data_x[kk]) for kk in range(len(data_x))]
             XaxisMax = np.max([np.max(data_x[kk]) for kk in range(len(data_x))])
             XaxisMin = np.min([np.min(data_x[kk]) for kk in range(len(data_x))])
             max_xrange = XaxisMax - XaxisMin  # max(xrange)
@@ -9311,54 +9096,31 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, choose_yrang
         ax.tick_params('both', length=5, width=2, which='major')
         ax.tick_params('both', length=3, width=1, which='minor')
     
-    if eigenvalues:
-        if specialPoints != []:
-            if specialPoints[0] != []:
-                for jj in range(len(specialPoints[0])):
-                    plt.plot([specialPoints[0][jj]], [specialPoints[1][jj]], marker='o', markersize=8, 
-                             c=line_color_list[-1])    
-                for a, b, c in zip(specialPoints[0], specialPoints[1], specialPoints[2]): 
-                    if a > plt.xlim()[0]+(plt.xlim()[1]-plt.xlim()[0])/2:
-                        x_offset = -(plt.xlim()[1]-plt.xlim()[0])*0.02
-                    else:
-                        x_offset = (plt.xlim()[1]-plt.xlim()[0])*0.02
-                    plt.text(a+x_offset, b+y_offset, c, fontsize=18)
-    
     if showFixedPoints == True:
         if not specialPoints[0] == []:
-            for jj in range(len(specialPoints)):
+            for jj in range(len(specialPoints[0])):
                 try:
-                    lam1 = specialPoints[jj]
+                    lam1 = specialPoints[1][jj]
                     if sympy.re(lam1) < 0:
                         FPfill = 'full'
-                    elif sympy.re(lam1) > 0:
-                        FPfill = 'none'
+                        circleColor = 'green'
                     else:
-                        FPfill = 'none'
-                        
+                        FPfill = 'none' 
+                        circleColor = 'red'       
                 except:
                     print('Check input!') 
                     FPfill = 'none'
                 if sympy.re(lam1) != 0:
-                    plt.plot([specialPoints[jj]], 0.0, marker='o', markersize=9, 
-                             c='green', fillstyle=FPfill, mew=3)
+                    plt.plot([specialPoints[0][jj]], 0.0, marker='o', markersize=9, 
+                             c=circleColor, fillstyle=FPfill, mew=3)
+    
                 
     plt.grid(kwargs.get('grid', False))
-           
-    if curvelab is not None or showLegend == True:
-        #if 'legend_loc' in kwargs:
-        #    legend_loc = kwargs['legend_loc']
-        #else:
-        #    legend_loc = 'upper left'
-        legend_fontsize = kwargs.get('legend_fontsize', 14)
-        legend_loc = kwargs.get('legend_loc', 'upper left')
-        plt.legend(loc=str(legend_loc), fontsize=legend_fontsize, ncol=2)
         
     for tick in ax.xaxis.get_major_ticks():
-                    tick.label.set_fontsize(13)               
-    
-    if aspectRatioEqual:
-        ax.set_aspect('equal')
+        tick.label.set_fontsize(13)               
+        
+    plt.tight_layout()
  
 
 def _decodeNetworkTypeFromString(netTypeStr):
