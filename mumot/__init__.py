@@ -20,6 +20,7 @@ import os
 import re
 import sys
 import tempfile
+from typing import Union
 import warnings
 from bisect import bisect_left
 from enum import Enum
@@ -9422,7 +9423,7 @@ def _doubleUnderscorify(s):
     return ''.join(s_list)
 
 
-def _greekPrependify(s):
+def _greekPrependify(s: str) -> str:
     """Prepend two backslash symbols in front of Greek letters to enable proper LaTeX rendering. """
     for nn in range(len(GREEK_LETT_LIST_1)):
         if 'eta' in s:
@@ -9434,7 +9435,7 @@ def _greekPrependify(s):
     return s
 
 
-def _greekReplace(s, sub, repl):
+def _greekReplace(s: str, sub: str, repl: str) -> str:
     """ Auxiliary function for _greekPrependify() """
     # if find_index is not minus1 we have found at least one match for the substring
     find_index = s.find(sub)
@@ -9455,7 +9456,7 @@ def _greekReplace(s, sub, repl):
     return s
 
 
-def _roundNumLogsOut(number):
+def _roundNumLogsOut(number: Union[complex, float]) -> str:
     """ Round numerical output in Logs to 3 decimal places. """
     # if number is complex
     if type(number) == sympy.Add:
