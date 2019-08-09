@@ -47,7 +47,9 @@ from IPython.display import Javascript, Math, display
 from IPython.utils import io
 from matplotlib import pyplot as plt
 from matplotlib.cbook import MatplotlibDeprecationWarning
+from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import axes3d  # @UnresolvedImport
+from mpl_toolkits.mplot3d import proj3d
 from pyexpat import model  # @UnresolvedImport
 from scipy.integrate import odeint
 from sympy import (Derivative, Matrix, Symbol, collect, default_sort_key,
@@ -1163,6 +1165,10 @@ class MuMoTmodel:
         silent : bool, optional
              Switch on/off widgets and plot.  Important for use with multi
              controllers.  Defaults to False.
+        setNumPoints : int, optional
+             Used for 3d stream plots to specify the number of streams plotted
+        maxTime : float, optional
+             Must be strictly positive. Used for numerical integration of ODE system in 3d stream plots. Default value is 1.0.
 
         Returns
         -------
@@ -1189,9 +1195,7 @@ class MuMoTmodel:
             elif stateVariable3 is None:
                 SOL_2ndOrdMomDict = self._check2ndOrderMom(showNoise=kwargs.get('showNoise', False))
             else:
-                print('3D stream plot not yet implemented.')
-                #SOL_2ndOrdMomDict = None
-                return None
+                SOL_2ndOrdMomDict = None
             
             continuous_update = not (kwargs.get('showNoise', False) or kwargs.get('showFixedPoints', False))
             showNoise = kwargs.get('showNoise', False)                 
@@ -1228,9 +1232,8 @@ class MuMoTmodel:
     # fixed points
     def vector(self, stateVariable1, stateVariable2, stateVariable3=None,
                params=None, initWidgets=None, **kwargs):
-        """Display interactive stream plot of ``stateVariable1`` (x-axis),
-        ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis;
-        not currently supported - see below)
+        """Display interactive vector plot of ``stateVariable1`` (x-axis),
+        ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis)
 
         Parameters
         ----------
@@ -3043,16 +3046,14 @@ class MuMoTview:
     
     ## calculate stationary states of 3d system
     def _get_fixedPoints3d(self):
-        
         argDict = self._get_argDict()
         
         EQ1 = self._mumotModel._equations[self._stateVariable1].subs(argDict)
         EQ2 = self._mumotModel._equations[self._stateVariable2].subs(argDict)
         EQ3 = self._mumotModel._equations[self._stateVariable3].subs(argDict)
-        
+
         eps = 1e-8
         EQsolA = solve((EQ1, EQ2, EQ3), (self._stateVariable1, self._stateVariable2, self._stateVariable3), dict=True)
-        
         EQsol = []
         addIndexToSolList = []
         for nn in range(len(EQsolA)):
@@ -4770,7 +4771,6 @@ class MuMoTfieldView(MuMoTview):
                 realEQsol, eigList = self._get_fixedPoints3d()
                 EV = []
                 EVplot = []
-                
                 for kk in range(len(eigList)):
                     EVsub = []
                     for key in eigList[kk]:
@@ -4786,7 +4786,6 @@ class MuMoTfieldView(MuMoTview):
                             EVplot.append(EVsub)
                     else:
                         EVplot.append(EVsub)
-                    
                 if self._mumotModel._constantSystemSize == True:
                     FixedPoints = [[realEQsol[kk][self._stateVariable1] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)], 
                                  [realEQsol[kk][self._stateVariable2] for kk in range(len(realEQsol)) if (0 <= sympy.re(realEQsol[kk][self._stateVariable1]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable2]) <= 1) and (0 <= sympy.re(realEQsol[kk][self._stateVariable3]) <= 1)],
@@ -4804,7 +4803,6 @@ class MuMoTfieldView(MuMoTview):
 #                 
             else:
                 FixedPoints = None
-        
             self._FixedPoints = FixedPoints
             
         self._realEQsol = realEQsol
@@ -4891,7 +4889,7 @@ class MuMoTfieldView(MuMoTview):
         self._logs.append(log)
 
     ## get 3-dimensional field for plotting        
-    def _get_field3d(self, kind, meshPoints, plotLimits=1):
+    def _get_field3d(self, kind, meshPoints, plotLimits = 1):
         with io.capture_output() as log:
             self._log(kind)
             (funcs, argDict, plotLimits) = self._get_field()
@@ -4964,7 +4962,7 @@ class MuMoTvectorView(MuMoTfieldView):
     _checkReactants = None
     ## set of all constant reactants to get intersection with _checkReactants
     _checkConstReactants = None
-    
+
     def __init__(self, model, controller, fieldParams, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
         #if model._systemSize is None and model._constantSystemSize == True:
         #    self._showErrorMessage("Cannot construct field-based plot until system size is set, using substitute()")
@@ -4975,9 +4973,9 @@ class MuMoTvectorView(MuMoTfieldView):
         self._generatingCommand = "vector"
 
     def _plot_field(self, _=None):
-        
+
         super()._plot_field()                   
-        
+
         if self._stateVariable3 is None:   
             self._get_field2d("2d vector plot", 10)  # @todo: allow user to set mesh points with keyword
             fig_vector = plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color='black')  # @todo: define colormap by user keyword
@@ -5029,6 +5027,14 @@ class MuMoTstreamView(MuMoTfieldView):
     _checkReactants = None
     ## set of all constant reactants to get intersection with _checkReactants
     _checkConstReactants = None
+    ## sets time of integration for 3d streams
+    maxTime = None
+    ## time of integration for 3d streams
+    _integrationTime = None
+    ## set number of 3d streams
+    setNumPoints = None
+    ## number of 3d streams
+    _numPoints = None
     
     def __init__(self, model, controller, fieldParams, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
         #if model._systemSize is None and model._constantSystemSize == True:
@@ -5036,7 +5042,11 @@ class MuMoTstreamView(MuMoTfieldView):
         #    return
         #if self._SOL_2ndOrdMomDict is None:
         #    self._showErrorMessage('Noise in the system could not be calculated: \'showNoise\' automatically disabled.')
-
+        
+        ## These might be better somewhere else?
+        self._numPoints = kwargs.get('setNumPoints', 30)
+        self._integrationTime = kwargs.get('maxTime', 1.0)
+        
         self._checkReactants = model._reactants
         if model._constantReactants:
             self._checkConstReactants = model._constantReactants
@@ -5054,8 +5064,8 @@ class MuMoTstreamView(MuMoTfieldView):
             for reactant in checkReactants:
                 if reactant in checkConstReactants:
                     checkReactants.remove(reactant)
-        if len(checkReactants) != 2:
-            self._showErrorMessage("Not implemented: This feature is available only for systems with exactly 2 time-dependent reactants!")
+        if len(checkReactants) > 3:
+            self._showErrorMessage("Not implemented: This feature is available only for systems with 1,2 or 3 time-dependent reactants!")
         
         super()._plot_field()
 
@@ -5198,11 +5208,87 @@ class MuMoTstreamView(MuMoTfieldView):
             with io.capture_output() as log:
                 self._appendFixedPointsToLogs(self._realEQsol, self._EV, self._Evects)
             self._logs.append(log)
-        
-        ## else model has 3 dimensions
-        else:
-            print('3d stream plot not yet implemented.')
-        
+        else:     
+            self._get_field3d("3d stream plot", 10)
+            ax = self._figure.gca(projection='3d')
+            
+            argDict = self._get_argDict()
+            
+            ## Derived model equations stored with parameter values substituted in from widgets
+            eqA = self._mumotModel._equations[self._stateVariable1].subs(argDict)
+            eqB = self._mumotModel._equations[self._stateVariable2].subs(argDict)
+            eqC = self._mumotModel._equations[self._stateVariable3].subs(argDict)
+
+            ## Model of ODEs from model equations
+            ## Needed for odeint() method to integrate streams from start points
+            ## N is needed for the equations
+            def modelODEs(states, t, eqA, eqB, eqC):
+                A = states[0]
+                B = states[1]
+                C = states[2]
+
+                ## eval is needed to run the derived equation as a mathematical formula rather than a string
+                dAdt = eval(str(eqA))
+                dBdt = eval(str(eqB))
+                dCdt = eval(str(eqC))
+
+                return [dAdt, dBdt, dCdt]
+
+            ## time over which streams are integrated, longer time gives a longer stream
+            t = np.linspace(0, self._integrationTime ,20)
+             
+            ## This empty array will store start points of streams
+            start_points = np.empty([0,3])
+            ## This is used to calculate speed value at each randomly selected point
+            ## Each column and row in self._X contains the same values so we only need 1
+            ## Used to find corresponding speed value for each starting point
+            speed_points = self._X[0,0,:]
+
+            j = 0
+            
+            ## Builds array start_points of starting points for streams
+            ## _numPoints is a keyword for the number of start points (number of streams)
+            while j < self._numPoints:
+                ## Randomly choose points to start streams from
+                p = np.random.choice(self._X[0,0,:])
+                q = np.random.choice(self._Y[0,:,0])
+                r = np.random.choice(self._Z[:,0,0])
+                ## Use selected point as start point if they meet following criteria
+                ## If not, then reselect start point
+                ## Method is ineffecient for high number of start points
+                if (p + q + r <= 1):
+                    temp = np.array([[p,q,r]])
+                    start_points = np.concatenate((start_points, temp), axis = 0)
+                    j += 1
+            
+            ## Plot streams from each start point
+            for i in range(start_points[:,0].shape[0]):
+                x = start_points[i,0]
+                y = start_points[i,1]
+                z = start_points[i,2]
+                
+                ## Finds the speed of stream at each start point
+                ## Finds index of each start point in speed_points
+                ## Uses indexes to find corresponding speed for start point in self._speed
+                speed_x = np.where(speed_points == x)[0]
+                speed_y = np.where(speed_points == y)[0]
+                speed_z = np.where(speed_points == z)[0]
+                speed = np.absolute(self._speed[speed_x, speed_y, speed_z])[0]
+                
+                ## Initial conditions for integrations
+                state0 = [x, y, z]
+                state = odeint(modelODEs, state0, t, args=(eqA, eqB, eqC))
+
+                fig_stream3d = ax.plot(state[:,0],state[:,1],state[:,2], color=plt.cm.Greys(speed))
+                
+                ## Adds arrow halfway along the length of each stream
+                ## mutation_scale is the size of the arrow head
+                arrow_point = int(t.shape[0]/2)
+                arrow = Arrow3D([state[:,0][arrow_point], state[:,0][arrow_point+2]], [state[:,1][arrow_point], state[:,1][arrow_point+2]], [state[:,2][arrow_point], state[:,2][arrow_point+2]], mutation_scale=7, color=plt.cm.Greys(speed))
+                ax.add_artist(arrow)
+
+            _fig_formatting_3D(figure=fig_stream3d, xlab=self._xlab, ylab=self._ylab, zlab=self._zlab, specialPoints=self._FixedPoints,
+                               showFixedPoints=self._showFixedPoints, ax_reformat=True, showPlane=self._mumotModel._constantSystemSize, fontsize=self._chooseFontSize)
 
 class MuMoTbifurcationView(MuMoTview):
     """Bifurcation view on model."""
@@ -8419,13 +8505,13 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
                        specialPoints=None, showFixedPoints=False, **kwargs):
     """Function for editing properties of 3D plots. 
 
-    Called by :class:`MuMoTvectorView`.
+    Called by :class:`MuMoTvectorView` and :class:`MuMoTstreamView`
 
     """
     fig = plt.gcf()
     #fig.set_size_inches(10,8) 
     ax = fig.gca(projection='3d')
-    
+
     if kwargs.get('showPlane', False) == True:
         #pointsMesh = np.linspace(0, 1, 11)
         #Xdat, Ydat = np.meshgrid(pointsMesh, pointsMesh)
@@ -8434,7 +8520,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
         #ax.plot_surface(Xdat, Ydat, Zdat, rstride=20, cstride=20, color='grey', alpha=0.25)
         #ax.plot_wireframe(Xdat, Ydat, Zdat, rstride=1, cstride=1, color='grey', alpha=0.5)
         ax.plot([1, 0, 0, 1], [0, 1, 0, 0], [0, 0, 1, 0], linewidth=2, c='k')
-        
+
     if xlab is None:
         try:
             xlabelstr = ax.xaxis.get_label_text()
@@ -9732,3 +9818,15 @@ def _roundNumLogsOut(number):
     # if number is real
     else:
         return str(number.round(4))
+
+## Class enables arrows to be added to 3d stream plot
+## copied from https://stackoverflow.com/questions/22867620/putting-arrowheads-on-vectors-in-matplotlibs-3d-plot        
+class Arrow3D(FancyArrowPatch):
+    def __init__(self, xs, ys, zs, *args, **kwargs):
+        FancyArrowPatch.__init__(self, (0,0), (0,0), *args, **kwargs)
+        self._verts3d = xs, ys, zs
+    def draw(self, renderer):
+        xs3d, ys3d, zs3d = self._verts3d
+        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
+        self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
+        FancyArrowPatch.draw(self, renderer)
