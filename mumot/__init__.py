@@ -8241,22 +8241,6 @@ def _buildFig(object, figure=None):
     else:
         object._figure = figure
 
-
-def _buildFigOLD(object, figure=None):
-    """Generic function for constructing figures in :class:`MuMoTview` and :class:`MuMoTmultiController` classes."""
-    global figureCounter
-    object._figureNum = figureCounter
-    figureCounter += 1
-    plt.ion()
-    with warnings.catch_warnings():  # ignore warnings when plt.hold has been deprecated in installed libraries - still need to try plt.hold(True) in case older libraries in use
-        warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
-        warnings.filterwarnings("ignore", category=UserWarning)
-        plt.hold(True)  
-    if figure is None:
-        object._figure = plt.figure(object._figureNum) 
-    else:
-        object._figure = figure
-
 def _round_to_1(x):
     '''used for determining significant digits for axes formatting in plots MuMoTstreamView and MuMoTbifurcationView.'''
     if x == 0: return 1
