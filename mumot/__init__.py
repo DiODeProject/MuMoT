@@ -1115,7 +1115,7 @@ class MuMoTmodel:
 
     # construct interactive stream plot with the option to show noise around
     # fixed points
-    def stream(self, stateVariable1, stateVariable2, stateVariable3=None,
+    def stream(self, stateVariable1, stateVariable2=None, stateVariable3=None,
                params=None, initWidgets=None, **kwargs):
         """Display interactive stream plot of ``stateVariable1`` (x-axis),
         ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis;
@@ -1184,7 +1184,9 @@ class MuMoTmodel:
             return None
 
         if self._check_state_variables(stateVariable1, stateVariable2, stateVariable3):
-            if stateVariable3 is None:
+            if stateVariable2 is None:
+                SOL_2ndOrdMomDict = self._check2ndOrderMom(showNoise=kwargs.get('showNoise', False))
+            elif stateVariable3 is None:
                 SOL_2ndOrdMomDict = self._check2ndOrderMom(showNoise=kwargs.get('showNoise', False))
             else:
                 print('3D stream plot not yet implemented.')
@@ -1756,8 +1758,8 @@ class MuMoTmodel:
         #print( self._agentProbabilities )
 
     def _check_state_variables(self, stateVariable1, stateVariable2, stateVariable3=None):
-        if process_sympy(stateVariable1) in self._reactants and process_sympy(stateVariable2) in self._reactants and (stateVariable3 is None or process_sympy(stateVariable3) in self._reactants):
-            if stateVariable1 != stateVariable2 and stateVariable1 != stateVariable3 and stateVariable2 != stateVariable3:
+        if process_sympy(stateVariable1) in self._reactants and (stateVariable2 is None or process_sympy(stateVariable2) in self._reactants) and (stateVariable3 is None or process_sympy(stateVariable3) in self._reactants):
+            if (stateVariable1 != stateVariable2 and stateVariable1 != stateVariable3 and stateVariable2 != stateVariable3) or (stateVariable2 is None and stateVariable3 is None):
                 return True
             else:
                 print('State variables cannot be the same')
@@ -1790,6 +1792,21 @@ class MuMoTmodel:
         return self._funcs
     
     ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
+    def _getArgTuple1d(self, argDict, stateVariable1, X):
+        argList = []
+        for arg in self._args:
+            if arg == stateVariable1:
+                argList.append(X)
+            elif arg == self._systemSize:
+                argList.append(1)  # @todo: system size set to 1
+            else:
+                try:
+                    argList.append(argDict[arg])
+                except KeyError:
+                    raise MuMoTValueError('Unexpected reactant \'' + str(arg) + '\': system size > 1?')
+        return tuple(argList)
+    
+    ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
     def _getArgTuple2d(self, argDict, stateVariable1, stateVariable2, X, Y):
         argList = []
         for arg in self._args:
@@ -1806,7 +1823,7 @@ class MuMoTmodel:
                     raise MuMoTValueError('Unexpected reactant \'' + str(arg) + '\': system size > 2?')
         return tuple(argList)
 
-    ## get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots
+    ## get tuple to evalute functions returned by _getFuncs with, for 3d field-based plots
     def _getArgTuple3d(self, argDict, stateVariable1, stateVariable2, stateVariable3, X, Y, Z):
         argList = []
         for arg in self._args:
@@ -2964,18 +2981,15 @@ class MuMoTview:
         JAC = MAT.jacobian([self._stateVariable1])
         
         eigList = []
-        
         for nn in range(len(realEQsol)): 
             evSet = {}
             JACsub = JAC.subs([(self._stateVariable1, realEQsol[nn][self._stateVariable1])])
             #evSet = JACsub.eigenvals()
             eigVects = JACsub.eigenvects()
             for kk in range(len(eigVects)):
-                evSet[eigVects[kk][0]] = (eigVects[kk][1])
+                evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
             eigList.append(evSet)
         return realEQsol, eigList  # returns two lists of dictionaries
-    
-    
     
     ## calculate stationary states of 2d system
     def _get_fixedPoints2d(self):
@@ -4365,7 +4379,7 @@ class MuMoTfieldView(MuMoTview):
     _aggregateResults = None
     
     
-    def __init__(self, model, controller, fieldParams, SOL_2ndOrd, stateVariable1, stateVariable2, stateVariable3=None, figure=None, params=None, **kwargs):
+    def __init__(self, model, controller, fieldParams, SOL_2ndOrd, stateVariable1, stateVariable2 = None, stateVariable3=None, figure=None, params=None, **kwargs):
         if model._systemSize is None and model._constantSystemSize == True:
             print("Cannot construct field-based plot until system size is set, using substitute()")
             return
@@ -4380,12 +4394,14 @@ class MuMoTfieldView(MuMoTview):
                 self._chooseFontSize = None
             self._showFixedPoints = kwargs.get('showFixedPoints', False)
             self._xlab = r'' + kwargs.get('xlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable1)))+'}$')
-            self._ylab = r'' + kwargs.get('ylab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable2)))+'}$')
+            if stateVariable2:
+                self._ylab = r'' + kwargs.get('ylab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable2)))+'}$')
             if stateVariable3:
                 self._zlab = r'' + kwargs.get('zlab', r'$' + '\Phi_{' + _doubleUnderscorify(_greekPrependify(str(stateVariable3))) + '}$') 
             
             self._stateVariable1 = process_sympy(stateVariable1)
-            self._stateVariable2 = process_sympy(stateVariable2)
+            if stateVariable2 is not None:
+                self._stateVariable2 = process_sympy(stateVariable2)
             if stateVariable3 is not None:
                 self._axes3d = True
                 self._stateVariable3 = process_sympy(stateVariable3)
@@ -4399,11 +4415,11 @@ class MuMoTfieldView(MuMoTview):
                 self._showSSANoise = True
             else:
                 self._showSSANoise = False
-            
+
             if stateVariable3 is None:    
                 self._chooseXrange = kwargs.get('choose_xrange', None)
                 self._chooseYrange = kwargs.get('choose_yrange', None)
-            
+
             if self._controller is None:
                 # storing all values of MA-specific parameters
                 self._maxTime = fieldParams["maxTime"]
@@ -4414,7 +4430,7 @@ class MuMoTfieldView(MuMoTview):
 #                self._plotProportions = fieldParams["plotProportions"]
                 self._runs = fieldParams.get('runs', 20)
                 self._aggregateResults = fieldParams.get('aggregateResults', True)
-            
+
             else:
                 # storing fixed params
                 for key, value in fieldParams.items():
@@ -4529,7 +4545,22 @@ class MuMoTfieldView(MuMoTview):
         EV = None
         Evects = None
         
-        if self._stateVariable3 is None:
+        if self._stateVariable2 is None:
+            if self._showNoise == True:
+                print('Please note: Currently \'showNoise\' only available for 2D stream and vector plots.')
+            if self._showFixedPoints == True:
+                FixedPoints = [[],[]]
+                realEQsol, eigList = self._get_fixedPoints1d()
+                for kk in range(len(realEQsol)):
+                    for val1,key2 in zip(realEQsol[kk].values(), eigList[kk].keys()):
+                        FixedPoints[0].append(val1)
+                        FixedPoints[1].append(key2)
+            else:
+                FixedPoints = None
+            
+            self._FixedPoints = FixedPoints
+
+        elif self._stateVariable3 is None:
             if self._showFixedPoints == True or self._SOL_2ndOrdMomDict is not None or self._showSSANoise:
                 Phi_stateVar1 = Symbol('Phi_'+str(self._stateVariable1)) 
                 Phi_stateVar2 = Symbol('Phi_'+str(self._stateVariable2))
@@ -4803,6 +4834,29 @@ class MuMoTfieldView(MuMoTview):
         funcs = self._mumotModel._getFuncs()
         
         return (funcs, argDict, plotLimits)
+    
+    ## get 1-dimensional field for plotting
+    def _get_field1d(self, kind, meshPoints, plotLimits=1):
+
+        (funcs, argDict, plotLimits) = self._get_field()
+        self._X = np.mgrid[0:plotLimits:complex(0, meshPoints)]
+        if self._mumotModel._constantSystemSize:
+            mask = self._mask.get((meshPoints, 2))
+            if mask is None:
+                mask = np.zeros(self._X.shape, dtype=bool)
+                upperright = np.triu_indices(meshPoints, m=1)  # @todo: allow user to set mesh points with keyword 
+                mask[upperright[0]] = True
+                mask = np.flipud(mask)
+                self._mask[(meshPoints, 2)] = mask
+        self._Xdot = funcs[self._stateVariable1](*self._mumotModel._getArgTuple1d(argDict, self._stateVariable1, self._X))
+        try:
+#            self._speed = np.log(self._Xdot)
+#            if np.isnan(self._speed).any():
+            self._speed = None
+        except:
+            self._speed = None
+        if self._mumotModel._constantSystemSize:
+            self._Xdot = np.ma.array(self._Xdot, mask=mask)       
 
     ## get 2-dimensional field for plotting
     def _get_field2d(self, kind, meshPoints, plotLimits=1):
@@ -5003,10 +5057,109 @@ class MuMoTstreamView(MuMoTfieldView):
         if len(checkReactants) != 2:
             self._showErrorMessage("Not implemented: This feature is available only for systems with exactly 2 time-dependent reactants!")
         
+        super()._plot_field()
+
         
-        super()._plot_field()                   
+        ## if model has 1 dimension
+        if self._stateVariable2 is None:
+            _mesh_points = 100
+            self._get_field1d("1d stream plot", _mesh_points)
+            
+            ## Since plot is 2d, need every element of x-data to be plotted against 0
+            ys = np.zeros(self._X.shape)
+            
+            ## length of negative section of stream
+            _neg_length = 0
+            ## length of positive section of stream
+            _pos_length = 0
+            ## point along line where sign changes
+            _sign_change_point = 0.0
+            ## index where sign changes
+            _sign_change_index = 0
+            ## represents whether previous point was positive or negative
+            _prev_point = 0
+            ## has the sign of the point changed from the previous point
+            _sign_change = False
+
+            for i in range(self._X.shape[0]):
+                _Xdot_temp = np.absolute(self._Xdot[i])    ## used for line shading
+                if self._Xdot[i] < 0:
+                    ## if this is the first point, set prev point to -1
+                    if (_prev_point == 0):
+                        _prev_point = -1
+                    ## if previous _Xdot value was > 0, the sign has changed
+                    elif (_prev_point == 1):
+                        _prev_point = -1
+                        _sign_change = True
+                    ## plot line segment, with color based on absolute value of _Xdot
+                    fig_stream_1d = plt.plot(self._X[i:i+2], ys[i:i+2], color = plt.cm.Reds(_Xdot_temp))
+                    
+                    _neg_length += 1
+                        
+                elif self._Xdot[i] >= 0:
+                    ## if this is the first point, set prev point to 1
+                    if (_prev_point == 0):
+                        _prev_point = 1
+                    ## if previous _Xdot value was < 0, the sign has changed
+                    elif (_prev_point == -1):
+                        _prev_point = 1
+                        _sign_change = True
+                    ## plot line segment, with color based on absolute value of _Xdot    
+                    fig_stream_1d = plt.plot(self._X[i:i+2], ys[i:i+2], color = plt.cm.Blues(_Xdot_temp))
+                    _pos_length += 1
+
+                ## if sign has changed, record where sign changed
+                if _sign_change:
+                    _sign_change_index = i
+                    _sign_change_point = self._X[i]
+                    _sign_change = False    
+            
+            ## These values are used to plot each arrows start point
+            _neg_arrow_start = 0.0
+            _pos_arrow_start = 0.0
+            
+            ## These values are used for the color of each arrow so it matches the color of the point of line its on
+            _neg_arrow_color = 0.0
+            _pos_arrow_color = 0.0
+            
+            ##Currently only works if there is one fixed point within the range 0 - 1
+            ## If _prev_point == 1, then the last point was positive and so the pos arrow goes on the right
+            if (_prev_point == 1):
+                _pos_arrow_start = _sign_change_point + (_pos_length/(2*_mesh_points))
+                _neg_arrow_start = (_neg_length/(2*_mesh_points))
+                _pos_arrow_color = self._Xdot[_sign_change_index + int(_pos_length/2)]
+                _neg_arrow_color = self._Xdot[int(_neg_length/2)]
+            ## If _prev_point == -1, then the last point was negative and so the neg arrow goes on the right
+            else:
+                _neg_arrow_start = _sign_change_point + (_neg_length/(2*_mesh_points))
+                _pos_arrow_start = (_pos_length/(2*_mesh_points))
+                _neg_arrow_color = self._Xdot[_sign_change_index + int(_neg_length/2)]
+                _pos_arrow_color = self._Xdot[int(_pos_length/2)]
+            
+            ## Need to get absolute values so color value isn't negative
+            _neg_arrow_color = np.absolute(_neg_arrow_color)
+            _pos_arrow_color = np.absolute(_pos_arrow_color)
+            
+            ## if either length segment is zero, no arrow will be plotted
+            if _neg_length != 0:
+                plt.arrow(_neg_arrow_start+0.05, 0, -0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = plt.cm.Reds(_neg_arrow_color))
+            if _pos_length != 0:
+                plt.arrow(_pos_arrow_start-0.05, 0, 0.01, 0, width = 0.000001, head_width=0.04, head_length=0.025, color = plt.cm.Blues(_pos_arrow_color))
+                
+            if self._chooseXrange:
+                choose_xrange = self._chooseXrange
+            else:
+                choose_xrange = [0, 1]
+            if self._chooseYrange:
+                choose_yrange = self._chooseYrange
+            else:
+                choose_yrange = [-0.1, 0.1]
+            
+            ##Format the plot
+            _fig_formatting_1D(figure=fig_stream_1d , choose_xrange= choose_xrange, choose_yrange = choose_yrange, showFixedPoints=self._showFixedPoints, specialPoints=self._FixedPoints, xlab=self._xlab)
         
-        if self._stateVariable3 is None:
+        ## elif model has 2 dimensions
+        elif self._stateVariable3 is None:
             self._get_field2d("2d stream plot", 100)  # @todo: allow user to set mesh points with keyword
             
             if self._speed is not None:
@@ -5045,7 +5198,8 @@ class MuMoTstreamView(MuMoTfieldView):
             with io.capture_output() as log:
                 self._appendFixedPointsToLogs(self._realEQsol, self._EV, self._Evects)
             self._logs.append(log)
-                
+        
+        ## else model has 3 dimensions
         else:
             print('3d stream plot not yet implemented.')
         
@@ -5949,7 +6103,6 @@ class MuMoTstochasticSimulationView(MuMoTview):
             timeInterval, self._currentState = self._simulationStep()
             # increment time
             self._t += timeInterval
-             
             # log step
             for state, pop in self._currentState.items():
                 if state in self._mumotModel._constantReactants: continue
@@ -8853,6 +9006,122 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
     if aspectRatioEqual:
         ax.set_aspect('equal')
     
+    
+def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None,
+                       showFixedPoints=False, specialPoints=None, xlab=None, **kwargs):
+    """Format 1D plots.
+
+    Called by :class:`MuMoTstreamView`.
+
+    """
+    
+    if xdata:
+        ax = plt.gca()
+        data_x = xdata
+
+    elif figure:
+        #plt.gcf()
+        fig1dStream = plt.gcf()
+        fig1dStream.set_size_inches(6, 2)
+        ax = plt.gca()
+        data_x = [ax.lines[kk].get_xdata() for kk in range(len(ax.lines))]
+
+    else:
+        print('Choose either figure or dataset(s)')
+
+    if xlab is None:
+        try:
+            xlabelstr = ax.xaxis.get_label_text()
+            if len(ax.xaxis.get_label_text()) == 0:
+                xlabelstr = 'choose x-label'
+        except:
+            xlabelstr = 'choose x-label'
+    else:
+        xlabelstr = xlab
+    
+    if figure is not None:
+        xmajortickslocs = ax.xaxis.get_majorticklocs()
+        xminortickslocs = ax.xaxis.get_minorticklocs()
+        x_lim_left = ax.get_xbound()[0]  # ax.xaxis.get_data_interval()[0]
+        x_lim_right = ax.get_xbound()[1]  # ax.xaxis.get_data_interval()[1]
+        ax.set_xticks(xmajortickslocs)
+        ax.set_xticks(xminortickslocs, minor=True)
+        ax.tick_params(axis='both', which='major', length=5, width=2)
+        ax.tick_params(axis='both', which='minor', length=3, width=1)
+        plt.xlim(x_lim_left, x_lim_right)
+        plt.yticks([])    
+            
+    if len(xlabelstr) > 40:
+        chooseFontSize = 10  # 16
+    elif 31 <= len(xlabelstr) <= 40:
+        chooseFontSize = 14  # 20
+    elif 26 <= len(xlabelstr) <= 30:
+        chooseFontSize = 18  # 26
+    else:
+        chooseFontSize = 24  # 30
+        
+    if 'fontsize' in kwargs:
+        if not kwargs['fontsize'] is None:
+            chooseFontSize = kwargs['fontsize']
+
+    plt.xlabel(r''+str(xlabelstr), fontsize=chooseFontSize)
+    plt.ylabel('')
+     
+    if figure is None or choose_xrange is not None:
+        if choose_yrange:
+            plt.ylim(choose_yrange[0],choose_yrange[1])
+        if choose_xrange:
+            max_xrange = choose_xrange[1]-choose_xrange[0]
+        else:
+            XaxisMax = np.max([np.max(data_x[kk]) for kk in range(len(data_x))])
+            XaxisMin = np.min([np.min(data_x[kk]) for kk in range(len(data_x))])
+            max_xrange = XaxisMax - XaxisMin  # max(xrange)
+        
+        if max_xrange < 1.0:
+            xMLocator_major = _round_to_1(max_xrange/5)
+        else:
+            xMLocator_major = _round_to_1(max_xrange/10)
+        xMLocator_minor = xMLocator_major/2
+        
+        if choose_xrange:
+            plt.xlim(choose_xrange[0]-xMLocator_minor/10.0, choose_xrange[1]+xMLocator_minor/10.0)
+        else:
+            plt.xlim(XaxisMin-xMLocator_minor/10.0, XaxisMax+xMLocator_minor/10.0)
+
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(xMLocator_major))
+        ax.xaxis.set_minor_locator(ticker.MultipleLocator(xMLocator_minor))
+        for axis in ['top', 'bottom', 'left', 'right']:
+            ax.spines[axis].set_linewidth(2)
+        
+        ax.tick_params('both', length=5, width=2, which='major')
+        ax.tick_params('both', length=3, width=1, which='minor')
+    
+    if showFixedPoints == True:
+        if not specialPoints[0] == []:
+            for jj in range(len(specialPoints[0])):
+                try:
+                    lam1 = specialPoints[1][jj]
+                    if sympy.re(lam1) < 0:
+                        FPfill = 'full'
+                        circleColor = 'green'
+                    else:
+                        FPfill = 'none' 
+                        circleColor = 'red'       
+                except:
+                    print('Check input!') 
+                    FPfill = 'none'
+                if sympy.re(lam1) != 0:
+                    plt.plot([specialPoints[0][jj]], 0.0, marker='o', markersize=9, 
+                             c=circleColor, fillstyle=FPfill, mew=3)
+    
+                
+    plt.grid(kwargs.get('grid', False))
+        
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(13)               
+        
+    plt.tight_layout()
+ 
 
 def _decodeNetworkTypeFromString(netTypeStr):
     # init the network type
