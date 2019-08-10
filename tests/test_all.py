@@ -1,9 +1,6 @@
 from textwrap import dedent
 
-from mumot import (
-    MuMoTmodel,
-    parseModel
-)
+from mumot.models import parseModel
 
 
 def test_dummy_1():
