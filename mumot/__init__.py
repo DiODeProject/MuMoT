@@ -30,7 +30,6 @@ from ._version import __version__
 from .process_latex.process_latex import process_sympy
 from .models import (
     MuMoTmodel,
-    NetworkType,
     parseModel,
 )
 from .utils import (
@@ -60,6 +59,7 @@ from .controllers import (
     MuMoTtimeEvolutionController,
 )
 from .consts import (
+    NetworkType,
     MAX_RANDOM_SEED,
 )
 from .exceptions import (

@@ -2,7 +2,6 @@
 
 import copy
 import sympy
-from enum import Enum
 import os
 import re
 import tempfile
@@ -36,40 +35,6 @@ from . import (
     utils,
     views,
 )
-
-
-class NetworkType(Enum):
-    """Enumeration of possible network types."""
-
-    FULLY_CONNECTED = 0
-    ERSOS_RENYI = 1
-    BARABASI_ALBERT = 2
-    SPACE = 3
-    DYNAMIC = 4
-
-
-def _decodeNetworkTypeFromString(netTypeStr: str) -> Optional[NetworkType]:
-    # init the network type
-    admissibleNetTypes = {'full': NetworkType.FULLY_CONNECTED,
-                          'erdos-renyi': NetworkType.ERSOS_RENYI,
-                          'barabasi-albert': NetworkType.BARABASI_ALBERT,
-                          'dynamic': NetworkType.DYNAMIC}
-
-    if netTypeStr not in admissibleNetTypes:
-        print(f"ERROR! Invalid network type argument! Valid strings are: {admissibleNetTypes}")
-    return admissibleNetTypes.get(netTypeStr, None)
-
-
-def _encodeNetworkTypeToString(netType: NetworkType) -> Optional[str]:
-    # init the network type
-    netTypeEncoding = {NetworkType.FULLY_CONNECTED: 'full',
-                       NetworkType.ERSOS_RENYI: 'erdos-renyi',
-                       NetworkType.BARABASI_ALBERT: 'barabasi-albert',
-                       NetworkType.DYNAMIC: 'dynamic'}
-
-    if netType not in netTypeEncoding:
-        print(f"ERROR! Invalid netTypeEncoding table! Tried to encode network type: {netType}")
-    return netTypeEncoding.get(netType, 'none')
 
 
 def _deriveODEsFromRules(reactants, rules):

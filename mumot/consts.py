@@ -1,5 +1,7 @@
 """Constants (inc. symbols) used in MuMoT."""
 
+from enum import Enum
+
 from .process_latex.process_latex import process_sympy
 
 MAX_RANDOM_SEED = 2147483647
@@ -23,5 +25,15 @@ RATE_STEP = 0.1
 
 INITIAL_COND_INIT_VAL = 0.0
 INITIAL_COND_INIT_BOUND = 1.0
+
+
+class NetworkType(Enum):
+    """Enumeration of possible network types."""
+
+    FULLY_CONNECTED = 0
+    ERSOS_RENYI = 1
+    BARABASI_ALBERT = 2
+    SPACE = 3
+    DYNAMIC = 4
 
 

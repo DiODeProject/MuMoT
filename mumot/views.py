@@ -3870,10 +3870,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
     def _constructorSpecificParams(self, MAParams):
         if self._controller is None:
             self._timestepSize = MAParams.get('timestepSize', 1)
-            self._netType = models._decodeNetworkTypeFromString(MAParams['netType'])
-            if self._netType != models.NetworkType.FULLY_CONNECTED:
+            self._netType = utils._decodeNetworkTypeFromString(MAParams['netType'])
+            if self._netType != consts.NetworkType.FULLY_CONNECTED:
                 self._netParam = MAParams['netParam']
-                if self._netType == models.NetworkType.DYNAMIC:
+                if self._netType == consts.NetworkType.DYNAMIC:
                     self._motionCorrelatedness = MAParams['motionCorrelatedness']
                     self._particleSpeed = MAParams['particleSpeed']
                     self._showTrace = MAParams.get('showTrace', False)
@@ -3883,8 +3883,8 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             self._generatingCommand = "multiagent"
             # storing fixed params
             if self._fixedParams.get('netType') is not None:
-                self._fixedParams['netType'] = models._decodeNetworkTypeFromString(self._fixedParams['netType'])
-            self._netType = models._decodeNetworkTypeFromString(MAParams['netType'][0])
+                self._fixedParams['netType'] = utils._decodeNetworkTypeFromString(self._fixedParams['netType'])
+            self._netType = utils._decodeNetworkTypeFromString(MAParams['netType'][0])
             self._update_net_params(False)
 
         self._mumotModel._getSingleAgentRules()
@@ -3904,17 +3904,17 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                 break
 
         if onlyDynamic:
-            # if (not self._controller) and (not self._netType == models.NetworkType.DYNAMIC): # if the user has specified the network type, we notify him/her through error-message
+            # if (not self._controller) and (not self._netType == consts.NetworkType.DYNAMIC): # if the user has specified the network type, we notify him/her through error-message
             #    self._errorMessage.value = "Only Moving-Particle netType is available when rules contain the emptyset."
-            if not self._netType == models.NetworkType.DYNAMIC:
+            if not self._netType == consts.NetworkType.DYNAMIC:
                 print("Only Moving-Particle netType is available when rules contain the emptyset or constant reactants.")
-            self._netType = models.NetworkType.DYNAMIC
+            self._netType = consts.NetworkType.DYNAMIC
             if self._controller:  # updating value and disabling widget
                 if self._controller._widgetsExtraParams.get('netType') is not None:
-                    self._controller._widgetsExtraParams['netType'].value = models.NetworkType.DYNAMIC
+                    self._controller._widgetsExtraParams['netType'].value = consts.NetworkType.DYNAMIC
                     self._controller._widgetsExtraParams['netType'].disabled = True
                 else:
-                    self._fixedParams['netType'] = models.NetworkType.DYNAMIC
+                    self._fixedParams['netType'] = consts.NetworkType.DYNAMIC
                 self._controller._update_net_params()
             else:  # this is a standalone view
                 # if the assigned value of net-param is not consistent with the input, raise a WARNING and set the default value to 0.1
@@ -3940,10 +3940,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         log_str += ", maxTime = " + str(self._maxTime)
         log_str += ", timestepSize = " + str(self._timestepSize)
         log_str += ", randomSeed = " + str(self._randomSeed)
-        log_str += ", netType = '" + models._encodeNetworkTypeToString(self._netType) + "'"
-        if not self._netType == models.NetworkType.FULLY_CONNECTED:
+        log_str += ", netType = '" + utils._encodeNetworkTypeToString(self._netType) + "'"
+        if not self._netType == consts.NetworkType.FULLY_CONNECTED:
             log_str += ", netParam = " + str(self._netParam)
-        if self._netType == models.NetworkType.DYNAMIC:
+        if self._netType == consts.NetworkType.DYNAMIC:
             log_str += ", motionCorrelatedness = " + str(self._motionCorrelatedness)
             log_str += ", particleSpeed = " + str(self._particleSpeed)
             log_str += ", showTrace = " + str(self._showTrace)
@@ -3983,10 +3983,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         MAParams["maxTime"] = self._maxTime
         MAParams['timestepSize'] = self._timestepSize
         MAParams["randomSeed"] = self._randomSeed
-        MAParams['netType'] = models._encodeNetworkTypeToString(self._netType)
-        if self._netType != models.NetworkType.FULLY_CONNECTED:
+        MAParams['netType'] = utils._encodeNetworkTypeToString(self._netType)
+        if self._netType != consts.NetworkType.FULLY_CONNECTED:
             MAParams['netParam'] = self._netParam
-        if self._netType == models.NetworkType.DYNAMIC:
+        if self._netType == consts.NetworkType.DYNAMIC:
             MAParams['motionCorrelatedness'] = self._motionCorrelatedness
             MAParams['particleSpeed'] = self._particleSpeed
             MAParams['showTrace'] = self._showTrace
@@ -4022,9 +4022,9 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         self._adjust_barabasi_network_range()
         if self._controller is not None:
             self._netType = self._getWidgetParamValue('netType', self._controller._widgetsExtraParams)
-            if self._netType != models.NetworkType.FULLY_CONNECTED:  # this used to refer only to value in self._fixedParams; possible bug?
+            if self._netType != consts.NetworkType.FULLY_CONNECTED:  # this used to refer only to value in self._fixedParams; possible bug?
                 self._netParam = self._getWidgetParamValue('netParam', self._controller._widgetsExtraParams)  # self._fixedParams['netParam'] if self._fixedParams.get('netParam') is not None else self._controller._widgetsExtraParams['netParam'].value
-                if self._netType is None or self._netType == models.NetworkType.DYNAMIC:  # this used to refer only to value in self._fixedParams; possible bug?
+                if self._netType is None or self._netType == consts.NetworkType.DYNAMIC:  # this used to refer only to value in self._fixedParams; possible bug?
                     self._motionCorrelatedness = self._getWidgetParamValue('motionCorrelatedness', self._controller._widgetsExtraParams)  # self._fixedParams['motionCorrelatedness'] if self._fixedParams.get('motionCorrelatedness') is not None else self._controller._widgetsExtraParams['motionCorrelatedness'].value
                     self._particleSpeed = self._getWidgetParamValue('particleSpeed', self._controller._widgetsExtraParams)  # self._fixedParams['particleSpeed'] if self._fixedParams.get('particleSpeed') is not None else self._controller._widgetsExtraParams['particleSpeed'].value
                     self._showTrace = self._getWidgetParamValue('showTrace', self._controller._widgetsPlotOnly)  # self._fixedParams['showTrace'] if self._fixedParams.get('showTrace') is not None else self._controller._widgetsPlotOnly['showTrace'].value
@@ -4053,7 +4053,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             self._initFigure()
             # plt.clf()
             # plt.axes().set_aspect('equal')
-            if self._netType == models.NetworkType.DYNAMIC:
+            if self._netType == consts.NetworkType.DYNAMIC:
                 plt.xlim((0, 1))
                 plt.ylim((0, 1))
                 # plt.axes().set_aspect('equal')
@@ -4199,10 +4199,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
 
     def _initGraph(self):
         numNodes = sum(self._currentState.values())
-        if (self._netType == models.NetworkType.FULLY_CONNECTED):
+        if (self._netType == consts.NetworkType.FULLY_CONNECTED):
             # print("Generating full graph")
             self._graph = nx.complete_graph(numNodes)  # np.repeat(0, self.numNodes)
-        elif (self._netType == models.NetworkType.ERSOS_RENYI):
+        elif (self._netType == consts.NetworkType.ERSOS_RENYI):
             # print("Generating Erdos-Renyi graph (connected)")
             if self._netParam is not None and self._netParam > 0 and self._netParam <= 1:
                 self._graph = nx.erdos_renyi_graph(numNodes, self._netParam, np.random.randint(consts.MAX_RANDOM_SEED))
@@ -4222,7 +4222,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                             f"It must be between 0 and 1; input is {self._netParam}")
                 print(errorMsg)
                 raise exceptions.MuMoTValueError(errorMsg)
-        elif (self._netType == models.NetworkType.BARABASI_ALBERT):
+        elif (self._netType == consts.NetworkType.BARABASI_ALBERT):
             # print("Generating Barabasi-Albert graph")
             netParam = int(self._netParam)
             if netParam is not None and netParam > 0 and netParam <= numNodes:
@@ -4232,12 +4232,12 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                             f"It must be an integer between 1 and {numNodes}; input is {self._netParam}")
                 print(errorMsg)
                 raise exceptions.MuMoTValueError(errorMsg)
-        elif (self._netType == models.NetworkType.SPACE):
+        elif (self._netType == consts.NetworkType.SPACE):
             # @todo: implement network generate by placing points (with local communication range) randomly in 2D space
             errorMsg = "ERROR: Graphs of type SPACE are not implemented yet."
             print(errorMsg)
             raise exceptions.MuMoTValueError(errorMsg)
-        elif (self._netType == models.NetworkType.DYNAMIC):
+        elif (self._netType == consts.NetworkType.DYNAMIC):
             self._positions = []
             for _ in range(numNodes):
                 x = np.random.rand() * self._arena_width
@@ -4254,7 +4254,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
         self._agents = np.random.permutation(self._agents).tolist()  # random shuffling of elements (useful to avoid initial clusters in networks)
 
         # init the positionHistory lists
-        dynamicNetwork = self._netType == models.NetworkType.DYNAMIC
+        dynamicNetwork = self._netType == consts.NetworkType.DYNAMIC
         if dynamicNetwork:
             self._positionHistory = []
             for _ in np.arange(sum(self._currentState.values())):
@@ -4264,7 +4264,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
 
     def _simulationStep(self):
         tmp_agents = copy.deepcopy(self._agents)
-        dynamic = self._netType == models.NetworkType.DYNAMIC
+        dynamic = self._netType == consts.NetworkType.DYNAMIC
         if dynamic:
             tmp_positions = copy.deepcopy(self._positions)
             communication_range = self._netParam
@@ -4459,7 +4459,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                 pass
         if resetValueAndRange:
             self._controller._widgetsExtraParams['netParam'].max = float("inf")  # temp to avoid min > max exception
-        if (self._netType == models.NetworkType.FULLY_CONNECTED):
+        if (self._netType == consts.NetworkType.FULLY_CONNECTED):
             # self._controller._widgetsExtraParams['netParam'].min = 0
             # self._controller._widgetsExtraParams['netParam'].max = 1
             # self._controller._widgetsExtraParams['netParam'].step = 1
@@ -4467,7 +4467,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             # self._controller._widgetsExtraParams['netParam'].disabled = True
             # self._controller._widgetsExtraParams['netParam'].description = "None"
             self._controller._widgetsExtraParams['netParam'].layout.display = 'none'
-        elif (self._netType == models.NetworkType.ERSOS_RENYI):
+        elif (self._netType == consts.NetworkType.ERSOS_RENYI):
             # self._controller._widgetsExtraParams['netParam'].disabled = False
             self._controller._widgetsExtraParams['netParam'].layout.display = 'flex'
             if resetValueAndRange:
@@ -4476,7 +4476,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                 self._controller._widgetsExtraParams['netParam'].step = 0.1
                 self._controller._widgetsExtraParams['netParam'].value = 0.5
             self._controller._widgetsExtraParams['netParam'].description = "Network connectivity parameter (link probability)"
-        elif (self._netType == models.NetworkType.BARABASI_ALBERT):
+        elif (self._netType == consts.NetworkType.BARABASI_ALBERT):
             # self._controller._widgetsExtraParams['netParam'].disabled = False
             self._controller._widgetsExtraParams['netParam'].layout.display = 'flex'
             maxVal = self._systemSize - 1
@@ -4486,10 +4486,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                 self._controller._widgetsExtraParams['netParam'].step = 1
                 self._controller._widgetsExtraParams['netParam'].value = min(maxVal, 3)
             self._controller._widgetsExtraParams['netParam'].description = "Network connectivity parameter (new edges)"
-        elif (self._netType == models.NetworkType.SPACE):
+        elif (self._netType == consts.NetworkType.SPACE):
             self._controller._widgetsExtraParams['netParam'].value = -1
 
-        if (self._netType == models.NetworkType.DYNAMIC):
+        if (self._netType == consts.NetworkType.DYNAMIC):
             # self._controller._widgetsExtraParams['netParam'].disabled = False
             self._controller._widgetsExtraParams['netParam'].layout.display = 'flex'
             if resetValueAndRange:
@@ -4531,7 +4531,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
 
     def _adjust_barabasi_network_range(self) -> None:
         """Adjust the widget of the number of edges of the Barabasi-Albert network when the system size slider is changed."""
-        if self._controller is None or not self._netType == models.NetworkType.BARABASI_ALBERT or self._controller._widgetsExtraParams.get('netParam') is None:
+        if self._controller is None or not self._netType == consts.NetworkType.BARABASI_ALBERT or self._controller._widgetsExtraParams.get('netParam') is None:
             return
         maxVal = self._systemSize - 1
         if self._controller._widgetsExtraParams['netParam'].max == maxVal:

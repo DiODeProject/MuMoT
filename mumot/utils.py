@@ -8,6 +8,7 @@ from . import (
     defaults,
     exceptions,
     models,
+    utils,
     _version
 )
 
@@ -222,7 +223,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
     if optionName == 'netType':
         # check validity of the network type or init to default
         if inputValue is not None:
-            decodedNetType = models._decodeNetworkTypeFromString(inputValue)
+            decodedNetType = utils._decodeNetworkTypeFromString(inputValue)
             if decodedNetType is None:  # terminating the process if the input argument is wrong
                 error_msg = (f"The specified value for netType ={inputValue} is not valid. \n"
                              "Accepted values are: 'full',  'erdos-renyi', 'barabasi-albert', and 'dynamic'.")
@@ -231,7 +232,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
 
             return [inputValue, True]
         else:
-            decodedNetType = models._decodeNetworkTypeFromString(initValues) if initValues is not None else None
+            decodedNetType = utils._decodeNetworkTypeFromString(initValues) if initValues is not None else None
             if decodedNetType is not None:  # assigning the init value only if it's a valid value
                 return [initValues, False]
             else:
@@ -247,24 +248,24 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
             print(error_msg)
             raise exceptions.MuMoTValueError(error_msg)
         # check if netParam range is valid or set the correct default range (systemSize is necessary)
-        if models._decodeNetworkTypeFromString(netType[0]) == models.NetworkType.FULLY_CONNECTED:
+        if utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.FULLY_CONNECTED:
             return [0, 0, 0, False]
-        elif models._decodeNetworkTypeFromString(netType[0]) == models.NetworkType.ERSOS_RENYI:
+        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.ERSOS_RENYI:
             return _parse_input_keyword_for_numeric_widgets(
                 inputValue=inputValue,
                 defaultValueRangeStep=[0.1, 0.1, 1, 0.1],
                 initValueRangeStep=initValues,
                 validRange=(0.1, 1.0))
-        elif models._decodeNetworkTypeFromString(netType[0]) == models.NetworkType.BARABASI_ALBERT:
+        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.BARABASI_ALBERT:
             maxEdges = systemSize - 1
             return _parse_input_keyword_for_numeric_widgets(
                 inputValue=inputValue,
                 defaultValueRangeStep=[min(maxEdges, 3), 1, maxEdges, 1],
                 initValueRangeStep=initValues,
                 validRange=(1, maxEdges))
-        elif models._decodeNetworkTypeFromString(netType[0]) == models.NetworkType.SPACE:
+        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.SPACE:
             pass  # method is not implemented
-        elif models._decodeNetworkTypeFromString(netType[0]) == models.NetworkType.DYNAMIC:
+        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.DYNAMIC:
             return _parse_input_keyword_for_numeric_widgets(
                 inputValue=inputValue,
                 defaultValueRangeStep=[0.1, 0.0, 1.0, 0.05],
@@ -528,3 +529,27 @@ def _process_params(params):
             paramsRet.append(atom)
 
     return (paramsRet, paramValues)
+
+
+def _decodeNetworkTypeFromString(netTypeStr: str) -> Optional[consts.NetworkType]:
+    # init the network type
+    admissibleNetTypes = {'full': consts.NetworkType.FULLY_CONNECTED,
+                          'erdos-renyi': consts.NetworkType.ERSOS_RENYI,
+                          'barabasi-albert': consts.NetworkType.BARABASI_ALBERT,
+                          'dynamic': consts.NetworkType.DYNAMIC}
+
+    if netTypeStr not in admissibleNetTypes:
+        print(f"ERROR! Invalid network type argument! Valid strings are: {admissibleNetTypes}")
+    return admissibleNetTypes.get(netTypeStr, None)
+
+
+def _encodeNetworkTypeToString(netType: consts.NetworkType) -> Optional[str]:
+    # init the network type
+    netTypeEncoding = {consts.NetworkType.FULLY_CONNECTED: 'full',
+                       consts.NetworkType.ERSOS_RENYI: 'erdos-renyi',
+                       consts.NetworkType.BARABASI_ALBERT: 'barabasi-albert',
+                       consts.NetworkType.DYNAMIC: 'dynamic'}
+
+    if netType not in netTypeEncoding:
+        print(f"ERROR! Invalid netTypeEncoding table! Tried to encode network type: {netType}")
+    return netTypeEncoding.get(netType, 'none')
