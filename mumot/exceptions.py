@@ -23,3 +23,9 @@ class MuMoTSyntaxError(MuMoTError):
     """Class to report MuMoT-specific errors arising from incorrectly-structured input.
     """
     pass
+
+
+def _raiseModelError(expected, read, rule):
+    raise MuMoTSyntaxError(f"Expected {expected} but read '{read}' in rule: {rule}")
+
+

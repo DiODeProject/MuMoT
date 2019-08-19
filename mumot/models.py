@@ -38,10 +38,6 @@ from . import (
 )
 
 
-def _raiseModelError(expected, read, rule):
-    raise exceptions.MuMoTSyntaxError(f"Expected {expected} but read '{read}' in rule: {rule}")
-
-
 class NetworkType(Enum):
     """Enumeration of possible network types."""
 
@@ -2205,7 +2201,7 @@ def parseModel(modelDescription):
                                 reactants.add(reactant)
                         newRule.lhsReactants.append(reactant)
                     else:
-                        _raiseModelError("reactant", token, rule)
+                        exceptions._raiseModelError("reactant", token, rule)
                         return
                 elif state == 'B':
                     if token == "->":
@@ -2213,7 +2209,7 @@ def parseModel(modelDescription):
                     elif token == '+':
                         state = 'A'
                     else:
-                        _raiseModelError("'->' or '+'", token, rule)
+                        exceptions._raiseModelError("'->' or '+'", token, rule)
                         return
                 elif state == 'C':
                     if token != "+" and token != "->" and token != ":":
@@ -2243,7 +2239,7 @@ def parseModel(modelDescription):
                                 reactants.add(reactant)
                         newRule.rhsReactants.append(reactant)
                     else:
-                        _raiseModelError("reactant", token, rule)
+                        exceptions._raiseModelError("reactant", token, rule)
                         return
                 elif state == 'D':
                     if token == ":":
@@ -2251,7 +2247,7 @@ def parseModel(modelDescription):
                     elif token == '+':
                         state = 'C'
                     else:
-                        _raiseModelError("':' or '+'", token, rule)
+                        exceptions._raiseModelError("':' or '+'", token, rule)
                         return
                 elif state == 'E':
                     rate += token

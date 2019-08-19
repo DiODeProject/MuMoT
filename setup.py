@@ -41,7 +41,7 @@ setup(
         'scipy<1.0.0',  # see https://github.com/DiODeProject/MuMoT/issues/63
         'sympy >= 1.1.1, < 1.3',  # see https://github.com/DiODeProject/MuMoT/issues/170
         'tornado<5'  # needed to avoid errors with older ipykernel
-        ],
+    ],
     extras_require={
         'test': [
             'pytest',
@@ -49,7 +49,7 @@ setup(
             'nbval',
             'nbdime',
             'jupyter',
-            ],
+        ],
         'docs': [
             'sphinx',
         ],
@@ -63,5 +63,5 @@ setup(
         "Topic :: Scientific/Engineering :: Chemistry",
         "Topic :: Scientific/Engineering :: Mathematics",
         "Topic :: Scientific/Engineering :: Physics",
-        ],
+    ],
 )
