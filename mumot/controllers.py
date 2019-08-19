@@ -8,6 +8,7 @@ from ipywidgets import HTML
 from sympy import Symbol
 
 from . import (
+    consts,
     defaults,
     exceptions,
     models,
