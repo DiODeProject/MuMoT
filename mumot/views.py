@@ -36,10 +36,6 @@ from . import (
 figureCounter = 1  # global figure counter for model views
 
 
-LINE_COLOR_LIST = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
-MULTIPLOT_COLUMNS = 2
-
-
 class MuMoTview:
     """A view on a model."""
 
@@ -526,7 +522,7 @@ class MuMoTmultiView(MuMoTview):
             view._controller = controller
         self._shareAxes = kwargs.get('shareAxes', False)
         if not(self._shareAxes):
-            self._numColumns = MULTIPLOT_COLUMNS
+            self._numColumns = consts.MULTIPLOT_COLUMNS
             self._numRows = math.ceil(self._subPlotNum / self._numColumns)
             plt.gcf().set_size_inches(9, 4.5)
 
@@ -809,7 +805,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
         self._colors = []
         for idx, state in enumerate(sorted(self._initialState.keys(), key=str)):
             if state in self._stateVarListDisplay:
-                self._colors.append(LINE_COLOR_LIST[idx])
+                self._colors.append(consts.LINE_COLOR_LIST[idx])
         # print(self._colors)
 
     def __init__(self, *args, **kwargs):
@@ -1856,11 +1852,11 @@ class MuMoTfieldView(MuMoTview):
                     ax.add_artist(ells[kk])
                     ells[kk].set_alpha(0.5)
                     if sympy.re(EVplot[kk][0]) < 0 and sympy.re(EVplot[kk][1]) < 0:
-                        Fcolor = LINE_COLOR_LIST[1]
+                        Fcolor = consts.LINE_COLOR_LIST[1]
                     elif sympy.re(EVplot[kk][0]) > 0 and sympy.re(EVplot[kk][1]) > 0:
-                        Fcolor = LINE_COLOR_LIST[2]
+                        Fcolor = consts.LINE_COLOR_LIST[2]
                     else:
-                        Fcolor = LINE_COLOR_LIST[0]
+                        Fcolor = consts.LINE_COLOR_LIST[0]
                     ells[kk].set_facecolor(Fcolor)
                 # self._ells = ells
             else:
@@ -3349,9 +3345,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._colors = {}
             self._colors_list = []
             for idx, state in enumerate(sorted(self._initialState.keys(), key=str)):
-                self._colors[state] = LINE_COLOR_LIST[idx]
+                self._colors[state] = consts.LINE_COLOR_LIST[idx]
                 if state not in self._mumotModel._constantReactants:
-                    self._colors_list.append(LINE_COLOR_LIST[idx])
+                    self._colors_list.append(consts.LINE_COLOR_LIST[idx])
 
         self._logs.append(log)
         if not self._silent:
@@ -4939,7 +4935,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
 
 def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, choose_yrange=None, eigenvalues=None,
                        curve_replot=False, ax_reformat=False, showFixedPoints=False, specialPoints=None,
-                       xlab=None, ylab=None, curvelab=None, aspectRatioEqual=False, line_color_list=LINE_COLOR_LIST,
+                       xlab=None, ylab=None, curvelab=None, aspectRatioEqual=False, line_color_list=consts.LINE_COLOR_LIST,
                        **kwargs):
     """Format 2D plots.
 

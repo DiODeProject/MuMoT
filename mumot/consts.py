@@ -26,6 +26,9 @@ RATE_STEP = 0.1
 INITIAL_COND_INIT_VAL = 0.0
 INITIAL_COND_INIT_BOUND = 1.0
 
+LINE_COLOR_LIST = ['b', 'g', 'r', 'c', 'm', 'y', 'grey', 'orange', 'k']
+MULTIPLOT_COLUMNS = 2
+
 
 class NetworkType(Enum):
     """Enumeration of possible network types."""
@@ -35,5 +38,3 @@ class NetworkType(Enum):
     BARABASI_ALBERT = 2
     SPACE = 3
     DYNAMIC = 4
-
-
