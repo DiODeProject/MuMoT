@@ -3741,7 +3741,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                     # labels.append(state)
                     colors.append(self._colors[state])
 
-            # plt.pie(finaldata, labels=labels, autopct=_make_autopct(piedata),
+            # plt.pie(finaldata, labels=labels, autopct=utils._make_autopct(piedata),
             #         colors=colors) # shadow=True, startangle=90,
             xpos = np.arange(len(finaldata))  # the x locations for the bars
             width = 1  # the width of the bars
@@ -4852,19 +4852,19 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
             max_zrange = z_lim_top - z_lim_bot
 
         if max_xrange < 1.0:
-            xMLocator_major = _round_to_1(max_xrange / 4)
+            xMLocator_major = utils._round_to_1(max_xrange / 4)
         else:
-            xMLocator_major = _round_to_1(max_xrange / 6)
+            xMLocator_major = utils._round_to_1(max_xrange / 6)
         # xMLocator_minor = xMLocator_major / 2
         if max_yrange < 1.0:
-            yMLocator_major = _round_to_1(max_yrange / 4)
+            yMLocator_major = utils._round_to_1(max_yrange / 4)
         else:
-            yMLocator_major = _round_to_1(max_yrange / 6)
+            yMLocator_major = utils._round_to_1(max_yrange / 6)
         # yMLocator_minor = yMLocator_major / 2
         if max_zrange < 1.0:
-            zMLocator_major = _round_to_1(max_zrange / 4)
+            zMLocator_major = utils._round_to_1(max_zrange / 4)
         else:
-            zMLocator_major = _round_to_1(max_zrange / 6)
+            zMLocator_major = utils._round_to_1(max_zrange / 6)
         # zMLocator_minor = yMLocator_major / 2
         ax.xaxis.set_major_locator(ticker.MultipleLocator(xMLocator_major))
         # ax.xaxis.set_minor_locator(ticker.MultipleLocator(xMLocator_minor))
@@ -5268,14 +5268,14 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
             max_yrange = YaxisMax - YaxisMin
 
         if max_xrange < 1.0:
-            xMLocator_major = _round_to_1(max_xrange / 5)
+            xMLocator_major = utils._round_to_1(max_xrange / 5)
         else:
-            xMLocator_major = _round_to_1(max_xrange / 10)
+            xMLocator_major = utils._round_to_1(max_xrange / 10)
         xMLocator_minor = xMLocator_major / 2
         if max_yrange < 1.0:
-            yMLocator_major = _round_to_1(max_yrange / 5)
+            yMLocator_major = utils._round_to_1(max_yrange / 5)
         else:
-            yMLocator_major = _round_to_1(max_yrange / 10)
+            yMLocator_major = utils._round_to_1(max_yrange / 10)
         yMLocator_minor = yMLocator_major / 2
 
         if choose_xrange:
@@ -5430,9 +5430,9 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None,
             max_xrange = XaxisMax - XaxisMin  # max(xrange)
 
         if max_xrange < 1.0:
-            xMLocator_major = _round_to_1(max_xrange / 5)
+            xMLocator_major = utils._round_to_1(max_xrange / 5)
         else:
-            xMLocator_major = _round_to_1(max_xrange / 10)
+            xMLocator_major = utils._round_to_1(max_xrange / 10)
         xMLocator_minor = xMLocator_major / 2
 
         if choose_xrange:
@@ -5605,18 +5605,3 @@ def _plot_cov_ellipse(
 
     ax.add_artist(ellip)
     return ellip
-
-
-def _round_to_1(x):
-    """Used for determining significant digits for axes formatting in plots MuMoTstreamView and MuMoTbifurcationView."""
-    if x == 0:
-        return 1
-    return round(x, -int(math.floor(math.log10(abs(x)))))
-
-
-def _make_autopct(values):
-    def my_autopct(pct):
-        total = sum(values)
-        val = int(round(pct * total / 100.0))
-        return '{p:.2f}%  ({v:d})'.format(p=pct, v=val)
-    return my_autopct

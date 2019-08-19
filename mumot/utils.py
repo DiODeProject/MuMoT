@@ -553,3 +553,18 @@ def _encodeNetworkTypeToString(netType: consts.NetworkType) -> Optional[str]:
     if netType not in netTypeEncoding:
         print(f"ERROR! Invalid netTypeEncoding table! Tried to encode network type: {netType}")
     return netTypeEncoding.get(netType, 'none')
+
+
+def _round_to_1(x):
+    """Used for determining significant digits for axes formatting in plots MuMoTstreamView and MuMoTbifurcationView."""
+    if x == 0:
+        return 1
+    return round(x, -int(math.floor(math.log10(abs(x)))))
+
+
+def _make_autopct(values):
+    def my_autopct(pct):
+        total = sum(values)
+        val = int(round(pct * total / 100.0))
+        return '{p:.2f}%  ({v:d})'.format(p=pct, v=val)
+    return my_autopct
