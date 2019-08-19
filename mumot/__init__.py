@@ -13,7 +13,6 @@ Renato Pagliara Vasquez
 """
 
 import sys
-from typing import Tuple
 
 import matplotlib
 # If operating system is macOS use a non-default matplotlib backend

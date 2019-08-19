@@ -37,7 +37,6 @@ from .process_latex.process_latex import process_sympy
 from . import (
     consts,
     exceptions,
-    models,
     utils,
 )
 

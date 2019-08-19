@@ -5,7 +5,6 @@ import sympy
 import os
 import re
 import tempfile
-from typing import Optional
 
 from graphviz import Digraph
 from IPython.display import display, Math
@@ -14,7 +13,6 @@ from sympy import (
     collect,
     default_sort_key,
     Derivative,
-    factorial,
     lambdify,
     latex,
     linsolve,
@@ -455,7 +453,7 @@ class MuMoTmodel:
 
             return
         # assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
-        rhs_dict, substring = _deriveMasterEquation(stoich)
+        rhs_dict, substring = views._deriveMasterEquation(stoich)
 
         return rhs_dict, substring
 
@@ -486,7 +484,7 @@ class MuMoTmodel:
 
             return
         # assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
-        rhs_dict, substring = _deriveMasterEquation(stoich)
+        rhs_dict, substring = views._deriveMasterEquation(stoich)
 
         # rhs_ME = 0
         term_count = 0
@@ -1511,7 +1509,7 @@ class MuMoTmodel:
         MAParams['showTrace'] = utils._format_advanced_option(
             optionName='showTrace',
             inputValue=kwargs.get('showTrace'),
-            initValues=initWidgets.get('showTrace', MAParams['netType'] == NetworkType.DYNAMIC))
+            initValues=initWidgets.get('showTrace', MAParams['netType'] == consts.NetworkType.DYNAMIC))
         MAParams['showInteractions'] = utils._format_advanced_option(
             optionName='showInteractions',
             inputValue=kwargs.get('showInteractions'),
@@ -1542,13 +1540,13 @@ class MuMoTmodel:
 
         # if the netType is a fixed-param and its value is not 'DYNAMIC', all useless parameter become fixed (and widgets are never displayed)
         if MAParams['netType'][-1]:
-            decodedNetType = _decodeNetworkTypeFromString(MAParams['netType'][0])
-            if decodedNetType != NetworkType.DYNAMIC:
+            decodedNetType = utils._decodeNetworkTypeFromString(MAParams['netType'][0])
+            if decodedNetType != consts.NetworkType.DYNAMIC:
                 MAParams['motionCorrelatedness'][-1] = True
                 MAParams['particleSpeed'][-1] = True
                 MAParams['showTrace'][-1] = True
                 MAParams['showInteractions'][-1] = True
-                if decodedNetType == NetworkType.FULLY_CONNECTED:
+                if decodedNetType == consts.NetworkType.FULLY_CONNECTED:
                     MAParams['netParam'][-1] = True
 
         # Construct controller

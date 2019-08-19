@@ -27,5 +27,3 @@ class MuMoTSyntaxError(MuMoTError):
 
 def _raiseModelError(expected, read, rule):
     raise MuMoTSyntaxError(f"Expected {expected} but read '{read}' in rule: {rule}")
-
-
