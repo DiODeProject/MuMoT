@@ -3529,11 +3529,11 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             boxesData.append(boxData)
                             avgs.append(np.mean(boxData))
                             # bplot = plt.boxplot(boxData, patch_artist=True, positions=[timestep],
-                            #                     manage_xticks=False, widths=self._maxTime / (steps * 3) )
+                            #                     manage_ticks=False, widths=self._maxTime / (steps * 3) )
                             # print(f"Plotting bxplt at positions {timestep} generated from idx = {idx}")
                         plt.plot(timesteps, avgs, color=self._colors[state])
                         bplots = plt.boxplot(boxesData, patch_artist=True, positions=timesteps,
-                                             manage_xticks=False, widths=self._maxTime / (steps * 3))
+                                             manage_ticks=False, widths=self._maxTime / (steps * 3))
                         # for patch, color in zip(bplots['boxes'], [self._colors[state]] * len(timesteps)):
                         #     patch.set_facecolor(color)
                         # bplot['boxes'].set_facecolor(self._colors[state])
