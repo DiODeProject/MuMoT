@@ -36,9 +36,9 @@ setup(
         'matplotlib<3.0',  # see https://github.com/DiODeProject/MuMoT/issues/171
         'networkx',
         'notebook<5.5',  # needed if using pyzmq < 17
-        'pydstool',
+        'pydstool>=0.90.3',  # min version that allows scipy >= 1.0.0 to be used
         'pyzmq<17',  # needed if using tornado < 5
-        'scipy<1.0.0',  # see https://github.com/DiODeProject/MuMoT/issues/63
+        'scipy',
         'sympy >= 1.1.1, < 1.3',  # see https://github.com/DiODeProject/MuMoT/issues/170
         'tornado<5'  # needed to avoid errors with older ipykernel
     ],
