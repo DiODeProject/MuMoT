@@ -33,7 +33,7 @@ setup(
         'ipykernel<4.7',  # needed so no duplicate figures when wiggle ipywidgets
         'ipython',
         'ipywidgets',
-        'matplotlib<3.0',  # see https://github.com/DiODeProject/MuMoT/issues/171
+        'matplotlib',
         'networkx',
         'notebook<5.5',  # needed if using pyzmq < 17
         'pydstool',
