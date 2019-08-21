@@ -32,12 +32,12 @@ Installing MuMoT within a Conda environment
 
       conda --version
 
-#. Create a new conda environment containing just Python 3.6:
+#. Create a new conda environment containing just Python >=3.6 e.g.:
 
    .. code:: sh
 
       conda update conda
-      conda create -n mumot-env python=3.6
+      conda create -n mumot-env python=3.7
 
 #. Check that conda environment has been created: 
    
@@ -72,7 +72,7 @@ Installing MuMoT within a VirtualEnv
    `this repository <https://github.com/DiODeProject/MuMoT/>`__.
 2. Ensure you have the following installed:
 
-   -  `Python >= 3.4 and <= 3.6 <https://www.python.org/downloads/>`__
+   -  `Python >= 3.6 <https://www.python.org/downloads/>`__
    -  the pip_ package
       manager (usually comes with Python 3.x but might not for certain
       flavours of Linux)
