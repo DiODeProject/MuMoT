@@ -5,7 +5,6 @@ import datetime
 import math
 import sys
 from typing import Dict, Optional, Tuple, Union
-import warnings
 
 from IPython.display import display, Math
 from IPython.utils import io
@@ -13,7 +12,6 @@ from ipywidgets import HTML
 import ipywidgets.widgets as widgets
 import matplotlib
 from matplotlib import pyplot as plt
-from matplotlib.cbook import MatplotlibDeprecationWarning
 import matplotlib.patches as mpatch
 import matplotlib.ticker as ticker
 from mpl_toolkits.mplot3d import proj3d
@@ -539,7 +537,6 @@ class MuMoTmultiView(MuMoTview):
         plt.clf()
         self._resetErrorMessage()
         if self._shareAxes:
-            # hold should already be on
             for func, subPlotNum, axes3d in self._controller._replotFunctions:
                 func()
         else:
@@ -3532,11 +3529,11 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             boxesData.append(boxData)
                             avgs.append(np.mean(boxData))
                             # bplot = plt.boxplot(boxData, patch_artist=True, positions=[timestep],
-                            #                     manage_xticks=False, widths=self._maxTime / (steps * 3) )
+                            #                     manage_ticks=False, widths=self._maxTime / (steps * 3) )
                             # print(f"Plotting bxplt at positions {timestep} generated from idx = {idx}")
                         plt.plot(timesteps, avgs, color=self._colors[state])
                         bplots = plt.boxplot(boxesData, patch_artist=True, positions=timesteps,
-                                             manage_xticks=False, widths=self._maxTime / (steps * 3))
+                                             manage_ticks=False, widths=self._maxTime / (steps * 3))
                         # for patch, color in zip(bplots['boxes'], [self._colors[state]] * len(timesteps)):
                         #     patch.set_facecolor(color)
                         # bplot['boxes'].set_facecolor(self._colors[state])
@@ -4769,10 +4766,6 @@ def _buildFig(object, figure=None):
     else:
         plt.ioff()
     figureCounter += 1
-    with warnings.catch_warnings():  # ignore warnings when plt.hold has been deprecated in installed libraries - still need to try plt.hold(True) in case older libraries in use
-        warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
-        warnings.filterwarnings("ignore", category=UserWarning)
-        plt.hold(True)
     if figure is None:
         if figureCounter > 2:
             plt.ion()
