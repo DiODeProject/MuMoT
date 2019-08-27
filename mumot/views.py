@@ -5642,8 +5642,11 @@ def _deriveMasterEquation(stoichiometry):
     Returns dictionary used in :method:`MuMoTmodel.showMasterEquation`.
     """
     substring = None
+
     P, E_op, x, y, v, w, t, m = symbols('P E_op x y v w t m')
+    x, y, v, w = symbols('x y v w', cls=Function)
     V = Symbol(r'\overline{V}', real=True, constant=True)
+
     stoich = stoichiometry
     nvec = []
     for key1 in stoich:
