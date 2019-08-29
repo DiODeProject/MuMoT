@@ -4,7 +4,7 @@ python:
   - "3.6"
   - "3.7"
 before_install:
-  - sudo apt-get install -y texlive graphviz dvipng
+  - sudo apt-get install -y texlive texlive-latex-extra graphviz dvipng
 install:
   - pip install tox-travis codecov
 script: 
