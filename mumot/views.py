@@ -24,6 +24,7 @@ from sympy import (
     default_sort_key,
     Derivative,
     factorial,
+    Function,
     lambdify,
     latex,
     simplify,
