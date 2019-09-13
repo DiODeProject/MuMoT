@@ -57,11 +57,15 @@ Installing MuMoT within a Conda environment
 
 #. *Install* MuMoT and dependencies into this conda environment:
 
+
    .. code:: sh
 
       conda install graphviz
       python -m pip install path/to/clone/of/MuMoT/repository
 
+   NB if your clone of the MuMot repository is a subdirectory of the current directory,
+   make sure you run ``python3 -m pip install ./MuMoT`` instead of ``python3 -m pip install MuMoT``
+   (to ensure  MuMoT is installed from your Git clone and not :ref:`from PyPI<pypi_inst>`).
 
 .. _venv_inst:
 
@@ -110,6 +114,12 @@ Installing MuMoT within a VirtualEnv
 
       python3 -m pip install path/to/clone/of/MuMoT/repository
       jupyter nbextension enable --py widgetsnbextension --sys-prefix
+
+   NB if your clone of the MuMot repository is a subdirectory of the current directory,
+   make sure you run ``python3 -m pip install ./MuMoT`` instead of ``python3 -m pip install MuMoT``
+   (to ensure  MuMoT is installed from your Git clone and not :ref:`from PyPI<pypi_inst>`).
+
+.. _pypi_inst:
 
 Installing MuMoT from PyPI
 --------------------------
