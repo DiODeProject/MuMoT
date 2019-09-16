@@ -52,7 +52,8 @@ Installing MuMoT within a Conda environment
 
    .. code:: sh
 
-      source activate mumot-env    # on macOS/Linux
+      source activate mumot-env    # on macOS/Linux with older versions of conda
+      conda activate mumot-env    # on macOS/Linux with newer versions of conda
       activate mumot-env           # on Windows
 
 #. *Install* MuMoT and dependencies into this conda environment:
