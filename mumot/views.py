@@ -1683,7 +1683,7 @@ class MuMoTfieldView(MuMoTview):
                 Phi_stateVar2 = sympy.Symbol('Phi_' + str(self._stateVariable2))
                 eta_stateVar1 = sympy.Symbol('eta_' + str(self._stateVariable1))
                 eta_stateVar2 = sympy.Symbol('eta_' + str(self._stateVariable2))
-                M_2 = sympy.Symbol('M_2')
+                M_2 = sympy.Function('M_2')
 
                 systemSize = sympy.Symbol('systemSize')
                 argDict = self._get_argDict()

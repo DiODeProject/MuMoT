@@ -439,7 +439,8 @@ class MuMoTmodel:
             Dictionary of substitutions used, this defaults to `None` if no substitutions were made
 
         """
-        P, t = symbols('P t')
+        t = symbols('t')
+        P = Function('P')
         stoich = self._stoichiometry
         nvec = []
         for key1 in stoich:
