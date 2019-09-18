@@ -24,6 +24,7 @@ from sympy import (
     default_sort_key,
     Derivative,
     factorial,
+    Function,
     lambdify,
     latex,
     simplify,
@@ -1188,7 +1189,8 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
             for key in EOM_1stOrdMomDict:
                 noiseCorrEOMdict[sym * key] = sympy.expand(sym * EOM_1stOrdMomDict[key])
 
-        M_1, M_2 = sympy.symbols('M_1 M_2')
+        M_1 = Function('M_1')
+        M_2 = Function('M_2')
         eta_SV1 = sympy.Symbol(f"eta_{self._stateVariable1}")
         cVar1 = sympy.symbols('cVar1')
         if self._stateVariable2:
@@ -1332,7 +1334,8 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         # if len(self._stateVarList) == 3:
         #     eta_SV3 = sympy.Symbol('eta_' + str(self._stateVarList[2]))
 
-        M_1, M_2 = sympy.symbols('M_1 M_2')
+        M_1 = Function('M_1')
+        M_2 = Function('M_2')
         eta_SV1 = sympy.Symbol('eta_' + str(self._stateVariable1))
         if self._stateVariable2:
             eta_SV2 = sympy.Symbol('eta_' + str(self._stateVariable2))
@@ -1680,7 +1683,7 @@ class MuMoTfieldView(MuMoTview):
                 Phi_stateVar2 = sympy.Symbol('Phi_' + str(self._stateVariable2))
                 eta_stateVar1 = sympy.Symbol('eta_' + str(self._stateVariable1))
                 eta_stateVar2 = sympy.Symbol('eta_' + str(self._stateVariable2))
-                M_2 = sympy.Symbol('M_2')
+                M_2 = sympy.Function('M_2')
 
                 systemSize = sympy.Symbol('systemSize')
                 argDict = self._get_argDict()
@@ -5643,8 +5646,13 @@ def _deriveMasterEquation(stoichiometry):
     Returns dictionary used in :method:`MuMoTmodel.showMasterEquation`.
     """
     substring = None
-    P, E_op, x, y, v, w, t, m = symbols('P E_op x y v w t m')
+
+    x, y, v, w, t, m = symbols('x y v w t m')
+    E_op = Function('E_op')
+    z = Function('z')
+    P = Function('P')
     V = Symbol(r'\overline{V}', real=True, constant=True)
+
     stoich = stoichiometry
     nvec = []
     for key1 in stoich:
@@ -5665,7 +5673,7 @@ def _deriveMasterEquation(stoichiometry):
 
     rhs = 0
     sol_dict_rhs = {}
-    f = lambdify((x(y, v - w)), x(y, v - w), modules='sympy')
+    f = lambdify(z(y, v - w), z(y, v - w), modules='sympy')
     g = lambdify((x, y, v), (factorial(x) / factorial(x - y)) / v**y, modules='sympy')
     for key1 in stoich:
         prod1 = 1
@@ -5692,7 +5700,9 @@ def _deriveMasterEquation(stoichiometry):
 
 def _doVanKampenExpansion(rhs, stoich):
     """Return the left-hand side and right-hand side of van Kampen expansion."""
-    P, E_op, x, y, v, w, t, m = symbols('P E_op x y v w t m')
+    x, y, v, w, t, m = symbols('x y v w t m')
+    E_op = Function('E_op')
+    P = Function('P')
     V = Symbol(r'\overline{V}', real=True, constant=True)
     nvec = []
     nconstvec = []
