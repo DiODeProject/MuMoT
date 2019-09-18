@@ -4646,8 +4646,9 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
                 else:
                     reactantOccurencies = re_stoch[0]
                 if reactantOccurencies > 0:
-                    prob *= self._currentState[reactant] * reactantOccurencies
+                    prob *= self._currentState[reactant] ** reactantOccurencies
                 numReagents += reactantOccurencies
+            # print("for reaction " + str(reaction) + " counted " + str(numReagents) + " reagents (prob:" + str(prob) +" ) (rate: " + str(self._ratesDict[str(reaction["rate"])]) + ")")
             if prob > 0 and numReagents > 1:
                 prob /= sum(self._currentState.values())**(numReagents - 1)
             probabilitiesOfChange[reaction_id] = prob
