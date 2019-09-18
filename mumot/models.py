@@ -22,6 +22,7 @@ from sympy import (
     solve,
     Symbol,
     symbols,
+    Function
 )
 
 from . import (
@@ -468,7 +469,8 @@ class MuMoTmodel:
 
         """
 
-        P, t = symbols('P t')
+        t = symbols('t')
+        P = Function('P')
         out_rhs = ""
         stoich = self._stoichiometry
         nvec = []
@@ -2208,7 +2210,8 @@ def _get_orderedLists_vKE(stoich):
 
 def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
     """Return the Fokker-Planck equation."""
-    P, t = symbols('P t')
+    t = symbols('t')
+    P = Function('P')
     V = Symbol(r'\overline{V}', real=True, constant=True)
     Vlist_lhs, Vlist_rhs, substring = _get_orderedLists_vKE(stoich)
     rhsFPE = 0
@@ -2261,7 +2264,10 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
     Returns equations of motion for noise.
 
     """
-    P, M_1, M_2, t = symbols('P M_1 M_2 t')
+    t = symbols('t')
+    P = Function('P')
+    M_1 = Function('M_1')
+    M_2 = Function('M_2')
 
     # A,B, alpha, beta, gamma = symbols('A B alpha beta gamma')
     # custom_stoich= {'reaction1': {'rate': alpha, A: [0,1]}, 'reaction2': {'rate': gamma, A: [2,0], B: [0,1]},
@@ -2440,7 +2446,10 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
     Returns analytical solution for stationary noise.
 
     """
-    P, M_1, M_2, t = symbols('P M_1 M_2 t')
+    t = symbols('t')
+    P = Function('P')
+    M_1 = Function('M_1')
+    M_2 = Function('M_2')
 
     EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich)
 
@@ -2562,7 +2571,8 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
 
 def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     """Return the ODE system derived from Master equation."""
-    P, t = symbols('P t')
+    t = symbols('t')
+    P = Function('P')
     V = Symbol(r'\overline{V}', real=True, constant=True)
     Vlist_lhs, Vlist_rhs, substring = _get_orderedLists_vKE(stoich)
     rhsODE = 0
