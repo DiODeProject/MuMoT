@@ -41,7 +41,6 @@ under the European Union's `Horizon 2020`_ research and innovation programme
 Included third-party code
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* ``mumot/gen``: includes submodules used by MuMoT
 * ``mumot/__init__.py``: contains functions (C) 2012 Free Software Foundation, under the MIT Licence
 
 mybinder.org
