@@ -41,7 +41,6 @@ under the European Union's `Horizon 2020`_ research and innovation programme
 Included third-party code
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* ``mumot/process_latex/``: LaTeX parser; taken from latex2sympy project and updated for Python 3.  (C) latex2sympy, under the MIT license.
 * ``mumot/gen``: includes submodules used by MuMoT
 * ``mumot/__init__.py``: contains functions (C) 2012 Free Software Foundation, under the MIT Licence
 

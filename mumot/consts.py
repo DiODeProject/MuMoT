@@ -2,11 +2,11 @@
 
 from enum import Enum
 
-from .process_latex.process_latex import process_sympy
+from sympy.parsing.latex import parse_latex
 
 MAX_RANDOM_SEED = 2147483647
 
-EMPTYSET_SYMBOL = process_sympy('1')
+EMPTYSET_SYMBOL = parse_latex('1')
 
 GREEK_LETT_LIST_1 = ['alpha', 'beta', 'gamma', 'Gamma', 'delta', 'Delta',
                      'epsilon', 'zeta', 'theta', 'Theta', 'iota', 'kappa',

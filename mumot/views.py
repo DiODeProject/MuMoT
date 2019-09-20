@@ -31,8 +31,8 @@ from sympy import (
     Symbol,
     symbols,
 )
+from sympy.parsing.latex import parse_latex
 
-from .process_latex.process_latex import process_sympy
 from . import (
     consts,
     exceptions,
@@ -674,7 +674,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
                 for state, pop in tEParams["initialState"].items():
                     if isinstance(state, str):
                         # convert string into SymPy symbol
-                        self._initialState[process_sympy(state)] = pop
+                        self._initialState[parse_latex(state)] = pop
                     else:
                         self._initialState[state] = pop
                 # # add to the _initialState the constant reactants
@@ -690,7 +690,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
                 for state, pop in tEParams["initialState"][0].items():
                     if isinstance(state, str):
                         # Convert string into SymPy symbol
-                        self._initialState[process_sympy(state)] = pop[0]
+                        self._initialState[parse_latex(state)] = pop[0]
                     else:
                         self._initialState[state] = pop[0]
 
@@ -725,7 +725,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
                 if type(showStateVars) == list:
                     self._stateVarListDisplay = showStateVars
                     for kk in range(len(self._stateVarListDisplay)):
-                        self._stateVarListDisplay[kk] = process_sympy(self._stateVarListDisplay[kk])
+                        self._stateVarListDisplay[kk] = parse_latex(self._stateVarListDisplay[kk])
                 else:
                     self._showErrorMessage('Check input: should be of type list!')
             else:
@@ -1515,12 +1515,12 @@ class MuMoTfieldView(MuMoTview):
             if stateVariable3:
                 self._zlab = r'' + kwargs.get('zlab', r'$' + r'\Phi_{' + utils._doubleUnderscorify(utils._greekPrependify(str(stateVariable3))) + '}$')
 
-            self._stateVariable1 = process_sympy(stateVariable1)
+            self._stateVariable1 = parse_latex(stateVariable1)
             if stateVariable2 is not None:
-                self._stateVariable2 = process_sympy(stateVariable2)
+                self._stateVariable2 = parse_latex(stateVariable2)
             if stateVariable3 is not None:
                 self._axes3d = True
-                self._stateVariable3 = process_sympy(stateVariable3)
+                self._stateVariable3 = parse_latex(stateVariable3)
             _mask = {}
 
             self._SOL_2ndOrdMomDict = SOL_2ndOrd
@@ -1540,8 +1540,8 @@ class MuMoTfieldView(MuMoTview):
                 # storing all values of MA-specific parameters
                 self._maxTime = fieldParams["maxTime"]
                 self._randomSeed = fieldParams["randomSeed"]
-                # final_x = str(process_sympy(fieldParams.get("final_x", latex(sorted(self._mumotModel._getAllReactants()[0], key=str)[0]))))
-                # final_y = str(process_sympy(fieldParams.get("final_y", latex(sorted(self._mumotModel._getAllReactants()[0], key=str)[0]))))
+                # final_x = str(parse_latex(fieldParams.get("final_x", latex(sorted(self._mumotModel._getAllReactants()[0], key=str)[0]))))
+                # final_y = str(parse_latex(fieldParams.get("final_y", latex(sorted(self._mumotModel._getAllReactants()[0], key=str)[0]))))
                 # self._finalViewAxes = (final_x, final_y)
                 # self._plotProportions = fieldParams["plotProportions"]
                 self._runs = fieldParams.get('runs', 20)
@@ -2592,7 +2592,7 @@ class MuMoTbifurcationView(MuMoTview):
 
         self._silent = kwargs.get('silent', False)
 
-        self._bifurcationParameter_for_get_argDict = str(process_sympy(bifurcationParameter))
+        self._bifurcationParameter_for_get_argDict = str(parse_latex(bifurcationParameter))
         # self._bifurcationParameter_for_bookmark = utils._greekPrependify(utils._doubleUnderscorify(self._bifurcationParameter_for_get_argDict))
         self._bifurcationParameter_for_bookmark = bifurcationParameter
 
@@ -2654,7 +2654,7 @@ class MuMoTbifurcationView(MuMoTview):
             self._initialState = {}
             for state, pop in BfcParams["initialState"].items():
                 if isinstance(state, str):
-                    self._initialState[process_sympy(state)] = pop  # convert string into SymPy symbol
+                    self._initialState[parse_latex(state)] = pop  # convert string into SymPy symbol
                 else:
                     self._initialState[state] = pop
 
@@ -2666,7 +2666,7 @@ class MuMoTbifurcationView(MuMoTview):
             self._initialState = {}
             for state, pop in BfcParams["initialState"][0].items():
                 if isinstance(state, str):
-                    self._initialState[process_sympy(state)] = pop[0]  # convert string into SymPy symbol
+                    self._initialState[parse_latex(state)] = pop[0]  # convert string into SymPy symbol
                 else:
                     self._initialState[state] = pop[0]
 
@@ -3307,7 +3307,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 self._initialState = {}
                 for state, pop in SSParams["initialState"].items():
                     if isinstance(state, str):
-                        self._initialState[process_sympy(state)] = pop  # convert string into SymPy symbol
+                        self._initialState[parse_latex(state)] = pop  # convert string into SymPy symbol
                     else:
                         self._initialState[state] = pop
                 # Add to the _initialState the constant reactants
@@ -3317,10 +3317,10 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 self._maxTime = SSParams["maxTime"]
                 self._randomSeed = SSParams["randomSeed"]
                 self._visualisationType = SSParams["visualisationType"]
-                final_x = str(process_sympy(SSParams.get("final_x", latex(sorted(self._mumotModel._getAllReactants()[0], key=str)[0]))))
-                # if isinstance(final_x, str): final_x = process_sympy(final_x)
-                final_y = str(process_sympy(SSParams.get("final_y", latex(sorted(self._mumotModel._getAllReactants()[0], key=str)[0]))))
-                # if isinstance(final_y, str): final_y = process_sympy(final_y)
+                final_x = str(parse_latex(SSParams.get("final_x", latex(sorted(self._mumotModel._getAllReactants()[0], key=str)[0]))))
+                # if isinstance(final_x, str): final_x = parse_latex(final_x)
+                final_y = str(parse_latex(SSParams.get("final_y", latex(sorted(self._mumotModel._getAllReactants()[0], key=str)[0]))))
+                # if isinstance(final_y, str): final_y = parse_latex(final_y)
                 self._finalViewAxes = (final_x, final_y)
                 self._plotProportions = SSParams["plotProportions"]
                 self._realtimePlot = SSParams.get('realtimePlot', False)
@@ -3332,7 +3332,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 self._initialState = {}
                 for state, pop in SSParams["initialState"][0].items():
                     if isinstance(state, str):
-                        self._initialState[process_sympy(state)] = pop[0]  # convert string into SymPy symbol
+                        self._initialState[parse_latex(state)] = pop[0]  # convert string into SymPy symbol
                     else:
                         self._initialState[state] = pop[0]
                 # add to the _initialState the constant reactants

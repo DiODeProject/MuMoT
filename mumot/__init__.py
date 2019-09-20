@@ -23,10 +23,10 @@ import matplotlib
 if sys.platform == "darwin":
     matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
+from sympy.parsing.latex import parse_latex
 
 # Import the functions and classes we wish to export i.e. the public API
 from ._version import __version__
-from .process_latex.process_latex import process_sympy
 from .models import (
     MuMoTmodel,
     parseModel,
