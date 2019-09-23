@@ -25,10 +25,9 @@ setup(
     url='https://github.com/DiODeProject/MuMoT',
     packages=find_packages(),
     package_dir={'': '.'},
-    package_data={'mumot.gen': ['PS.tokens', 'PSLexer.tokens']},
     license='GPL-3.0',
     install_requires=[
-        'antlr4-python3-runtime==4.5.3',
+        'antlr4-python3-runtime',
         'graphviz',
         'ipykernel<4.7',  # needed so no duplicate figures when wiggle ipywidgets
         'ipython',

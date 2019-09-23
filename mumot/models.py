@@ -24,13 +24,13 @@ from sympy import (
     symbols,
     Function
 )
+from sympy.parsing.latex import parse_latex
 
 from . import (
     controllers,
     defaults,
     consts,
     exceptions,
-    process_sympy,
     utils,
     views,
 )
@@ -100,7 +100,7 @@ class MuMoTmodel:
         for subString in subsStrings:
             if '=' not in subString:
                 raise exceptions.MuMoTSyntaxError("No '=' in assignment " + subString)
-            assignment = process_sympy(subString)
+            assignment = parse_latex(subString)
             subs.append((assignment.lhs, assignment.rhs))
         newModel = MuMoTmodel()
         newModel._constantSystemSize = self._constantSystemSize
@@ -1361,8 +1361,8 @@ class MuMoTmodel:
             showSystemSize=False,
             showPlotLimits=False)
 
-        if str(process_sympy(bifPar)) in paramValuesDict:
-            del paramValuesDict[str(process_sympy(bifPar))]
+        if str(parse_latex(bifPar)) in paramValuesDict:
+            del paramValuesDict[str(parse_latex(bifPar))]
 
         BfcParams = {}
         # read input parameters
@@ -1707,7 +1707,7 @@ class MuMoTmodel:
         return self._solutions
 
     def _create_free_param_dictionary_for_controller(self, inputParams, initWidgets=None, showSystemSize=False, showPlotLimits=False):
-        initWidgetsSympy = {process_sympy(paramName): paramValue for paramName, paramValue in initWidgets.items()} if initWidgets is not None else {}
+        initWidgetsSympy = {parse_latex(paramName): paramValue for paramName, paramValue in initWidgets.items()} if initWidgets is not None else {}
 
         paramValuesDict = {}
         for freeParam in self._rates.union(self._constantReactants):
@@ -1817,7 +1817,7 @@ class MuMoTmodel:
         # print(self._agentProbabilities)
 
     def _check_state_variables(self, stateVariable1, stateVariable2, stateVariable3=None):
-        if process_sympy(stateVariable1) in self._reactants and (stateVariable2 is None or process_sympy(stateVariable2) in self._reactants) and (stateVariable3 is None or process_sympy(stateVariable3) in self._reactants):
+        if parse_latex(stateVariable1) in self._reactants and (stateVariable2 is None or parse_latex(stateVariable2) in self._reactants) and (stateVariable3 is None or parse_latex(stateVariable3) in self._reactants):
             if (stateVariable1 != stateVariable2 and stateVariable1 != stateVariable3 and stateVariable2 != stateVariable3) or (stateVariable2 is None and stateVariable3 is None):
                 return True
             else:
@@ -2071,7 +2071,7 @@ def parseModel(modelDescription):
                         if token == r'\emptyset':
                             constantReactant = True
                             token = '1'
-                        expr = process_sympy(token)
+                        expr = parse_latex(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
                             raise exceptions.MuMoTSyntaxError(f"Non-singleton symbol set in token {token} in rule {rule}")
@@ -2109,7 +2109,7 @@ def parseModel(modelDescription):
                         if token == r'\emptyset':
                             constantReactant = True
                             token = '1'
-                        expr = process_sympy(token)
+                        expr = parse_latex(token)
                         reactantAtoms = expr.atoms()
                         if len(reactantAtoms) != 1:
                             raise exceptions.MuMoTSyntaxError(f"Non-singleton symbol set in token {token} in rule {rule}")
@@ -2141,7 +2141,7 @@ def parseModel(modelDescription):
                     # should never reach here
                     assert False
 
-            newRule.rate = process_sympy(rate)
+            newRule.rate = parse_latex(rate)
             rateAtoms = newRule.rate.atoms(Symbol)
             for atom in rateAtoms:
                 if atom not in rates:

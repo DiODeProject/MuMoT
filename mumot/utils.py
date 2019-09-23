@@ -1,10 +1,10 @@
 import math
-
-import numpy as np
 import numbers
 from typing import Optional, List
 
-from .process_latex.process_latex import process_sympy
+import numpy as np
+from sympy.parsing.latex import parse_latex
+
 from . import (
     consts,
     defaults,
@@ -109,7 +109,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                 initPop = initValues.get(reactant) if initValues is not None else None
 
                 # Convert string into SymPy symbol
-                initialState[process_sympy(reactant)] = _parse_input_keyword_for_numeric_widgets(
+                initialState[parse_latex(reactant)] = _parse_input_keyword_for_numeric_widgets(
                     inputValue=pop,
                     defaultValueRangeStep=[defaults.MuMoTdefault._agents,
                                            defaults.MuMoTdefault._agentsLimits[0],
@@ -120,7 +120,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                 fixedBool = True
         else:
             first = True
-            initValuesSympy = ({process_sympy(reactant): pop
+            initValuesSympy = ({parse_latex(reactant): pop
                                 for reactant, pop in initValues.items()}
                                if initValues is not None else {})
             for i, reactant in enumerate(sorted(allReactants, key=str)):
@@ -520,7 +520,7 @@ def _process_params(params):
         if name in ('plotLimits', 'systemSize'):
             paramsRet.append(name)
         else:
-            expr = process_sympy(name.replace('\\\\', '\\'))
+            expr = parse_latex(name.replace('\\\\', '\\'))
             atoms = expr.atoms()
             if len(atoms) > 1:
                 raise exceptions.MuMoTSyntaxError(f"Non-singleton parameter name in parameter {name}")
