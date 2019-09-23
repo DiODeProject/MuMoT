@@ -29,17 +29,17 @@ setup(
     install_requires=[
         'antlr4-python3-runtime',
         'graphviz',
-        'ipykernel<4.7',  # needed so no duplicate figures when wiggle ipywidgets
+        'ipykernel',  # needed so no duplicate figures when wiggle ipywidgets
         'ipython',
         'ipywidgets',
         'matplotlib',
         'networkx',
-        'notebook<5.5',  # needed if using pyzmq < 17
+        'notebook',  # needed if using pyzmq < 17
         'pydstool>=0.90.3',  # min version that allows scipy >= 1.0.0 to be used
-        'pyzmq<17',  # needed if using tornado < 5
+        'pyzmq',  # needed if using tornado < 5
         'scipy',
         'sympy>=1.4',
-        'tornado<5'  # needed to avoid errors with older ipykernel
+        'tornado'  # needed to avoid errors with older ipykernel
     ],
     extras_require={
         'test': [
