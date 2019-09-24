@@ -1706,11 +1706,17 @@ class MuMoTmodel:
             self._solutions = solve(iter(self._equations.values()), self._reactants, force=False, positive=False, set=False)
         return self._solutions
 
+    def _get_rates_from_stoichiometry(self):
+        rates = set()
+        for reaction in self._stoichiometry.values():
+            rates.add( reaction['rate'] )
+        return rates
+
     def _create_free_param_dictionary_for_controller(self, inputParams, initWidgets=None, showSystemSize=False, showPlotLimits=False):
         initWidgetsSympy = {parse_latex(paramName): paramValue for paramName, paramValue in initWidgets.items()} if initWidgets is not None else {}
 
         paramValuesDict = {}
-        for freeParam in self._rates.union(self._constantReactants):
+        for freeParam in self._get_rates_from_stoichiometry().union(self._constantReactants):
             paramValuesDict[str(freeParam)] = utils._parse_input_keyword_for_numeric_widgets(
                 inputValue=utils._get_item_from_params_list(inputParams, str(freeParam)),
                 defaultValueRangeStep=[defaults.MuMoTdefault._initialRateValue, defaults.MuMoTdefault._rateLimits[0], defaults.MuMoTdefault._rateLimits[1], defaults.MuMoTdefault._rateStep],
