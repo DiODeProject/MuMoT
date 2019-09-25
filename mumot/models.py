@@ -1709,7 +1709,10 @@ class MuMoTmodel:
     def _get_rates_from_stoichiometry(self):
         rates = set()
         for reaction in self._stoichiometry.values():
-            rates.add( reaction['rate'] )
+            if reaction['rate']: 
+                for symb in reaction['rate'].atoms():
+                    if isinstance(symb, Symbol):
+                        rates.add( symb )
         return rates
 
     def _create_free_param_dictionary_for_controller(self, inputParams, initWidgets=None, showSystemSize=False, showPlotLimits=False):
@@ -1843,7 +1846,7 @@ class MuMoTmodel:
                 argList.append(reactant)
             for reactant in self._constantReactants:
                 argList.append(reactant)
-            for rate in self._rates:
+            for rate in self._get_rates_from_stoichiometry():
                 argList.append(rate)
             if self._systemSize is not None:
                 argList.append(self._systemSize)
