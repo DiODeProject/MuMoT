@@ -1,6 +1,6 @@
 import math
 import numbers
-from typing import Optional, List
+from typing import Callable, Iterable, List, Optional, Union
 
 import numpy as np
 from sympy.parsing.latex import parse_latex
@@ -9,7 +9,6 @@ from . import (
     consts,
     defaults,
     exceptions,
-    utils,
     _version
 )
 
@@ -79,14 +78,10 @@ def _doubleUnderscorify(s: str) -> str:
     return ''.join(s_list)
 
 
-def _count_sig_decimals(digits: str, maximum: Optional[int] = 7) -> int:
+def _count_sig_decimals(digits: str, maximum: int = 7) -> int:
     """Return the number of significant decimals of the input digit string (up to a maximum of 7)."""
     _, _, fractional = digits.partition(".")
-
-    if fractional:
-        return min(len(fractional), maximum)
-    else:
-        return 0
+    return min(len(fractional), maximum) if fractional else 0
 
 
 def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=None, extraParam2=None):
@@ -224,7 +219,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
     if optionName == 'netType':
         # check validity of the network type or init to default
         if inputValue is not None:
-            decodedNetType = utils._decodeNetworkTypeFromString(inputValue)
+            decodedNetType = _decodeNetworkTypeFromString(inputValue)
             if decodedNetType is None:  # terminating the process if the input argument is wrong
                 error_msg = (f"The specified value for netType ={inputValue} is not valid. \n"
                              "Accepted values are: 'full',  'erdos-renyi', 'barabasi-albert', and 'dynamic'.")
@@ -233,7 +228,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
 
             return [inputValue, True]
         else:
-            decodedNetType = utils._decodeNetworkTypeFromString(initValues) if initValues is not None else None
+            decodedNetType = _decodeNetworkTypeFromString(initValues) if initValues is not None else None
             if decodedNetType is not None:  # assigning the init value only if it's a valid value
                 return [initValues, False]
             else:
@@ -249,24 +244,24 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
             print(error_msg)
             raise exceptions.MuMoTValueError(error_msg)
         # check if netParam range is valid or set the correct default range (systemSize is necessary)
-        if utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.FULLY_CONNECTED:
+        if _decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.FULLY_CONNECTED:
             return [0, 0, 0, False]
-        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.ERSOS_RENYI:
+        elif _decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.ERSOS_RENYI:
             return _parse_input_keyword_for_numeric_widgets(
                 inputValue=inputValue,
                 defaultValueRangeStep=[0.1, 0.1, 1, 0.1],
                 initValueRangeStep=initValues,
                 validRange=(0.1, 1.0))
-        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.BARABASI_ALBERT:
+        elif _decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.BARABASI_ALBERT:
             maxEdges = systemSize - 1
             return _parse_input_keyword_for_numeric_widgets(
                 inputValue=inputValue,
                 defaultValueRangeStep=[min(maxEdges, 3), 1, maxEdges, 1],
                 initValueRangeStep=initValues,
                 validRange=(1, maxEdges))
-        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.SPACE:
+        elif _decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.SPACE:
             pass  # method is not implemented
-        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.DYNAMIC:
+        elif _decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.DYNAMIC:
             return _parse_input_keyword_for_numeric_widgets(
                 inputValue=inputValue,
                 defaultValueRangeStep=[0.1, 0.0, 1.0, 0.05],
@@ -395,12 +390,16 @@ def _parse_input_keyword_for_numeric_widgets(
         defaultValueRangeStep: List[object],
         initValueRangeStep: List[object],
         validRange: Optional[List[object]] = None,
-        onlyValue: Optional[bool] = False) -> List[object]:
+        onlyValue: bool = False) -> List[Union[float, bool]]:
     """Parse an input keyword and set initial range and default values (when the input is a slider-widget).
 
-    Check if the fixed value is not None, otherwise it returns the default value (samewise for ``initRange`` and ``defaultRange``).
-    The optional parameter ``validRange`` is use to check if the fixedValue has a usable value.
-    If the ``defaultValue`` is out of the ``initRange``, the default value is move to the closest of the initRange extremes.
+    Check if the fixed value is not None,
+    otherwise it returns the default value
+    (samewise for ``initRange`` and ``defaultRange``).
+    The optional parameter ``validRange`` is used to
+    check if the fixedValue has a usable value.
+    If the ``defaultValue`` is out of the ``initRange``,
+    the default value is move to the closest of the initRange extremes.
 
     Parameters
     ----------
@@ -413,7 +412,8 @@ def _parse_input_keyword_for_numeric_widgets(
     validRange : list of object, optional
         The min and max accepted values ``[min,max]``
     onlyValue : bool, optional
-        If ``True`` then ``defaultValueRangeStep`` and ``initValueRangeStep`` are only a single value
+        If ``True`` then ``defaultValueRangeStep`` and ``initValueRangeStep``
+        are only a single value
 
     Returns
     -------
@@ -478,7 +478,7 @@ def _parse_input_keyword_for_numeric_widgets(
     return outputValues
 
 
-def _parse_input_keyword_for_boolean_widgets(inputValue, defaultValue, initValue=None, paramNameForErrorMsg=None):
+def _parse_input_keyword_for_boolean_widgets(inputValue, defaultValue, initValue=None, paramNameForErrorMsg: Optional[str] = None):  # TODO: add type hints
     """Parse an input keyword and set initial range and default values (when the input is a boolean checkbox)
     check if the fixed value is not None, otherwise it returns the default value.
 
@@ -512,7 +512,7 @@ def _parse_input_keyword_for_boolean_widgets(inputValue, defaultValue, initValue
             return [defaultValue, False]
 
 
-def _process_params(params):
+def _process_params(params):  # TODO: add type hints
     paramsRet = []
     paramNames, paramValues = zip(*params)
     for name in paramNames:
@@ -556,14 +556,14 @@ def _encodeNetworkTypeToString(netType: consts.NetworkType) -> Optional[str]:
     return netTypeEncoding.get(netType, 'none')
 
 
-def _round_to_1(x):
+def _round_to_1(x: float) -> float:
     """Used for determining significant digits for axes formatting in plots MuMoTstreamView and MuMoTbifurcationView."""
     if x == 0:
         return 1
     return round(x, -int(math.floor(math.log10(abs(x)))))
 
 
-def _make_autopct(values):
+def _make_autopct(values: Iterable[float]) -> Callable:
     def my_autopct(pct):
         total = sum(values)
         val = int(round(pct * total / 100.0))

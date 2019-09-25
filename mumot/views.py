@@ -35,7 +35,9 @@ from sympy.parsing.latex import parse_latex
 
 from . import (
     consts,
+    controllers,
     exceptions,
+    models,
     utils,
 )
 
@@ -73,13 +75,18 @@ class MuMoTview:
     # generating keyword arguments
     _generatingKwargs = None
 
-    def __init__(self, model, controller, figure=None, params=None, **kwargs):
+    def __init__(self,
+                 model,  # type: models.MuMoTmodel
+                 controller,  # type: controllers.MuMoTcontroller
+                 figure=None,
+                 params=None,
+                 **kwargs) -> None:  # TODO: finish adding type hints
         self._silent = kwargs.get('silent', False)
         self._mumotModel = model
         self._controller = controller
-        self._logs = []
+        self._logs = []  # TODO: add type hint
         self._axes3d = False
-        self._fixedParams = {}
+        self._fixedParams = {}  # TODO: add type hint
         self._plotLimits = 1
 
         self._generatingKwargs = kwargs
@@ -90,12 +97,11 @@ class MuMoTview:
         # storing the rates for each rule
         if self._mumotModel:
             freeParamDict = self._get_argDict()
-            self._ratesDict = {}
+            self._ratesDict = {}  # TODO: add type hint
             for rule in self._mumotModel._rules:
                 self._ratesDict[str(rule.rate)] = rule.rate.subs(freeParamDict)
                 if self._ratesDict[str(rule.rate)] == float('inf') or self._ratesDict[str(rule.rate)] is sympy.zoo:
                     self._ratesDict[str(rule.rate)] = sys.maxsize
-            # print(self._ratesDict)
         self._systemSize = self._getSystemSize()
 
         if not self._silent:
@@ -117,9 +123,6 @@ class MuMoTview:
             self._controller._bookmarkWidget.style.button_color = 'pink'
 
     def _show_computation_stop(self) -> None:
-        # ax = plt.gca()
-        # ax.set_facecolor('xkcd:white')
-        # print("pink off")
         if self._controller is not None:
             self._controller._bookmarkWidget.style.button_color = 'silver'
 
@@ -161,10 +164,10 @@ class MuMoTview:
             self._logs.append(log)
         return log_str
 
-    def _set_fixedParams(self, paramDict) -> None:
+    def _set_fixedParams(self, paramDict) -> None:  # TODO: finish adding type hints
         self._fixedParams = paramDict
 
-    def _get_params(self, refModel=None):
+    def _get_params(self, refModel=None):  # TODO: finish adding type hints
         if refModel is not None:
             model = refModel
         else:
@@ -201,7 +204,7 @@ class MuMoTview:
 
         return params
 
-    def _get_bookmarks_params(self, refModel=None) -> str:
+    def _get_bookmarks_params(self, refModel=None) -> str:  # TODO: finish adding type hints
         params = self._get_params(refModel)
         log_str = "params = ["
         for name, value in params:
@@ -238,7 +241,7 @@ class MuMoTview:
 
         return systemSize
 
-    def _get_argDict(self):
+    def _get_argDict(self) -> Dict[Symbol, Union[float, int]]:
         """Get names and values from widgets."""
         paramNames = []
         paramValues = []
@@ -274,7 +277,7 @@ class MuMoTview:
 
         return argDict
 
-    def _get_fixedPoints1d(self):
+    def _get_fixedPoints1d(self):  # TODO: add type hints
         """Calculate stationary states of 1D system."""
         argDict = self._get_argDict()
 
@@ -301,7 +304,7 @@ class MuMoTview:
             eigList.append(evSet)
         return realEQsol, eigList  # returns two lists of dictionaries
 
-    def _get_fixedPoints2d(self):
+    def _get_fixedPoints2d(self):  # TODO: add type hints
         """Calculate stationary states of 2d system."""
 
         argDict = self._get_argDict()
@@ -355,7 +358,7 @@ class MuMoTview:
             eigList.append(evSet)
         return realEQsol, eigList  # returns two lists of dictionaries
 
-    def _get_fixedPoints3d(self):
+    def _get_fixedPoints3d(self):  # TODO: add type hints
         """Calculate stationary states of 3d system."""
         argDict = self._get_argDict()
 
@@ -437,7 +440,7 @@ class MuMoTview:
             self._systemSize = self._getSystemSize()
         self._update_view_specific_params(freeParamDict)
 
-    def _getWidgetParamValue(self, key, dict=None):
+    def _getWidgetParamValue(self, key, dict=None):  # TODO: add type hints
         """Check fixedParams then generatingKwargs for a key value otherwise return from dict."""
         if self._fixedParams.get(key) is not None:
             return self._fixedParams[key]
@@ -452,7 +455,7 @@ class MuMoTview:
         else:
             return None
 
-    def _getInitialState(self, state, freeParamDict):
+    def _getInitialState(self, state, freeParamDict):  # TODO: add type hints
         """Get initial state from widgets, otherwise original initial state."""
         if state in self._mumotModel._constantReactants:
             return freeParamDict[state]
@@ -461,7 +464,7 @@ class MuMoTview:
         else:
             return self._initialState[state]
 
-    def _update_view_specific_params(self, freeParamDict=None):
+    def _update_view_specific_params(self, freeParamDict: Optional[Dict] = None):  # TODO: add better type hint
         """Interface method to update view-specific params from widgets.
 
         @todo JARM: I don't see what purpose this serves - it is mostly ignored and I don't think will function as intended
@@ -469,7 +472,7 @@ class MuMoTview:
         if freeParamDict is None:
             freeParamDict = {}
 
-    def _safeSymbol(self, item):
+    def _safeSymbol(self, item):  # TODO: add type hint
         """Used in _update_view_specific_params"""
         if type(item) is sympy.Symbol:
             return item
@@ -516,7 +519,7 @@ class MuMoTmultiView(MuMoTview):
     # controllers (for building bookmarks)
     _controllers = None
 
-    def __init__(self, controller, model, views, controllers, subPlotNum, **kwargs):
+    def __init__(self, controller, model, views, controllers, subPlotNum, **kwargs) -> None:  # TODO: add type hint
         super().__init__(model, controller, **kwargs)
         self._generatingCommand = "mumot.MuMoTmultiController"
         self._views = views
@@ -553,11 +556,11 @@ class MuMoTmultiView(MuMoTview):
             # plt.tight_layout()
             # subplotNum += 1
 
-    def _setLog(self, log) -> None:
+    def _setLog(self, log) -> None:  # TODO: finish type hint
         for view in self._views:
             view._setLog(log)
 
-    def _print_standalone_view_cmd(self, includeParams: bool = False):
+    def _print_standalone_view_cmd(self, includeParams: bool = False) -> str:
         model = self._views[0]._mumotModel  # @todo this suppose that all models are the same for all views
         with io.capture_output() as log:
             if not self._controller._silent:
@@ -592,11 +595,9 @@ class MuMoTmultiView(MuMoTview):
                 self._logs.append(log)
             return log_str
 
-    def _set_fixedParams(self, paramDict):
+    def _set_fixedParams(self, paramDict) -> None:  # TODO: finish adding type hint
         self._fixedParams = paramDict
         for view in self._views:
-            # view._set_fixedParams(paramDict)
-
             # This operation merges the two dictionaries with the second overriding the values of the first
             view._set_fixedParams({**paramDict, **view._fixedParams})
 
@@ -647,24 +648,15 @@ class MuMoTtimeEvolutionView(MuMoTview):
     # displayed range for horizontal axis
     _chooseYrange = None
 
-    # def __init__(self, model, controller, stateVariable1, stateVariable2,
-    #             stateVariable3 = None, stateVariable4 = None, figure = None, params = None,
-    #             **kwargs):
-    def __init__(self, model, controller, tEParams, showStateVars=None, figure=None, params=None, **kwargs):
-        # if model._systemSize is None and model._constantSystemSize:
-        #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
-        #    return
+    def __init__(self, model, controller, tEParams, showStateVars=None, figure=None, params=None, **kwargs):  # TODO: add type hints
         self._silent = kwargs.get('silent', False)
         super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
-        # super().__init__(model, controller, figure, params, **kwargs)
 
         self._tEParams = tEParams
         self._chooseXrange = kwargs.get('choose_xrange', None)
         self._chooseYrange = kwargs.get('choose_yrange', None)
 
         with io.capture_output() as log:
-            # if True:
-            #     log=''
 
             self._systemSize = self._getSystemSize()
 
@@ -677,9 +669,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
                         self._initialState[parse_latex(state)] = pop
                     else:
                         self._initialState[state] = pop
-                # # add to the _initialState the constant reactants
-                # for constantReactant in self._mumotModel._getAllReactants()[1]:
-                #     self._initialState[constantReactant] = freeParamDict[constantReactant]
 
                 # Storing all values of MA-specific parameters
                 self._maxTime = tEParams["maxTime"]
@@ -747,7 +736,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
         if not self._silent:
             self._plot_NumSolODE()
 
-    def _get_eqsODE(self, y_old, time):
+    def _get_eqsODE(self, y_old, time):  # TODO: add type hints
         """ Calculates right-hand side of ODE system."""
         SVsub = {}
 
@@ -763,7 +752,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
 
         return ode_sys
 
-    def _plot_NumSolODE(self):
+    def _plot_NumSolODE(self) -> None:
         if not self._silent:  # @todo is this necessary?
             plt.figure(self._figureNum)
             plt.clf()
@@ -771,25 +760,22 @@ class MuMoTtimeEvolutionView(MuMoTview):
         self._showErrorMessage(str(self))
         self._update_params()
 
-    def _update_view_specific_params(self, freeParamDict=None):
+    def _update_view_specific_params(self, freeParamDict=None) -> None:  # TODO: finish adding type hints
         """getting other parameters specific to integrate"""
         if freeParamDict is None:
             freeParamDict = {}
 
         if self._controller is not None:
             if self._getWidgetParamValue('initialState', None) is not None:
-                # self._initialState = self._getWidgetParamValue('initialState', None)
-                # self._initialState = {sympy.Symbol(key): self._getWidgetParamValue('initialState', None)[key]
-                #                       for key in self._getWidgetParamValue('initialState', None)}
                 self._initialState = {self._safeSymbol(key): self._getWidgetParamValue('initialState', None)[key]
                                       for key in self._getWidgetParamValue('initialState', None)}
             else:
                 for state in self._initialState.keys():
                     # add normal and constant reactants to the _initialState
-                    self._initialState[state] = self._getInitialState(state, freeParamDict)  # freeParamDict[state] if state in self._mumotModel._constantReactants else self._controller._widgetsExtraParams['init' + str(state)].value
+                    self._initialState[state] = self._getInitialState(state, freeParamDict)
             if 'plotProportions' in self._tEParams:  # @todo JARM: I don't really understand logic of checking _tEParams but then retrieving the value from elsewhere
-                self._plotProportions = self._getWidgetParamValue('plotProportions', self._controller._widgetsPlotOnly)  # self._fixedParams['plotProportions'] if self._fixedParams.get('plotProportions') is not None else self._controller._widgetsPlotOnly['plotProportions'].value
-            self._maxTime = self._getWidgetParamValue('maxTime', self._controller._widgetsExtraParams)  # self._fixedParams['maxTime'] if self._fixedParams.get('maxTime') is not None else self._controller._widgetsExtraParams['maxTime'].value
+                self._plotProportions = self._getWidgetParamValue('plotProportions', self._controller._widgetsPlotOnly)
+            self._maxTime = self._getWidgetParamValue('maxTime', self._controller._widgetsExtraParams)
 
 
 class MuMoTintegrateView(MuMoTtimeEvolutionView):
@@ -804,7 +790,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
     # ordered list of colors to be used
     _colors = None
 
-    def _constructorSpecificParams(self, _):
+    def _constructorSpecificParams(self, _) -> None:
         if self._controller is not None:
             self._generatingCommand = "integrate"
 
@@ -812,14 +798,12 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
         for idx, state in enumerate(sorted(self._initialState.keys(), key=str)):
             if state in self._stateVarListDisplay:
                 self._colors.append(consts.LINE_COLOR_LIST[idx])
-        # print(self._colors)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self._ylab = kwargs.get('ylab', 'reactants')
         super().__init__(*args, **kwargs)
-        # self._generatingCommand = "numSimStateVar"
 
-    def _plot_NumSolODE(self, _=None):
+    def _plot_NumSolODE(self, _=None) -> None:
         self._show_computation_start()
 
         super()._plot_NumSolODE()
@@ -927,7 +911,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
 
         self._show_computation_stop()
 
-    def _redrawOnly(self, _=None):
+    def _redrawOnly(self, _=None) -> None:
         super()._plot_NumSolODE()
         self._update_params()
         NrDP = int(self._maxTime / self._tstep) + 1
@@ -987,7 +971,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
                     display(Math(out))
         self._logs.append(log)
 
-    def _build_bookmark(self, includeParams=True):
+    def _build_bookmark(self, includeParams: bool = True) -> str:
         if not self._silent:
             log_str = "bookmark = "
         else:
@@ -1029,38 +1013,32 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
 class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
     """Noise correlations around fixed points plot view on model."""
 
-    # equations of motion for first order moments of noise variables
-    _EOM_1stOrdMomDict = None
-    # equations of motion for second order moments of noise variables
-    _EOM_2ndOrdMomDict = None
-    # upper bound of simulation time for dynamical system to reach equilibrium (can be set via keyword)
-    _maxTimeDS = None
-    # time step of simulation for dynamical system to reach equilibrium (can be set via keyword)
-    _tstepDS = None
-    # y-label with default specific to this MuMoTnoiseCorrelationsView class (can be set via keyword)
-    _ylab = None
-
-    def _constructorSpecificParams(self, _):
+    def _constructorSpecificParams(self, _) -> None:
         if self._controller is not None:
             self._generatingCommand = "noiseCorrelations"
 
     def __init__(self, model, controller, NCParams, EOM_1stOrdMom,
-                 EOM_2ndOrdMom, figure=None, params=None, **kwargs):
+                 EOM_2ndOrdMom, figure=None, params=None, **kwargs) -> None:
+        # equations of motion for first order moments of noise variables
         self._EOM_1stOrdMomDict = EOM_1stOrdMom
+        # equations of motion for second order moments of noise variables
         self._EOM_2ndOrdMomDict = EOM_2ndOrdMom
-        self._maxTimeDS = kwargs.get('maxTimeDS', 50)
-        self._tstepDS = kwargs.get('tstepDS', 0.01)
-        self._ylab = kwargs.get('ylab', 'noise correlations')
+        # upper bound of simulation time for dynamical system to reach equilibrium (can be set via keyword)
+        self._maxTimeDS: float = kwargs.get('maxTimeDS', 50)
+        # time step of simulation for dynamical system to reach equilibrium (can be set via keyword)
+        self._tstepDS: float = kwargs.get('tstepDS', 0.01)
+        # y-label with default specific to this MuMoTnoiseCorrelationsView class (can be set via keyword)
+        self._ylab: str = kwargs.get('ylab', 'noise correlations')
         self._silent = kwargs.get('silent', False)
+
         super().__init__(model=model, controller=controller, tEParams=NCParams,
                          showStateVars=None, figure=figure, params=params, **kwargs)
-        # super().__init__(model, controller, None, figure, params, **kwargs)
 
         if len(self._stateVarList) < 1 or len(self._stateVarList) > 3:
             self._showErrorMessage("Not implemented: This feature is available only for systems with 1, 2 or 3 time-dependent reactants!")
             return None
 
-    def _plot_NumSolODE(self, _=None):
+    def _plot_NumSolODE(self, _=None) -> None:
         self._show_computation_start()
 
         super()._plot_NumSolODE()
@@ -1080,8 +1058,6 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
 
         NrDP = int(self._maxTimeDS / self._tstepDS) + 1
         time = np.linspace(0, self._maxTimeDS, NrDP)
-        # NrDP = int(self._tend / self._tstep) + 1
-        # time = np.linspace(0, self._tend, NrDP)
 
         initDict = self._initialState
 
@@ -5481,7 +5457,7 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None,
 
 def _plot_point_cov(
         points: np.ndarray,
-        nstd: Optional[float] = 2,
+        nstd: float = 2,
         ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs) -> matplotlib.patches.Ellipse:
     """
@@ -5538,8 +5514,8 @@ def _plot_point_cov(
 
 def _plot_cov_ellipse(
         cov: np.ndarray,
-        pos: np.ndarray, nstd:
-        Optional[float] = 2.0,
+        pos: np.ndarray,
+        nstd: float = 2.0,
         ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs) -> matplotlib.patches.Ellipse:
     """

@@ -1,6 +1,7 @@
 """MuMoT controller classes."""
 
 import base64
+from typing import Dict, List
 
 from IPython.display import Javascript, display
 import ipywidgets.widgets as widgets
@@ -19,48 +20,48 @@ from . import (
 class MuMoTcontroller:
     """Controller for a model view."""
 
-    _view = None
-    # dictionary of LaTeX labels for widgets, with parameter name as key
-    _paramLabelDict = None
-    # dictionary of controller widgets only for the free parameters of the model, with parameter name as key
-    _widgetsFreeParams = None
-    # dictionary of controller widgets for the special parameters (e.g., simulation length, initial state), with parameter name as key
-    _widgetsExtraParams = None
-    # dictionary of controller widgets, with parameter that influence only the plotting and not the computation
-    _widgetsPlotOnly = None
-    # list keeping the order of the extra-widgets (_widgetsExtraParams and _widgetsPlotOnly)
-    _extraWidgetsOrder = None
+    _view: views.MuMoTview  # = None
     # replot function widgets have been assigned (for use by MuMoTmultiController)
     _replotFunction = None
     # redraw function widgets have been assigned (for use by MuMoTmultiController)
     _redrawFunction = None
     # widget for simple error messages to be displayed to user during interaction
-    _errorMessage = None
+    _errorMessage: widgets.HTML = None
     # plot limits slider widget
     _plotLimitsWidget = None  # @todo: is it correct that this is a variable of the general MuMoTcontroller?? it might be simply added in the _widgetsPlotOnly dictionary
     # system size slider widget
-    _systemSizeWidget = None
+    _systemSizeWidget: widgets.Widget = None
     # bookmark button widget
-    _bookmarkWidget = None
+    _bookmarkWidget: widgets.Widget = None
     # advanced tab widget
     _advancedTabWidget = None
     # download button widget
-    _downloadWidget = None
+    _downloadWidget: widgets.Widget = None
     # download link widget
-    _downloadWidgetLink = None
+    _downloadWidgetLink: widgets.HTML = None
 
-    def __init__(self, paramValuesDict, paramLabelDict=None,
-                 continuousReplot: bool = False, showPlotLimits: bool = False,
-                 showSystemSize: bool = False, advancedOpts=None, **kwargs) -> None:
-        self._silent = kwargs.get('silent', False)
-        self._paramLabelDict = paramLabelDict if paramLabelDict is not None else {}
-        self._widgetsFreeParams = {}
-        self._widgetsExtraParams = {}
-        self._widgetsPlotOnly = {}
-        self._extraWidgetsOrder = []
+    def __init__(self,
+                 paramValuesDict,
+                 paramLabelDict=None,
+                 continuousReplot: bool = False,
+                 showPlotLimits: bool = False,
+                 showSystemSize: bool = False,
+                 advancedOpts=None,
+                 **kwargs) -> None:
+        self._silent: bool = kwargs.get('silent', False)
+        # LaTeX labels for widgets, with parameter name as key
+        self._paramLabelDict: Dict[str, str] = paramLabelDict if paramLabelDict is not None else {}
+        # Controller widgets only for the free parameters of the model, with parameter name as key
+        self._widgetsFreeParams: Dict[str, widgets.Widget] = {}
+        # Controller widgets for the special parameters (e.g., simulation length, initial state), with parameter name as key
+        self._widgetsExtraParams: Dict[str, widgets.Widget] = {}
+        # Controller widgets, with parameter that influence only the plotting and not the computation
+        self._widgetsPlotOnly: Dict[str, widgets.Widget] = {}
+        # The order of the extra-widgets (_widgetsExtraParams and _widgetsPlotOnly)
+        self._extraWidgetsOrder: List[str] = []
 
         for paramName in sorted(paramValuesDict.keys()):
-            if paramName == 'plotLimits' or paramName == 'systemSize':
+            if paramName in ('plotLimits', 'systemSize'):
                 continue
             if not paramValuesDict[paramName][-1]:
                 paramValue = paramValuesDict[paramName]
@@ -148,9 +149,6 @@ class MuMoTcontroller:
         self._errorMessage.value = "Pasted bookmark to log - view with showLogs(tail = True)"
         self._view._print_standalone_view_cmd(True)
 
-    # set the functions that must be triggered when the widgets are changed.
-    # @param[in]    recomputeFunction    The function to be called when recomputing is necessary
-    # @param[in]    redrawFunction    The function to be called when only redrawing (relying on previous computation) is sufficient
     def _setReplotFunction(self, recomputeFunction, redrawFunction=None) -> None:
         """set the functions that must be triggered when the widgets are changed.
         :param recomputeFunction
@@ -174,11 +172,11 @@ class MuMoTcontroller:
 
     def _createAdvancedWidgets(self, _advancedOpts, _continuousReplot: bool = False) -> None:
         """Interface method to add advanced options (if needed)"""
-        return None
+        raise NotImplementedError()
 
     def _orderAdvancedWidgets(self, initialState) -> None:
         """Interface method to sort the advanced options, in the self._extraWidgetsOrder list"""
-        pass
+        raise NotImplementedError()
 
     def _displayAdvancedOptionsTab(self) -> None:
         """Create and display the "Advanced options" tab (if not empty)"""
@@ -193,12 +191,10 @@ class MuMoTcontroller:
                 advancedWidgets.append(self._widgetsPlotOnly[widgetName])
                 if not self._widgetsPlotOnly[widgetName].layout.display == 'none':
                     atLeastOneAdvancedWidget = True
-            # else:
-                # print("WARNING! In the _extraWidgetsOrder is listed the widget " + widgetName + " which is although not found in _widgetsExtraParams or _widgetsPlotOnly")
         if advancedWidgets:  # if not empty
             advancedPage = widgets.Box(children=advancedWidgets)
             advancedPage.layout.flex_flow = 'column'
-            self._advancedTabWidget = widgets.Accordion(children=[advancedPage])  # , selected_index=-1)
+            self._advancedTabWidget = widgets.Accordion(children=[advancedPage])
             self._advancedTabWidget.set_title(0, 'Advanced options')
             self._advancedTabWidget.selected_index = None
             if atLeastOneAdvancedWidget:
@@ -296,12 +292,12 @@ class MuMoTcontroller:
             }
         }
         """ % str(data_to_download)
-        # str(data_to_download)
-        # data_to_download.to_csv(index=False).replace('\n','\\n').replace("'","\'")
 
         return Javascript(js_download)
 
-    def _create_download_link(self, text: str, title: str = "Download file",
+    def _create_download_link(self,
+                              text: str,
+                              title: str = "Download file",
                               filename: str = "file.txt") -> str:
         """Create a download link."""
         b64 = base64.b64encode(text.encode())
@@ -322,7 +318,7 @@ class MuMoTcontroller:
 class MuMoTbifurcationController(MuMoTcontroller):
     """Controller to enable Advanced options widgets for bifurcation view."""
 
-    def _createAdvancedWidgets(self, BfcParams, continuousReplot: bool = False):
+    def _createAdvancedWidgets(self, BfcParams, continuousReplot: bool = False) -> None:
         initialState = BfcParams['initialState'][0]
         if not BfcParams['initialState'][-1]:
             # for state,pop in initialState.items():
@@ -361,7 +357,6 @@ class MuMoTbifurcationController(MuMoTcontroller):
                                          readout_format='.' + str(utils._count_sig_decimals(str(initBifParam[3]))) + 'f',
                                          description='Initial ' + r'\(' + utils._doubleUnderscorify(utils._greekPrependify(str(BfcParams['bifurcationParameter'][0]))) + r'\) : ',
                                          style={'description_width': 'initial:'},
-                                         # layout=widgets.Layout(width='50%'),
                                          disabled=False,
                                          continuous_update=continuousReplot)
             self._widgetsExtraParams['initBifParam'] = widget
@@ -378,7 +373,7 @@ class MuMoTbifurcationController(MuMoTcontroller):
 class MuMoTtimeEvolutionController(MuMoTcontroller):
     """Controller class to enable Advanced options widgets for simulation of ODEs and time evolution of noise correlations."""
 
-    def _createAdvancedWidgets(self, tEParams, continuousReplot=False):
+    def _createAdvancedWidgets(self, tEParams, continuousReplot=False) -> None:
         initialState = tEParams['initialState'][0]
         if not tEParams['initialState'][-1]:
             # for state,pop in initialState.items():
@@ -434,7 +429,7 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
 
         return initialState
 
-    def _orderAdvancedWidgets(self, initialState):
+    def _orderAdvancedWidgets(self, initialState) -> None:
         # define the widget order
         for state in sorted(initialState.keys(), key=str):
             self._extraWidgetsOrder.append(f"init{state}")
@@ -446,7 +441,7 @@ class MuMoTtimeEvolutionController(MuMoTcontroller):
 class MuMoTfieldController(MuMoTcontroller):
     """Controller for field views"""
 
-    def _createAdvancedWidgets(self, advancedOpts, continuousReplot=False):
+    def _createAdvancedWidgets(self, advancedOpts, continuousReplot=False) -> None:
         # Max time slider
         if not advancedOpts['maxTime'][-1]:
             maxTime = advancedOpts['maxTime']
@@ -531,23 +526,19 @@ class MuMoTfieldController(MuMoTcontroller):
             )
             self._widgetsExtraParams['aggregateResults'] = widget
 
-        return None
-
-    def _orderAdvancedWidgets(self, _noInitialState):
+    def _orderAdvancedWidgets(self, _noInitialState) -> None:
         # define the widget order
         # self._extraWidgetsOrder.append('final_x')
         # self._extraWidgetsOrder.append('final_y')
         # self._extraWidgetsOrder.append('plotProportions')
-        self._extraWidgetsOrder.append('runs')
-        self._extraWidgetsOrder.append('maxTime')
-        self._extraWidgetsOrder.append('randomSeed')
-        self._extraWidgetsOrder.append('aggregateResults')
+        self._extraWidgetsOrder.extend([
+            'runs', 'maxTime', 'randomSeed', 'aggregateResults'])
 
 
 class MuMoTstochasticSimulationController(MuMoTcontroller):
     """Controller for stochastic simulations (base class of MuMoTmultiagentController)."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._downloadWidget.on_click(self._download_link_unsupported, remove=True)
         self._downloadWidget.on_click(self._reveal_download_link)
@@ -697,28 +688,22 @@ class MuMoTstochasticSimulationController(MuMoTcontroller):
 
         return initialState
 
-    def _addSpecificWidgets(self, SSParams, continuousReplot):
+    def _addSpecificWidgets(self, SSParams, continuousReplot) -> None:
         pass
 
-    def _orderAdvancedWidgets(self, initialState):
+    def _orderAdvancedWidgets(self, initialState) -> None:
         # define the widget order
         for state in sorted(initialState.keys(), key=str):
             self._extraWidgetsOrder.append(f"init{state}")
-        self._extraWidgetsOrder.append('maxTime')
-        self._extraWidgetsOrder.append('randomSeed')
-        self._extraWidgetsOrder.append('visualisationType')
-        self._extraWidgetsOrder.append('final_x')
-        self._extraWidgetsOrder.append('final_y')
-        self._extraWidgetsOrder.append('plotProportions')
-        self._extraWidgetsOrder.append('realtimePlot')
-        self._extraWidgetsOrder.append('runs')
-        self._extraWidgetsOrder.append('aggregateResults')
+        self._extraWidgetsOrder.extend([
+            'maxTime', 'randomSeed', 'visualisationType', 'final_x', 'final_y',
+            'plotProportions', 'realtimePlot', 'runs', 'aggregateResults'])
 
 
 class MuMoTmultiagentController(MuMoTstochasticSimulationController):
     """Controller for multiagent views."""
 
-    def _addSpecificWidgets(self, MAParams, continuousReplot=False):
+    def _addSpecificWidgets(self, MAParams, continuousReplot=False) -> None:
 
         # Network type dropdown selector
         if not MAParams['netType'][-1]:
@@ -823,28 +808,17 @@ class MuMoTmultiagentController(MuMoTstochasticSimulationController):
             )
             self._widgetsPlotOnly['showInteractions'] = widget
 
-    def _orderAdvancedWidgets(self, initialState):
+    def _orderAdvancedWidgets(self, initialState) -> None:
         # define the widget order
         for state in sorted(initialState.keys(), key=str):
             self._extraWidgetsOrder.append(f"init{state}")
-        self._extraWidgetsOrder.append('maxTime')
-        self._extraWidgetsOrder.append('timestepSize')
-        self._extraWidgetsOrder.append('netType')
-        self._extraWidgetsOrder.append('netParam')
-        self._extraWidgetsOrder.append('particleSpeed')
-        self._extraWidgetsOrder.append('motionCorrelatedness')
-        self._extraWidgetsOrder.append('randomSeed')
-        self._extraWidgetsOrder.append('visualisationType')
-        self._extraWidgetsOrder.append('final_x')
-        self._extraWidgetsOrder.append('final_y')
-        self._extraWidgetsOrder.append('showTrace')
-        self._extraWidgetsOrder.append('showInteractions')
-        self._extraWidgetsOrder.append('plotProportions')
-        self._extraWidgetsOrder.append('realtimePlot')
-        self._extraWidgetsOrder.append('runs')
-        self._extraWidgetsOrder.append('aggregateResults')
+        self._extraWidgetsOrder.extend(
+            ['maxTime', 'timestepSize', 'netType', 'netParam', 'particleSpeed',
+             'motionCorrelatedness', 'randomSeed', 'visualisationType',
+             'final_x', 'final_y', 'showTrace', 'showInteractions',
+             'plotProportions', 'realtimePlot', 'runs', 'aggregateResults'])
 
-    def _update_net_params(self, _=None):
+    def _update_net_params(self, _=None) -> None:
         """Update the widgets related to the ``netType``
 
         It is linked - through ``observe()`` - before the ``_view`` is created.
@@ -860,7 +834,7 @@ class MuMoTmultiController(MuMoTcontroller):
     # replot function list to invoke on views
     _replotFunctions = None
 
-    def __init__(self, controllers, params=None, initWidgets=None, **kwargs):
+    def __init__(self, controllers, params=None, initWidgets=None, **kwargs) -> None:
         if initWidgets is None:
             initWidgets = {}
 

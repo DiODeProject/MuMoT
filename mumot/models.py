@@ -1,28 +1,31 @@
 """MuMoT model classes."""
 
 import copy
-import sympy
 import os
 import re
 import tempfile
+from typing import Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from graphviz import Digraph
 from IPython.display import display, Math
 import numpy as np
+import sympy
 from sympy import (
+    Add,
     collect,
     default_sort_key,
     Derivative,
+    Function,
     lambdify,
     latex,
     linsolve,
+    Mul,
     numbered_symbols,
     preview,
     simplify,
     solve,
     Symbol,
     symbols,
-    Function
 )
 from sympy.parsing.latex import parse_latex
 
@@ -183,7 +186,7 @@ class MuMoTmodel:
 
         return newModel
 
-    def visualise(self):
+    def visualise(self) -> Digraph:
         """Build a graphical representation of the model.
 
         Returns
@@ -200,7 +203,7 @@ class MuMoTmodel:
             brew link libtool
 
         """
-        errorShown = False
+        error_shown = False
         if self._dot is None:
             dot = Digraph(comment="Model", engine='circo')
             if not self._constantSystemSize:
@@ -256,14 +259,14 @@ class MuMoTmodel:
                     if source is not None:
                         dot.edge(source, target, label=htmlLabel, arrowhead=head, arrowtail=tail, dir='both')
                 else:
-                    if not errorShown:
-                        errorShown = True
+                    if not error_shown:
+                        error_shown = True
                         print("Model contains rules with three or more reactants; only displaying unary and binary rules")
             self._dot = dot
 
         return self._dot
 
-    def showConstantReactants(self):
+    def showConstantReactants(self) -> None:
         """Show a sorted LaTeX representation of the model's constant reactants.
 
         Displays the LaTeX representation in the Jupyter Notebook if there are
@@ -282,7 +285,7 @@ class MuMoTmodel:
                 out = utils._doubleUnderscorify(utils._greekPrependify(out))
                 display(Math(out))
 
-    def showReactants(self):
+    def showReactants(self) -> None:
         """Show a sorted LaTeX representation of the model's reactants.
 
         Displays rendered LaTeX in the Jupyter Notebook.
@@ -302,7 +305,7 @@ class MuMoTmodel:
             out = utils._doubleUnderscorify(utils._greekPrependify(reactant))
             display(Math(out))
 
-    def showRates(self):
+    def showRates(self) -> None:
         """Show a sorted LaTeX representation of the model's rate parameters.
 
         Displays rendered LaTeX in the Jupyter Notebook.
@@ -317,7 +320,7 @@ class MuMoTmodel:
             out = utils._doubleUnderscorify(utils._greekPrependify(out))
             display(Math(out))
 
-    def showSingleAgentRules(self):
+    def showSingleAgentRules(self) -> None:
         """Show the probabilistic transitions of the agents in each possible reactant-state.
 
         Returns
@@ -349,7 +352,7 @@ class MuMoTmodel:
             else:
                 print("does not initiate any reaction.")
 
-    def getODEs(self, method='massAction'):
+    def getODEs(self, method: str = 'massAction') -> Union[Dict[Symbol, Add], Dict[Derivative, Add], None]:
         """Get symbolic equations for the model system of ODEs.
 
         Parameters
@@ -359,18 +362,21 @@ class MuMoTmodel:
 
         Returns
         -------
-        :class:`dict`
+        :class:`dict` or None
             Dictionary of ODE right hand sides with reactant (left hand side) as key
 
         """
+        ret = None
         if method == 'massAction':
-            return self._equations
+            ret = self._equations
         elif method == 'vanKampen':
-            return _getODEs_vKE(_get_orderedLists_vKE, self._stoichiometry)
+            ret = _getODEs_vKE(_get_orderedLists_vKE, self._stoichiometry)
         else:
-            print("Invalid input for method. Choose either method = 'massAction' or method = 'vanKampen'. Default is 'massAction'.")
+            print("Invalid input for method. "
+                  "Choose either method = 'massAction' or method = 'vanKampen'. Default is 'massAction'.")
+        return ret
 
-    def showODEs(self, method='massAction'):
+    def showODEs(self, method: str = 'massAction') -> None:
         """Show a LaTeX representation of the model system of ODEs.
 
         Displays rendered LaTeX in the Jupyter Notebook.
@@ -385,7 +391,6 @@ class MuMoTmodel:
             `None`
 
         """
-
         if method == 'massAction':
             for reactant in self._reactants:
                 out = "\\displaystyle \\frac{\\textrm{d}" + latex(reactant) + "}{\\textrm{d}t} := " + latex(self._equations[reactant])
@@ -400,20 +405,19 @@ class MuMoTmodel:
         else:
             print("Invalid input for method. Choose either method = 'massAction' or method = 'vanKampen'. Default is 'massAction'.")
 
-    def getStoichiometry(self):
-        """Get stoichiometry as a dictionary
+    def getStoichiometry(self) -> Dict[Symbol, Union[Dict[str, Symbol], Dict[Symbol, List[Union[int, Dict[Symbol, Add]]]]]]:
+        """Get stoichiometry as a dictionary.
 
         Returns
         -------
         :class:`dict`
-            Dictionary  with key ReactionNr; ReactionNr represents another dictionary with reaction rate, reactants
+            Dictionary with key ReactionNr; ReactionNr represents another dictionary with reaction rate, reactants
             and corresponding stoichiometry.
 
         """
-
         return self._stoichiometry
 
-    def showStoichiometry(self):
+    def showStoichiometry(self) -> None:
         """Display stoichiometry as a dictionary with keys ReactionNr,
         ReactionNr represents another dictionary with reaction rate, reactants
         and corresponding stoichiometry.
@@ -429,13 +433,13 @@ class MuMoTmodel:
         out = utils._doubleUnderscorify(utils._greekPrependify(out))
         display(Math(out))
 
-    def getMasterEquation(self):
+    def getMasterEquation(self) -> Optional[Tuple[Dict[Symbol, Sequence[Union[Symbol, Mul, Function]]], Optional[Dict[Symbol, Add]]]]:
         """Gets Master Equation expressed with step operators, and substitutions.
 
         Returns
         -------
-        :class:`dict`, :class:`dict`
-            Dictionary showing all terms of the right hand side of the Master Equation
+        (:class:`dict`, :class:`dict`) or None
+            Dictionary showing all terms of the right hand side of the Master Equation and 
             Dictionary of substitutions used, this defaults to `None` if no substitutions were made
 
         """
@@ -452,14 +456,13 @@ class MuMoTmodel:
 
         if len(nvec) < 1 or len(nvec) > 4:
             print("Derivation of Master Equation works for 1, 2, 3 or 4 different reactants only")
-
             return
-        # assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
+
         rhs_dict, substring = views._deriveMasterEquation(stoich)
 
         return rhs_dict, substring
 
-    def showMasterEquation(self):
+    def showMasterEquation(self) -> None:
         """Displays Master equation expressed with step operators.
 
         Displays rendered LaTeX in the Jupyter Notebook.
@@ -469,7 +472,6 @@ class MuMoTmodel:
             `None`
 
         """
-
         t = symbols('t')
         P = Function('P')
         out_rhs = ""
@@ -521,7 +523,7 @@ class MuMoTmodel:
                 subV = utils._greekPrependify(utils._doubleUnderscorify(str(subVal)))
                 display(Math(r"With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
 
-    def getVanKampenExpansion(self):
+    def getVanKampenExpansion(self) -> Tuple[Add, Add, Optional[Dict[Symbol, Add]]]:
         """Get van Kampen expansion when the operators are expanded up to
         second order.
 
@@ -531,13 +533,13 @@ class MuMoTmodel:
             van Kampen expansion left hand side
             van Kampen expansion right hand side
             Dictionary of substitutions used, this defaults to `None` if no substitutions were made
-        """
 
+        """
         rhs_vke, lhs_vke, substring = views._doVanKampenExpansion(views._deriveMasterEquation, self._stoichiometry)
 
         return lhs_vke, rhs_vke, substring
 
-    def showVanKampenExpansion(self):
+    def showVanKampenExpansion(self) -> None:
         """Show van Kampen expansion when the operators are expanded up to
         second order.
 
@@ -559,7 +561,7 @@ class MuMoTmodel:
                 subV = utils._greekPrependify(utils._doubleUnderscorify(str(subVal)))
                 display(Math(r"With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
 
-    def getFokkerPlanckEquation(self):
+    def getFokkerPlanckEquation(self) -> Tuple[Dict[Derivative, Add], Union[Dict[Symbol, Add]], None]:
         """Get Fokker-Planck equation derived from term ~ O(1) in van Kampen
         expansion (linear noise approximation).
 
@@ -573,7 +575,7 @@ class MuMoTmodel:
 
         return _getFokkerPlanckEquation(_get_orderedLists_vKE, self._stoichiometry)
 
-    def showFokkerPlanckEquation(self):
+    def showFokkerPlanckEquation(self) -> None:
         """Show Fokker-Planck equation derived from term ~ O(1) in van Kampen
         expansion (linear noise approximation).
 
@@ -596,7 +598,7 @@ class MuMoTmodel:
                 subV = utils._greekPrependify(utils._doubleUnderscorify(str(subVal)))
                 display(Math(r"With \; substitution:\;" + latex(subK) + ":= " + latex(subV)))
 
-    def getNoiseEquations(self):
+    def getNoiseEquations(self):  # TODO: add type hints
         """Get equations of motion of first and second order moments of noise.
 
         Returns
@@ -613,7 +615,7 @@ class MuMoTmodel:
 
         return EOM_1stOrderMom, NoiseSubs1stOrder, EOM_2ndOrderMom, NoiseSubs2ndOrder
 
-    def showNoiseEquations(self):
+    def showNoiseEquations(self) -> None:
         """Display equations of motion of first and second order moments of noise.
 
         Displays rendered LaTeX in the Jupyter Notebook.
@@ -649,7 +651,7 @@ class MuMoTmodel:
         """
         return _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
 
-    def showNoiseSolutions(self):
+    def showNoiseSolutions(self) -> None:
         """Display noise in the stationary state.
 
         Displays rendered LaTeX in the Jupyter Notebook.
@@ -680,7 +682,7 @@ class MuMoTmodel:
                 out = utils._doubleUnderscorify(utils._greekPrependify(out))
                 display(Math(out))
 
-    def show(self):
+    def show(self) -> None:
         """Show a LaTeX representation of the model.
 
         Display all rules in the model as rendered LaTeX in the Jupyter
@@ -726,7 +728,10 @@ class MuMoTmodel:
             out = utils._doubleUnderscorify(utils._greekPrependify(out))
             display(Math(out))
 
-    def integrate(self, showStateVars=None, initWidgets=None, **kwargs):
+    def integrate(self,
+                  showStateVars=None,
+                  initWidgets: Optional[Dict[str, Tuple[float, float, float, float]]] = None,
+                  **kwargs) -> controllers.MuMoTtimeEvolutionController:
         """Construct interactive time evolution plot for state variables.
 
         Parameters
@@ -839,7 +844,9 @@ class MuMoTmodel:
 
         return viewController
 
-    def noiseCorrelations(self, initWidgets=None, **kwargs):
+    def noiseCorrelations(self,
+                          initWidgets: Optional[Dict[str, Tuple[float, float, float, float]]] = None,
+                          **kwargs) -> controllers.MuMoTtimeEvolutionController:
         """Construct interactive time evolution plot for noise correlations
         around fixed points.
 
@@ -984,8 +991,13 @@ class MuMoTmodel:
 
     # construct interactive stream plot with the option to show noise around
     # fixed points
-    def stream(self, stateVariable1, stateVariable2=None, stateVariable3=None,
-               params=None, initWidgets=None, **kwargs):
+    def stream(self,
+               stateVariable1: str,
+               stateVariable2: Optional[str] = None,
+               stateVariable3: Optional[str] = None,
+               params: Optional[List[Tuple[str, float]]] = None,
+               initWidgets: Optional[Dict[str, Tuple[float, float, float, float]]] = None,
+               **kwargs) -> controllers.MuMoTfieldController:
         """Display interactive stream plot of ``stateVariable1`` (x-axis),
         ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis;
         not currently supported - see below).
@@ -993,15 +1005,14 @@ class MuMoTmodel:
         Parameters
         ----------
         stateVariable1
-            State variable to be plotted on the x-axis. Type?
+            State variable to be plotted on the x-axis.
         stateVariable2
-            State variable to be plotted on the y-axis. Type?
+            State variable to be plotted on the y-axis.
         stateVariable3 : optional
             State variable to be plotted on the z-axis.  Not currently
-            supported; use `vector` instead for 3-dimensional systems.  Type?
+            supported; use `vector` instead for 3-dimensional systems.
         params : optional
             Parameter list (see 'Partial controllers' in the `user manual`_).
-            Type?
         initWidgets : dict, optional
              Keys are the free parameter or any other specific parameter, and
              values each a list of ``[initial-value, min-value, max-value,
@@ -1039,8 +1050,8 @@ class MuMoTmodel:
 
         Returns
         -------
-        :class:`MuMoTcontroller`
-            A MuMoT controller object
+        :class:`MuMoTfieldController`
+            A MuMoT field controller object
 
         Notes
         -----
@@ -1124,19 +1135,24 @@ class MuMoTmodel:
 
     # construct interactive vector plot with the option to show noise around
     # fixed points
-    def vector(self, stateVariable1, stateVariable2, stateVariable3=None,
-               params=None, initWidgets=None, **kwargs):
+    def vector(self,
+               stateVariable1: str,
+               stateVariable2: str,
+               stateVariable3: Optional[str] = None,
+               params: Optional[List[Tuple[str, float]]] = None,
+               initWidgets: Optional[Dict[str, Tuple[float, float, float, float]]] = None,
+               **kwargs) -> Union[controllers.MuMoTfieldController, None]:
         """Display interactive vector plot of ``stateVariable1`` (x-axis),
         ``stateVariable2`` (y-axis), and optionally ``stateVariable3`` (z-axis)
 
         Parameters
         ----------
         stateVariable1
-            State variable to be plotted on the x-axis. Type?
+            State variable to be plotted on the x-axis.
         stateVariable2
-            State variable to be plotted on the y-axis. Type?
+            State variable to be plotted on the y-axis.
         stateVariable3 : optional
-            State variable to be plotted on the z-axis.  Type?
+            State variable to be plotted on the z-axis.
         params : optional
             Parameter list (see 'Partial controllers' in the `user manual`_).
             Type?
@@ -1175,8 +1191,8 @@ class MuMoTmodel:
 
         Returns
         -------
-        :class:`MuMoTcontroller`
-            A MuMoT controller object
+        :class:`MuMoTfieldController` or None
+            A MuMoT field controller object
 
         Notes
         -----
@@ -1256,8 +1272,12 @@ class MuMoTmodel:
         else:
             return None
 
-    def bifurcation(self, bifurcationParameter, stateVariable1,
-                    stateVariable2=None, initWidgets=None, **kwargs):
+    def bifurcation(self,
+                    bifurcationParameter: str,
+                    stateVariable1: str,
+                    stateVariable2: Optional[str] = None,
+                    initWidgets: Optional[Dict[str, Tuple[float, float, float, float]]] = None,
+                    **kwargs) -> controllers.MuMoTbifurcationController:
         r"""Construct and display bifurcation plot of ``stateVariable1``
         (y-axis), or ``stateVariable1`` +/- ``stateVariable2`` (y-axis),
         depending on ``bifurcationParameter`` (x-axis).
@@ -1268,13 +1288,13 @@ class MuMoTmodel:
         Parameters
         ----------
         bifurcationParameter
-            Critical parameter plotted on x-axis.  Type?
+            Critical parameter plotted on x-axis.
         stateVariable1
             State variable expression to be plotted on the y-axis; allowed are:
-            reactant1, reactant1-reactant2, or reactant1+reactant2.  Type?
+            reactant1, reactant1-reactant2, or reactant1+reactant2.
         stateVariable2 : optional
             State variable if system is larger than 2D (not currently
-            supported).  Type?
+            supported).
         initWidgets : dict, optional
             Keys are the free-parameter or any other specific parameter, and
             values are four values, e.g. ``'parameter': [initial-value,
@@ -1398,7 +1418,9 @@ class MuMoTmodel:
 
         return viewController
 
-    def multiagent(self, initWidgets=None, **kwargs):
+    def multiagent(self,
+                   initWidgets: Optional[Dict[str, Tuple[float, float, float, float]]] = None,
+                   **kwargs):
         """Construct interactive multiagent plot (simulation of agents locally interacting with each other).
 
         Parameters
@@ -1570,7 +1592,9 @@ class MuMoTmodel:
 
         return viewController
 
-    def SSA(self, initWidgets=None, **kwargs):
+    def SSA(self,
+            initWidgets: Optional[Dict[str, Tuple[float, float, float, float]]] = None,
+            **kwargs) -> controllers.MuMoTstochasticSimulationController:
         """Construct interactive Stochastic Simulation Algorithm (SSA) plot (simulation run of the Gillespie algorithm to approximate the Master Equation solution).
 
         Parameters
@@ -1684,14 +1708,14 @@ class MuMoTmodel:
 
         return viewController
 
-    def _getAllReactants(self):
+    def _getAllReactants(self) -> Tuple[Set[Symbol], Set[str]]:  # TODO: double-check type hint for second element of Tuple
         """Get the pair of set (reactants, constantReactants).
 
         This method is necessary to have all reactants (to set the system size) also after a substitution has occurred.
 
         """
-        allReactants = set()
-        allConstantReactants = set()
+        allReactants: Set[Symbol] = set()
+        allConstantReactants: Set[str] = set()  # TODO: double-check type hint
         for reaction in self._stoichiometry.values():
             for reactant, info in reaction.items():
                 if (not reactant == 'rate') and (reactant not in allReactants) and (reactant not in allConstantReactants):
@@ -1701,12 +1725,19 @@ class MuMoTmodel:
                         allReactants.add(reactant)
         return (allReactants, allConstantReactants)
 
-    def _get_solutions(self):
+    def _get_solutions(self) -> List[Dict[Symbol, Mul]]:
         if self._solutions is None:
-            self._solutions = solve(iter(self._equations.values()), self._reactants, force=False, positive=False, set=False)
+            self._solutions = solve(iter(self._equations.values()),
+                                    self._reactants, force=False,
+                                    positive=False, set=False)
         return self._solutions
 
-    def _create_free_param_dictionary_for_controller(self, inputParams, initWidgets=None, showSystemSize=False, showPlotLimits=False):
+    def _create_free_param_dictionary_for_controller(
+            self,
+            inputParams,
+            initWidgets=None,
+            showSystemSize=False,
+            showPlotLimits=False) -> Dict[str, List[Union[float, bool]]]:
         initWidgetsSympy = {parse_latex(paramName): paramValue for paramName, paramValue in initWidgets.items()} if initWidgets is not None else {}
 
         paramValuesDict = {}
@@ -1738,7 +1769,7 @@ class MuMoTmodel:
 
         return paramValuesDict
 
-    def _getSingleAgentRules(self):
+    def _getSingleAgentRules(self) -> None:
         """Derive the single-agent rules (which are used in the multiagent simulation) from the reaction rules"""
         # Create the empty structure
         self._agentProbabilities = {}
@@ -1816,7 +1847,10 @@ class MuMoTmodel:
             self._agentProbabilities[reactant].append([otherReact, rule.rate, targetReact, otherTargets])
         # print(self._agentProbabilities)
 
-    def _check_state_variables(self, stateVariable1, stateVariable2, stateVariable3=None):
+    def _check_state_variables(self,
+            stateVariable1: str,
+            stateVariable2: str,
+            stateVariable3: Optional[str] = None) -> bool:
         if parse_latex(stateVariable1) in self._reactants and (stateVariable2 is None or parse_latex(stateVariable2) in self._reactants) and (stateVariable3 is None or parse_latex(stateVariable3) in self._reactants):
             if (stateVariable1 != stateVariable2 and stateVariable1 != stateVariable3 and stateVariable2 != stateVariable3) or (stateVariable2 is None and stateVariable3 is None):
                 return True
@@ -1827,7 +1861,7 @@ class MuMoTmodel:
             print('Invalid reactant provided as state variable')
             return False
 
-    def _getFuncs(self):
+    def _getFuncs(self) -> Dict[Symbol, Callable]:
         """Lambdify sympy equations for numerical integration, plotting, etc."""
         # if self._systemSize is None:
         #     assert false ## @todo is this necessary?
@@ -1849,7 +1883,7 @@ class MuMoTmodel:
 
         return self._funcs
 
-    def _getArgTuple1d(self, argDict, stateVariable1, X):
+    def _getArgTuple1d(self, argDict, stateVariable1, X):  # TODO: add type hints
         """Get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots."""
         argList = []
         for arg in self._args:
@@ -1864,7 +1898,7 @@ class MuMoTmodel:
                     raise exceptions.MuMoTValueError('Unexpected reactant \'' + str(arg) + '\': system size > 1?')
         return tuple(argList)
 
-    def _getArgTuple2d(self, argDict, stateVariable1, stateVariable2, X, Y):
+    def _getArgTuple2d(self, argDict, stateVariable1, stateVariable2, X, Y):  # TODO: add type hints
         """Get tuple to evalute functions returned by _getFuncs with, for 2d field-based plots."""
         argList = []
         for arg in self._args:
@@ -1881,7 +1915,7 @@ class MuMoTmodel:
                     raise exceptions.MuMoTValueError('Unexpected reactant \'' + str(arg) + '\': system size > 2?')
         return tuple(argList)
 
-    def _getArgTuple3d(self, argDict, stateVariable1, stateVariable2, stateVariable3, X, Y, Z):
+    def _getArgTuple3d(self, argDict, stateVariable1, stateVariable2, stateVariable3, X, Y, Z):  # TODO: add type hints
         """Get tuple to evalute functions returned by _getFuncs with, for 3d field-based plots."""
         argList = []
         for arg in self._args:
@@ -1901,9 +1935,9 @@ class MuMoTmodel:
 
         return tuple(argList)
 
-    def _getArgTuple(self, argDict, reactants, reactantValues):
+    def _getArgTuple(self, argDict, reactants, reactantValues):  # TODO: add type hints
         """Get tuple to evalute functions returned by _getFuncs with."""
-        assert False  # need to work this out
+        raise NotImplementedError
         argList = []
         # for arg in self._args:
         #     if arg == stateVariable1:
@@ -1919,7 +1953,7 @@ class MuMoTmodel:
 
         return tuple(argList)
 
-    def _localLaTeXimageFile(self, source):
+    def _localLaTeXimageFile(self, source) -> str:  # TODO: finish adding type hints
         """Render LaTeX source to local image file."""
         tmpfile = tempfile.NamedTemporaryFile(dir=self._tmpdir.name, suffix='.' + self._renderImageFormat, delete=False)
         self._tmpfiles.append(tmpfile)
@@ -1927,7 +1961,7 @@ class MuMoTmodel:
 
         return tmpfile.name[tmpfile.name.find(self._tmpdirpath):]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._rules = []
         self._reactants = set()
         self._systemSize = None
@@ -1957,8 +1991,8 @@ class MuMoTmodel:
 class _Rule:
     """Single reaction rule."""
 
-    lhsReactants = []
-    rhsReactants = []
+    lhsReactants = []  # TODO: add type hint
+    rhsReactants = []  # TODO: add type hint
     rate = ""
 
     def __init__(self):
@@ -1967,7 +2001,7 @@ class _Rule:
         self.rate = ""
 
 
-def parseModel(modelDescription):
+def parseModel(modelDescription: str) -> Union[MuMoTmodel, None]:
     """Create model from text description.
 
     Parameters
@@ -2178,7 +2212,7 @@ def parseModel(modelDescription):
     return model
 
 
-def _get_orderedLists_vKE(stoich):
+def _get_orderedLists_vKE(stoich):  # TODO: add type hints
     """Create list of dictionaries where the key is the system size order."""
     V = Symbol(r'\overline{V}', real=True, constant=True)
     stoichiometry = stoich
@@ -2209,7 +2243,7 @@ def _get_orderedLists_vKE(stoich):
     return Vlist_lhs, Vlist_rhs, substring
 
 
-def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
+def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):  # TODO: add type hints
     """Return the Fokker-Planck equation."""
     t = symbols('t')
     P = Function('P')
@@ -2259,7 +2293,7 @@ def _getFokkerPlanckEquation(_get_orderedLists_vKE, stoich):
     return SOL_FPE, substring
 
 
-def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
+def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):  # TODO: add type hints
     """Calculates noise in the system.
 
     Returns equations of motion for noise.
@@ -2441,7 +2475,7 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
     return EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder
 
 
-def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
+def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):  # TODO: add type hints
     """Calculate noise in the system.
 
     Returns analytical solution for stationary noise.
@@ -2570,7 +2604,7 @@ def _getNoiseStationarySol(_getNoiseEOM, _getFokkerPlanckEquation, _get_orderedL
     return SOL_1stOrderMom[0], NoiseSubs1stOrder, SOL_2ndOrdMomDict, NoiseSubs2ndOrder
 
 
-def _getODEs_vKE(_get_orderedLists_vKE, stoich):
+def _getODEs_vKE(_get_orderedLists_vKE, stoich):  # TODO: add type hints
     """Return the ODE system derived from Master equation."""
     t = symbols('t')
     P = Function('P')
@@ -2794,7 +2828,7 @@ def _getODEs_vKE(_get_orderedLists_vKE, stoich):
     return ODEsys
 
 
-def _getStoichiometry(rules, const_reactants):
+def _getStoichiometry(rules, const_reactants):  # TODO: add type hints
     """Produce dictionary with stoichiometry of all reactions with key ReactionNr.
 
     ReactionNr represents another dictionary with reaction rate, reactants and their stoichiometry.
