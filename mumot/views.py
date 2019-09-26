@@ -188,7 +188,7 @@ class MuMoTview:
         for name, value in self._fixedParams.items():
             # if name == 'systemSize' or name == 'plotLimits':
             #     continue
-            if name not in self._mumotModel._rates and name not in self._mumotModel._constantReactants:
+            if name not in self._mumotModel._get_rates_from_stoichiometry() and name not in self._mumotModel._constantReactants:
                 continue
             name = repr(name)
             if name in model._ratesLaTeX:
