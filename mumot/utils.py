@@ -101,8 +101,8 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
     """
     if optionName == 'initialState':
         (allReactants, _) = extraParam
-        fixSumTo1 = extraParam2 is not None
-        idleReactant = extraParam2 #if extraParam2 is not None else sorted(allReactants, key=str)[0]
+        fixSumTo1 = extraParam2[0]
+        idleReactant = extraParam2[1]
         initialState = {}
         # handle initialState dictionary (either convert or generate a default one)
         if inputValue is not None:
@@ -143,17 +143,20 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
             sumValues = sum([initialState[reactant][0] for reactant in allReactants])
             minStep = min([initialState[reactant][3] for reactant in allReactants])
             
-            # first thing setting the values of the idleReactant 
-            idleValue = initialState[idleReactant][0]
-            if idleValue > 1: 
-                wrn_msg = f"WARNING! the initial value of reactant {idleReactant} has been changed to {new_val}\n"
-                print(wrn_msg)
-                #raise exceptions.MuMoTWarning(wrn_msg)
-                initialState[idleReactant][0] = new_val
-            # the idleValue have range min-max reset to [0,1]
-            initialState[idleReactant][1] = 0
-            initialState[idleReactant][2] = 1
-            initialState[idleReactant][3] = minStep
+            # first thing setting the values of the idleReactant
+            if idleReactant is not None: 
+                idleValue = initialState[idleReactant][0]
+                if idleValue > 1: 
+                    wrn_msg = f"WARNING! the initial value of reactant {idleReactant} has been changed to {new_val}\n"
+                    print(wrn_msg)
+                    #raise exceptions.MuMoTWarning(wrn_msg)
+                    initialState[idleReactant][0] = new_val
+                # the idleValue have range min-max reset to [0,1]
+                initialState[idleReactant][1] = 0
+                initialState[idleReactant][2] = 1
+                initialState[idleReactant][3] = minStep
+            else:
+                idleValue = 0
             for reactant in sorted(allReactants, key=str):
                 if reactant not in allReactants:
                     error_msg = (f"Reactant '{reactant}' does not exist in this model.\n"
@@ -174,15 +177,16 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                             sumValues += new_val
                             initialState[reactant][0] = new_val
                     # modify (if necessary) min-max
-                    pop = initialState[reactant]
-                    sumNorm = sumValues if sumValues <= 1 else 1
-                    if pop[2] > (1 - sumNorm + pop[0] + idleValue):  # max
-                        if pop[1] > (1 - sumNorm + pop[0] + idleValue):  # min
-                            initialState[reactant][1] = (1 - sumNorm + pop[0] + idleValue)
-                        initialState[reactant][2] = (1 - sumNorm + pop[0] + idleValue)
-                    if pop[1] > (1 - sumNorm + pop[0]):  # min
-                        initialState[reactant][1] = (1 - sumNorm + pop[0])
-                    # initialState[reactant][3] = minStep
+                    if idleReactant is not None:
+                        pop = initialState[reactant]
+                        sumNorm = sumValues if sumValues <= 1 else 1
+                        if pop[2] > (1 - sumNorm + pop[0] + idleValue):  # max
+                            if pop[1] > (1 - sumNorm + pop[0] + idleValue):  # min
+                                initialState[reactant][1] = (1 - sumNorm + pop[0] + idleValue)
+                            initialState[reactant][2] = (1 - sumNorm + pop[0] + idleValue)
+                        if pop[1] > (1 - sumNorm + pop[0]):  # min
+                            initialState[reactant][1] = (1 - sumNorm + pop[0])
+                        # initialState[reactant][3] = minStep
             if not _almostEqual(sumValues, 1):
                 new_val = 1 - sum([initialState[reactant][0]
                                    for reactant in allReactants

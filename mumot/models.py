@@ -805,12 +805,14 @@ class MuMoTmodel:
         IntParams = {}
         # read input parameters
         IntParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+        # the first item of extraParam2 for intial state is fixSumTo1, the second is the idle reactant
+        extraParam2initS = [True, IntParams['substitutedReactant'][0]]
         IntParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
             extraParam=self._getAllReactants(),
-            extraParam2 = IntParams['substitutedReactant'][0] )
+            extraParam2 = extraParam2initS )
         IntParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
@@ -921,12 +923,14 @@ class MuMoTmodel:
         NCParams = {}
         # read input parameters
         NCParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+        # the first item of extraParam2 for intial state is fixSumTo1, the second is the idle reactant
+        extraParam2initS = [True, NCParams['substitutedReactant'][0]]
         NCParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
             extraParam=self._getAllReactants(),
-            extraParam2=NCParams['substitutedReactant'][0])
+            extraParam2=extraParam2initS)
         NCParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
@@ -1373,12 +1377,14 @@ class MuMoTmodel:
             inputValue=kwargs.get('initBifParam'),
             initValues=initWidgets.get('initBifParam'))
         BfcParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+        # the first item of extraParam2 for intial state is fixSumTo1, the second is the idle reactant
+        extraParam2initS = [True, BfcParams['substitutedReactant'][0]]
         BfcParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
             extraParam=self._getAllReactants(),
-            extraParam2=BfcParams['substitutedReactant'][0])
+            extraParam2=extraParam2initS)
         BfcParams['bifurcationParameter'] = [bifPar, True]
         BfcParams['conserved'] = [conserved, True]
 
@@ -1468,15 +1474,17 @@ class MuMoTmodel:
         MAParams = {}
         # Read input parameters
         MAParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
-        # next line forces the multiagent() view to have the sum of the initial states to 1. If this wants to be changed, remember to change also the callback function of the widgets _updateInitialStateWidgets in controllers.py
-        if MAParams['substitutedReactant'][0] is None:
+        # the first item of extraParam2 for intial state is fixSumTo1, the second is the idle reactant
+        # in the multiagent() view, the sum of the initial states is fixed to 1. If this wants to be changed, remember to change also the callback function of the widgets _updateInitialStateWidgets in controllers.py
+        if MAParams['substitutedReactant'][0] is None and len(self._getAllReactants()[0]) > 1:
             MAParams['substitutedReactant'][0] = sorted(self._getAllReactants()[0], key=str)[0]
+        extraParam2initS = [True, MAParams['substitutedReactant'][0]]
         MAParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
             extraParam=self._getAllReactants(),
-            extraParam2=MAParams['substitutedReactant'][0])
+            extraParam2=extraParam2initS)
         MAParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
@@ -1630,15 +1638,17 @@ class MuMoTmodel:
         ssaParams = {}
         # Read input parameters
         ssaParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
-        # next line forces the SSA() view to have the sum of the initial states to 1. If this wants to be changed, remember to change also the callback function of the widgets _updateInitialStateWidgets in controllers.py
-        if ssaParams['substitutedReactant'][0] is None:
+        # the first item of extraParam2 for intial state is fixSumTo1, the second is the idle reactant
+        # in the SSA() view, the sum of the initial states is fixed to 1. If this wants to be changed, remember to change also the callback function of the widgets _updateInitialStateWidgets in controllers.py
+        if ssaParams['substitutedReactant'][0] is None and len(self._getAllReactants()[0]) > 1:
             ssaParams['substitutedReactant'][0] = sorted(self._getAllReactants()[0], key=str)[0]
+        extraParam2initS = [True, ssaParams['substitutedReactant'][0]]
         ssaParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
             extraParam=self._getAllReactants(),
-            extraParam2=ssaParams['substitutedReactant'][0])
+            extraParam2=extraParam2initS)
         ssaParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
@@ -1793,7 +1803,8 @@ class MuMoTmodel:
                 if reactant in allConstantReactants:
                     warningMsg = 'WARNING! Constant reactants appearing on the right-handside are ignored. Every constant reactant on the left-handside (implicitly) corresponds to the same constant reactant on the right-handside.\n'\
                                  f'E.g., in rule ' + str(rule.lhsReactants) + ' -> ' + str(rule.rhsReactants) + ' constant reactants should not appear on the right-handside.'
-                    raise exceptions.MuMoTWarning(warningMsg)
+                    print(warningMsg)
+                    #raise exceptions.MuMoTWarning(warningMsg)
                     break  # print maximum one warning
 
             # Add to the target of the first non-empty item the new born coming from empty-set or constant reactants

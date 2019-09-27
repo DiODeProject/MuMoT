@@ -3911,7 +3911,9 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             # if (not self._controller) and (not self._netType == consts.NetworkType.DYNAMIC): # if the user has specified the network type, we notify him/her through error-message
             #    self._errorMessage.value = "Only Moving-Particle netType is available when rules contain the emptyset."
             if not self._netType == consts.NetworkType.DYNAMIC:
-                raise exceptions.MuMoTWarning("Only Moving-Particle netType is available when rules contain the emptyset or constant reactants.")
+                wrnMsg = "Only Moving-Particle netType is available when rules contain the emptyset or constant reactants."
+                print(wrnMsg)
+                #raise exceptions.MuMoTWarning()
             self._netType = consts.NetworkType.DYNAMIC
             if self._controller:  # updating value and disabling widget
                 if self._controller._widgetsExtraParams.get('netType') is not None:
@@ -3926,7 +3928,8 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                     wrnMsg = "WARNING! net-param value " + str(self._netParam) + " is invalid for Moving-Particles. Valid range is [0,1] indicating the particles' communication range. \n"
                     self._netParam = 0.1
                     wrnMsg += "New default values is '_netParam'=" + str(self._netParam)
-                    raise exceptions.MuMoTWarning(wrnMsg)
+                    print(wrnMsg)
+                    #raise exceptions.MuMoTWarning(wrnMsg)
 
     def _build_bookmark(self, includeParams=True) -> str:
         log_str = "bookmark = " if not self._silent else ""
