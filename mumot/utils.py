@@ -143,7 +143,6 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
             if reactant not in allReactants:
                 error_msg = (f"Reactant '{reactant}' does not exist in this model.\n"
                              f"Valid reactants are {allReactants}. Please, correct the value and retry.")
-                print(error_msg)
                 raise exceptions.MuMoTValueError(error_msg)
 
             pop = initialState[reactant]
@@ -161,7 +160,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                     new_val = max(0, pop[0] + (1 - sumValues))
                     if not _almostEqual(pop[0], new_val):
                         wrn_msg = f"WARNING! the initial value of reactant {reactant} has been changed to {new_val}\n"
-                        print(wrn_msg)
+                        raise exceptions.MuMoTWarning(wrn_msg)
                         sumValues -= pop[0]
                         sumValues += new_val
                         initialState[reactant][0] = new_val
@@ -180,7 +179,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                                for reactant in allReactants
                                if reactant != idleReactant])
             wrn_msg = f"WARNING! the initial value of reactant {idleReactant} has been changed to {new_val}\n"
-            print(wrn_msg)
+            raise exceptions.MuMoTWarning(wrn_msg)
             initialState[idleReactant][0] = new_val
         return [initialState, fixedBool]
         # print("Initial State is " + str(initialState))
@@ -228,7 +227,6 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
             if decodedNetType is None:  # terminating the process if the input argument is wrong
                 error_msg = (f"The specified value for netType ={inputValue} is not valid. \n"
                              "Accepted values are: 'full',  'erdos-renyi', 'barabasi-albert', and 'dynamic'.")
-                print(error_msg)
                 raise exceptions.MuMoTValueError(error_msg)
 
             return [inputValue, True]
@@ -246,7 +244,6 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
         if (not netType[-1]) and inputValue is not None:
             error_msg = ("If netType is not fixed, netParam cannot be fixed. "
                          "Either leave free to widget the 'netParam' or fix the 'netType'.")
-            print(error_msg)
             raise exceptions.MuMoTValueError(error_msg)
         # check if netParam range is valid or set the correct default range (systemSize is necessary)
         if utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.FULLY_CONNECTED:
@@ -317,7 +314,6 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
             if inputValue not in validVisualisationTypes:  # terminating the process if the input argument is wrong
                 errorMsg = (f"The specified value for visualisationType = {inputValue} is not valid.\n"
                             f"Valid values are: {validVisualisationTypes}. Please correct it and retry.")
-                print(errorMsg)
                 raise exceptions.MuMoTValueError(errorMsg)
             return [inputValue, True]
         else:
@@ -333,7 +329,6 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
             if inputValue not in reactants_str:
                 error_msg = (f"The specified value for {optionName} = {inputValue} is not valid.\n"
                              f"Valid values are the reactants: {reactants_str}. Please correct it and retry.")
-                print(error_msg)
                 raise exceptions.MuMoTValueError(error_msg)
             else:
                 return [inputValue, True]
@@ -429,18 +424,15 @@ def _parse_input_keyword_for_numeric_widgets(
         if initValueRangeStep is not None and getattr(initValueRangeStep, "__getitem__", None) is None:
             error_msg = (f"initValueRangeStep value '{initValueRangeStep}' must be specified in the format [val,min,max,step].\n"
                          "Please, correct the value and retry.")
-            print(error_msg)
             raise exceptions.MuMoTValueError(error_msg)
     if inputValue is not None:
         if not isinstance(inputValue, numbers.Number):
             error_msg = (f"Input value '{inputValue}' is not a numeric vaule and must be a number.\n"
                          "Please, correct the value and retry.")
-            print(error_msg)
             raise exceptions.MuMoTValueError(error_msg)
         elif validRange and (inputValue < validRange[0] or inputValue > validRange[1]):
             error_msg = (f"Input value '{inputValue}' has raised out-of-range exception. Valid range is {validRange}\n"
                          "Please, correct the value and retry.")
-            print(error_msg)
             raise exceptions.MuMoTValueError(error_msg)
         else:
             if onlyValue:
@@ -456,7 +448,6 @@ def _parse_input_keyword_for_numeric_widgets(
             if validRange and (initValueRangeStep < validRange[0] or initValueRangeStep > validRange[1]):
                 error_msg = (f"Invalid init value={initValueRangeStep} has raised out-of-range exception. Valid range is {validRange}\n"
                              "Please, correct the value and retry.")
-                print(error_msg)
                 raise exceptions.MuMoTValueError(error_msg)
             else:
                 outputValues = [initValueRangeStep]
@@ -464,12 +455,10 @@ def _parse_input_keyword_for_numeric_widgets(
             if initValueRangeStep[1] > initValueRangeStep[2] or initValueRangeStep[0] < initValueRangeStep[1] or initValueRangeStep[0] > initValueRangeStep[2]:
                 error_msg = (f"Invalid init range [val,min,max,step]={initValueRangeStep}. Value must be within min and max values.\n"
                              "Please, correct the value and retry.")
-                print(error_msg)
                 raise exceptions.MuMoTValueError(error_msg)
             elif validRange and (initValueRangeStep[1] < validRange[0] or initValueRangeStep[2] > validRange[1]):
                 error_msg = (f"Invalid init range [val,min,max,step]={initValueRangeStep} has raised out-of-range exception. Valid range is {validRange}\n"
                              "Please, correct the value and retry.")
-                print(error_msg)
                 raise exceptions.MuMoTValueError(error_msg)
             else:
                 outputValues = initValueRangeStep
@@ -502,7 +491,6 @@ def _parse_input_keyword_for_boolean_widgets(inputValue, defaultValue, initValue
             paramNameForErrorMsg = f"for {paramNameForErrorMsg} = " if paramNameForErrorMsg else ""
             errorMsg = (f"The specified value {paramNameForErrorMsg}'{inputValue}' is not valid. \n"
                         "The value must be a boolean True/False.")
-            print(errorMsg)
             raise exceptions.MuMoTValueError(errorMsg)
         return [inputValue, True]
     else:
@@ -540,7 +528,7 @@ def _decodeNetworkTypeFromString(netTypeStr: str) -> Optional[consts.NetworkType
                           'dynamic': consts.NetworkType.DYNAMIC}
 
     if netTypeStr not in admissibleNetTypes:
-        print(f"ERROR! Invalid network type argument! Valid strings are: {admissibleNetTypes}")
+        raise exceptions.MuMoTValueError(f"ERROR! Invalid network type argument! Valid strings are: {admissibleNetTypes}")
     return admissibleNetTypes.get(netTypeStr, None)
 
 
@@ -552,7 +540,7 @@ def _encodeNetworkTypeToString(netType: consts.NetworkType) -> Optional[str]:
                        consts.NetworkType.DYNAMIC: 'dynamic'}
 
     if netType not in netTypeEncoding:
-        print(f"ERROR! Invalid netTypeEncoding table! Tried to encode network type: {netType}")
+        raise exceptions.MuMoTValueError(f"ERROR! Invalid netTypeEncoding table! Tried to encode network type: {netType}")
     return netTypeEncoding.get(netType, 'none')
 
 
