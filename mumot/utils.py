@@ -188,13 +188,14 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                             initialState[reactant][1] = (1 - sumNorm + pop[0])
                         # initialState[reactant][3] = minStep
             if not _almostEqual(sumValues, 1):
+                reactantToFix = sorted(allReactants, key=str)[0] if idleReactant is None else idleReactant
                 new_val = 1 - sum([initialState[reactant][0]
                                    for reactant in allReactants
-                                   if reactant != idleReactant])
-                wrn_msg = f"WARNING! the initial value of reactant {idleReactant} has been changed to {new_val}\n"
+                                   if reactant != reactantToFix])
+                wrn_msg = f"WARNING! the initial value of reactant {reactantToFix} has been changed to {new_val}\n"
                 print(wrn_msg)
                 #raise exceptions.MuMoTWarning(wrn_msg)
-                initialState[idleReactant][0] = new_val
+                initialState[reactantToFix][0] = new_val
         return [initialState, fixedBool]
         # print("Initial State is " + str(initialState))
     if optionName == 'maxTime':
