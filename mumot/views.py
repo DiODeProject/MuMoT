@@ -1653,11 +1653,8 @@ class MuMoTfieldView(MuMoTview):
         self._update_params()
         self._show_computation_start()
         if not(self._silent):  # @todo is this necessary?
-            print('here')
             plt.figure(self._figureNum)
-            print('there')
             plt.clf()
-            print('everywhere')
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
 
@@ -2166,7 +2163,9 @@ class MuMoTvectorView(MuMoTfieldView):
 
         if self._stateVariable3 is None:
             self._get_field2d("2d vector plot", 10)  # @todo: allow user to set mesh points with keyword
+            print('foo')
             fig_vector = plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color='black')  # @todo: define colormap by user keyword
+            print('bar')
 
             if self._mumotModel._constantSystemSize:
                 plt.fill_between([0, 1], [1, 0], [1, 1], color='grey', alpha='0.25')
