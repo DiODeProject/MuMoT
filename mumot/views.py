@@ -1653,6 +1653,7 @@ class MuMoTfieldView(MuMoTview):
         self._update_params()
         self._show_computation_start()
         if not(self._silent):  # @todo is this necessary?
+            print(self._figureNum)
             print(id(plt.figure(self._figureNum)))
             plt.clf()
             self._resetErrorMessage()
