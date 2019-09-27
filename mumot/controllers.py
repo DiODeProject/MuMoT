@@ -1031,7 +1031,7 @@ class MuMoTmultiController(MuMoTcontroller):
                         controller._view._chooseXrange = kwargs.get('choose_xrange')
                 if key == 'initialState':
                     ep1 = views_[0]._mumotModel._getAllReactants()
-                    ep2 = [react for react in views_[0]._mumotModel._getAllReactants()[0] if react not in views_[0]._mumotModel._reactants][0] if views_[0]._mumotModel._systemSize is not None else None
+                    ep2 = [True, [react for react in views_[0]._mumotModel._getAllReactants()[0] if react not in views_[0]._mumotModel._reactants][0] if views_[0]._mumotModel._systemSize is not None else None]
                     # @todo assuming same model for all views.
                     # This operation is NOT correct when multicotroller views have different models.
                 if key == 'visualisationType':
