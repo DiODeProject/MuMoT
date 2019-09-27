@@ -101,10 +101,12 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
     """
     if optionName == 'initialState':
         (allReactants, _) = extraParam
+        fixSumTo1 = extraParam2 is not None
+        idleReactant = extraParam2 #if extraParam2 is not None else sorted(allReactants, key=str)[0]
         initialState = {}
         # handle initialState dictionary (either convert or generate a default one)
         if inputValue is not None:
-            for i, reactant in enumerate(sorted(inputValue.keys(), key=str)):
+            for reactant in sorted(inputValue.keys(), key=str):
                 pop = inputValue[reactant]
                 initPop = initValues.get(reactant) if initValues is not None else None
 
@@ -116,14 +118,14 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                                            defaults.MuMoTdefault._agentsLimits[1],
                                            defaults.MuMoTdefault._agentsStep],
                     initValueRangeStep=initPop,
-                    validRange=(0.0, 1.0))
+                    validRange=(0.0, 1.0) if fixSumTo1 else (0, float("inf")))
                 fixedBool = True
         else:
             first = True
             initValuesSympy = ({parse_latex(reactant): pop
                                 for reactant, pop in initValues.items()}
                                if initValues is not None else {})
-            for i, reactant in enumerate(sorted(allReactants, key=str)):
+            for reactant in sorted(allReactants, key=str):
                 defaultV = defaults.MuMoTdefault._agents if first else 0
                 first = False
                 initialState[reactant] = _parse_input_keyword_for_numeric_widgets(
@@ -133,54 +135,62 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                                            defaults.MuMoTdefault._agentsLimits[1],
                                            defaults.MuMoTdefault._agentsStep],
                     initValueRangeStep=initValuesSympy.get(reactant),
-                    validRange=(0.0, 1.0))
+                    validRange=(0.0, 1.0) if fixSumTo1 else (0, float("inf")))
                 fixedBool = False
 
         # Check if the initialState values are valid
-        sumValues = sum([initialState[reactant][0] for reactant in allReactants])
-        minStep = min([initialState[reactant][3] for reactant in allReactants])
-        for i, reactant in enumerate(sorted(allReactants, key=str)):
-            if reactant not in allReactants:
-                error_msg = (f"Reactant '{reactant}' does not exist in this model.\n"
-                             f"Valid reactants are {allReactants}. Please, correct the value and retry.")
-                raise exceptions.MuMoTValueError(error_msg)
-
-            pop = initialState[reactant]
-            # check if the proportions sum to 1
-            if i == 0:
-                idleReactant = reactant
-                idleValue = pop[0]
-                # the idleValue have range min-max reset to [0,1]
-                initialState[reactant][1] = 0
-                initialState[reactant][2] = 1
-                initialState[reactant][3] = minStep
-            else:
-                # modify (if necessary) the initial value
-                if sumValues > 1:
-                    new_val = max(0, pop[0] + (1 - sumValues))
-                    if not _almostEqual(pop[0], new_val):
-                        wrn_msg = f"WARNING! the initial value of reactant {reactant} has been changed to {new_val}\n"
-                        raise exceptions.MuMoTWarning(wrn_msg)
-                        sumValues -= pop[0]
-                        sumValues += new_val
-                        initialState[reactant][0] = new_val
-                # modify (if necessary) min-max
-                pop = initialState[reactant]
-                sumNorm = sumValues if sumValues <= 1 else 1
-                if pop[2] > (1 - sumNorm + pop[0] + idleValue):  # max
-                    if pop[1] > (1 - sumNorm + pop[0] + idleValue):  # min
-                        initialState[reactant][1] = (1 - sumNorm + pop[0] + idleValue)
-                    initialState[reactant][2] = (1 - sumNorm + pop[0] + idleValue)
-                if pop[1] > (1 - sumNorm + pop[0]):  # min
-                    initialState[reactant][1] = (1 - sumNorm + pop[0])
-                # initialState[reactant][3] = minStep
-        if not _almostEqual(sumValues, 1):
-            new_val = 1 - sum([initialState[reactant][0]
-                               for reactant in allReactants
-                               if reactant != idleReactant])
-            wrn_msg = f"WARNING! the initial value of reactant {idleReactant} has been changed to {new_val}\n"
-            raise exceptions.MuMoTWarning(wrn_msg)
-            initialState[idleReactant][0] = new_val
+        if fixSumTo1:
+            sumValues = sum([initialState[reactant][0] for reactant in allReactants])
+            minStep = min([initialState[reactant][3] for reactant in allReactants])
+            
+            # first thing setting the values of the idleReactant 
+            idleValue = initialState[idleReactant][0]
+            if idleValue > 1: 
+                wrn_msg = f"WARNING! the initial value of reactant {idleReactant} has been changed to {new_val}\n"
+                print(wrn_msg)
+                #raise exceptions.MuMoTWarning(wrn_msg)
+                initialState[idleReactant][0] = new_val
+            # the idleValue have range min-max reset to [0,1]
+            initialState[idleReactant][1] = 0
+            initialState[idleReactant][2] = 1
+            initialState[idleReactant][3] = minStep
+            for reactant in sorted(allReactants, key=str):
+                if reactant not in allReactants:
+                    error_msg = (f"Reactant '{reactant}' does not exist in this model.\n"
+                                 f"Valid reactants are {allReactants}. Please, correct the value and retry.")
+                    raise exceptions.MuMoTValueError(error_msg)
+    
+                # check if the proportions sum to 1
+                if reactant != idleReactant:
+                    pop = initialState[reactant]
+                    # modify (if necessary) the initial value
+                    if sumValues > 1:
+                        new_val = max(0, pop[0] + (1 - sumValues))
+                        if not _almostEqual(pop[0], new_val):
+                            wrn_msg = f"WARNING! the initial value of reactant {reactant} has been changed to {new_val}\n"
+                            print(wrn_msg)
+                            #raise exceptions.MuMoTWarning(wrn_msg)
+                            sumValues -= pop[0]
+                            sumValues += new_val
+                            initialState[reactant][0] = new_val
+                    # modify (if necessary) min-max
+                    pop = initialState[reactant]
+                    sumNorm = sumValues if sumValues <= 1 else 1
+                    if pop[2] > (1 - sumNorm + pop[0] + idleValue):  # max
+                        if pop[1] > (1 - sumNorm + pop[0] + idleValue):  # min
+                            initialState[reactant][1] = (1 - sumNorm + pop[0] + idleValue)
+                        initialState[reactant][2] = (1 - sumNorm + pop[0] + idleValue)
+                    if pop[1] > (1 - sumNorm + pop[0]):  # min
+                        initialState[reactant][1] = (1 - sumNorm + pop[0])
+                    # initialState[reactant][3] = minStep
+            if not _almostEqual(sumValues, 1):
+                new_val = 1 - sum([initialState[reactant][0]
+                                   for reactant in allReactants
+                                   if reactant != idleReactant])
+                wrn_msg = f"WARNING! the initial value of reactant {idleReactant} has been changed to {new_val}\n"
+                print(wrn_msg)
+                #raise exceptions.MuMoTWarning(wrn_msg)
+                initialState[idleReactant][0] = new_val
         return [initialState, fixedBool]
         # print("Initial State is " + str(initialState))
     if optionName == 'maxTime':

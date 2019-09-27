@@ -804,11 +804,13 @@ class MuMoTmodel:
 
         IntParams = {}
         # read input parameters
+        IntParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         IntParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
-            extraParam=self._getAllReactants())
+            extraParam=self._getAllReactants(),
+            extraParam2 = IntParams['substitutedReactant'][0] )
         IntParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
@@ -818,7 +820,6 @@ class MuMoTmodel:
             inputValue=kwargs.get('plotProportions'),
             initValues=initWidgets.get('plotProportions'))
         IntParams['conserved'] = [kwargs.get('conserved', False), True]
-        IntParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
 
         # construct controller
         viewController = controllers.MuMoTtimeEvolutionController(
@@ -919,17 +920,18 @@ class MuMoTmodel:
 
         NCParams = {}
         # read input parameters
+        NCParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         NCParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
-            extraParam=self._getAllReactants())
+            extraParam=self._getAllReactants(),
+            extraParam2=NCParams['substitutedReactant'][0])
         NCParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
             initValues=initWidgets.get('maxTime'))
         NCParams['conserved'] = [kwargs.get('conserved', False), True]
-        NCParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
 
         EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = \
             _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
@@ -1370,14 +1372,15 @@ class MuMoTmodel:
             optionName='initBifParam',
             inputValue=kwargs.get('initBifParam'),
             initValues=initWidgets.get('initBifParam'))
+        BfcParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
         BfcParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
-            extraParam=self._getAllReactants())
+            extraParam=self._getAllReactants(),
+            extraParam2=BfcParams['substitutedReactant'][0])
         BfcParams['bifurcationParameter'] = [bifPar, True]
         BfcParams['conserved'] = [conserved, True]
-        BfcParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
 
         # construct controller
         viewController = controllers.MuMoTbifurcationController(
@@ -1464,12 +1467,16 @@ class MuMoTmodel:
 
         MAParams = {}
         # Read input parameters
+        MAParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+        # next line forces the multiagent() view to have the sum of the initial states to 1. If this wants to be changed, remember to change also the callback function of the widgets _updateInitialStateWidgets in controllers.py
+        if MAParams['substitutedReactant'][0] is None:
+            MAParams['substitutedReactant'][0] = sorted(self._getAllReactants()[0], key=str)[0]
         MAParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
-            extraParam=self._getAllReactants())
-        MAParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+            extraParam=self._getAllReactants(),
+            extraParam2=MAParams['substitutedReactant'][0])
         MAParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
@@ -1622,12 +1629,16 @@ class MuMoTmodel:
 
         ssaParams = {}
         # Read input parameters
+        ssaParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+        # next line forces the SSA() view to have the sum of the initial states to 1. If this wants to be changed, remember to change also the callback function of the widgets _updateInitialStateWidgets in controllers.py
+        if ssaParams['substitutedReactant'][0] is None:
+            ssaParams['substitutedReactant'][0] = sorted(self._getAllReactants()[0], key=str)[0]
         ssaParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
-            extraParam=self._getAllReactants())
-        ssaParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+            extraParam=self._getAllReactants(),
+            extraParam2=ssaParams['substitutedReactant'][0])
         ssaParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
