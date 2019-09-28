@@ -20,8 +20,8 @@ import matplotlib
 # (e.g. superfluous figures when sliders are moved).
 # Automated testing using tox could be affected as well
 # if default matplotlib backend is used
-if sys.platform == "darwin":
-    matplotlib.use('TkAgg')
+#if sys.platform == "darwin":
+matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 from sympy.parsing.latex import parse_latex
 
