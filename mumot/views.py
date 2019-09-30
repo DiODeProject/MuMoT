@@ -32,6 +32,7 @@ from sympy import (
     symbols,
 )
 from sympy.parsing.latex import parse_latex
+from warnings import warn
 
 from . import (
     consts,
@@ -3910,7 +3911,8 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             # if (not self._controller) and (not self._netType == consts.NetworkType.DYNAMIC): # if the user has specified the network type, we notify him/her through error-message
             #    self._errorMessage.value = "Only Moving-Particle netType is available when rules contain the emptyset."
             if not self._netType == consts.NetworkType.DYNAMIC:
-                print("Only Moving-Particle netType is available when rules contain the emptyset or constant reactants.")
+                wrnMsg = "Only Moving-Particle netType is available when rules contain the emptyset or constant reactants."
+                warn(wrnMsg, exceptions.MuMoTWarning)
             self._netType = consts.NetworkType.DYNAMIC
             if self._controller:  # updating value and disabling widget
                 if self._controller._widgetsExtraParams.get('netType') is not None:
@@ -3925,7 +3927,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
                     wrnMsg = "WARNING! net-param value " + str(self._netParam) + " is invalid for Moving-Particles. Valid range is [0,1] indicating the particles' communication range. \n"
                     self._netParam = 0.1
                     wrnMsg += "New default values is '_netParam'=" + str(self._netParam)
-                    print(wrnMsg)
+                    warn(wrnMsg, exceptions.MuMoTWarning)
 
     def _build_bookmark(self, includeParams=True) -> str:
         log_str = "bookmark = " if not self._silent else ""
@@ -4223,7 +4225,6 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             else:
                 errorMsg = ("ERROR! Invalid network parameter (link probability) for E-R networks. "
                             f"It must be between 0 and 1; input is {self._netParam}")
-                print(errorMsg)
                 raise exceptions.MuMoTValueError(errorMsg)
         elif (self._netType == consts.NetworkType.BARABASI_ALBERT):
             # print("Generating Barabasi-Albert graph")
@@ -4233,12 +4234,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             else:
                 errorMsg = ("ERROR! Invalid network parameter (number of edges per new node) for B-A networks."
                             f"It must be an integer between 1 and {numNodes}; input is {self._netParam}")
-                print(errorMsg)
                 raise exceptions.MuMoTValueError(errorMsg)
         elif (self._netType == consts.NetworkType.SPACE):
             # @todo: implement network generate by placing points (with local communication range) randomly in 2D space
             errorMsg = "ERROR: Graphs of type SPACE are not implemented yet."
-            print(errorMsg)
             raise exceptions.MuMoTValueError(errorMsg)
         elif (self._netType == consts.NetworkType.DYNAMIC):
             self._positions = []
@@ -4696,7 +4695,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
             bottom += prob
 
         if reaction_id == -1:
-            print("ERROR! Transition not found. Error in the algorithm execution.")
+            raise exceptions.MuMoTError("ERROR! Transition not found. Error in the algorithm execution.")
             sys.exit()
         # print("current state: " + str(self._currentState))
         # print("triggered change: " + str(self._mumotModel._stoichiometry[reaction_id]))
@@ -4707,7 +4706,7 @@ class MuMoTSSAView(MuMoTstochasticSimulationView):
                 continue
             self._currentState[reactant] += re_stoch[1] - re_stoch[0]
             if self._currentState[reactant] < 0:
-                print(f"ERROR! Population size became negative: {self._currentState}; Error in the algorithm execution.")
+                raise exceptions.MuMoTError(f"ERROR! Population size became negative: {self._currentState}; Error in the algorithm execution.")
                 sys.exit()
         # print(self._currentState)
 
