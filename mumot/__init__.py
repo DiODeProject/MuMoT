@@ -2,8 +2,11 @@
 
 For documentation and version information use about()
 
-Contributors:
+Authors:
 James A. R. Marshall, Andreagiovanni Reina, Thomas Bose
+
+Contributors:
+Robert Dennison
 
 Packaging, Documentation and Deployment:
 Will Furnass

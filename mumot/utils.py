@@ -19,6 +19,7 @@ def about() -> None:
     """Print version, author and documentation information."""
     print("Multiscale Modelling Tool (MuMoT): Version " + _version.__version__)
     print("Authors: James A. R. Marshall, Andreagiovanni Reina, Thomas Bose")
+    print("Contributors: Robert Dennison, Will Furnass")
     print("Documentation: https://mumot.readthedocs.io/")
 
 
