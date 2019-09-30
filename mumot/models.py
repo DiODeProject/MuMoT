@@ -25,6 +25,7 @@ from sympy import (
     Function
 )
 from sympy.parsing.latex import parse_latex
+from warnings import warn
 
 from . import (
     controllers,
@@ -1803,8 +1804,7 @@ class MuMoTmodel:
                 if reactant in allConstantReactants:
                     warningMsg = 'WARNING! Constant reactants appearing on the right-handside are ignored. Every constant reactant on the left-handside (implicitly) corresponds to the same constant reactant on the right-handside.\n'\
                                  f'E.g., in rule ' + str(rule.lhsReactants) + ' -> ' + str(rule.rhsReactants) + ' constant reactants should not appear on the right-handside.'
-                    print(warningMsg)
-                    #raise exceptions.MuMoTWarning(warningMsg)
+                    warn(warningMsg, exceptions.MuMoTWarning)
                     break  # print maximum one warning
 
             # Add to the target of the first non-empty item the new born coming from empty-set or constant reactants

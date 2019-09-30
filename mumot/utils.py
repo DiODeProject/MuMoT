@@ -4,6 +4,7 @@ from typing import Optional, List
 
 import numpy as np
 from sympy.parsing.latex import parse_latex
+from warnings import warn
 
 from . import (
     consts,
@@ -101,7 +102,8 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
     """
     if optionName == 'initialState':
         (allReactants, _) = extraParam
-        fixSumTo1 = extraParam2[0]
+        #fixSumTo1 = extraParam2[0] # until we have better information, all views should sum to 1, then use system size to scale
+        fixSumTo1 = True
         idleReactant = extraParam2[1]
         initialState = {}
         # handle initialState dictionary (either convert or generate a default one)
@@ -148,8 +150,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                 idleValue = initialState[idleReactant][0]
                 if idleValue > 1: 
                     wrn_msg = f"WARNING! the initial value of reactant {idleReactant} has been changed to {new_val}\n"
-                    print(wrn_msg)
-                    #raise exceptions.MuMoTWarning(wrn_msg)
+                    warn(wrn_msg, exceptions.MuMoTWarning)
                     initialState[idleReactant][0] = new_val
                 # the idleValue have range min-max reset to [0,1]
                 initialState[idleReactant][1] = 0
@@ -171,8 +172,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                         new_val = max(0, pop[0] + (1 - sumValues))
                         if not _almostEqual(pop[0], new_val):
                             wrn_msg = f"WARNING! the initial value of reactant {reactant} has been changed to {new_val}\n"
-                            print(wrn_msg)
-                            #raise exceptions.MuMoTWarning(wrn_msg)
+                            warn(wrn_msg, exceptions.MuMoTWarning)
                             sumValues -= pop[0]
                             sumValues += new_val
                             initialState[reactant][0] = new_val
@@ -193,8 +193,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                                    for reactant in allReactants
                                    if reactant != reactantToFix])
                 wrn_msg = f"WARNING! the initial value of reactant {reactantToFix} has been changed to {new_val}\n"
-                print(wrn_msg)
-                #raise exceptions.MuMoTWarning(wrn_msg)
+                warn(wrn_msg, exceptions.MuMoTWarning)
                 initialState[reactantToFix][0] = new_val
         return [initialState, fixedBool]
         # print("Initial State is " + str(initialState))
