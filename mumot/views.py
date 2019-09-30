@@ -32,7 +32,7 @@ from sympy import (
     symbols,
 )
 from sympy.parsing.latex import parse_latex
-from warnings import warn
+from warnings import warn, catch_warnings, simplefilter
 
 from . import (
     consts,
@@ -544,11 +544,13 @@ class MuMoTmultiView(MuMoTview):
         else:
             # subplotNum = 1
             for func, subPlotNum, axes3d in self._controller._replotFunctions:
-                if axes3d:
-                    # self._figure.add_subplot(self._numRows, self._numColumns, subPlotNum, projection = '3d')
-                    plt.subplot(self._numRows, self._numColumns, subPlotNum, projection='3d')
-                else:
-                    plt.subplot(self._numRows, self._numColumns, subPlotNum)
+                with catch_warnings():
+                    simplefilter("ignore")
+                    if axes3d:
+                        # self._figure.add_subplot(self._numRows, self._numColumns, subPlotNum, projection = '3d')
+                        plt.subplot(self._numRows, self._numColumns, subPlotNum, projection='3d')
+                    else:
+                        plt.subplot(self._numRows, self._numColumns, subPlotNum)
                 func()
             plt.subplots_adjust(left=0.12, bottom=0.25, right=0.98, top=0.9, wspace=0.45, hspace=None)
             # plt.tight_layout()
