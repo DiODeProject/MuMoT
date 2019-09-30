@@ -282,7 +282,7 @@ The repo2docker build process takes ~15 mins for MuMoT;
 therefore note that any pushes to the master branch will invalidate any cached image for the tip of the master branch, 
 which will increase mybinder.org startup times from seconds to ~15 mins.
 
-**Button**: A mybinder.org session for the User Manual as of the tip of the master branch can be started by 
+**Button**: A mybinder.org session for the User Manual as of the latest stable release of MuMoT can be started by 
 following the link in the instructions for :ref:`getting started online <mybinder_usage>`.
 
 Branch, tag and version policy, inc. how to create a new release
