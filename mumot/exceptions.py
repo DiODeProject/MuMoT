@@ -1,6 +1,5 @@
 """MuMoT warning, exception and error classes."""
 
-
 class MuMoTWarning(Warning):
     """Class to report MuMoT-specific warnings.
     """

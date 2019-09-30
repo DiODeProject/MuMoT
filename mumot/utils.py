@@ -4,6 +4,7 @@ from typing import Optional, List
 
 import numpy as np
 from sympy.parsing.latex import parse_latex
+from warnings import warn
 
 from . import (
     consts,
@@ -101,10 +102,13 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
     """
     if optionName == 'initialState':
         (allReactants, _) = extraParam
+        #fixSumTo1 = extraParam2[0] # until we have better information, all views should sum to 1, then use system size to scale
+        fixSumTo1 = True
+        idleReactant = extraParam2[1]
         initialState = {}
         # handle initialState dictionary (either convert or generate a default one)
         if inputValue is not None:
-            for i, reactant in enumerate(sorted(inputValue.keys(), key=str)):
+            for reactant in sorted(inputValue.keys(), key=str):
                 pop = inputValue[reactant]
                 initPop = initValues.get(reactant) if initValues is not None else None
 
@@ -116,14 +120,14 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                                            defaults.MuMoTdefault._agentsLimits[1],
                                            defaults.MuMoTdefault._agentsStep],
                     initValueRangeStep=initPop,
-                    validRange=(0.0, 1.0))
+                    validRange=(0.0, 1.0) if fixSumTo1 else (0, float("inf")))
                 fixedBool = True
         else:
             first = True
             initValuesSympy = ({parse_latex(reactant): pop
                                 for reactant, pop in initValues.items()}
                                if initValues is not None else {})
-            for i, reactant in enumerate(sorted(allReactants, key=str)):
+            for reactant in sorted(allReactants, key=str):
                 defaultV = defaults.MuMoTdefault._agents if first else 0
                 first = False
                 initialState[reactant] = _parse_input_keyword_for_numeric_widgets(
@@ -133,55 +137,64 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                                            defaults.MuMoTdefault._agentsLimits[1],
                                            defaults.MuMoTdefault._agentsStep],
                     initValueRangeStep=initValuesSympy.get(reactant),
-                    validRange=(0.0, 1.0))
+                    validRange=(0.0, 1.0) if fixSumTo1 else (0, float("inf")))
                 fixedBool = False
 
         # Check if the initialState values are valid
-        sumValues = sum([initialState[reactant][0] for reactant in allReactants])
-        minStep = min([initialState[reactant][3] for reactant in allReactants])
-        for i, reactant in enumerate(sorted(allReactants, key=str)):
-            if reactant not in allReactants:
-                error_msg = (f"Reactant '{reactant}' does not exist in this model.\n"
-                             f"Valid reactants are {allReactants}. Please, correct the value and retry.")
-                print(error_msg)
-                raise exceptions.MuMoTValueError(error_msg)
-
-            pop = initialState[reactant]
-            # check if the proportions sum to 1
-            if i == 0:
-                idleReactant = reactant
-                idleValue = pop[0]
+        if fixSumTo1:
+            sumValues = sum([initialState[reactant][0] for reactant in allReactants])
+            minStep = min([initialState[reactant][3] for reactant in allReactants])
+            
+            # first thing setting the values of the idleReactant
+            if idleReactant is not None: 
+                idleValue = initialState[idleReactant][0]
+                if idleValue > 1: 
+                    wrn_msg = f"WARNING! the initial value of reactant {idleReactant} has been changed to {new_val}\n"
+                    warn(wrn_msg, exceptions.MuMoTWarning)
+                    initialState[idleReactant][0] = new_val
                 # the idleValue have range min-max reset to [0,1]
-                initialState[reactant][1] = 0
-                initialState[reactant][2] = 1
-                initialState[reactant][3] = minStep
+                initialState[idleReactant][1] = 0
+                initialState[idleReactant][2] = 1
+                initialState[idleReactant][3] = minStep
             else:
-                # modify (if necessary) the initial value
-                if sumValues > 1:
-                    new_val = max(0, pop[0] + (1 - sumValues))
-                    if not _almostEqual(pop[0], new_val):
-                        wrn_msg = f"WARNING! the initial value of reactant {reactant} has been changed to {new_val}\n"
-                        print(wrn_msg)
-                        sumValues -= pop[0]
-                        sumValues += new_val
-                        initialState[reactant][0] = new_val
-                # modify (if necessary) min-max
-                pop = initialState[reactant]
-                sumNorm = sumValues if sumValues <= 1 else 1
-                if pop[2] > (1 - sumNorm + pop[0] + idleValue):  # max
-                    if pop[1] > (1 - sumNorm + pop[0] + idleValue):  # min
-                        initialState[reactant][1] = (1 - sumNorm + pop[0] + idleValue)
-                    initialState[reactant][2] = (1 - sumNorm + pop[0] + idleValue)
-                if pop[1] > (1 - sumNorm + pop[0]):  # min
-                    initialState[reactant][1] = (1 - sumNorm + pop[0])
-                # initialState[reactant][3] = minStep
-        if not _almostEqual(sumValues, 1):
-            new_val = 1 - sum([initialState[reactant][0]
-                               for reactant in allReactants
-                               if reactant != idleReactant])
-            wrn_msg = f"WARNING! the initial value of reactant {idleReactant} has been changed to {new_val}\n"
-            print(wrn_msg)
-            initialState[idleReactant][0] = new_val
+                idleValue = 0
+            for reactant in sorted(allReactants, key=str):
+                if reactant not in allReactants:
+                    error_msg = (f"Reactant '{reactant}' does not exist in this model.\n"
+                                 f"Valid reactants are {allReactants}. Please, correct the value and retry.")
+                    raise exceptions.MuMoTValueError(error_msg)
+    
+                # check if the proportions sum to 1
+                if reactant != idleReactant:
+                    pop = initialState[reactant]
+                    # modify (if necessary) the initial value
+                    if sumValues > 1:
+                        new_val = max(0, pop[0] + (1 - sumValues))
+                        if not _almostEqual(pop[0], new_val):
+                            wrn_msg = f"WARNING! the initial value of reactant {reactant} has been changed to {new_val}\n"
+                            warn(wrn_msg, exceptions.MuMoTWarning)
+                            sumValues -= pop[0]
+                            sumValues += new_val
+                            initialState[reactant][0] = new_val
+                    # modify (if necessary) min-max
+                    if idleReactant is not None:
+                        pop = initialState[reactant]
+                        sumNorm = sumValues if sumValues <= 1 else 1
+                        if pop[2] > (1 - sumNorm + pop[0] + idleValue):  # max
+                            if pop[1] > (1 - sumNorm + pop[0] + idleValue):  # min
+                                initialState[reactant][1] = (1 - sumNorm + pop[0] + idleValue)
+                            initialState[reactant][2] = (1 - sumNorm + pop[0] + idleValue)
+                        if pop[1] > (1 - sumNorm + pop[0]):  # min
+                            initialState[reactant][1] = (1 - sumNorm + pop[0])
+                        # initialState[reactant][3] = minStep
+            if not _almostEqual(sumValues, 1):
+                reactantToFix = sorted(allReactants, key=str)[0] if idleReactant is None else idleReactant
+                new_val = 1 - sum([initialState[reactant][0]
+                                   for reactant in allReactants
+                                   if reactant != reactantToFix])
+                wrn_msg = f"WARNING! the initial value of reactant {reactantToFix} has been changed to {new_val}\n"
+                warn(wrn_msg, exceptions.MuMoTWarning)
+                initialState[reactantToFix][0] = new_val
         return [initialState, fixedBool]
         # print("Initial State is " + str(initialState))
     if optionName == 'maxTime':
@@ -228,7 +241,6 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
             if decodedNetType is None:  # terminating the process if the input argument is wrong
                 error_msg = (f"The specified value for netType ={inputValue} is not valid. \n"
                              "Accepted values are: 'full',  'erdos-renyi', 'barabasi-albert', and 'dynamic'.")
-                print(error_msg)
                 raise exceptions.MuMoTValueError(error_msg)
 
             return [inputValue, True]
@@ -246,7 +258,6 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
         if (not netType[-1]) and inputValue is not None:
             error_msg = ("If netType is not fixed, netParam cannot be fixed. "
                          "Either leave free to widget the 'netParam' or fix the 'netType'.")
-            print(error_msg)
             raise exceptions.MuMoTValueError(error_msg)
         # check if netParam range is valid or set the correct default range (systemSize is necessary)
         if utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.FULLY_CONNECTED:
@@ -317,7 +328,6 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
             if inputValue not in validVisualisationTypes:  # terminating the process if the input argument is wrong
                 errorMsg = (f"The specified value for visualisationType = {inputValue} is not valid.\n"
                             f"Valid values are: {validVisualisationTypes}. Please correct it and retry.")
-                print(errorMsg)
                 raise exceptions.MuMoTValueError(errorMsg)
             return [inputValue, True]
         else:
@@ -333,7 +343,6 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
             if inputValue not in reactants_str:
                 error_msg = (f"The specified value for {optionName} = {inputValue} is not valid.\n"
                              f"Valid values are the reactants: {reactants_str}. Please correct it and retry.")
-                print(error_msg)
                 raise exceptions.MuMoTValueError(error_msg)
             else:
                 return [inputValue, True]
@@ -429,18 +438,15 @@ def _parse_input_keyword_for_numeric_widgets(
         if initValueRangeStep is not None and getattr(initValueRangeStep, "__getitem__", None) is None:
             error_msg = (f"initValueRangeStep value '{initValueRangeStep}' must be specified in the format [val,min,max,step].\n"
                          "Please, correct the value and retry.")
-            print(error_msg)
             raise exceptions.MuMoTValueError(error_msg)
     if inputValue is not None:
         if not isinstance(inputValue, numbers.Number):
             error_msg = (f"Input value '{inputValue}' is not a numeric vaule and must be a number.\n"
                          "Please, correct the value and retry.")
-            print(error_msg)
             raise exceptions.MuMoTValueError(error_msg)
         elif validRange and (inputValue < validRange[0] or inputValue > validRange[1]):
             error_msg = (f"Input value '{inputValue}' has raised out-of-range exception. Valid range is {validRange}\n"
                          "Please, correct the value and retry.")
-            print(error_msg)
             raise exceptions.MuMoTValueError(error_msg)
         else:
             if onlyValue:
@@ -456,7 +462,6 @@ def _parse_input_keyword_for_numeric_widgets(
             if validRange and (initValueRangeStep < validRange[0] or initValueRangeStep > validRange[1]):
                 error_msg = (f"Invalid init value={initValueRangeStep} has raised out-of-range exception. Valid range is {validRange}\n"
                              "Please, correct the value and retry.")
-                print(error_msg)
                 raise exceptions.MuMoTValueError(error_msg)
             else:
                 outputValues = [initValueRangeStep]
@@ -464,12 +469,10 @@ def _parse_input_keyword_for_numeric_widgets(
             if initValueRangeStep[1] > initValueRangeStep[2] or initValueRangeStep[0] < initValueRangeStep[1] or initValueRangeStep[0] > initValueRangeStep[2]:
                 error_msg = (f"Invalid init range [val,min,max,step]={initValueRangeStep}. Value must be within min and max values.\n"
                              "Please, correct the value and retry.")
-                print(error_msg)
                 raise exceptions.MuMoTValueError(error_msg)
             elif validRange and (initValueRangeStep[1] < validRange[0] or initValueRangeStep[2] > validRange[1]):
                 error_msg = (f"Invalid init range [val,min,max,step]={initValueRangeStep} has raised out-of-range exception. Valid range is {validRange}\n"
                              "Please, correct the value and retry.")
-                print(error_msg)
                 raise exceptions.MuMoTValueError(error_msg)
             else:
                 outputValues = initValueRangeStep
@@ -502,7 +505,6 @@ def _parse_input_keyword_for_boolean_widgets(inputValue, defaultValue, initValue
             paramNameForErrorMsg = f"for {paramNameForErrorMsg} = " if paramNameForErrorMsg else ""
             errorMsg = (f"The specified value {paramNameForErrorMsg}'{inputValue}' is not valid. \n"
                         "The value must be a boolean True/False.")
-            print(errorMsg)
             raise exceptions.MuMoTValueError(errorMsg)
         return [inputValue, True]
     else:
@@ -540,7 +542,7 @@ def _decodeNetworkTypeFromString(netTypeStr: str) -> Optional[consts.NetworkType
                           'dynamic': consts.NetworkType.DYNAMIC}
 
     if netTypeStr not in admissibleNetTypes:
-        print(f"ERROR! Invalid network type argument! Valid strings are: {admissibleNetTypes}")
+        raise exceptions.MuMoTValueError(f"ERROR! Invalid network type argument! Valid strings are: {admissibleNetTypes}")
     return admissibleNetTypes.get(netTypeStr, None)
 
 
@@ -552,7 +554,7 @@ def _encodeNetworkTypeToString(netType: consts.NetworkType) -> Optional[str]:
                        consts.NetworkType.DYNAMIC: 'dynamic'}
 
     if netType not in netTypeEncoding:
-        print(f"ERROR! Invalid netTypeEncoding table! Tried to encode network type: {netType}")
+        raise exceptions.MuMoTValueError(f"ERROR! Invalid netTypeEncoding table! Tried to encode network type: {netType}")
     return netTypeEncoding.get(netType, 'none')
 
 

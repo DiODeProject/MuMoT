@@ -25,6 +25,7 @@ from sympy import (
     Function
 )
 from sympy.parsing.latex import parse_latex
+from warnings import warn
 
 from . import (
     controllers,
@@ -804,11 +805,15 @@ class MuMoTmodel:
 
         IntParams = {}
         # read input parameters
+        IntParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+        # the first item of extraParam2 for intial state is fixSumTo1, the second is the idle reactant
+        extraParam2initS = [True, IntParams['substitutedReactant'][0]]
         IntParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
-            extraParam=self._getAllReactants())
+            extraParam=self._getAllReactants(),
+            extraParam2 = extraParam2initS )
         IntParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
@@ -818,7 +823,6 @@ class MuMoTmodel:
             inputValue=kwargs.get('plotProportions'),
             initValues=initWidgets.get('plotProportions'))
         IntParams['conserved'] = [kwargs.get('conserved', False), True]
-        IntParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
 
         # construct controller
         viewController = controllers.MuMoTtimeEvolutionController(
@@ -919,17 +923,20 @@ class MuMoTmodel:
 
         NCParams = {}
         # read input parameters
+        NCParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+        # the first item of extraParam2 for intial state is fixSumTo1, the second is the idle reactant
+        extraParam2initS = [True, NCParams['substitutedReactant'][0]]
         NCParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
-            extraParam=self._getAllReactants())
+            extraParam=self._getAllReactants(),
+            extraParam2=extraParam2initS)
         NCParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
             initValues=initWidgets.get('maxTime'))
         NCParams['conserved'] = [kwargs.get('conserved', False), True]
-        NCParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
 
         EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder = \
             _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, self._stoichiometry)
@@ -1370,14 +1377,17 @@ class MuMoTmodel:
             optionName='initBifParam',
             inputValue=kwargs.get('initBifParam'),
             initValues=initWidgets.get('initBifParam'))
+        BfcParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+        # the first item of extraParam2 for intial state is fixSumTo1, the second is the idle reactant
+        extraParam2initS = [True, BfcParams['substitutedReactant'][0]]
         BfcParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
-            extraParam=self._getAllReactants())
+            extraParam=self._getAllReactants(),
+            extraParam2=extraParam2initS)
         BfcParams['bifurcationParameter'] = [bifPar, True]
         BfcParams['conserved'] = [conserved, True]
-        BfcParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
 
         # construct controller
         viewController = controllers.MuMoTbifurcationController(
@@ -1464,12 +1474,18 @@ class MuMoTmodel:
 
         MAParams = {}
         # Read input parameters
+        MAParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+        # the first item of extraParam2 for intial state is fixSumTo1, the second is the idle reactant
+        # in the multiagent() view, the sum of the initial states is fixed to 1. If this wants to be changed, remember to change also the callback function of the widgets _updateInitialStateWidgets in controllers.py
+        if MAParams['substitutedReactant'][0] is None and len(self._getAllReactants()[0]) > 1:
+            MAParams['substitutedReactant'][0] = sorted(self._getAllReactants()[0], key=str)[0]
+        extraParam2initS = [True, MAParams['substitutedReactant'][0]]
         MAParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
-            extraParam=self._getAllReactants())
-        MAParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+            extraParam=self._getAllReactants(),
+            extraParam2=extraParam2initS)
         MAParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
@@ -1622,12 +1638,18 @@ class MuMoTmodel:
 
         ssaParams = {}
         # Read input parameters
+        ssaParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+        # the first item of extraParam2 for intial state is fixSumTo1, the second is the idle reactant
+        # in the SSA() view, the sum of the initial states is fixed to 1. If this wants to be changed, remember to change also the callback function of the widgets _updateInitialStateWidgets in controllers.py
+        if ssaParams['substitutedReactant'][0] is None and len(self._getAllReactants()[0]) > 1:
+            ssaParams['substitutedReactant'][0] = sorted(self._getAllReactants()[0], key=str)[0]
+        extraParam2initS = [True, ssaParams['substitutedReactant'][0]]
         ssaParams['initialState'] = utils._format_advanced_option(
             optionName='initialState',
             inputValue=kwargs.get('initialState'),
             initValues=initWidgets.get('initialState'),
-            extraParam=self._getAllReactants())
-        ssaParams['substitutedReactant'] = [[react for react in self._getAllReactants()[0] if react not in self._reactants][0] if self._systemSize is not None else None, True]
+            extraParam=self._getAllReactants(),
+            extraParam2=extraParam2initS)
         ssaParams['maxTime'] = utils._format_advanced_option(
             optionName='maxTime',
             inputValue=kwargs.get('maxTime'),
@@ -1782,7 +1804,7 @@ class MuMoTmodel:
                 if reactant in allConstantReactants:
                     warningMsg = 'WARNING! Constant reactants appearing on the right-handside are ignored. Every constant reactant on the left-handside (implicitly) corresponds to the same constant reactant on the right-handside.\n'\
                                  f'E.g., in rule ' + str(rule.lhsReactants) + ' -> ' + str(rule.rhsReactants) + ' constant reactants should not appear on the right-handside.'
-                    print(warningMsg)
+                    warn(warningMsg, exceptions.MuMoTWarning)
                     break  # print maximum one warning
 
             # Add to the target of the first non-empty item the new born coming from empty-set or constant reactants
