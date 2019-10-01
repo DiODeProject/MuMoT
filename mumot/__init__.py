@@ -23,6 +23,9 @@ import matplotlib
 #if sys.platform == "darwin":
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
+# Guard against iopub rate limiting warnings (https://github.com/DiODeProject/MuMoT/issues/359)
+from notebook.notebookapp import NotebookApp
+NotebookApp.iopub_msg_rate_limit = 10000.0
 from sympy.parsing.latex import parse_latex
 
 # Import the functions and classes we wish to export i.e. the public API
