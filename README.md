@@ -1,9 +1,12 @@
 # MuMoT: Multiscale Modelling Tool
 
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/DiODeProject/MuMoT/v1.1.0?filepath=docs%2FMuMoTuserManual.ipynb)
+[![PyPI version](https://badge.fury.io/py/mumot.svg)](https://badge.fury.io/py/mumot)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mumot)
+
 [![Build Status](https://api.travis-ci.org/DiODeProject/MuMoT.svg?branch=master)](https://travis-ci.org/DiODeProject/MuMoT/branches)
 [![Documentation Status](https://readthedocs.org/projects/mumot/badge/?version=latest)](https://mumot.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://codecov.io/github/DiODeProject/MuMoT/coverage.svg?branch=master)](https://codecov.io/gh/DiODeProject/MuMoT)
-[![Binder (latest stable release)](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/DiODeProject/MuMoT/v1.1.0?filepath=docs%2FMuMoTuserManual.ipynb)
 
 ## Introduction / overview
 
