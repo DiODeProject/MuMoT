@@ -5,6 +5,7 @@ API
 
 .. currentmodule:: mumot
 
+
 Functions
 ---------
 
@@ -26,6 +27,9 @@ Model classes
 View classes
 ------------
 
+.. inheritance-diagram:: mumot.views
+   :parts: 1
+
 .. autosummary::
    :toctree: autosummary
 
@@ -45,6 +49,9 @@ View classes
 Controller classes
 ------------------
 
+.. inheritance-diagram:: mumot.controllers
+   :parts: 1
+
 .. autosummary::
    :toctree: autosummary
 
@@ -57,6 +64,9 @@ Controller classes
 
 Exception classes
 -----------------
+
+.. inheritance-diagram:: mumot.exceptions
+   :parts: 1
 
 .. autosummary::
    :toctree: autosummary
