@@ -10,6 +10,10 @@ Core Development Team:
 * `Andreagiovanni Reina`_
 * `Thomas Bose`_
 
+Contributors: 
+
+* `Robert Dennison`_
+
 Packaging, Documentation and Deployment:
 
 * `Will Furnass`_
