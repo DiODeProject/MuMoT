@@ -31,15 +31,15 @@ setup(
         'graphviz',
         'ipykernel',
         'ipython',
-        'ipywidgets',
+        'ipykernel<4.7',  # needed so no duplicate figures when wiggle ipywidgets
         'matplotlib',
         'networkx',
-        'notebook',
+        'notebook<5.5',  # needed if using pyzmq < 17
         'pydstool>=0.90.3',  # min version that allows scipy >= 1.0.0 to be used
-        'pyzmq',
+        'pyzmq<17',  # needed if using tornado < 5
         'scipy',
         'sympy>=1.4',
-        'tornado'
+        'tornado<5'  # needed to avoid errors with older ipykernel
     ],
     extras_require={
         'test': [
