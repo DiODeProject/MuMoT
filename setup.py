@@ -29,9 +29,9 @@ setup(
     install_requires=[
         'antlr4-python3-runtime',
         'graphviz',
-        'ipykernel',
-        'ipython',
         'ipykernel<4.7',  # needed so no duplicate figures when wiggle ipywidgets
+        'ipython',
+        'ipywidgets',
         'matplotlib',
         'networkx',
         'notebook<5.5',  # needed if using pyzmq < 17
