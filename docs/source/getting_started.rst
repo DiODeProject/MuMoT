@@ -21,7 +21,7 @@ View and interact with the user manual online:
 
 .. image:: https://mybinder.org/badge.svg
    :alt: Start running MuMoT user manual on mybinder.org
-   :target: https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=docs%2FMuMoTuserManual.ipynb
+   :target: https://mybinder.org/v2/gh/DiODeProject/MuMoT/v1.1.0?filepath=docs%2FMuMoTuserManual.ipynb
 
 Note that this uses the excellent and free `mybinder.org <https://mybinder.org/>`__ service,
 funded by the `Gordon and Betty Moore Foundation <https://www.moore.org/>`__,
@@ -36,8 +36,8 @@ Demo notebooks
 --------------
 The following demo notebooks are also available online:
 
-* `Paper <https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=docs%2FMuMoTpaperResults.ipynb>`_: (*MuMoT authors, University of Sheffield*)
-* `Epidemics <https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=DemoNotebooks%2FEpidemicsDemo_SIRI.ipynb>`_: (*Renato Pagliara, Princeton University*)
+* `Paper <https://mybinder.org/v2/gh/DiODeProject/MuMoT/v1.1.0?filepath=docs%2FMuMoTpaperResults.ipynb>`_: (*MuMoT authors, University of Sheffield*)
+* `Epidemics <https://mybinder.org/v2/gh/DiODeProject/MuMoT/v1.1.0?filepath=DemoNotebooks%2FEpidemicsDemo_SIRI.ipynb>`_: (*Renato Pagliara, Princeton University*)
 
 On your own machine
 -------------------

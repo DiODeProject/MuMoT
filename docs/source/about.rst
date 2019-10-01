@@ -10,6 +10,10 @@ Core Development Team:
 * `Andreagiovanni Reina`_
 * `Thomas Bose`_
 
+Contributors: 
+
+* Robert Dennison (rtdennison1@sheffield.ac.uk)
+
 Packaging, Documentation and Deployment:
 
 * `Will Furnass`_
@@ -24,6 +28,7 @@ Citation
 If you use MuMoT in your own work please cite the original paper describing MuMoT, as well as the DOI for the version of MuMoT you used (to credit developers involved in that version):
 
 * Marshall, J. A. R., Reina, A., Bose, T. (2019) Multiscale Modelling Tool: Mathematical modelling of collective behaviour without the maths. *Under submission*
+* Marshall, J. A. R., Reina, A., Bose, T., Dennison, R., Furnass, W., Pagliara Vasquez, R. (2019) MuMoT release 1.1.0 doi: https://doi.org/10.15131/shef.data.9925010
 * Marshall, J. A. R., Reina, A., Bose, T. (2019) MuMoT release 1.0.0 doi: https://doi.org/10.15131/shef.data.7951298.v1
 
 .. todo:: Add formatted citation and BibTeX entry inc ORDA_ (FigShare) / Zenodo_ DOI.
