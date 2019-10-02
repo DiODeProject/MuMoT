@@ -27,7 +27,7 @@ Citation
 
 If you use MuMoT in your own work please cite the original paper describing MuMoT, as well as the DOI for the version of MuMoT you used (to credit developers involved in that version):
 
-* Marshall, J. A. R., Reina, A., Bose, T. (2019) Multiscale Modelling Tool: Mathematical modelling of collective behaviour without the maths. *Under submission*
+* Marshall, J. A. R., Reina, A., Bose, T. (2019) Multiscale Modelling Tool: Mathematical modelling of collective behaviour without the maths. PLoS one **14**(9): e0222906. https://doi.org/10.1371/journal.pone.0222906
 * Marshall, J. A. R., Reina, A., Bose, T., Dennison, R., Furnass, W., Pagliara Vasquez, R. (2019) MuMoT release 1.1.1 doi: https://doi.org/10.15131/shef.data.9925010
 * Marshall, J. A. R., Reina, A., Bose, T. (2019) MuMoT release 1.0.0 doi: https://doi.org/10.15131/shef.data.7951298.v1
 
@@ -41,7 +41,8 @@ Funding
 
 MuMoT was developed with funds from the `European Research Council`_ (ERC) 
 under the European Union's `Horizon 2020`_ research and innovation programme 
-(grant agreement number 647704 - DiODe_).
+(grant agreement number 647704 - DiODe_), and from Corporate Information
+and Computing Services, University of Sheffield.
 
 Included third-party code
 ^^^^^^^^^^^^^^^^^^^^^^^^^
