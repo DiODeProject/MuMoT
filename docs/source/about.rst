@@ -12,7 +12,7 @@ Core Development Team:
 
 Contributors: 
 
-* Robert Dennison (rtdennison1@sheffield.ac.uk)
+* Robert Dennison
 
 Packaging, Documentation and Deployment:
 
