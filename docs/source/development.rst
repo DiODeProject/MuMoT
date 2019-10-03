@@ -299,15 +299,6 @@ In this project the use of branches and git tags is as follows:
  - The ``master`` branch is the only long-lived *active* branch
  - New features are developed by creating **feature branches** from the ``master`` branch;
    these feature branches are then ultimately merged back into ``master`` via Pull Requests then deleted.
- - A *maintenance* branch is created per minor release
- - The only commits added to maintenance branches are:
-
-   - Fixes for critical bugs
-   - Source changes that update the version number in ``mumot/_version.py`` or the changelog.
-
-To illustrate this:
-
-.. image:: /_static/branch_model.png
 
 To create a release:
 
@@ -320,29 +311,9 @@ To create a release:
    ensure all GitHub Issues tagged with the pending release (*Milestone*) 
    have either been addressed or 
    are reassigned to a different Milestone.
-   Ensure all pull requests against ``master`` relating to the pendiing Milestone have been merged and all CI tests pass.
+   Ensure all pull requests against ``master`` relating to the pending Milestone have been merged and all CI tests pass.
 
-#. *Major/minor release only*: create a new maintenance branch with an appropriate name.  E.g.::
-   
-      $ git checkout -b 0.9.x master
-      Switched to a new branch "0.9.x"
-      
-#. *Patch release only*: merge critical fixes into the appropriate maintenance branch.  E.g.::
-
-      $ git checkout -b 0.9.x master
-      Switched to a new branch "0.9.x"
-      git merge fixed_critical_bug_1
-      git merge fixed_critical_bug_2
-
-#. Update the file ``CHANGELOG.md`` with changes since the last release.
-   You can derive this list of changes from commits made since the last release; 
-   if the last release was tagged in git with ``v0.8.0`` 
-   then you can see the first line of all commit comments since then with: ::
-
-      $ git checkout master
-      $ git log --pretty=oneline --abbrev-commit v0.9.0..HEAD
-
-#. Bump the version in ``mumot/_version`` from e.g.
+#. Create a pull request against ``master`` to bump the version in ``mumot/_version.py`` from e.g.
 
    .. code-block:: python
    
@@ -358,14 +329,35 @@ To create a release:
 
    Package versions (``setup.py``) and 
    the version info in rendered Sphinx docs 
-   are automatically set using this variable. Ensure that the version number uses only digits, to comply with PyPI naming restrictions.
+   are automatically set using this variable.
+   Ensure that the version number uses only digits,
+   to comply with PyPI naming restrictions.
 
-   Don't forget to: ::
+   Also, update the MuMoT version in all mybinder.org URLs in the README and Sphinx docs:
+   they should, in this case, contain ``v0.9.0`` (note the extra '``v``').
+
+   Also, check update citation info (including the DOI and contributors) for this pending release
+   in ``docs/source/about.rst``.
+
+   Also, update the file ``CHANGELOG.md`` with changes since the last release.
+   You can derive this list of changes from commits made since the last release; 
+   if the last release was tagged in git with ``v0.8.0`` 
+   then you can see the first line of all commit comments since then with: ::
+
+      $ git checkout master
+      $ git log --pretty=oneline --abbrev-commit v0.9.0..HEAD
+
+   then: ::
 
       $ git commit -a -m "Bumped version number to 0.9.0"
+      
+   and create the Pull Request.
+   
+#. Merge this Pull Request into ``master`` then create an *annotated tag*: ::
 
-   and add an `annotated tag`_ to this commit and push the branch: ::
-
+      $ git checkout master
+      $ git fetch --prune --all
+      $ git merge --ff-only upstream/master
       $ git tag -a v0.9.0 -m "Release 0.9.0"
       $ git push upstream --tags
       $ git push
@@ -380,43 +372,26 @@ To create a release:
 
    NB annotated tags are are often used within git repositories to identify the commits corresponding to particular releases.
 
-#. Install the packages required to build source and binary distributions of the package: ::
+#. The pushing of a tagged commit to ``github.com:DiODeProject/MuMoT.git`` causes Travis to:
 
-      $ python3 -m pip install setuptools wheel
-
-#. Build source and binary distributions of the package: ::
-
-      $ cd top/level/directory/in/repo
-      $ python3 setup.py sdist bdist_wheel
-
-   This creates two files in the ``dist`` subdirectory:
+   #. Run through the standard tasks performed for Pull Requests (see ``.travis.yml``) *then*
+   #. Build two versions of Python package for this release of MuMoT
 
       * A binary 'wheel' package e.g. ``mumot-0.9.0-py3-none-any.whl``
       * A source package e.g. ``mumot-0.9.0.tar.gz``
 
-#. Upload this package to Test PyPI.
 
-   * `Register for an account <https://test.pypi.org/account/register/>`__
-     and verify your email address.
-   * Push your binary and source packages to Test PyPI using the twine_ tool: ::
+   #. Upload these files to `PyPI <https://pypi.org/account/register/>`__ 
+      using environment variables stored as encrypted credentials in this Travis project.
 
-      $ python3 -m pip install twine
-      $ twine upload --repository-url https://test.pypi.org/legacy/ dist/mumot-0.9.0*
+#. You can monitor the progress of building packages for MuMoT and uploading them to PyPI 
+   using the `dashboard for this Travis project <https://travis-ci.org/DiODeProject/MuMoT/builds/>`__.
 
-   * Check that your package is visible at `https://test.pypi.org/project/mumot <https://test.pypi.org/project/mumot>`__.
-
-#. Follow the :ref:`MuMoT installation instructions <install>` but at the relevant point
-   try to install ``mumot`` from Test PyPI instead of from the MuMoT git repository. ::
-
-      $ python3 -m pip install --extra-index-url https://testpypi.python.org/pypi mumot
-
-#. If uploading to Test PyPI then downloading and installing from Test PyPI was successful, then do the same for the main PyPI:
-
-   * `Register for an account <https://pypi.org/account/register/>`__
-        and verify your email address.
-   * Push your binary and source packages to PyPI using: ::
-
-      $ twine upload dist/mumot-0.9.0*
+#. Ensure there is an item in ORDA_ (The University of Sheffield's Research Data Catalogue and Repository) for this release, listing all substantive contributors. 
+   This results in 
+   
+   * The release being referenceable/citable by DOI_.
+   * The release being discoverable via the University's Library Catalogue.
 
 #. Finally, bump the version info on the ``master`` branch (not the ``release-...`` branch) by updating ``mumot/_version`` from e.g.
 
@@ -432,13 +407,7 @@ To create a release:
       version_info = (0, 9, 0, 'dev')
         __version__ = "{}.{}.{}-{}".format(*version_info)
 
-#. Ensure there is an item in ORDA_ (The University of Sheffield's Research Data Catalogue and Repository) for this release, listing all substantive contributors. 
-   This results in 
-   
-   * The release being referenceable/citable by DOI_.
-   * The release being discoverable via the University's Library Catalogue.
-
-#. Add citation info (including the DOI and contributors) for the latest stable release to ``docs/source/about.rst``.
+   then merge this into ``master``.
 
 .. 
    https://github.com/scikit-learn/scikit-learn/wiki/How-to-make-a-release
