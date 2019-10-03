@@ -1,2 +1,2 @@
-version_info = (1, 1, 1)
+version_info = (1, 1, 2)
 __version__ = "{}.{}.{}".format(*version_info)
