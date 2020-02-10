@@ -2781,8 +2781,8 @@ class MuMoTbifurcationView(MuMoTview):
 
             self._pyDSmodel.pars = paramDict
 
-            XDATA = []  # list of arrays containing the bifurcation-parameter data for bifurcation diagram data
-            YDATA = []  # list of arrays containing the state variable data (either one variable, or the sum or difference of the two SVs) for bifurcation diagram data
+            xdata = []  # list of arrays containing the bifurcation-parameter data for bifurcation diagram data
+            ydata = []  # list of arrays containing the state variable data (either one variable, or the sum or difference of the two SVs) for bifurcation diagram data
 
             initDictList = []
             self._pyDSmodel_ics = {}
@@ -2824,7 +2824,7 @@ class MuMoTbifurcationView(MuMoTview):
             sPoints_X = []  # bifurcation parameter
             sPoints_Y = []  # stateVarBif1
             sPoints_Labels = []
-            EIGENVALUES = []
+            eigenvalues = []
             sPoints_Z = []  # stateVarBif2
             k_iter_BPlabel = 0
             k_iter_LPlabel = 0
@@ -2891,20 +2891,20 @@ class MuMoTbifurcationView(MuMoTview):
                 # pyDScont['EQ' + str(EQ_iter)].info()
                 if self._stateVarBif2 is not None:
                     try:
-                        XDATA.append(pyDScont['EQ' + str(EQ_iter)].sol[self._bifurcationParameterPyDS])
+                        xdata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._bifurcationParameterPyDS])
                         if self._SVoperation:
                             if self._SVoperation == '-':
-                                YDATA.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1] -
+                                ydata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1] -
                                              pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif2])
                             elif self._SVoperation == '+':
-                                YDATA.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1] +
+                                ydata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1] +
                                              pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif2])
                             else:
                                 self._showErrorMessage("Only '+' and '-' are supported operations between state variables.")
                         else:
-                            YDATA.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1])
+                            ydata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1])
 
-                        EIGENVALUES.append(np.array([pyDScont['EQ' + str(EQ_iter)].sol[kk].labels['EP']['data'].evals
+                        eigenvalues.append(np.array([pyDScont['EQ' + str(EQ_iter)].sol[kk].labels['EP']['data'].evals
                                                      for kk in range(len(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1]))]))
 
                         while pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP)):
@@ -2963,20 +2963,20 @@ class MuMoTbifurcationView(MuMoTview):
                                     self._show_computation_stop()
                                     self._showErrorMessage('Division by zero<br>')
 
-                                XDATA.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._bifurcationParameterPyDS])
+                                xdata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._bifurcationParameterPyDS])
                                 if self._SVoperation:
                                     if self._SVoperation == '-':
-                                        YDATA.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1] -
+                                        ydata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1] -
                                                      pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif2])
                                     elif self._SVoperation == '+':
-                                        YDATA.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1] +
+                                        ydata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1] +
                                                      pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif2])
                                     else:
                                         self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')
                                 else:
-                                    YDATA.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1])
+                                    ydata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1])
 
-                                EIGENVALUES.append(np.array([pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[kk].labels['EP']['data'].evals
+                                eigenvalues.append(np.array([pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[kk].labels['EP']['data'].evals
                                                              for kk in range(len(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1]))]))
                                 while pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next)):
                                     if (round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._bifurcationParameterPyDS], 4)
@@ -3014,10 +3014,10 @@ class MuMoTbifurcationView(MuMoTview):
                 # Bifurcation routine for 1D system
                 else:
                     try:
-                        XDATA.append(pyDScont['EQ' + str(EQ_iter)].sol[self._bifurcationParameterPyDS])
-                        YDATA.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1])
+                        xdata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._bifurcationParameterPyDS])
+                        ydata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1])
 
-                        EIGENVALUES.append(np.array([pyDScont['EQ' + str(EQ_iter)].sol[kk].labels['EP']['data'].evals
+                        eigenvalues.append(np.array([pyDScont['EQ' + str(EQ_iter)].sol[kk].labels['EP']['data'].evals
                                                      for kk in range(len(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1]))]))
 
                         while pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP)):
@@ -3076,10 +3076,10 @@ class MuMoTbifurcationView(MuMoTview):
                                     self._show_computation_stop()
                                     self._showErrorMessage('Division by zero<br>')
 
-                                XDATA.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._bifurcationParameterPyDS])
-                                YDATA.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1])
+                                xdata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._bifurcationParameterPyDS])
+                                ydata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1])
 
-                                EIGENVALUES.append(np.array([pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[kk].labels['EP']['data'].evals
+                                eigenvalues.append(np.array([pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[kk].labels['EP']['data'].evals
                                                              for kk in range(len(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1]))]))
                                 while pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next)):
                                     if (round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._bifurcationParameterPyDS], 4)
@@ -3134,18 +3134,18 @@ class MuMoTbifurcationView(MuMoTview):
                 if self._mumotModel._systemSize:
                     self._chooseYrange = [-self._getSystemSize(), self._getSystemSize()]
 
-            if XDATA != [] and self._chooseXrange is None:
-                xmaxbif = np.max([np.max(XDATA[kk]) for kk in range(len(XDATA))])
+            if xdata != [] and self._chooseXrange is None:
+                xmaxbif = np.max([np.max(xdata[kk]) for kk in range(len(xdata))])
                 self._chooseXrange = [0, xmaxbif]
 
-            if XDATA != [] and YDATA != []:
+            if xdata != [] and ydata != []:
                 # plt.clf()
-                _fig_formatting_2D(xdata=XDATA,
-                                   ydata=YDATA,
+                _fig_formatting_2D(xdata=xdata,
+                                   ydata=ydata,
                                    xlab=self._LabelX,
                                    ylab=self._LabelY,
                                    specialPoints=specialPoints,
-                                   eigenvalues=EIGENVALUES,
+                                   eigenvalues=eigenvalues,
                                    choose_xrange=self._chooseXrange, choose_yrange=self._chooseYrange,
                                    ax_reformat=False, curve_replot=False, fontsize=self._chooseFontSize)
 
