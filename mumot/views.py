@@ -2616,7 +2616,7 @@ class MuMoTbifurcationView(MuMoTview):
 
         self._MaxNumPoints = kwargs.get('contMaxNumPoints', 100)
 
-        self._bifurcationParameter = self._pydstoolify(bifurcationParameter)
+        self._bifurcationParameter = _pydstoolify(bifurcationParameter)
         replBifParam = {}
         if self._bifurcationParameter in self._pydsProtected:
             self._bifurcationParameterPyDS = 'A' + self._bifurcationParameter
@@ -2625,10 +2625,10 @@ class MuMoTbifurcationView(MuMoTview):
             self._bifurcationParameterPyDS = self._bifurcationParameter
 
         self._stateVarExpr1 = stateVarExpr1
-        stateVarExpr1 = self._pydstoolify(stateVarExpr1)
+        stateVarExpr1 = _pydstoolify(stateVarExpr1)
 
         if stateVarExpr2:
-            stateVarExpr2 = self._pydstoolify(stateVarExpr2)
+            stateVarExpr2 = _pydstoolify(stateVarExpr2)
 
         self._SVoperation = None
         try:
@@ -2692,12 +2692,12 @@ class MuMoTbifurcationView(MuMoTview):
         for reactant in self._mumotModel._reactants:
             if reactant not in self._mumotModel._constantReactants:
                 stateVariableList.append(reactant)
-                reactantString = self._pydstoolify(reactant)
+                reactantString = _pydstoolify(reactant)
                 if reactantString[0].islower() or reactantString in self._pydsProtected:
                     replaceSV[reactantString] = 'A' + reactantString
-                    varspecs['A' + reactantString] = self._pydstoolify(self._mumotModel._equations[reactant])
+                    varspecs['A' + reactantString] = _pydstoolify(self._mumotModel._equations[reactant])
                 else:
-                    varspecs[reactantString] = self._pydstoolify(self._mumotModel._equations[reactant])
+                    varspecs[reactantString] = _pydstoolify(self._mumotModel._equations[reactant])
 
         for key, equation in varspecs.items():
             for replKey, replVal in replaceSV.items():
@@ -2721,10 +2721,10 @@ class MuMoTbifurcationView(MuMoTview):
 
         if self._stateVarBif2 is None:
             if self._stateVariable2:
-                if self._stateVarBif1 == self._pydstoolify(self._stateVariable1):
-                    self._stateVarBif2 = self._pydstoolify(self._stateVariable2)
-                elif self._stateVarBif1 == self._pydstoolify(self._stateVariable2):
-                    self._stateVarBif2 = self._pydstoolify(self._stateVariable1)
+                if self._stateVarBif1 == _pydstoolify(self._stateVariable1):
+                    self._stateVarBif2 = _pydstoolify(self._stateVariable2)
+                elif self._stateVarBif1 == _pydstoolify(self._stateVariable2):
+                    self._stateVarBif2 = _pydstoolify(self._stateVariable1)
                 self._stateVarBif2Print = self._stateVarBif2
                 if self._stateVarBif2[0].islower() or self._stateVarBif2 in self._pydsProtected:
                     self._stateVarBif2 = 'A' + self._stateVarBif2
@@ -2759,12 +2759,12 @@ class MuMoTbifurcationView(MuMoTview):
         replaceRates = {}
         for arg in argDict:
             if arg in self._mumotModel._rates or arg in self._mumotModel._constantReactants or arg == self._mumotModel._systemSize:
-                if self._pydstoolify(arg) in self._pydsProtected:
-                    paramDict['A' + self._pydstoolify(arg)] = argDict[arg]
-                    if self._pydstoolify(arg) != self._bifurcationParameter:
-                        replaceRates[self._pydstoolify(arg)] = 'A' + self._pydstoolify(arg)
+                if _pydstoolify(arg) in self._pydsProtected:
+                    paramDict['A' + _pydstoolify(arg)] = argDict[arg]
+                    if _pydstoolify(arg) != self._bifurcationParameter:
+                        replaceRates[_pydstoolify(arg)] = 'A' + _pydstoolify(arg)
                 else:
-                    paramDict[self._pydstoolify(arg)] = argDict[arg]
+                    paramDict[_pydstoolify(arg)] = argDict[arg]
 
         for key, equation in self._pyDSmodel.varspecs.items():
             for replKey, replVal in replaceRates.items():
@@ -2786,8 +2786,8 @@ class MuMoTbifurcationView(MuMoTview):
 
             # print(self._pyDSmodel_ics
             # for ic in self._pyDSmodel_ics:
-            #    if 'Phi0' in self._pydstoolify(ic):
-            #        self._pyDSmodel_ics[self._pydstoolify(ic)[self._pydstoolify(ic).index('0') + 1:]] = self._pyDSmodel_ics.pop(ic)  # {'A': 0.1, 'B': 0.9 }
+            #    if 'Phi0' in _pydstoolify(ic):
+            #        self._pyDSmodel_ics[_pydstoolify(ic)[_pydstoolify(ic).index('0') + 1:]] = self._pyDSmodel_ics.pop(ic)  # {'A': 0.1, 'B': 0.9 }
 
             if len(self._stateVariableList) == 1:
                 realEQsol, eigList = self._get_fixedPoints1d()
@@ -2822,19 +2822,27 @@ class MuMoTbifurcationView(MuMoTview):
             sPoints_Z = []  # stateVarBif2
             k_iter_BPlabel = 0
             k_iter_LPlabel = 0
-            # print(initDictList)
 
-            for nn in range(len(initDictList)):
-                for key in initDictList[nn]:
-                    old_key = key
-                    new_key = self._pydstoolify(key)
-                    if new_key[0].islower() or new_key in self._pydsProtected:
-                        new_key = 'A' + new_key
-                    initDictList[nn][new_key] = initDictList[nn].pop(old_key)
+            for nn, init_dict in enumerate(initDictList):
+                # Mutate key names so they are in a form that is compatible
+                # with PyDSTool
+                init_dict_pyds = {}
+                for k, v in init_dict.items():
+                    k_pyds = _pydstoolify(k)
+                    if k_pyds.islower() or k_pyds in self._pydsProtected:
+                        k_pyds = 'A' + k_pyds
+                    init_dict_pyds[k_pyds] = v
 
-                # self._pyDSmodel.ics = initDictList[nn]
+                #for key in initDictList[nn]:
+                #    old_key = key
+                #    new_key = _pydstoolify(key)
+                #    if new_key[0].islower() or new_key in self._pydsProtected:
+                #        new_key = 'A' + new_key
+                #    initDictList[nn][new_key] = initDictList[nn].pop(old_key)
+
+                # self._pyDSmodel.ics = init_dict_pyds
                 pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)
-                pyDSode.set(ics=initDictList[nn])
+                pyDSode.set(ics=init_dict_pyds)
                 # pyDSode.set(pars = self._getBifParInitCondFromSlider())
                 pyDSode.set(pars={self._bifurcationParameterPyDS: self._initBifParam})
 
@@ -3150,17 +3158,6 @@ class MuMoTbifurcationView(MuMoTview):
             plt.clf()
             self._resetErrorMessage()
         self._showErrorMessage(str(self))
-
-    def _pydstoolify(self, equation) -> str:
-        """Utility function to mangle variable names in equations so they are accepted by PyDStool."""
-        equation = str(equation)
-        equation = equation.replace('{', '')
-        equation = equation.replace('}', '')
-        equation = equation.replace('_', '')
-        equation = equation.replace('\\', '')
-        equation = equation.replace('^', '')
-
-        return equation
 
     def _build_bookmark(self, includeParams: bool = True) -> str:
         if not self._silent:
@@ -5855,3 +5852,16 @@ def _doVanKampenExpansion(rhs, stoich):
             rhs_vKE += rhs_dict[key][3].subs(PhiConstDict) * (term.doit() - func)
 
     return rhs_vKE.expand(), lhs_vKE, substring
+
+
+def _pydstoolify(equation) -> str:
+    """Utility function to mangle variable names in equations so they are accepted by PyDStool."""
+    eq_str = str(equation)
+
+    chars_to_remove = ['{', '}', '_', '\\', '^']
+
+    for c in chars_to_remove:
+        eq_str = eq_str.replace(c, '')
+
+    return eq_str
+
