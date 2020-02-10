@@ -38,7 +38,7 @@ setup(
         'pydstool>=0.90.3',  # min version that allows scipy >= 1.0.0 to be used
         'pyzmq<17',  # needed if using tornado < 5
         'scipy',
-        'sympy>=1.4',
+        'sympy>=1.4,<1.5',  # pinned to <1.5 due to Issue #377
         'tornado<5'  # needed to avoid errors with older ipykernel
     ],
     extras_require={
