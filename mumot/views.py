@@ -1165,21 +1165,31 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
                 display(Math(out))
         self._logs.append(log)
 
-        argDict = self._get_argDict()
-        for key in self._mumotModel._constantReactants:
-            if argDict[key] is not None:
-                argDict[sympy.Symbol(f"Phi_{key}")] = argDict.pop(key)
-        for key in steadyStateDict:
-            if key in self._mumotModel._reactants:
-                steadyStateDict[sympy.Symbol(f"Phi_{key}")] = steadyStateDict.pop(key)
+        argDict_tmp = self._get_argDict()
+#         for key in self._mumotModel._constantReactants:
+#             if argDict[key] is not None:
+#                 argDict[sympy.Symbol(f"Phi_{key}")] = argDict.pop(key)
+#         for key in steadyStateDict:
+#             if key in self._mumotModel._reactants:
+#                 steadyStateDict[sympy.Symbol(f"Phi_{key}")] = steadyStateDict.pop(key)
+        # Mutate key names of the argDict and the steadyStateDict so that they indicate concentrations via prefix Phi
+        argDict = {}
+        for key, val in argDict_tmp.items():
+            key_phi = sympy.Symbol(f"Phi_{key}") if key in self._mumotModel._constantReactants else: key
+            argDict[key_phi] = val
+        steadyStateDictPhi = {}
+        for key, val in steadyStateDict.items():
+            key_phi = sympy.Symbol(f"Phi_{key}") if key in self._mumotModel._reactants else: key
+            steadyStateDictPhi[key_phi] = val
+        
         EOM_1stOrdMomDict = copy.deepcopy(self._EOM_1stOrdMomDict)
         for sol in EOM_1stOrdMomDict:
-            EOM_1stOrdMomDict[sol] = EOM_1stOrdMomDict[sol].subs(steadyStateDict)
+            EOM_1stOrdMomDict[sol] = EOM_1stOrdMomDict[sol].subs(steadyStateDictPhi)
             EOM_1stOrdMomDict[sol] = EOM_1stOrdMomDict[sol].subs(argDict)
 
         EOM_2ndOrdMomDict = copy.deepcopy(self._EOM_2ndOrdMomDict)
 
-        SOL_2ndOrdMomDict = self._numericSol2ndOrdMoment(EOM_2ndOrdMomDict, steadyStateDict, argDict)
+        SOL_2ndOrdMomDict = self._numericSol2ndOrdMoment(EOM_2ndOrdMomDict, steadyStateDictPhi, argDict)
 
         time_depend_noise = []
         for reactant in self._mumotModel._reactants:
@@ -1689,10 +1699,12 @@ class MuMoTfieldView(MuMoTview):
                 M_2 = sympy.Function('M_2')
 
                 systemSize = sympy.Symbol('systemSize')
-                argDict = self._get_argDict()
-                for key in argDict:
-                    if key in self._mumotModel._constantReactants:
-                        argDict[sympy.Symbol('Phi_' + str(key))] = argDict.pop(key)
+                argDict_tmp = self._get_argDict()
+                # Mutate key names of argDict so that they indicate concentrations via prefix Phi
+                argDict = {}
+                for key, val in argDict_tmp.items():
+                    key_phi = sympy.Symbol(f"Phi_{key}") if key in self._mumotModel._constantReactants else: key
+                    argDict[key_phi] = val
 
                 realEQsol, eigList = self._get_fixedPoints2d()
 
