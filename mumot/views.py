@@ -1175,11 +1175,11 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         # Mutate key names of the argDict and the steadyStateDict so that they indicate concentrations via prefix Phi
         argDict = {}
         for key, val in argDict_tmp.items():
-            key_phi = sympy.Symbol(f"Phi_{key}") if key in self._mumotModel._constantReactants else: key
+            key_phi = sympy.Symbol(f"Phi_{key}") if key in self._mumotModel._constantReactants else key
             argDict[key_phi] = val
         steadyStateDictPhi = {}
         for key, val in steadyStateDict.items():
-            key_phi = sympy.Symbol(f"Phi_{key}") if key in self._mumotModel._reactants else: key
+            key_phi = sympy.Symbol(f"Phi_{key}") if key in self._mumotModel._reactants else key
             steadyStateDictPhi[key_phi] = val
         
         EOM_1stOrdMomDict = copy.deepcopy(self._EOM_1stOrdMomDict)
@@ -1703,7 +1703,7 @@ class MuMoTfieldView(MuMoTview):
                 # Mutate key names of argDict so that they indicate concentrations via prefix Phi
                 argDict = {}
                 for key, val in argDict_tmp.items():
-                    key_phi = sympy.Symbol(f"Phi_{key}") if key in self._mumotModel._constantReactants else: key
+                    key_phi = sympy.Symbol(f"Phi_{key}") if key in self._mumotModel._constantReactants else key
                     argDict[key_phi] = val
 
                 realEQsol, eigList = self._get_fixedPoints2d()
