@@ -27,7 +27,7 @@ setup(
     package_dir={'': '.'},
     license='GPL-3.0',
     install_requires=[
-        'antlr4-python3-runtime',
+        'antlr4-python3-runtime>=4.7,<4.8',
         'graphviz',
         'ipykernel<4.7',  # needed so no duplicate figures when wiggle ipywidgets
         'ipython',
