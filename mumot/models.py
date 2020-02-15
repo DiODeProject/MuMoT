@@ -114,17 +114,23 @@ class MuMoTmodel:
         for sub in subs:
             if sub[0] in newModel._reactants and len(sub[1].atoms(Symbol)) == 1:
                 raise exceptions.MuMoTSyntaxError(f"Using substitute to rename reactants not supported: {sub[0]} = {sub[1]}")
+
+        # Creating a new stoichiometry dictionary for every reaction by substituting keys and values when necessary
         for reaction in newModel._stoichiometry:
             for sub in subs:
                 newModel._stoichiometry[reaction]['rate'] = newModel._stoichiometry[reaction]['rate'].subs(sub[0], sub[1])
-                for reactant in newModel._stoichiometry[reaction]:
-                    if not reactant == 'rate':
-                        if reactant == sub[0]:
-                            if '+' not in str(sub[1]) and '-' not in str(sub[1]):
-                                # replace keys according to: dictionary[new_key] = dictionary.pop(old_key)
-                                newModel._stoichiometry[reaction][sub[1]] = newModel._stoichiometry[reaction].pop(reactant)
-                            else:
-                                newModel._stoichiometry[reaction][reactant].append({reactant: sub[1]})
+                new_stoichiometry_dict = {}
+                for stoich_key, stoich_value in newModel._stoichiometry[reaction].items():
+                    new_st_key = stoich_key
+                    new_st_value = stoich_value
+                    if (stoich_key != 'rate') and stoich_key == sub[0]:  # check if substitution is necessary
+                        if '+' not in str(sub[1]) and '-' not in str(sub[1]):  # substitute key
+                            new_st_key = sub[1]
+                        else:  # substitute value
+                            new_st_value.append({stoich_key: sub[1]})
+                    new_stoichiometry_dict[new_st_key] = new_st_value
+                newModel._stoichiometry[reaction] = new_stoichiometry_dict
+
         for reactant in newModel._reactants:
             for sub in subs:
                 newModel._equations[reactant] = newModel._equations[reactant].subs(sub[0], sub[1])
