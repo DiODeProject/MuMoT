@@ -27,7 +27,7 @@ setup(
     package_dir={'': '.'},
     license='GPL-3.0',
     install_requires=[
-        'antlr4-python3-runtime',
+        'antlr4-python3-runtime>=4.7,<4.8',
         'graphviz',
         'ipykernel<4.7',  # needed so no duplicate figures when wiggle ipywidgets
         'ipython',
@@ -38,7 +38,7 @@ setup(
         'pydstool>=0.90.3',  # min version that allows scipy >= 1.0.0 to be used
         'pyzmq<17',  # needed if using tornado < 5
         'scipy',
-        'sympy>=1.4',
+        'sympy>=1.4,<1.5',  # pinned to <1.5 due to Issue #377
         'tornado<5'  # needed to avoid errors with older ipykernel
     ],
     extras_require={
@@ -59,6 +59,7 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Chemistry",
         "Topic :: Scientific/Engineering :: Mathematics",
