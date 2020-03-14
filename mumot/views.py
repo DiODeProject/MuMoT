@@ -2175,7 +2175,7 @@ class MuMoTvectorView(MuMoTfieldView):
             fig_vector = plt.quiver(self._X, self._Y, self._Xdot, self._Ydot, units='width', color='black')  # @todo: define colormap by user keyword
 
             if self._mumotModel._constantSystemSize:
-                plt.fill_between([0, 1], [1, 0], [1, 1], color='grey', alpha='0.25')
+                plt.fill_between([0, 1], [1, 0], [1, 1], color='grey', alpha=0.25)
                 if self._chooseXrange:
                     choose_xrange = self._chooseXrange
                 else:
@@ -2406,7 +2406,7 @@ class MuMoTstreamView(MuMoTfieldView):
                                             self._Ydot, color='k')
 
             if self._mumotModel._constantSystemSize:
-                plt.fill_between([0, 1], [1, 0], [1, 1], color='grey', alpha='0.25')
+                plt.fill_between([0, 1], [1, 0], [1, 1], color='grey', alpha=0.25)
                 if self._chooseXrange:
                     choose_xrange = self._chooseXrange
                 else:
