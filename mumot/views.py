@@ -73,6 +73,20 @@ class MuMoTview:
     _generatingCommand = None
     # generating keyword arguments
     _generatingKwargs = None
+    # x-label
+    _xlab = None
+    # y-label
+    _ylab = None
+    # defines fontsize on the axes
+    _axes_font_size = None
+    # legend location: combinations like 'upper left', lower right, or 'center center' are allowed (9 options in total)
+    _legend_loc = None
+    # legend fontsize, accepts integers
+    _legend_fontsize = None
+    # displayed range for vertical axis
+    _chooseXrange = None
+    # displayed range for horizontal axis
+    _chooseYrange = None
 
     def __init__(self, model, controller, figure=None, params=None, **kwargs):
         self._silent = kwargs.get('silent', False)
@@ -98,6 +112,16 @@ class MuMoTview:
                     self._ratesDict[str(rule.rate)] = sys.maxsize
             # print(self._ratesDict)
         self._systemSize = self._getSystemSize()
+
+        # storing the graphics params
+        if 'fontsize' in kwargs:
+            self._axes_font_size = kwargs['fontsize']
+        else:
+            self._axes_font_size = None
+        self._legend_loc = kwargs.get('legend_loc', 'upper right')
+        self._legend_fontsize = kwargs.get('legend_fontsize', None)
+        self._chooseXrange = kwargs.get('choose_xrange', None)
+        self._chooseYrange = kwargs.get('choose_yrange', None)
 
         if not self._silent:
             _buildFig(self, figure)
@@ -628,14 +652,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
     _maxTime = None
     # time step of numerical simulation
     _tstep = None
-    # defines fontsize on the axes
-    _chooseFontSize = None
-    # string that defines the x-label
-    _xlab = None
-    # legend location: combinations like 'upper left', lower right, or 'center center' are allowed (9 options in total)
-    _legend_loc = None
-    # legend fontsize, accepts integers
-    _legend_fontsize = None
     # total number of agents in the simulation
     _systemSize = None
     # the system state at the start of the simulation (timestep zero)
@@ -645,14 +661,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
     # Parameters for controller specific to this time evolution view
     _tEParams = None
 
-    # displayed range for vertical axis
-    _chooseXrange = None
-    # displayed range for horizontal axis
-    _chooseYrange = None
-
-    # def __init__(self, model, controller, stateVariable1, stateVariable2,
-    #             stateVariable3 = None, stateVariable4 = None, figure = None, params = None,
-    #             **kwargs):
     def __init__(self, model, controller, tEParams, showStateVars=None, figure=None, params=None, **kwargs):
         # if model._systemSize is None and model._constantSystemSize:
         #    print("Cannot construct time evolution -based plot until system size is set, using substitute()")
@@ -662,8 +670,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
         # super().__init__(model, controller, figure, params, **kwargs)
 
         self._tEParams = tEParams
-        self._chooseXrange = kwargs.get('choose_xrange', None)
-        self._chooseYrange = kwargs.get('choose_yrange', None)
 
         with io.capture_output() as log:
             # if True:
@@ -709,15 +715,7 @@ class MuMoTtimeEvolutionView(MuMoTview):
                         else:
                             self._fixedParams[key] = value[0]
 
-            if 'fontsize' in kwargs:
-                self._chooseFontSize = kwargs['fontsize']
-            else:
-                self._chooseFontSize = None
             self._xlab = kwargs.get('xlab', 'time t')
-            # self._ylab = kwargs.get('ylab', r'evolution of states')
-
-            self._legend_loc = kwargs.get('legend_loc', 'upper right')
-            self._legend_fontsize = kwargs.get('legend_fontsize', None)
 
             self._stateVarList = []
             for reactant in self._mumotModel._reactants:
@@ -798,8 +796,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
 class MuMoTintegrateView(MuMoTtimeEvolutionView):
     """Numerical solution of ODEs plot view on model."""
 
-    # y-label with default specific to this MuMoTintegrateView class (can be set via keyword)
-    _ylab = None
     # initial conditions used for proportion plot
     _y0 = None
     # save solution for redraw to switch between plotProportions = True and False
@@ -909,7 +905,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
         _fig_formatting_2D(xdata=x_data, ydata=y_data, xlab=self._xlab,
                            ylab=self._ylab, choose_xrange=choose_xrange,
                            choose_yrange=self._chooseYrange,
-                           fontsize=self._chooseFontSize, curvelab=c_labels,
+                           fontsize=self._axes_font_size, curvelab=c_labels,
                            legend_loc=self._legend_loc, grid=True,
                            legend_fontsize=self._legend_fontsize,
                            line_color_list=self._colors)
@@ -972,7 +968,7 @@ class MuMoTintegrateView(MuMoTtimeEvolutionView):
         _fig_formatting_2D(xdata=x_data, ydata=y_data, xlab=self._xlab,
                            ylab=self._ylab, choose_xrange=choose_xrange,
                            choose_yrange=self._chooseYrange,
-                           fontsize=self._chooseFontSize, curvelab=c_labels,
+                           fontsize=self._axes_font_size, curvelab=c_labels,
                            legend_loc=self._legend_loc, grid=True,
                            legend_fontsize=self._legend_fontsize)
 
@@ -1040,8 +1036,6 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
     _maxTimeDS = None
     # time step of simulation for dynamical system to reach equilibrium (can be set via keyword)
     _tstepDS = None
-    # y-label with default specific to this MuMoTnoiseCorrelationsView class (can be set via keyword)
-    _ylab = None
 
     def _constructorSpecificParams(self, _):
         if self._controller is not None:
@@ -1324,7 +1318,7 @@ class MuMoTnoiseCorrelationsView(MuMoTtimeEvolutionView):
         _fig_formatting_2D(xdata=x_data, ydata=y_data, xlab=self._xlab,
                            ylab=self._ylab, choose_xrange=choose_xrange,
                            choose_yrange=self._chooseYrange,
-                           fontsize=self._chooseFontSize, curvelab=c_labels,
+                           fontsize=self._axes_font_size, curvelab=c_labels,
                            legend_loc=self._legend_loc, grid=True,
                            legend_fontsize=self._legend_fontsize)
 
@@ -1465,22 +1459,12 @@ class MuMoTfieldView(MuMoTview):
     _speed = None
     # class-global dictionary of memoised masks with (mesh size, dimension) as key
     _mask = {}
-    # x-label
-    _xlab = None
-    # y-label
-    _ylab = None
     # z-label
     _zlab = None
     # flag to run SSA simulations to compute noise ellipse
     _showSSANoise = None
     # flag to show Noise
     _showNoise = None
-    # fontsize for axes labels
-    _chooseFontSize = None
-    # displayed range for vertical axis
-    _chooseXrange = None
-    # displayed range for horizontal axis
-    _chooseYrange = None
     # fixed points for logs
     _realEQsol = None
     # eigenvalues for logs
@@ -1511,10 +1495,6 @@ class MuMoTfieldView(MuMoTview):
         super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
 
         with io.capture_output() as log:
-            if 'fontsize' in kwargs:
-                self._chooseFontSize = kwargs['fontsize']
-            else:
-                self._chooseFontSize = None
             self._showFixedPoints = kwargs.get('showFixedPoints', False)
             self._xlab = r'' + kwargs.get('xlab', r'$' + r'\Phi_{' + utils._doubleUnderscorify(utils._greekPrependify(str(stateVariable1))) + '}$')
             if stateVariable2:
@@ -1539,9 +1519,9 @@ class MuMoTfieldView(MuMoTview):
             else:
                 self._showSSANoise = False
 
-            if stateVariable3 is None:
-                self._chooseXrange = kwargs.get('choose_xrange', None)
-                self._chooseYrange = kwargs.get('choose_yrange', None)
+            if stateVariable3 is not None:
+                self._chooseXrange = None
+                self._chooseYrange = None
 
             if self._controller is None:
                 # storing all values of MA-specific parameters
@@ -2200,7 +2180,7 @@ class MuMoTvectorView(MuMoTfieldView):
                                specialPoints=self._FixedPoints,
                                showFixedPoints=self._showFixedPoints,
                                ax_reformat=False, curve_replot=False,
-                               ylab=self._ylab, fontsize=self._chooseFontSize,
+                               ylab=self._ylab, fontsize=self._axes_font_size,
                                aspectRatioEqual=True,
                                choose_xrange=choose_xrange,
                                choose_yrange=choose_yrange)
@@ -2218,7 +2198,7 @@ class MuMoTvectorView(MuMoTfieldView):
                                showFixedPoints=self._showFixedPoints,
                                ax_reformat=True,
                                showPlane=self._mumotModel._constantSystemSize,
-                               fontsize=self._chooseFontSize)
+                               fontsize=self._axes_font_size)
 
         with io.capture_output() as log:
             self._appendFixedPointsToLogs(self._realEQsol, self._EV, self._Evects)
@@ -2431,7 +2411,7 @@ class MuMoTstreamView(MuMoTfieldView):
                                specialPoints=self._FixedPoints,
                                showFixedPoints=self._showFixedPoints,
                                ax_reformat=False, curve_replot=False,
-                               ylab=self._ylab, fontsize=self._chooseFontSize,
+                               ylab=self._ylab, fontsize=self._axes_font_size,
                                aspectRatioEqual=True,
                                choose_xrange=choose_xrange,
                                choose_yrange=choose_yrange)
@@ -2534,7 +2514,7 @@ class MuMoTstreamView(MuMoTfieldView):
                                showFixedPoints=self._showFixedPoints,
                                ax_reformat=True,
                                showPlane=self._mumotModel._constantSystemSize,
-                               fontsize=self._chooseFontSize)
+                               fontsize=self._axes_font_size)
 
 
 class MuMoTbifurcationView(MuMoTview):
@@ -2558,16 +2538,6 @@ class MuMoTbifurcationView(MuMoTview):
     _stateVarBif2Print = None
     # generates command for bookmark functionality
     _generatingCommand = None
-    # fontsize on figure axes
-    _chooseFontSize = None
-    # label for vertical axis
-    _LabelY = None
-    # label for horizontal axis
-    _LabelX = None
-    # displayed range for vertical axis
-    _chooseXrange = None
-    # displayed range for horizontal axis
-    _chooseYrange = None
     # maximum number of points in one continuation calculation
     _MaxNumPoints = None
     # information about the mathematical expression displayed on vertical axis; can be 'None', '+' or '-'
@@ -2607,18 +2577,14 @@ class MuMoTbifurcationView(MuMoTview):
 
         super().__init__(model=model, controller=controller, figure=figure, params=params, **kwargs)
 
-        self._chooseFontSize = kwargs.get('fontsize', None)
+        self._axes_font_size = kwargs.get('fontsize', None)
         if '-' in str(stateVarExpr1):
-            self._LabelY = kwargs.get('ylab', r'$' + r'\Phi_{' + str(stateVarExpr1)[:str(stateVarExpr1).index('-')].replace('\\\\', '\\') + '}' + '-' + r'\Phi_{' + str(stateVarExpr1)[str(stateVarExpr1).index('-') + 1:].replace('\\\\', '\\') + '}' + '$')
+            self._ylab = kwargs.get('ylab', r'$' + r'\Phi_{' + str(stateVarExpr1)[:str(stateVarExpr1).index('-')].replace('\\\\', '\\') + '}' + '-' + r'\Phi_{' + str(stateVarExpr1)[str(stateVarExpr1).index('-') + 1:].replace('\\\\', '\\') + '}' + '$')
         elif '+' in str(stateVarExpr1):
-            self._LabelY = kwargs.get('ylab', r'$' + r'\Phi_{' + str(stateVarExpr1)[:str(stateVarExpr1).index('-')].replace('\\\\', '\\') + '}' + '+' + r'\Phi_{' + str(stateVarExpr1)[str(stateVarExpr1).index('-') + 1:].replace('\\\\', '\\') + '}' + '$')
+            self._ylab = kwargs.get('ylab', r'$' + r'\Phi_{' + str(stateVarExpr1)[:str(stateVarExpr1).index('-')].replace('\\\\', '\\') + '}' + '+' + r'\Phi_{' + str(stateVarExpr1)[str(stateVarExpr1).index('-') + 1:].replace('\\\\', '\\') + '}' + '$')
         else:
-            self._LabelY = kwargs.get('ylab', r'$' + r'\Phi_{' + str(stateVarExpr1).replace('\\\\', '\\') + '}$')
-        # self._LabelY =  kwargs.get('ylab', r'$' + stateVarExpr1 +'$')
-        # self._LabelX = kwargs.get('xlab', r'$' + utils._doubleUnderscorify(utils._greekPrependify(bifurcationParameter)) +'$')
-        self._LabelX = kwargs.get('xlab', r'$' + bifurcationParameter + '$')
-        self._chooseXrange = kwargs.get('choose_xrange', None)
-        self._chooseYrange = kwargs.get('choose_yrange', None)
+            self._ylab = kwargs.get('ylab', r'$' + r'\Phi_{' + str(stateVarExpr1).replace('\\\\', '\\') + '}$')
+        self._xlab = kwargs.get('xlab', r'$' + bifurcationParameter + '$')
 
         self._MaxNumPoints = kwargs.get('contMaxNumPoints', 100)
 
@@ -3142,12 +3108,12 @@ class MuMoTbifurcationView(MuMoTview):
                 # plt.clf()
                 _fig_formatting_2D(xdata=xdata,
                                    ydata=ydata,
-                                   xlab=self._LabelX,
-                                   ylab=self._LabelY,
+                                   xlab=self._xlab,
+                                   ylab=self._ylab,
                                    specialPoints=specialPoints,
                                    eigenvalues=eigenvalues,
                                    choose_xrange=self._chooseXrange, choose_yrange=self._chooseYrange,
-                                   ax_reformat=False, curve_replot=False, fontsize=self._chooseFontSize)
+                                   ax_reformat=False, curve_replot=False, fontsize=self._axes_font_size)
 
             else:
                 self._showErrorMessage("Bifurcation diagram could not be computed. "
@@ -3301,6 +3267,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
             orientation='horizontal'
         )
         self._silent = kwargs.get('silent', False)
+        self._xlab = kwargs.get('xlab', 'time t')
+        self._ylab = kwargs.get('ylab', 'reactants')
         if not self._silent:
             display(self._progressBar)
 
@@ -3606,10 +3574,15 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 markers = [plt.Line2D([0, 0], [0, 0], color=self._colors[state], marker='s', linestyle='', markersize=10)
                            for state in sorted(self._initialState.keys(), key=str)
                            if state not in self._mumotModel._constantReactants]
-                plt.legend(markers, stateNamesLabel, loc='upper right', borderaxespad=0., numpoints=1)  # bbox_to_anchor=(0.885, 1),
-                _fig_formatting_2D(figure=self._figure, xlab='time t', ylab='reactants',
-                                   choose_xrange=(0 - padding_x, self._maxTime + padding_x),
-                                   choose_yrange=(0 - padding_y, y_max + padding_y),
+                plt.legend(markers, stateNamesLabel, loc=self._legend_loc, borderaxespad=0., numpoints=1, fontsize=self._legend_fontsize)  # bbox_to_anchor=(0.885, 1),
+                xrange = (0 - padding_x, self._maxTime + padding_x) if self._chooseXrange is None else self._chooseXrange 
+                yrange = (0 - padding_y, y_max + padding_y) if self._chooseYrange is None else self._chooseYrange 
+                _fig_formatting_2D(figure=self._figure, xlab=self._xlab, ylab=self._ylab,
+                                   choose_xrange=xrange,
+                                   choose_yrange=yrange,
+                                   #choose_xrange=choose_xrange,
+                                   #choose_yrange=self._chooseYrange,
+                                   fontsize=self._axes_font_size, 
                                    aspectRatioEqual=False, grid=True)
 
             if not fullPlot:  # If realtime-plot mode, draw only the last timestep rather than overlay all
@@ -3626,10 +3599,13 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             if self._plotProportions else currentEvo[state][-2:])
                     y_max = max(y_max, max(ytmp))
                     ydata.append(ytmp)
+                xrange = (0, self._maxTime) if self._chooseXrange is None else self._chooseXrange 
+                yrange = (0, y_max) if self._chooseYrange is None else self._chooseYrange 
                 _fig_formatting_2D(xdata=xdata, ydata=ydata, curve_replot=False,
-                                   choose_xrange=(0, self._maxTime),
-                                   choose_yrange=(0, y_max),
+                                   choose_xrange=xrange,
+                                   choose_yrange=yrange,
                                    aspectRatioEqual=False, LineThickness=2,
+                                   fontsize=self._axes_font_size, 
                                    grid=True, line_color_list=self._colors_list)
 
                 # y_max = 1.0 if self._plotProportions else self._systemSize
@@ -3712,7 +3688,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
             else:
                 xlab = r'$' + utils._doubleUnderscorify(utils._greekPrependify(str(self._finalViewAxes[0]))) + '$'
                 ylab = r'$' + utils._doubleUnderscorify(utils._greekPrependify(str(self._finalViewAxes[1]))) + '$'
-            _fig_formatting_2D(figure=self._figure, aspectRatioEqual=True, xlab=xlab, ylab=ylab)
+            _fig_formatting_2D(figure=self._figure, aspectRatioEqual=True, xlab=xlab, ylab=ylab, fontsize=self._axes_font_size,
+                               choose_xrange=self._chooseXrange, choose_yrange=self._chooseYrange)
         elif self._visualisationType == "barplot":
             self._initFigure()
 
@@ -3779,9 +3756,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
                 # stateNamesLabel = [r'$'+latex(sympy.Symbol(str(state)))+'$'
                 #                    for state in sorted(self._initialState.keys(), key=str)]
             ax.set_xticklabels(stateNamesLabel)
-            _fig_formatting_2D(figure=self._figure, xlab="reactants", ylab="population proportion"
+            _fig_formatting_2D(figure=self._figure, xlab=self._ylab, ylab="population proportion"
                                if self._plotProportions
-                               else "population size", aspectRatioEqual=False)
+                               else "population size", aspectRatioEqual=False, fontsize=self._axes_font_size)
             # @todo: to fix the choose_yrange of _fig_formatting_2D (issue #104)
             plt.ylim((0, y_max + padding_y))
         # update the figure
@@ -4147,7 +4124,7 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             stateNamesLabel = [r'$' + utils._doubleUnderscorify(utils._greekPrependify(str(sympy.Symbol(str(state))))) + '$' for state in sorted(self._initialState.keys(), key=str) if state not in self._mumotModel._constantReactants]
             # stateNamesLabel = [r'$' + latex(sympy.Symbol(str(state))) + '$' for state in sorted(self._initialState.keys(), key=str)]
             markers = [plt.Line2D([0, 0], [0, 0], color=self._colors[state], marker='o', linestyle='', markersize=10) for state in sorted(self._initialState.keys(), key=str)]
-            plt.legend(markers, stateNamesLabel, bbox_to_anchor=(1, 1), loc=2, borderaxespad=0., numpoints=1)
+            plt.legend(markers, stateNamesLabel, bbox_to_anchor=(1, 1), loc=self._legend_loc, borderaxespad=0., numpoints=1, fontsize=self._legend_fontsize)
 
         super()._updateSimultationFigure(allResults, fullPlot, currentEvo)
 
@@ -4911,25 +4888,25 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
                            marker=FPmarker, s=100, c=FPcolor)
 
     if kwargs.get('fontsize', None) is not None:
-        chooseFontSize = kwargs['fontsize']
+        axes_font_size = kwargs['fontsize']
     elif len(xlabelstr) > 40 or len(ylabelstr) > 40 or len(zlabelstr) > 40:
-        chooseFontSize = 12
+        axes_font_size = 12
     elif 31 <= len(xlabelstr) <= 40 or 31 <= len(ylabelstr) <= 40 or 31 <= len(zlabelstr) <= 40:
-        chooseFontSize = 16
+        axes_font_size = 16
     elif 26 <= len(xlabelstr) <= 30 or 26 <= len(ylabelstr) <= 30 or 26 <= len(zlabelstr) <= 30:
-        chooseFontSize = 22
+        axes_font_size = 22
     else:
-        chooseFontSize = 26
+        axes_font_size = 26
 
     ax.xaxis.labelpad = 20
     ax.yaxis.labelpad = 20
     ax.zaxis.labelpad = 20
-    ax.set_xlabel(r'' + str(xlabelstr), fontsize=chooseFontSize)
-    ax.set_ylabel(r'' + str(ylabelstr), fontsize=chooseFontSize)
+    ax.set_xlabel(r'' + str(xlabelstr), fontsize=axes_font_size)
+    ax.set_ylabel(r'' + str(ylabelstr), fontsize=axes_font_size)
     if len(str(zlabelstr)) > 1:
-        ax.set_zlabel(r'' + str(zlabelstr), fontsize=chooseFontSize, rotation=90)
+        ax.set_zlabel(r'' + str(zlabelstr), fontsize=axes_font_size, rotation=90)
     else:
-        ax.set_zlabel(r'' + str(zlabelstr), fontsize=chooseFontSize)
+        ax.set_zlabel(r'' + str(zlabelstr), fontsize=axes_font_size)
 
     for tick in ax.xaxis.get_major_ticks():
         tick.label.set_fontsize(18)
@@ -5241,22 +5218,20 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
                              ls=linestyle_list[nn], lw=LineThickness)
 
     if len(xlabelstr) > 40 or len(ylabelstr) > 40:
-        chooseFontSize = 10  # 16
+        axes_font_size = 10  # 16
     elif 31 <= len(xlabelstr) <= 40 or 31 <= len(ylabelstr) <= 40:
-        chooseFontSize = 14  # 20
+        axes_font_size = 14  # 20
     elif 26 <= len(xlabelstr) <= 30 or 26 <= len(ylabelstr) <= 30:
-        chooseFontSize = 18  # 26
+        axes_font_size = 18  # 26
     else:
-        chooseFontSize = 24  # 30
+        axes_font_size = 24  # 30
 
     if 'fontsize' in kwargs:
         if not kwargs['fontsize'] is None:
-            chooseFontSize = kwargs['fontsize']
+            axes_font_size = kwargs['fontsize']
 
-    plt.xlabel(r'' + str(xlabelstr), fontsize=chooseFontSize)
-    plt.ylabel(r'' + str(ylabelstr), fontsize=chooseFontSize)
-    # ax.set_xlabel(r''+str(xlabelstr), fontsize = chooseFontSize)
-    # ax.set_ylabel(r''+str(ylabelstr), fontsize = chooseFontSize)
+    plt.xlabel(r'' + str(xlabelstr), fontsize=axes_font_size)
+    plt.ylabel(r'' + str(ylabelstr), fontsize=axes_font_size)
 
     if figure is None or ax_reformat is True or choose_xrange is not None or choose_yrange is not None:
         if choose_xrange:
@@ -5413,19 +5388,19 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None,
         plt.yticks([])
 
     if len(xlabelstr) > 40:
-        chooseFontSize = 10  # 16
+        axes_font_size = 10  # 16
     elif 31 <= len(xlabelstr) <= 40:
-        chooseFontSize = 14  # 20
+        axes_font_size = 14  # 20
     elif 26 <= len(xlabelstr) <= 30:
-        chooseFontSize = 18  # 26
+        axes_font_size = 18  # 26
     else:
-        chooseFontSize = 24  # 30
+        axes_font_size = 24  # 30
 
     if 'fontsize' in kwargs:
         if not kwargs['fontsize'] is None:
-            chooseFontSize = kwargs['fontsize']
+            axes_font_size = kwargs['fontsize']
 
-    plt.xlabel(r'' + str(xlabelstr), fontsize=chooseFontSize)
+    plt.xlabel(r'' + str(xlabelstr), fontsize=axes_font_size)
     plt.ylabel('')
 
     if figure is None or choose_xrange is not None:

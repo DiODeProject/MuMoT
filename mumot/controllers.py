@@ -1023,6 +1023,21 @@ class MuMoTmultiController(MuMoTcontroller):
                 inputValue = kwargs.get(key)
                 ep1 = None
                 ep2 = None
+                if key == 'xlab':
+                    for controller in controllers:
+                        controller._view._xlab = kwargs.get('xlab')
+                if key == 'ylab':
+                    for controller in controllers:
+                        controller._view._ylab = kwargs.get('ylab')
+                if key == 'fontsize':
+                    for controller in controllers:
+                        controller._view._axes_font_size = kwargs.get('fontsize')
+                if key == 'legend_loc':
+                    for controller in controllers:
+                        controller._view._legend_loc = kwargs.get('legend_loc')
+                if key == 'legend_fontsize':
+                    for controller in controllers:
+                        controller._view._legend_fontsize = kwargs.get('legend_fontsize')
                 if key == 'choose_yrange':
                     for controller in controllers:
                         controller._view._chooseYrange = kwargs.get('choose_yrange')

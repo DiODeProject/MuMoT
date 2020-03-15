@@ -764,7 +764,7 @@ class MuMoTmodel:
             variables (at time t=0) sum up to 1, or not. Defaults to False.
         legend_fontsize: int, optional
             Specify fontsize of legend.  Defaults to 14.
-        legend_loc : str
+        legend_loc : str, optional
             Specify legend location: combinations like 'upper left' (default),
             'lower right', or 'center center' are allowed (9 options in total).
         fontsize : integer, optional
@@ -1461,6 +1461,18 @@ class MuMoTmodel:
            (active only for netType='dynamic') flag to plot the trajectory of each reactant. Defaults to False.
         showInteractions : bool, optional
            (active only for netType='dynamic') flag to plot the interaction range between particles. Defaults to False.
+                legend_fontsize: int, optional
+            Specify fontsize of legend.  Defaults to 14.
+        legend_loc : str, optional
+            Specify legend location: combinations like 'upper left' (default), 'lower right', or 'center center' are allowed (9 options in total).
+        fontsize : integer, optional
+            Specify fontsize for axis-labels.  If not specified, the fontsize is automatically derived from the length of axis label.
+        xlab : str, optional
+            Specify label on x-axis.   Defaults to 'time t'.
+        ylab : str, optional
+            Specify label on y-axis.   Defaults to 'reactants'.
+        choose_xrange : list of float, optional
+            Specify range plotted on x-axis as a two-element iterable of the form [xmin, xmax]. If not given uses data values to set axis limits.
         silent : bool, optional
             Switch on/off widgets and plot. Important for use with multicontrollers. Defaults to False.
 
@@ -1625,6 +1637,16 @@ class MuMoTmodel:
            Number of simulation runs to be executed. Must be strictly positive. Defaults to 1.
         aggregateResults : bool, optional
            Flag to aggregate or not the results from several runs. Defaults to True.
+        legend_loc : str, optional
+            Specify legend location: combinations like 'upper left' (default), 'lower right', or 'center center' are allowed (9 options in total).
+        fontsize : integer, optional
+            Specify fontsize for axis-labels.  If not specified, the fontsize is automatically derived from the length of axis label.
+        xlab : str, optional
+            Specify label on x-axis.   Defaults to 'time t'.
+        ylab : str, optional
+            Specify label on y-axis.   Defaults to 'reactants'.
+        choose_xrange : list of float, optional
+            Specify range plotted on x-axis as a two-element iterable of the form [xmin, xmax]. If not given uses data values to set axis limits.
         silent : bool, optional
             Switch on/off widgets and plot. Important for use with multicontrollers. Defaults to False.
 
