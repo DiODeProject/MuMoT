@@ -24,7 +24,7 @@ import matplotlib
 # Automated testing using tox could be affected as well
 # if default matplotlib backend is used
 #if sys.platform == "darwin":
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 # Guard against iopub rate limiting warnings (https://github.com/DiODeProject/MuMoT/issues/359)
 from notebook.notebookapp import NotebookApp
