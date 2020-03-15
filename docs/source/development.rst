@@ -62,13 +62,13 @@ Setting up a local development environment
 Follow the :ref:`install instructions <install>` but ensure you run:
 
 .. code:: sh
-
+   
    python3 -m pip install path/to/clone/of/MuMoT/repository[test,docs]
 
 instead of just ``python3 -m pip install path/to/clone/of/MuMoT/repository``.
 The '``[test,docs]``' bit ensures that the optional dependencies required to run tests and build the documentation are installed.
 
-If you make local changes to the MuMoT Python package and want to use the the updated package you should
+If you make local changes to the MuMoT Python package and want to use the updated package you should:
 
 #. Re-install the package within your conda environment or virtualenv (without upgrading MuMoT's dependencies):
 
@@ -87,7 +87,7 @@ Test suite
 ^^^^^^^^^^
 
 Testing of MuMoT is currently very basic; 
-the test suite only checks that certain Jupyter Notebooks run without failing i.e. there are nno checks for correctness of results.
+the test suite only checks that certain Jupyter Notebooks run without failing i.e. there are no checks for correctness of results.
 However, there is a framework in place to allow more tests to be written:
 
 * **Unit tests**: run by pointing pytest_ at the ``tests/`` directory; also generates a code coverage data using pytest-cov_; *no tests implemented yet*.
@@ -130,7 +130,7 @@ To locally run the MuMoT test suite in an isolated Python environment
       cd path/to/clone/of/MuMoT/repository
       tox
 
-   This parses the ``tox.ini`` file then
+   This parses the ``tox.ini`` file then:
     
     #. Creates a new virtualenv_ (Python virtual environment) containing just 
 
