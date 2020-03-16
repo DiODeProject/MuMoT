@@ -547,13 +547,18 @@ class MuMoTmultiView(MuMoTview):
         self._views = views
         self._controllers = controllers
         self._subPlotNum = subPlotNum
-        for view in self._views:
+        self._shareAxes = kwargs.get('shareAxes', False)
+        for i, view in enumerate(self._views):
             view._figure = self._figure
             view._figureNum = self._figureNum
             view._setLog(self._logs)
             view._controller = controller
-        self._shareAxes = kwargs.get('shareAxes', False)
-        if not(self._shareAxes):
+            # MuMoTstochasticSimulationView could be run with the option realtimePlot, this would work only if:
+            # * this view is the first of the list of views (so that realtimePlot will not erase previous plots)
+            # * the multiController has shareAxes==False, in which case the update will happen only on the view subplot 
+            if isinstance(view, MuMoTstochasticSimulationView) and self._shareAxes and i>0:
+                view._allowRealtimePlotting = False
+        if not self._shareAxes:
             self._numColumns = consts.MULTIPLOT_COLUMNS
             self._numRows = math.ceil(self._subPlotNum / self._numColumns)
             plt.gcf().set_size_inches(9, 4.5)
@@ -3254,6 +3259,8 @@ class MuMoTstochasticSimulationView(MuMoTview):
     _evo = None
     # progress bar
     _progressBar = None
+    # variable that is set to False only by the multiController managing this view (when shareAxes == True and not first view to be run)
+    _allowRealtimePlotting = True
 
     def __init__(self, model, controller, SSParams, figure=None, params=None, **kwargs):
         # Loading bar (useful to give user progress status for long executions)
@@ -3343,6 +3350,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             self._show_computation_start()
             self._update_params()
             self._log("Stochastic Simulation")
+            if not self._allowRealtimePlotting: self._realtimePlot = False # if realtimePlot is not allowed, then the _realtimePlot param is forced to False (regardless the widget or input value)
             # if you need to access the standalone view, you can use the
             # command self._printStandaloneViewCmd(), this is very useful for
             # developer and advanced users as indicated in issue #92
@@ -3762,7 +3770,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
             # @todo: to fix the choose_yrange of _fig_formatting_2D (issue #104)
             plt.ylim((0, y_max + padding_y))
         # update the figure
-        if not self._silent:
+        if not self._silent or self._realtimePlot:
             self._figure.canvas.draw()
 
     def _redrawOnly(self, _=None):
@@ -3773,9 +3781,9 @@ class MuMoTstochasticSimulationView(MuMoTview):
         #     self._updateSimultationFigure(results, fullPlot=True)
 
     def _initFigure(self):
-        if not self._silent:
+        if not self._silent or self._realtimePlot:
             plt.figure(self._figureNum)
-            plt.clf()
+            plt.cla()
 
         if (self._visualisationType == 'evo'):
             pass
