@@ -33,11 +33,11 @@ from sympy.parsing.latex import parse_latex
 
 # Set package version.
 # NB with Python 3.8 we could use importlib.metadata (in std lib) instead.
-from importlib_metadata import version, PackageNotFoundError
+from pkg_resources import get_distribution, DistributionNotFound
 try:
-    __version__ = version(__name__)
-except PackageNotFoundError:
-    # package is not installed
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:
+     # package is not installed
     pass
 
 # Import the functions and classes we wish to export i.e. the public API
