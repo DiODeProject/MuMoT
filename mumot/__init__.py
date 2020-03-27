@@ -31,8 +31,16 @@ from notebook.notebookapp import NotebookApp
 NotebookApp.iopub_msg_rate_limit = 10000.0
 from sympy.parsing.latex import parse_latex
 
+# Set package version.
+# NB with Python 3.8 we could use importlib.metadata (in std lib) instead.
+from pkg_resources import get_distribution, DistributionNotFound
+try:
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:
+     # package is not installed
+    pass
+
 # Import the functions and classes we wish to export i.e. the public API
-from ._version import __version__
 from .models import (
     MuMoTmodel,
     parseModel,

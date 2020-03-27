@@ -52,7 +52,7 @@ If you want to contribute a feature or fix a bug then:
       Automated tests will then run against your branch (using Travis) 
       and your code will be reviewed by the core development team, 
       after which your changes will be merged into the main MuMoT repository *or* 
-      you will be asked to make futher changes to your branch.
+      you will be asked to make further changes to your branch.
 
 .. _testing:
 
@@ -62,13 +62,13 @@ Setting up a local development environment
 Follow the :ref:`install instructions <install>` but ensure you run:
 
 .. code:: sh
-
+   
    python3 -m pip install path/to/clone/of/MuMoT/repository[test,docs]
 
 instead of just ``python3 -m pip install path/to/clone/of/MuMoT/repository``.
 The '``[test,docs]``' bit ensures that the optional dependencies required to run tests and build the documentation are installed.
 
-If you make local changes to the MuMoT Python package and want to use the the updated package you should
+If you make local changes to the MuMoT Python package and want to use the updated package you should:
 
 #. Re-install the package within your conda environment or virtualenv (without upgrading MuMoT's dependencies):
 
@@ -87,7 +87,7 @@ Test suite
 ^^^^^^^^^^
 
 Testing of MuMoT is currently very basic; 
-the test suite only checks that certain Jupyter Notebooks run without failing i.e. there are nno checks for correctness of results.
+the test suite only checks that certain Jupyter Notebooks run without failing i.e. there are no checks for correctness of results.
 However, there is a framework in place to allow more tests to be written:
 
 * **Unit tests**: run by pointing pytest_ at the ``tests/`` directory; also generates a code coverage data using pytest-cov_; *no tests implemented yet*.
@@ -130,7 +130,7 @@ To locally run the MuMoT test suite in an isolated Python environment
       cd path/to/clone/of/MuMoT/repository
       tox
 
-   This parses the ``tox.ini`` file then
+   This parses the ``tox.ini`` file then:
     
     #. Creates a new virtualenv_ (Python virtual environment) containing just 
 
@@ -299,11 +299,23 @@ In this project the use of branches and git tags is as follows:
  - The ``master`` branch is the only long-lived *active* branch
  - New features are developed by creating **feature branches** from the ``master`` branch;
    these feature branches are then ultimately merged back into ``master`` via Pull Requests then deleted.
+ - Changes in patch, major and minor versions are defined **solely** by 
+   creating an `annotated tag <https://git-scm.com/book/en/v2/Git-Basics-Tagging>`__ 
+   for a particular commit.  
+   The name of this tag should be of the form ``v<major>.<minor>.<patch>`` 
+   i.e the version preceded by a ``v``.
+   **The version does not need to then be specified anywhere in the code
+   (other than in links to mybinder in the Sphinx docs)**: 
+   whenever an installable release of MuMoT is created
+   the `setuptools_scm <https://pypi.org/project/setuptools-scm/>`__ package
+   will embed version information using the most recent tag on the current branch
+   plus extra information derived from the output of ``git describe`` 
+   if the most recent commit does not have an annotated tag associated with it.
 
 To create a release:
 
 #. Decide on the type of the next release (patch, major or minor), 
-   which depends on the nature of the changes.
+   which depends on the nature of the changes. 
 
 #. (Related) determine the appropriate version number for this pending release.
 
@@ -313,29 +325,15 @@ To create a release:
    are reassigned to a different Milestone.
    Ensure all pull requests against ``master`` relating to the pending Milestone have been merged and all CI tests pass.
 
-#. Create a pull request against ``master`` to bump the version in ``mumot/_version.py`` from e.g.
+#. If necessary, create a pull request against ``master`` to change the version in links to mybinder e.g. in
 
-   .. code-block:: python
-   
-      version_info = (0, 8, 0, 'dev')
-        __version__ = "{}.{}.{}-{}".format(*version_info)
-   
-   to e.g.
-   
-   .. code-block:: python
-   
-      version_info = (0, 9, 0)
-        __version__ = "{}.{}.{}".format(*version_info)
+      .. code-block::
 
-   Package versions (``setup.py``) and 
-   the version info in rendered Sphinx docs 
-   are automatically set using this variable.
-   Ensure that the version number uses only digits,
-   to comply with PyPI naming restrictions.
+         https://mybinder.org/v2/gh/DiODeProject/MuMoT/VERSION?filepath=docs%2FMuMoTuserManual.ipynb
 
-   Also, update the MuMoT version in all mybinder.org URLs in the README and Sphinx docs:
-   they should, in this case, contain ``v0.9.0`` (note the extra '``v``').
-
+   ensure ``VERSION`` is ``master`` or 
+   a particular current or future tagged version, preceded by a ``v`` e.g. ``v0.9.0``.
+   
    Also, check update citation info (including the DOI and contributors) for this pending release
    in ``docs/source/about.rst``.
 
@@ -345,13 +343,14 @@ To create a release:
    then you can see the first line of all commit comments since then with: ::
 
       $ git checkout master
-      $ git log --pretty=oneline --abbrev-commit v0.9.0..HEAD
+      $ git log --pretty=oneline --abbrev-commit v0.8.0..HEAD
 
    then: ::
 
-      $ git commit -a -m "Bumped version number to 0.9.0"
+      $ git commit -a -m "Preparing for release of version 0.9.0"
       
-   and create the Pull Request.
+   where 0.9.0 is the version of the new release.
+   Next, create the Pull Request.
    
 #. Merge this Pull Request into ``master`` then create an *annotated tag*: ::
 
@@ -362,7 +361,8 @@ To create a release:
       $ git push upstream --tags
       $ git push
 
-   Here we assume that you've set up your local git repository with a remote called ``upstream`` that points at ``github.com/DiODeProject/MuMoT.git`` e.g. ::
+   Here we assume that you've set up your local git repository with a remote called ``upstream`` 
+   that points at ``github.com/DiODeProject/MuMoT.git`` e.g. ::
 
       $ git remote -v
       origin	git@github.com:willfurnass/MuMoT.git (fetch)
@@ -370,7 +370,8 @@ To create a release:
       upstream	git@github.com:DiODeProject/MuMoT.git (fetch)
       upstream	git@github.com:DiODeProject/MuMoT.git (push)
 
-   NB annotated tags are are often used within git repositories to identify the commits corresponding to particular releases.
+   NB annotated tags are are often used within git repositories to identify 
+   the commit corresponding to a particular release.
 
 #. The pushing of a tagged commit to ``github.com:DiODeProject/MuMoT.git`` causes Travis to:
 
@@ -379,7 +380,6 @@ To create a release:
 
       * A binary 'wheel' package e.g. ``mumot-0.9.0-py3-none-any.whl``
       * A source package e.g. ``mumot-0.9.0.tar.gz``
-
 
    #. Upload these files to `PyPI <https://pypi.org/account/register/>`__ 
       using environment variables stored as encrypted credentials in this Travis project.
@@ -392,22 +392,6 @@ To create a release:
    
    * The release being referenceable/citable by DOI_.
    * The release being discoverable via the University's Library Catalogue.
-
-#. Finally, bump the version info on the ``master`` branch (not the ``release-...`` branch) by updating ``mumot/_version`` from e.g.
-
-   .. code-block:: python
-   
-      version_info = (0, 8, 0, 'dev')
-        __version__ = "{}.{}.{}-{}".format(*version_info)
-   
-   to e.g.
-   
-   .. code-block:: python
-   
-      version_info = (0, 9, 0, 'dev')
-        __version__ = "{}.{}.{}-{}".format(*version_info)
-
-   then merge this into ``master``.
 
 .. 
    https://github.com/scikit-learn/scikit-learn/wiki/How-to-make-a-release
