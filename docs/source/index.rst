@@ -23,5 +23,6 @@ MuMoT (Multiscale Modelling Tool) is a tool designed to allow sophisticated math
    getting_started
    install
    about
+   faq
    development
    api
