@@ -15,30 +15,22 @@ Windows Compatibility:
 Renato Pagliara Vasquez
 """
 
-import sys
-
-import matplotlib
-# If operating system is macOS use a non-default matplotlib backend
-# otherwise rendering of images might not be correct
-# (e.g. superfluous figures when sliders are moved).
-# Automated testing using tox could be affected as well
-# if default matplotlib backend is used
-#if sys.platform == "darwin":
-#matplotlib.use('TkAgg')
-from matplotlib import pyplot as plt
-# Guard against iopub rate limiting warnings (https://github.com/DiODeProject/MuMoT/issues/359)
-from notebook.notebookapp import NotebookApp
-NotebookApp.iopub_msg_rate_limit = 10000.0
-from sympy.parsing.latex import parse_latex
-
 # Set package version.
 # NB with Python 3.8 we could use importlib.metadata (in std lib) instead.
 from pkg_resources import get_distribution, DistributionNotFound
 try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
-     # package is not installed
+    # package is not installed
     pass
+import sys
+
+import matplotlib
+from matplotlib import pyplot as plt
+# Guard against iopub rate limiting warnings (https://github.com/DiODeProject/MuMoT/issues/359)
+from notebook.notebookapp import NotebookApp
+NotebookApp.iopub_msg_rate_limit = 10000.0
+from sympy.parsing.latex import parse_latex
 
 # Import the functions and classes we wish to export i.e. the public API
 from .models import (
