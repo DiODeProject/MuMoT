@@ -2,7 +2,7 @@
 
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=docs%2FMuMoTuserManual.ipynb)
 [![PyPI version](https://badge.fury.io/py/mumot.svg)](https://badge.fury.io/py/mumot)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mumot)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mumot.svg)
 
 [![Build Status](https://api.travis-ci.org/DiODeProject/MuMoT.svg?branch=master)](https://travis-ci.org/DiODeProject/MuMoT/branches)
 [![Documentation Status](https://readthedocs.org/projects/mumot/badge/?version=latest)](https://mumot.readthedocs.io/en/latest/?badge=latest)
