@@ -1,8 +1,9 @@
 # MuMoT: Multiscale Modelling Tool
 
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/DiODeProject/MuMoT/master?filepath=docs%2FMuMoTuserManual.ipynb)
-[![PyPI version](https://badge.fury.io/py/mumot.svg)](https://badge.fury.io/py/mumot)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mumot)
+[![](https://img.shields.io/pypi/v/mumot.svg)](https://pypi.org/pypi/mumot/)
+[![](https://img.shields.io/pypi/pyversions/mumot.svg)](https://pypi.org/pypi/mumot/)
+[![](https://img.shields.io/pypi/l/mumot.svg)](https://pypi.org/pypi/mumot/)
 
 [![Build Status](https://api.travis-ci.org/DiODeProject/MuMoT.svg?branch=master)](https://travis-ci.org/DiODeProject/MuMoT/branches)
 [![Documentation Status](https://readthedocs.org/projects/mumot/badge/?version=latest)](https://mumot.readthedocs.io/en/latest/?badge=latest)
