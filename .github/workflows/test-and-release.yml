@@ -16,9 +16,8 @@ jobs:
         python: [3.6, 3.7, 3.8]
 
     steps:
-      - name: Checkout this git repo
-        uses: actions/checkout@v2
-        run: |
+      - uses: actions/checkout@v2
+      - run: |
           git fetch --tags --prune --unshallow
 
       - name: Install LaTeX and GraphViz OS packages
@@ -37,7 +36,7 @@ jobs:
 
       - name: Capture coverage data
         run: codecov
-        if: python-version == '3.8'
+        if: matrix.python == '3.8'
 
       - name: Build binary wheel and source distributions
         run: python setup.py bdist_wheel sdist 
