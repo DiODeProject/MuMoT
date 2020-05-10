@@ -21,7 +21,7 @@ jobs:
         run: |
           git fetch --tags --prune --unshallow
 
-      - name: install LaTeX and GraphViz OS packages
+      - name: Install LaTeX and GraphViz OS packages
         run: sudo apt-get install -y texlive texlive-latex-extra graphviz dvipng
       - name: Set up Python
         uses: actions/setup-python@v2
