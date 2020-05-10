@@ -5,7 +5,7 @@
 [![](https://img.shields.io/pypi/pyversions/mumot.svg)](https://pypi.org/pypi/mumot/)
 [![](https://img.shields.io/pypi/l/mumot.svg)](https://pypi.org/pypi/mumot/)
 
-![.github/workflows/test-and-release.yml](https://github.com/DiODeProject/MuMoT/workflows/.github/workflows/test-and-release.yml/badge.svg?branch=master)
+![test_and_upload_distribution](https://github.com/DiODeProject/MuMoT/workflows/test_and_upload_distribution/badge.svg?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/mumot/badge/?version=latest)](https://mumot.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://codecov.io/github/DiODeProject/MuMoT/coverage.svg?branch=master)](https://codecov.io/gh/DiODeProject/MuMoT)
 
