@@ -1,37 +1,41 @@
 name: test_and_upload_distribution
 on:
+  # Trigger on tagged pushes to the master branch
   push:
     branches:
       - master
     tags:
-    - 'v*'
+      - 'v*'
+  # Or on pull requests against the master branch
   pull_request:
     branches:
       - master
 jobs:
-  build-and-deploy:
+  test_and_upload_distr_job:
     runs-on: ubuntu-latest
     strategy:
+      # Spawn and run a job for each of three supported Python 3.x versions
       matrix:
         python: [3.6, 3.7, 3.8]
 
     steps:
       - uses: actions/checkout@v2
-      - run: |
+      - name: Do non-shallow checkout to get all commits as needed if using setuptools_scm
+        run: |
           git fetch --tags --prune --unshallow
 
-      - name: Install LaTeX and GraphViz OS packages
+      - name: Install MuMoT OS package dependencies
         run: sudo apt-get install -y texlive texlive-latex-extra graphviz dvipng
-      - name: Set up Python
+      - name: Set up a version of Python
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
-      - name: Upgrade pip and install tox, codecov and twine
+      - name: Upgrade pip and install generic Python build and test tools
         run: |
           python -m pip install --upgrade pip
           python -m pip install tox codecov setuptools wheel twine setuptools_scm
 
-      - name: Run all tests using Tox
+      - name: Run tests using tox
         run: tox -e py
 
       - name: Capture coverage data
@@ -40,14 +44,14 @@ jobs:
 
       - name: Build binary wheel and source distributions
         run: python setup.py bdist_wheel sdist 
-      - name: Publish distributions to Test PyPI
-        if: (success() && github.event_name == 'push') || startsWith(github.event.ref, 'refs/tags')
+      - name: Publish distributions to Test PyPI if this is a tagged commit
+        if: success() && github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.test_pypi_password }}
         run: twine upload --repository testpypi dist/*
       - name: Publish distributions to PyPI if this is a tagged commit
-        if: (success() && github.event_name == 'push') && startsWith(github.event.ref, 'refs/tags')
+        if: success() && github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_password }}
