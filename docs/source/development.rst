@@ -25,7 +25,7 @@ If you want to contribute a feature or fix a bug then:
    See the *branch and versioning policy* below for more information about how branches, tags and versions are managed in this project.
 #. Make commits to that branch:
 
-   * Style: write code using `standard Python naming conventions <pep8>`.
+   * Style: write code using `standard Python naming conventions <pep8>`_.
    * Testing: if you add new features, fix bug(s) or change existing functionality:
 
      * Add (lower-level) `unit tests <https://en.wikipedia.org/wiki/Unit_testing>`__ to 
@@ -156,11 +156,9 @@ Automated testing using Travis CI
 
 Each `Pull Request`_ against the `MuMoT GitHub repository`_ and 
 each push to the ``master`` branch in that repository 
-trigger a `Continuous Integration <travis_intro>` (CI) job
-on the `travis-ci.org <travis_intro>` platform 
-(a service that is free for open-source projects).
+trigger a `GitHub Actions Continuous Integration <gh_actions_intro>` (CI) workflow.
 
-Each job 
+Each invocation of the workflow 
 runs a set of user-defined tasks in an isolated execution  environment, 
 logs output from those tasks, 
 quits early if an error is encountered
