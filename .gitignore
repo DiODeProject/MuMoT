@@ -1,4 +1,5 @@
 # general things to ignore
+.DS_Store
 build/
 dist/
 *.egg-info/
@@ -25,3 +26,4 @@ docs/_build
 .idea/
 .mypy_cache
 docs/source/autosummary
+.python-version
