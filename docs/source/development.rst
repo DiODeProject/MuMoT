@@ -401,7 +401,7 @@ To create a release:
 
    For example: ::
 
-      git archive v1.2.0 | gzip > mumot-v1.2.0.tar.gz
+      git archive v1.2.1 | gzip > mumot-v1.2.1.tar.gz
    
 #. Publish the item in ORDA to ensure:
 
