@@ -52,10 +52,10 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.test_pypi_password }}
         run: |
           twine check dist/*
-          twine upload --repository testpypi dist/*
+          twine upload --skip-existing --repository testpypi dist/*
       - name: Publish distributions to PyPI if this is a tagged commit
         if: success() && github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_password }}
-        run: twine upload dist/*
+        run: twine upload --skip-existing dist/*
