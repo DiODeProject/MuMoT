@@ -1,6 +1,6 @@
 # MuMoT: Multiscale Modelling Tool
 
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/DiODeProject/MuMoT/v1.2.1?filepath=docs%2FMuMoTuserManual.ipynb)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/DiODeProject/MuMoT/v1.2.2?filepath=docs%2FMuMoTuserManual.ipynb)
 [![](https://img.shields.io/pypi/v/mumot.svg)](https://pypi.org/pypi/mumot/)
 [![](https://img.shields.io/pypi/pyversions/mumot.svg)](https://pypi.org/pypi/mumot/)
 [![](https://img.shields.io/pypi/l/mumot.svg)](https://pypi.org/pypi/mumot/)
