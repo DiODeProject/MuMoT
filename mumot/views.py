@@ -3785,10 +3785,12 @@ class MuMoTstochasticSimulationView(MuMoTview):
             plt.figure(self._figureNum)
             plt.cla()
 
+        ax = plt.gca()
         if (self._visualisationType == 'evo'):
-            pass
+            ax.set_aspect('auto')
         elif (self._visualisationType == "final"):
             # plt.axes().set_aspect('equal')
+            ax.set_aspect('equal')
             if self._plotProportions:
                 plt.xlim((0, 1.0))
                 plt.ylim((0, 1.0))
@@ -3800,7 +3802,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
         elif (self._visualisationType == "barplot"):
             # plt.axes().set_aspect('equal') # for piechart
             # plt.axes().set_aspect('auto') # for barchart
-            pass
+            ax.set_aspect('auto')
 
     def _convertLatestDataIntoCSV(self):
         """Formatting of the latest simulation data in the CSV format"""
