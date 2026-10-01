@@ -1751,11 +1751,11 @@ class MuMoTfieldView(MuMoTview):
                     vec3 = EvectsPlot[nn][0]
                     vec3norm = vec3.norm()
                     vec3 = vec3 / vec3norm
-                    if vec2norm >= vec3norm:
-                        angle_ell = sympy.acos(vec1.dot(vec2) / (vec1.norm() * vec2.norm())).evalf()
-                    else:
-                        angle_ell = sympy.acos(vec1.dot(vec3) / (vec1.norm() * vec3.norm())).evalf()
-                    angle_ell = angle_ell.evalf()
+                    vec = vec2 if vec2norm >= vec3norm else vec3
+                    # cosine of the angle; discard round-off (imaginary parts, |cos| > 1)
+                    # that would otherwise give a complex angle
+                    cos_ell = sympy.re((vec1.dot(vec) / (vec1.norm() * vec.norm())).evalf())
+                    angle_ell = sympy.acos(max(-1, min(1, cos_ell))).evalf()
                     projection_angle_list.append(angle_ell)
                     angle_ell_deg = 180 * angle_ell / (sympy.pi).evalf()
                     angle_ell_list.append(round(angle_ell_deg, 5))
@@ -4191,7 +4191,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             except ValueError:
                 pass
         if resetValueAndRange:
-            self._controller._widgetsExtraParams['netParam'].max = float("inf")  # temp to avoid min > max exception
+            # temporarily raise max to avoid min > max exception (the new min is at most 1;
+            # max must stay finite as widget state must be JSON-serialisable)
+            self._controller._widgetsExtraParams['netParam'].max = max(
+                self._controller._widgetsExtraParams['netParam'].max, 1)
         if (self._netType == consts.NetworkType.FULLY_CONNECTED):
             # self._controller._widgetsExtraParams['netParam'].min = 0
             # self._controller._widgetsExtraParams['netParam'].max = 1
