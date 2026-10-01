@@ -31,29 +31,31 @@ dependencies = [
     # sympy's LaTeX parser only works with the antlr4 runtime release that
     # matches the version its grammar was generated with (4.11 for sympy >=1.12)
     "antlr4-python3-runtime==4.11.*",
-    "graphviz",
-    "ipykernel",
-    "ipympl",
-    "ipython",
-    "ipywidgets",
-    "matplotlib",
-    "networkx",
-    "numpy",
-    "scipy",
+    # Lower bounds only (no upper bounds): the oldest versions with the APIs
+    # MuMoT relies on, tested in CI with `uv pip install --resolution lowest-direct`
+    "graphviz>=0.20",
+    "ipykernel>=6.0",
+    "ipympl>=0.9",
+    "ipython>=8.0",
+    "ipywidgets>=8.0",
+    "matplotlib>=3.6",
+    "networkx>=2.8",
+    "numpy>=1.23",
+    "scipy>=1.9",
     "sympy>=1.12",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 test = [
-    "pytest",
-    "pytest-cov",
-    "nbval",
-    "nbdime",
-    "notebook",
+    "pytest>=7",
+    "pytest-cov>=4",
+    "nbval>=0.10",
+    "nbdime>=3",
+    "notebook>=7",
 ]
 docs = [
-    "sphinx",
+    "sphinx>=5",
 ]
 
 [project.urls]

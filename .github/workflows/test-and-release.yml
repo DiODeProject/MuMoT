@@ -11,6 +11,25 @@ on:
     branches:
       - master
 jobs:
+  # Check the lower bounds in pyproject.toml are still accurate by testing
+  # against the oldest allowed version of each direct dependency
+  minimum_versions_job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.10'
+      - name: Install oldest allowed dependencies
+        run: |
+          uv venv
+          uv pip install --resolution lowest-direct ".[test]"
+          uv pip check
+      - name: Run unit tests
+        run: uv run --no-sync pytest --verbose tests
+
   test_and_upload_distr_job:
     runs-on: ubuntu-latest
     strategy:
