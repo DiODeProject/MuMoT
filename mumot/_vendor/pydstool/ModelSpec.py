@@ -20,8 +20,8 @@ from .Symbolic import *
 
 from math import *
 from .utils import *
-from numpy import Inf, NaN, isfinite,  mod, sum
-from numpy import sometrue, alltrue
+from numpy import inf as Inf, nan as NaN, isfinite, mod, sum
+from numpy import any as sometrue, all as alltrue
 from copy import copy, deepcopy
 import math, random
 

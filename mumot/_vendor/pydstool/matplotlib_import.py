@@ -5,16 +5,13 @@
 """
 
 
-from numpy import Inf, NaN, isfinite, int, int8, int16, int32, int64, float, float32, float64
+from numpy import (
+    inf as Inf, nan as NaN, isfinite, int8, int16, int32, int64, float32,
+    float64
+)
 try:
-    import matplotlib
-    ver = matplotlib.__version__.split(".")
-    if int(ver[0]) == 0 and int(ver[1]) < 65:
-        import matplotlib.matlab as plt
-        from matplotlib.matlab import *
-    else:
-        import matplotlib.pyplot as plt
-        from matplotlib.pyplot import *
+    import matplotlib.pyplot as plt
+    from matplotlib.pyplot import *
 except RuntimeError as err:
     if str(err) == 'could not open display':
         failed=True

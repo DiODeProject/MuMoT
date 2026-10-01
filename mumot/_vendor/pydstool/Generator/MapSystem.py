@@ -7,16 +7,18 @@
 from .allimports import *
 from .baseclasses import Generator, discGen, theGenSpecHelper, \
      auxfn_container, _pollInputs
-from PyDSTool.utils import *
-from PyDSTool.common import *
-from PyDSTool.Variable import Variable
-from PyDSTool.Trajectory import Trajectory
-from PyDSTool.Points import Pointset
-from PyDSTool.Interval import uncertain
+from ..utils import *
+from ..common import *
+from ..Variable import Variable
+from ..Trajectory import Trajectory
+from ..Points import Pointset
+from ..Interval import uncertain
 
 # Other imports
-from numpy import Inf, NaN, isfinite, sometrue, alltrue, array, transpose, \
-     concatenate
+from numpy import (
+    inf as Inf, nan as NaN, isfinite, any as sometrue, all as alltrue, array,
+    transpose, concatenate
+)
 import math
 import random
 import types

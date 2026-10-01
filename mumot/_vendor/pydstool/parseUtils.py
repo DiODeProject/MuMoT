@@ -12,10 +12,11 @@ from .errors import *
 from .common import *
 import re
 import math, random
-from numpy import alltrue, sometrue
+from numpy import all as alltrue, any as sometrue
 import numpy as np
 from copy import copy, deepcopy
-import parser, symbol, token
+import token
+from ._cst import expr_tolist
 
 # --------------------------------------------------------------------------
 # GLOBAL BEHAVIOUR CONTROLS -- leave both as True for use with PyDSTool.
@@ -32,7 +33,7 @@ DO_DEC=True
 protected_numpynames = ['arcsin', 'arccos', 'arctan', 'arctan2',
                            'arccosh', 'arcsinh', 'arctanh']
 # scipy special functions
-scipy_specialfns = ['airy', 'airye', 'ai_zeros', 'bi_zeros', 'ellipj',
+_scipy_specialfns_all = ['airy', 'airye', 'ai_zeros', 'bi_zeros', 'ellipj',
             'ellipk', 'ellipkinc', 'ellipe', 'ellipeinc', 'jn',
             'jv', 'jve', 'yn', 'yv', 'yve', 'kn', 'kv', 'kve',
             'iv', 'ive', 'hankel1', 'hankel1e', 'hankel2',
@@ -80,6 +81,10 @@ scipy_specialfns = ['airy', 'airye', 'ai_zeros', 'bi_zeros', 'ellipj',
             'sici', 'spence', 'zeta', 'zetac', 'cbrt', 'exp10',
             'exp2', 'radian', 'cosdg', 'sindg', 'tandg', 'cotdg',
             'log1p', 'expm1', 'cosm1', 'round']
+# Only keep the special functions that the installed scipy still provides
+import scipy.special as _scipy_special
+scipy_specialfns = [_fn for _fn in _scipy_specialfns_all
+                    if hasattr(_scipy_special, _fn)]
 protected_scipynames = ['sign', 'mod']
 protected_specialfns = ['special_'+s for s in scipy_specialfns]
 protected_mathnames = [s for s in dir(math) if not s.startswith('__')]
@@ -184,9 +189,10 @@ _indentstr = "    "
 # This section: code by Pearu Peterson, adapted by Ryan Gutenkunst
 #   and Robert Clewley.
 
-syms=token.tok_name
-for s in symbol.sym_name.keys():
-    syms[s]=symbol.sym_name[s]
+# The concrete syntax trees used below were originally produced by the
+# `parser` module (removed in Python 3.10) and use grammar symbol names; they
+# are now produced by `expr_tolist`, which emits the names directly.
+syms = dict(token.tok_name)
 
 
 def mapPowStr(t, p='**'):
@@ -408,7 +414,6 @@ def splitargs(da, lbraces=['('], rbraces=[')']):
     return ll
 
 def ast2shortlist(t):
-    if type(t) is parser.STType: return ast2shortlist(t.tolist())
     if not isinstance(t, list): return t
     if t[1] == '': return None
     if not isinstance(t[1], list): return t
@@ -422,16 +427,14 @@ def ast2shortlist(t):
     return [t[0]]+o
 
 def sym2name(t):
-    if type(t) is parser.STType: return sym2name(t.tolist())
     if not isinstance(t, list): return t
-    return [syms[t[0]]]+list(map(sym2name,t[1:]))
+    return [syms.get(t[0], t[0])]+list(map(sym2name,t[1:]))
 
 def string2ast(t):
-    return sym2name(ast2shortlist(parser.expr(t)))
+    return ast2shortlist(expr_tolist(t))
 
 def ast2string(t):
     #if isinstance(t, str): return t
-    if type(t) is parser.STType: return ast2string(t.tolist())
     if not isinstance(t, list): return None
     if not isinstance(t[1], list): return t[1]
     o=''

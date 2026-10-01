@@ -24,15 +24,17 @@
 
 
 from .misc import *
-from PyDSTool.common import args, copy
+from ..common import args, copy
 
 from numpy.linalg import cond
 from scipy import optimize, linalg
 from numpy import dot as matrixmultiply
-from numpy import array, float, complex, int, float64, complex64, int32, \
-     zeros, divide, subtract, any, argsort, product, Inf, NaN, isfinite, \
-     r_, c_, sign, mod, subtract, divide, transpose, eye, real, imag, \
-     conjugate, shape, reshape, sqrt, random, spacing
+from numpy import (
+    array, float64, complex64, int32, zeros, divide, subtract, any, argsort,
+    prod as product, inf as Inf, nan as NaN, isfinite, r_, c_, sign, mod,
+    subtract, divide, transpose, eye, real, imag, conjugate, shape, reshape,
+    sqrt, random, spacing
+)
 from numpy.random import random
 
 #####

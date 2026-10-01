@@ -41,24 +41,26 @@ from .TestFunc import *
 from .BifPoint import *
 from .Plotting import *
 
-from PyDSTool import Point, Pointset, PointInfo, args
-from PyDSTool.common import pickle, sortedDictValues, sortedDictKeys
-from PyDSTool.errors import *
-from PyDSTool.Symbolic import QuantSpec
+from .. import Point, Pointset, PointInfo, args
+from ..common import pickle, sortedDictValues, sortedDictKeys
+from ..errors import *
+from ..Symbolic import QuantSpec
 try:
-    from PyDSTool.matplotlib_import import *
+    from ..matplotlib_import import *
 except ImportError:
-    from PyDSTool.matplotlib_unavailable import *
+    from ..matplotlib_unavailable import *
     print("Warning: matplotlib failed to import properly and so is not")
     print("  providing a graphing interface")
 
 from numpy.random import random
 from numpy import dot as matrixmultiply
 from scipy import optimize, linalg
-from numpy import array, float, complex, int, float64, complex64, int32, \
-    zeros, divide, subtract, arange, all, any, argsort, reshape, nonzero, \
-    log10, Inf, NaN, isfinite, r_, c_, sign, mod, mat, log2, \
-    subtract, divide, transpose, eye, real, imag, isnan, resize
+from numpy import (
+    array, float64, complex64, int32, zeros, divide, subtract, arange, all,
+    any, argsort, reshape, nonzero, log10, inf as Inf, nan as NaN, isfinite,
+    r_, c_, sign, mod, asmatrix as mat, log2, subtract, divide, transpose, eye, real, imag,
+    isnan, resize
+)
 from numpy.linalg import cond # not present in scipy.linalg!
 
 from copy import copy, deepcopy
@@ -412,14 +414,14 @@ class Continuation(object):
         for bftype in self.LocBifPoints:
             if bftype in cont_bif_points:
                 stop = bftype in self.StopAtPoints  # Set stopping flag
-                #if bftype is 'BP':
+                #if bftype == 'BP':
                     #method = Branch_Det(self.CorrFunc, self, save=True,
                                         #numpoints=self.MaxNumPoints+1)
                     #self.TestFuncs.append(method)
 
                     #self.BifPoints['BP'] = BranchPoint(method, iszero,
                                                        #stop=stop)
-                if bftype is 'B':
+                if bftype == 'B':
                     method = B_Check(self.CorrFunc, self, save=True,
                                      numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
@@ -851,7 +853,12 @@ class Continuation(object):
                 cond = s[0]/s[-1]
                 diag.cond.append(cond)
                 print("    Log(Condition #) = %lf" % log10(cond))
-            WX = linalg.solve(B,mat([R,Q]).T)
+            try:
+                WX = linalg.solve(B, c_[R, Q])
+            except linalg.LinAlgError:
+                # B is exactly singular (e.g. when starting at a branch
+                # point): use the minimum-norm least-squares solution
+                WX = linalg.lstsq(B, c_[R, Q])[0]
             subtract(V, WX[:,0], V)
             divide(V, linalg.norm(V), V)
             subtract(X, WX[:,1], X)
@@ -1878,7 +1885,7 @@ class Continuation(object):
     def info(self):
         print(self.__repr__())
         print("Using model: %s\n"%self.model.name)
-        if self.description is not 'None':
+        if self.description != 'None':
             print('Description')
             print('----------- \n')
             print(self.description, '\n')
@@ -2006,13 +2013,13 @@ class EquilibriumCurve(Continuation):
         for bftype in self.LocBifPoints:
             if bftype in equilibrium_bif_points:
                 stop = bftype in self.StopAtPoints  # Set stopping flag
-                if bftype is 'BP':
+                if bftype == 'BP':
                     method = Branch_Det(self.CorrFunc, self, save=True,
                                         numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
                     self.BifPoints['BP'] = BranchPoint(method, iszero,
                                                        stop=stop)
-                elif bftype is 'LP':
+                elif bftype == 'LP':
                     #method1 = Fold_Bor(self.CorrFunc, self, corr=False,
                     #                  save=True, numpoints=self.MaxNumPoints+1)
                     #method1 = Fold_Det(self.CorrFunc, self, save=True, numpoints=self.MaxNumPoints+1)
@@ -2029,7 +2036,7 @@ class EquilibriumCurve(Continuation):
                     self.BifPoints['LP'] = FoldPoint([method1, method2],
                                                      [iszero, isnotzero],
                                                      stop=stop)
-                elif bftype is 'H':
+                elif bftype == 'H':
                     method = Hopf_Bor(self.CorrFunc, self, corr=False,
                                       save=True, numpoints=self.MaxNumPoints+1)
                     #method = Hopf_Det(self.CorrFunc, self, save=True, numpoints=self.MaxNumPoints+1)
@@ -2151,18 +2158,18 @@ class FoldCurve(Continuation):
                     method2 = Hopf_Bor(self.CorrFunc.sysfunc, self,
                                        save=True, numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method2)
-                    if bftype is 'BT':
+                    if bftype == 'BT':
                         self.BifPoints['BT'] = BTPoint([method1, method2],
                                                        [iszero, iszero], stop=stop)
                     else:
                         self.BifPoints['ZH'] = ZHPoint([method1, method2],
                                                        [isnotzero, iszero], stop=stop)
-                elif bftype is 'CP':
+                elif bftype == 'CP':
                     method = CP_Fold(self.CorrFunc, self, save=True,
                                      numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
                     self.BifPoints['CP'] = CPPoint(method, iszero, stop=stop)
-                elif bftype is 'BP':
+                elif bftype == 'BP':
                     method1 = BP_Fold(self.CorrFunc, self, 0, save=True,
                                       numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method1)
@@ -2280,25 +2287,25 @@ class HopfCurveOne(Continuation):
         for bftype in self.LocBifPoints:
             if bftype in hopf_bif_points:
                 stop = bftype in self.StopAtPoints  # Set stopping flag
-                if bftype is 'BT':
+                if bftype == 'BT':
                     method = BT_Hopf_One(self.CorrFunc, self, save=True, \
                                          numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
 
                     self.BifPoints['BT'] = BTPoint(method, iszero, stop=stop)
-                if bftype is 'DH':
+                if bftype == 'DH':
                     method = DH_Hopf(self.CorrFunc, self, save=True, \
                                      numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
 
                     self.BifPoints['DH'] = DHPoint(method, iszero, stop=stop)
-                elif bftype is 'ZH':
+                elif bftype == 'ZH':
                     method = Fold_Det(self.CorrFunc.sysfunc, self, \
                                       save=True, numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
 
                     self.BifPoints['ZH'] = ZHPoint(method, iszero, stop=stop)
-                elif bftype is 'GH':
+                elif bftype == 'GH':
                     method = GH_Hopf_One(self.CorrFunc, self, save=True, \
                                          numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
@@ -2434,17 +2441,17 @@ class HopfCurveTwo(Continuation):
         for bftype in self.LocBifPoints:
             if bftype in hopf_bif_points:
                 stop = bftype in self.StopAtPoints  # Set stopping flag
-                if bftype is 'BT':
+                if bftype == 'BT':
                     method = BT_Hopf(self.CorrFunc, self, save=True, numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
 
                     self.BifPoints['BT'] = BTPoint(method, iszero, stop=stop)
-                elif bftype is 'GH':
+                elif bftype == 'GH':
                     method = GH_Hopf(self.CorrFunc, self, save=True, numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
 
                     self.BifPoints['GH'] = GHPoint(method, iszero, stop=stop)
-                elif bftype is 'ZH':
+                elif bftype == 'ZH':
                     method = Fold_Det(self.CorrFunc.sysfunc, self, save=True, numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
 
@@ -2497,7 +2504,7 @@ class FixedPointCurve(Continuation):
         for bftype in self.LocBifPoints:
             if bftype in fixedpoint_bif_points:
                 stop = bftype in self.StopAtPoints
-                if bftype is 'LPC':
+                if bftype == 'LPC':
                     method1 = Fold_Tan(self.CorrFunc, self, save=True,
                                       numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method1)
@@ -2508,17 +2515,17 @@ class FixedPointCurve(Continuation):
                         method2 = self.BifPoints['BP'].testfuncs[0]
 
                     self.BifPoints['LPC'] = LPCPoint([method1, method2], [iszero, isnotzero], stop=stop)
-                elif bftype is 'PD':
+                elif bftype == 'PD':
                     method = PD_Det(self.sysfunc, self, save=True, numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
 
                     self.BifPoints['PD'] = PDPoint(method, iszero, stop=stop)
-                elif bftype is 'NS':
+                elif bftype == 'NS':
                     method = NS_Det(self.sysfunc, self, save=True, numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
 
                     self.BifPoints['NS'] = NSPoint(method, iszero, stop=stop)
-                elif bftype is 'BP':
+                elif bftype == 'BP':
                     if 'LPC' not in self.BifPoints.keys():
                         method = Branch_Det(self.CorrFunc, self, save=True, numpoints=self.MaxNumPoints+1)
                         self.TestFuncs.append(method)
@@ -2626,7 +2633,7 @@ class FixedPointFoldCurve(FixedPointCurve):
         for bftype in self.LocBifPoints:
             if bftype in fold_map_bif_points:
                 stop = bftype in self.StopAtPoints
-                if bftype is 'CP':
+                if bftype == 'CP':
                     method = CP_Fold(self.CorrFunc, self, save=True,
                                      numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.append(method)
@@ -2914,7 +2921,7 @@ class FixedPointCuspCurve(FixedPointCurve):
         for bftype in self.LocBifPoints:
             if bftype in cusp_bif_points:
                 stop = bftype in self.StopAtPoints
-                if bftype is 'BP':
+                if bftype == 'BP':
                     method = Branch_Det(self.CorrFunc, self, save=True,
                                         numpoints=self.MaxNumPoints+1)
                     self.TestFuncs.remove(self.TestFuncs[-1])

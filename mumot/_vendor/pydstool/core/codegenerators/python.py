@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-from PyDSTool.common import invertMap, intersect, remain, concatStrDict, makeUniqueFn
-from PyDSTool.parseUtils import _indentstr, convertPowers, makeParList, parseMatrixStrToDictStr, count_sep
-from PyDSTool.Symbolic import QuantSpec
-from PyDSTool.utils import compareList, info
+from ...common import invertMap, intersect, remain, concatStrDict, makeUniqueFn
+from ...parseUtils import _indentstr, convertPowers, makeParList, parseMatrixStrToDictStr, count_sep
+from ...Symbolic import QuantSpec
+from ...utils import compareList, info
 
 from .base import _processReused, CodeGenerator
 

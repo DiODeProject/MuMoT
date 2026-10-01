@@ -51,9 +51,11 @@ from .parseUtils import isHierarchicalName, NAMESEP, mapNames, symbolMapClass
 
 ## Other imports
 import math, sys
-from numpy import Inf, NaN, isfinite, sign, abs, array, arange, \
-     zeros, concatenate, transpose, shape
-from numpy import sometrue, alltrue, any, all
+from numpy import (
+    inf as Inf, nan as NaN, isfinite, sign, abs, array, arange, zeros,
+    concatenate, transpose, shape
+)
+from numpy import any as sometrue, all as alltrue, any, all
 import copy
 from time import perf_counter
 import pprint

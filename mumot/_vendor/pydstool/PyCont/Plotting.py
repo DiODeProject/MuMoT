@@ -4,8 +4,8 @@
 """
 
 
-from PyDSTool.common import args
-from PyDSTool.matplotlib_import import *
+from ..common import args
+from ..matplotlib_import import *
 from functools import reduce
 
 # THESE ARE REPEATS FROM CONTINUATION!  MAKE SURE AND UPDATE!!!

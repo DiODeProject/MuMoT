@@ -8,16 +8,19 @@
 
 
 from .misc import *
-from PyDSTool.common import args
+from ..common import args
 from .TestFunc import DiscreteMap, FixedPointMap
 
-from numpy import Inf, NaN, isfinite, r_, c_, sign, mod, \
-    subtract, divide, transpose, eye, real, imag, \
-    conjugate, average
+from numpy import (
+    inf as Inf, nan as NaN, isfinite, r_, c_, sign, mod, subtract, divide,
+    transpose, eye, real, imag, conjugate, average
+)
 from scipy import optimize, linalg
 from numpy import dot as matrixmultiply
-from numpy import array, float, complex, int, float64, complex64, int32, \
-    zeros, divide, subtract, reshape, argsort, nonzero
+from numpy import (
+    array, float64, complex64, int32, zeros, divide, subtract, reshape,
+    argsort, nonzero
+)
 
 #####
 _classes = ['BifPoint', 'BPoint', 'BranchPoint', 'FoldPoint', 'HopfPoint',
@@ -188,34 +191,27 @@ class BranchPoint(BifPoint):
     def process(self, X, V, C):
         BifPoint.process(self, X, V, C)
 
-        # Finds the new branch
+        # Finds the new branch.
+        #
+        # At a branch point the null space of [J_coords, J_params] is two
+        # dimensional, spanned by the tangent V of the branch being continued
+        # and a second vector V1.  (The original code recomputed V by solving
+        # a linear system that is singular at the branch point, which made
+        # the branch found depend on floating-point rounding.)
         J_coords = C.CorrFunc.jac(X, C.coords)
         J_params = C.CorrFunc.jac(X, C.params)
+        J = c_[J_coords, J_params]
 
+        V = V / linalg.norm(V)
+        V = sign([x for x in V if abs(x) > 1e-8][0])*V
+        null = linalg.svd(J)[2][-2:]    # right singular vectors, smallest last
+        null = null - matrixmultiply(null, V)[:, None]*V   # remove V component
+        V1 = null[argsort([linalg.norm(n) for n in null])[-1]]
+        V1 /= linalg.norm(V1)
+        V1 = sign([x for x in V1 if abs(x) > 1e-8][0])*V1
 
-        singular = True
-        perpvec = r_[1,zeros(C.dim-1)]
-        d = 1
-        while singular and d <= C.dim:
-            try:
-                v0 = linalg.solve(r_[c_[J_coords, J_params],
-                                  [perpvec]], \
-                                  r_[zeros(C.dim-1),1])
-            except:
-                perpvec = r_[0., perpvec[0:(C.dim-1)]]
-                d += 1
-            else:
-                singular = False
-
-        if singular:
-            raise PyDSTool_ExistError("Problem in _compute: Failed to compute tangent vector.")
-        v0 /= linalg.norm(v0)
-        V = sign([x for x in v0 if abs(x) > 1e-8][0])*v0
-
-        A = r_[c_[J_coords, J_params], [V]]
-        W, VR = linalg.eig(A)
-        W0 = [ind for ind, eig in enumerate(W) if abs(eig) < 5e-5]
-        V1 = real(VR[:,W0[0]])
+        A = r_[J, [V]]
+        W = linalg.eig(A)[0]
 
         H = C.CorrFunc.hess(X, C.coords+C.params, C.coords+C.params)
         c11 = matrixmultiply(self.data.psi,[bilinearform(H[i,:,:], V, V) for i in range(H.shape[0])])

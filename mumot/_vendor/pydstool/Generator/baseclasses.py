@@ -1,17 +1,19 @@
 # Generator base classes: Generator, ctsGen, discGen
 
 from .allimports import *
-from PyDSTool.utils import *
-from PyDSTool.common import *
-from PyDSTool.Symbolic import ensureStrArgDict, Quantity, QuantSpec, mathNameMap
-from PyDSTool.Trajectory import Trajectory
-from PyDSTool.parseUtils import symbolMapClass, readArgs
-from PyDSTool.Variable import Variable, iscontinuous
-from PyDSTool.Points import Pointset
-import PyDSTool.Events as Events
+from ..utils import *
+from ..common import *
+from ..Symbolic import ensureStrArgDict, Quantity, QuantSpec, mathNameMap
+from ..Trajectory import Trajectory
+from ..parseUtils import symbolMapClass, readArgs
+from ..Variable import Variable, iscontinuous
+from ..Points import Pointset
+from .. import Events as Events
 
 # Other imports
-from numpy import Inf, NaN, isfinite, sometrue, alltrue
+from numpy import (
+    inf as Inf, nan as NaN, isfinite, any as sometrue, all as alltrue
+)
 import math, random
 import os
 from copy import copy, deepcopy

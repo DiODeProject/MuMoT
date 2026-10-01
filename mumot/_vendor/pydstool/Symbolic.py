@@ -66,12 +66,16 @@ from .errors import *
 
 #from math import *
 from .utils import *
-from numpy import array, Inf, NaN, isfinite, mod, sum, float64, int32
-from numpy import sometrue, alltrue
+from numpy import (
+    array, inf as Inf, nan as NaN, isfinite, mod, sum, float64, int32
+)
+from numpy import any as sometrue, all as alltrue
 # replacements of math functions so that expr2fun etc. produce vectorizable math functions
-from numpy import arccos, arcsin, arctan, arctan2, arccosh, arcsinh, arctanh, \
-     ceil, cos, cosh, exp, fabs, floor, fmod, frexp, hypot, ldexp, log, log10, \
-     modf, power, sin, sinh, sqrt, tan, tanh
+from numpy import (
+    arccos, arcsin, arctan, arctan2, arccosh, arcsinh, arctanh, ceil, cos,
+    cosh, exp, fabs, floor, fmod, frexp, hypot, ldexp, log, log10, modf, power,
+    sin, sinh, sqrt, tan, tanh
+)
 # for compatibility with numpy 1.0.X
 from math import degrees, radians
 # constants
@@ -149,7 +153,7 @@ mathlookup = {}.fromkeys(protected_mathnames, 'math.')
 randomlookup = {}.fromkeys(protected_randomnames, 'random.')
 builtinlookup = {'abs': '', 'pow': '', 'max': '', 'min': '', 'sum': ''}
 numpylookup = {}.fromkeys(protected_numpynames, 'numpy.')
-scipylookup = {}.fromkeys(protected_scipynames, 'scipy.')
+scipylookup = {}.fromkeys(protected_scipynames, 'numpy.')
 scipylookup.update( {}.fromkeys(scipy_specialfns, 'scipy.special.') )
 modlookup = {}
 modlookup.update(mathlookup)

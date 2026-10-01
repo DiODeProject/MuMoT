@@ -19,7 +19,7 @@ from .Symbolic import QuantSpec, allmathnames_symbolic
 from copy import copy, deepcopy
 from numpy import any
 
-import PyDSTool.core.codegenerators as CG
+from .core import codegenerators as CG
 
 __all__ = ['RHSfuncSpec', 'ImpFuncSpec', 'ExpFuncSpec', 'FuncSpec',
            'getSpecFromFile', 'resolveClashingAuxFnPars', 'makePartialJac']
@@ -785,9 +785,11 @@ class FuncSpec(object):
                                 # embedded system)
                                 returnstr += s
                             else:
-                                returnstr += 'scipy.'+s
+                                # sign and mod are numpy functions that
+                                # older scipy versions re-exported
+                                returnstr += 'numpy.'+s
                         else:
-                            returnstr += 'scipy.'+s
+                            returnstr += 'numpy.'+s
                     elif s in self._protected_numpynames:
                         if len(returnstr) > 0:
                             if returnstr[-1] == '.':

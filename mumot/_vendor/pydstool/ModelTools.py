@@ -42,9 +42,10 @@ from . import Model, Generator, ModelSpec, Symbolic, Events, ModelContext
 from .parseUtils import symbolMapClass, NAMESEP, isNumericToken
 
 # Other imports
-from numpy import Inf, NaN, isfinite,  array, \
-     arange, zeros, ones, concatenate, swapaxes, take, \
-     sometrue, alltrue, any, all
+from numpy import (
+    inf as Inf, nan as NaN, isfinite, array, arange, zeros, ones, concatenate,
+    swapaxes, take, any as sometrue, all as alltrue, any, all
+)
 import numpy
 import scipy
 import math  # for access by user-defined code of EvMapping

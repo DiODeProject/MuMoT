@@ -6,7 +6,7 @@ from .errors import PyDSTool_InitError as InitError
 from .errors import PyDSTool_ClearError as ClearError
 from .common import _all_int, _real_types, \
      verify_intbool, verify_pos, verify_nonneg, verify_values
-from numpy import isinf, Inf
+from numpy import isinf, inf as Inf
 import operator
 import sys
 

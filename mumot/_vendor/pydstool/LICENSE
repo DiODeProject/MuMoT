@@ -1,12 +1,3 @@
-"""Vendored, trimmed copy of PyDSTool (https://github.com/robclewley/pydstool).
-
-Only the pure-Python parts of PyDSTool that MuMoT needs for equilibrium-point
-continuation (the Vode ODE generator and PyCont) are kept; compiled
-integrators (Dopri, Radau), AUTO, ADMC++ and the Toolbox have been removed.
-See README.md in this directory for provenance and the list of changes.
-"""
-
-__LICENSE__ = """\
 Copyright (C) 2007-2012, Copyright (C) 2007-2014, Robert Clewley
 All rights reserved.
 
@@ -41,28 +32,3 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""
-
-from .Events import *
-from .Interval import *
-from .Points import *
-from .Variable import *
-from .Trajectory import *
-from .FuncSpec import *
-from . import Generator as GenModule
-from .Generator import Generator as Generator_
-from .Generator import *
-Generator = GenModule
-from . import Model as ModelModule
-from .Model import Model as Model_
-from .Model import *
-Model = ModelModule
-from .ModelTools import *
-from .ModelContext import *
-from .Symbolic import *
-from .ModelSpec import *
-from .parseUtils import auxfnDBclass, protected_allnames, protected_auxnamesDB, \
-         convertPowers
-from .PyCont import *
-from .common import Continuous, Discrete, targetLangs, args
-from .utils import *

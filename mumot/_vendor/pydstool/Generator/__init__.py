@@ -7,9 +7,6 @@ from .baseclasses import *
 from .ODEsystem import *
 from .Euler_ODEsystem import *
 from .Vode_ODEsystem import *
-from .Dopri_ODEsystem import *
-from .Radau_ODEsystem import *
-from .ADMC_ODEsystem import *
 from .ExplicitFnGen import *
 from .ImplicitFnGen import *
 from .EmbeddedSysGen import *

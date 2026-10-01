@@ -2,11 +2,13 @@
 
 from .allimports import *
 from .baseclasses import ctsGen, theGenSpecHelper
-from PyDSTool.utils import *
-from PyDSTool.common import *
+from ..utils import *
+from ..common import *
 
 # Other imports
-from numpy import Inf, NaN, isfinite, sometrue, alltrue, float64
+from numpy import (
+    inf as Inf, nan as NaN, isfinite, any as sometrue, all as alltrue, float64
+)
 import math, random
 from copy import copy, deepcopy
 

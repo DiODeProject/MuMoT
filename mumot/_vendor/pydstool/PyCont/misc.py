@@ -21,10 +21,10 @@
 # ----------------------------------------------------------------------------
 
 
-from PyDSTool import pointsToPointset, Point, Pointset
-from PyDSTool.common import args
-from PyDSTool.matplotlib_import import *
-from PyDSTool.errors import PyDSTool_ValueError
+from .. import pointsToPointset, Point, Pointset
+from ..common import args
+from ..matplotlib_import import *
+from ..errors import PyDSTool_ValueError
 
 # THESE ARE REPEATS FROM CONTINUATION!  MAKE SURE AND UPDATE!!!
 all_point_types = ['P', 'RG', 'LP', 'BP', 'H', 'BT', 'ZH', 'CP', 'GH',
@@ -34,10 +34,12 @@ all_curve_types = ['EP', 'LP', 'H', 'FP', 'LC', 'FD']
 from time import perf_counter
 from scipy import linalg
 from numpy import dot as matrixmultiply
-from numpy import array, float, complex, int, float64, complex64, int32, \
-     zeros, divide, subtract, argmax, identity, argsort, conjugate, sqrt, \
-     arange, Inf, NaN, isfinite, r_, c_, sign, mod, sum, \
-     multiply, transpose, eye, real, imag, ndarray
+from numpy import (
+    array, float64, complex64, int32, zeros, divide, subtract, argmax,
+    identity, argsort, conjugate, sqrt, arange, inf as Inf, nan as NaN,
+    isfinite, r_, c_, sign, mod, sum, multiply, transpose, eye, real, imag,
+    ndarray
+)
 from math import pi as PI
 from copy import copy
 

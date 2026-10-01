@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## Unreleased
+
+Modernisation for current Python and scientific Python versions:
+
+ - Supports Python 3.10-3.13 (dropped 3.6-3.9) and current releases of NumPy (2.x), SciPy, SymPy,
+   Matplotlib, IPython, ipywidgets and Jupyter (Notebook 7, JupyterLab).
+ - Dependencies are no longer pinned, except `antlr4-python3-runtime==4.11.*`,
+   which SymPy's LaTeX parser requires.
+ - PyDSTool is no longer a dependency: a trimmed copy, updated for current Python/NumPy/SciPy,
+   is bundled as `mumot._vendor.pydstool` (see its `README.md` for provenance and changes).
+ - Bifurcation diagrams use the new `mumot.continuation` module, a small backend-independent
+   continuation API; PyDSTool is now only used behind it.
+ - Fixed branch switching at branch points, which (in PyDSTool) depended on floating-point rounding
+   and could follow the wrong branch.
+ - Interactive figures use the `ipympl` (`%matplotlib widget`) backend where available,
+   so they work in Notebook 7+, JupyterLab and VS Code.
+ - Removed the ineffective `iopub` rate limit tweak (it only changed a setting in the kernel process;
+   set `--ServerApp.iopub_msg_rate_limit` when starting Jupyter instead).
+ - Restored behaviour that changed with newer SymPy (`latex()` of strings, `simplify()`
+   evaluating derivatives, stricter `subs()`), and noise equations now render moments as
+   ⟨η⟩ as intended.
+ - Removed the circular import between `mumot.utils` and the package (`mumot` can now be imported
+   from a source checkout) and moved symbolic derivations from `views` to the new `mumot.equations`.
+ - Packaging moved to `pyproject.toml`; CI, Read the Docs and Binder configuration updated.
+
 ## v1.2.2
 
 Enhancements: 

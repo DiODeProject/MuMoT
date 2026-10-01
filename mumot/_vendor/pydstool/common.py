@@ -11,15 +11,16 @@ import sys
 import types
 import numpy as npy
 import scipy as spy
-from scipy.optimize import minpack
+from scipy import optimize as minpack
 # In future, will convert these specific imports to be referred as npy.X
-from numpy import Inf, NaN, atleast_1d, clip, less, greater, logical_or, \
-     searchsorted, isfinite, shape, mat, sign, any, all, sometrue, alltrue, \
-     array, swapaxes, zeros, ones, finfo, double, exp, log, \
-     take, less_equal, putmask, ndarray, asarray, \
-     int, float, complex, complexfloating, integer, floating, \
-     int_, int0, int8, int16, int32, int64, float_, float32, float64, \
-     complex_, complex64, complex128, argmin, argmax
+from numpy import (
+    inf as Inf, nan as NaN, atleast_1d, clip, less, greater, logical_or,
+    searchsorted, isfinite, shape, asmatrix as mat, sign, any, all, any as sometrue, all as
+    alltrue, array, swapaxes, zeros, ones, finfo, double, exp, log, take,
+    less_equal, putmask, ndarray, asarray, complexfloating, integer, floating,
+    int_, intp as int0, int8, int16, int32, int64, float64 as float_, float32,
+    float64, complex128 as complex_, complex64, complex128, argmin, argmax
+)
 from numpy.linalg import norm
 from math import sqrt
 

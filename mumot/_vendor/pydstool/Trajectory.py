@@ -16,8 +16,10 @@ from .parseUtils import *
 from .errors import *
 
 # Other imports
-from numpy import array, arange, float64, int32, concatenate, zeros, shape, \
-     sometrue, alltrue, any, all, ndarray, asarray, Inf, unique
+from numpy import (
+    array, arange, float64, int32, concatenate, zeros, shape, any as sometrue,
+    all as alltrue, any, all, ndarray, asarray, inf as Inf, unique
+)
 from scipy.optimize import bisect, newton
 from numpy.linalg import norm
 import math

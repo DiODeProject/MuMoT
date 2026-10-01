@@ -4,9 +4,9 @@
 
 from copy import deepcopy
 
-from PyDSTool.common import intersect, concatStrDict, idfn
-from PyDSTool.parseUtils import addArgToCalls
-from PyDSTool.Symbolic import QuantSpec
+from ...common import intersect, concatStrDict, idfn
+from ...parseUtils import addArgToCalls
+from ...Symbolic import QuantSpec
 
 from .base import _processReused, CodeGenerator
 

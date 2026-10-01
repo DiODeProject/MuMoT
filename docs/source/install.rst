@@ -32,12 +32,12 @@ Installing MuMoT within a Conda environment
 
       conda --version
 
-#. Create a new conda environment containing just Python >=3.6 e.g.:
+#. Create a new conda environment containing just Python >=3.10 e.g.:
 
    .. code:: sh
 
       conda update conda
-      conda create -n mumot-env python=3.7
+      conda create -n mumot-env python=3.12
 
 #. Check that conda environment has been created: 
    
@@ -77,7 +77,7 @@ Installing MuMoT within a VirtualEnv
    `this repository <https://github.com/DiODeProject/MuMoT/>`__.
 2. Ensure you have the following installed:
 
-   -  `Python >= 3.6 <https://www.python.org/downloads/>`__
+   -  `Python >= 3.10 <https://www.python.org/downloads/>`__
    -  the pip_ package
       manager (usually comes with Python 3.x but might not for certain
       flavours of Linux)
@@ -108,13 +108,13 @@ Installing MuMoT within a VirtualEnv
       source mumot-env/bin/activate    # on macOS/Linux
       mumot-env/bin/activate           # on Windows
 
-5. *Install* MuMoT and dependencies into this Python virtualenv, then
-   enable interactive Notebook widgets:
+5. *Install* MuMoT and dependencies into this Python virtualenv,
+   plus a Jupyter front end if you don't already have one:
 
    .. code:: sh
 
       python3 -m pip install path/to/clone/of/MuMoT/repository
-      jupyter nbextension enable --py widgetsnbextension --sys-prefix
+      python3 -m pip install notebook    # or jupyterlab
 
    NB if your clone of the MuMot repository is a subdirectory of the current directory,
    make sure you run ``python3 -m pip install ./MuMoT`` instead of ``python3 -m pip install MuMoT``
@@ -137,56 +137,22 @@ with
 
       python3 -m pip install mumot
 
-(Optional) Enable tables of contents for individual Notebooks
--------------------------------------------------------------
+Interactive figures
+-------------------
 
-Hyperlinked tables of contents can be userful when viewing longer Notebooks such as 
+MuMoT uses the ipympl_ (``%matplotlib widget``) Matplotlib backend,
+which works in Jupyter Notebook 7+, JupyterLab and VS Code.
+It is installed automatically with MuMoT;
+if it is unavailable MuMoT falls back to the ``nbagg`` backend,
+which only works in the classic (version 6 or earlier) Notebook.
+
+Tables of contents for individual Notebooks
+-------------------------------------------
+
+Hyperlinked tables of contents can be useful when viewing longer Notebooks such as
 the `MuMoT User Manual <docs/MuMoTuserManual.ipynb>`__.
-
-Tables of contents can be displayed if you enable the **TOC2** Jupyter Extension as follows:
-
-#. Ensure the ``jupyter_contrib_nbextensions`` package is installed.
-   This is "a collection of extensions that add functionality to the Jupyter notebook". 
-   If you installed MuMoT into a *virtualenv* using **pip** then 
-   you need to ensure that virtualenv is activated before running:
-
-   .. code:: sh
-
-      pip install jupyter_contrib_nbextensions
-
-#. Enable ``jupyter_contrib_nbextensions``:
-
-   .. code:: sh
-
-      jupyter contrib nbextension install --sys-prefix
-
-#. Enable the TOC2 ('table of contents') extension that is 
-   provided by ``jupyter_contrib_nbextensions``:
-
-   .. code:: sh
-
-      jupyter nbextension enable toc2/main
-
-#. Enable a graphical interface for enabling/disabling TOC2 and other
-   Jupyter extensions. If using conda:
-
-   .. code:: sh
-
-      conda install -c conda-forge jupyter_nbextensions_configurator
-
-   Or if using a virtualenv instead:
-
-   .. code:: sh
-
-      pip install jupyter_nbextensions_configurator  # AND 
-      jupyter nbextensions_configurator enable --sys-prefix
-
-The next time you start Jupyter from your conda environment or virtualenv then open a Notebook 
-you should see a table of contents displayed down the left-hand-side of the Notebook.
-
-If you subsequently want to disable the TOC2 extension 
-and/or enable other Notebook extensions 
-then click *Nbextensions* in the Jupyter file browser tab.
+Jupyter Notebook 7+ and JupyterLab show one in the left-hand sidebar
+(*View* → *Table of Contents*); no extension is needed.
 
 .. _LaTeX distribution: https://www.latex-project.org/get/
 .. _MacTex: http://www.tug.org/mactex/
@@ -194,5 +160,6 @@ then click *Nbextensions* in the Jupyter file browser tab.
 .. _TexLive: http://www.tug.org/texlive
 .. _pip: https://pip.pypa.io/en/stable/installing/
 .. _virtualenv: https://virtualenv.pypa.io/en/stable/
-.. _graphviz: https://graphviz.gitlab.io/download/
+.. _graphviz: https://graphviz.org/download/
+.. _ipympl: https://matplotlib.org/ipympl/
 .. _Miniconda: https://conda.io/miniconda.html

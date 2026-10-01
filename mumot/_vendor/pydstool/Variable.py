@@ -13,8 +13,10 @@ from .Points import *
 from .Interval import *
 from .FuncSpec import ImpFuncSpec
 
-from numpy import Inf, NaN, isfinite, sometrue, alltrue, any, all, \
-     array, float64, int32, ndarray, asarray
+from numpy import (
+    inf as Inf, nan as NaN, isfinite, any as sometrue, all as alltrue, any,
+    all, array, float64, int32, ndarray, asarray
+)
 
 import copy
 import types, math, random
@@ -1022,11 +1024,11 @@ class Variable(object):
                     # to be multiple attempts to delete it (which of course
                     # fail after the first successful attempt)
                     pass
-            elif fname is 'funcspec':
+            elif fname == 'funcspec':
                 # doesn't refer to any dynamically-created methods
                 # so ignore
                 pass
-            elif fname is 'outputdata':
+            elif fname == 'outputdata':
                 # doesn't refer to any dynamically-created methods
                 # so ignore
                 pass

@@ -22,7 +22,10 @@ from .common import *
 from .errors import *
 
 ## Other imports
-from numpy import Inf, NaN, isfinite, isinf, isnan, array, sign, linspace, arange
+from numpy import (
+    inf as Inf, nan as NaN, isfinite, isinf, isnan, array, sign, linspace,
+    arange
+)
 import re, math
 import copy
 

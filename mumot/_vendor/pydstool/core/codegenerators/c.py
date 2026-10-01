@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-from PyDSTool.common import invertMap, intersect, concatStrDict, sortedDictItems, isUniqueSeq
-from PyDSTool.parseUtils import convertPowers, parseMatrixStrToDictStr, addArgToCalls, wrapArgInCall, splitargs, findEndBrace
-from PyDSTool.Symbolic import QuantSpec
-from PyDSTool.utils import compareList, info
+from ...common import invertMap, intersect, concatStrDict, sortedDictItems, isUniqueSeq
+from ...parseUtils import convertPowers, parseMatrixStrToDictStr, addArgToCalls, wrapArgInCall, splitargs, findEndBrace
+from ...Symbolic import QuantSpec
+from ...utils import compareList, info
 
 from .base import _processReused, CodeGenerator
 
@@ -507,7 +507,7 @@ double signum(double x)
         for evname in eventNames:
             ev = eventstruct.events[evname]
             evfullfn = ""
-            from PyDSTool.Events import LowLevelEvent
+            from ...Events import LowLevelEvent
             assert isinstance(ev, LowLevelEvent), ("Radau can only "
                                                 "accept low level events")
             evsig = ev._LLreturnstr + " " + ev.name + ev._LLargstr

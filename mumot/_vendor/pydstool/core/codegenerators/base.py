@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
-from PyDSTool.common import idfn, invertMap, remain
-from PyDSTool.parseUtils import proper_match, convertPowers
+from ...common import idfn, invertMap, remain
+from ...parseUtils import proper_match, convertPowers
 
 
 class CodeGenerator(object):

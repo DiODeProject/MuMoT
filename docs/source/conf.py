@@ -57,8 +57,8 @@ author = 'James A. R. Marshall, Andreagiovanni Reina, Thomas Bose'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #import mumot
-from pkg_resources import get_distribution
-release = get_distribution('mumot').version
+from importlib.metadata import version as _version
+release = _version('mumot')
 version = '.'.join(release.split('.')[:3])
 
 #binder_tag = f"v{version}" if release == version else "master"
@@ -69,7 +69,7 @@ version = '.'.join(release.split('.')[:3])
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

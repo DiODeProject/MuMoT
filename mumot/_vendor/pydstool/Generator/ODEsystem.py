@@ -2,16 +2,18 @@
 
 from .allimports import *
 from .baseclasses import ctsGen, theGenSpecHelper, auxfn_container
-from PyDSTool.utils import *
-from PyDSTool.common import *
-from PyDSTool.Variable import Variable, iscontinuous
-from PyDSTool.Trajectory import Trajectory
-from PyDSTool.Points import Pointset
-from PyDSTool.Interval import uncertain
+from ..utils import *
+from ..common import *
+from ..Variable import Variable, iscontinuous
+from ..Trajectory import Trajectory
+from ..Points import Pointset
+from ..Interval import uncertain
 
 # Other imports
-from numpy import Inf, NaN, isfinite, sometrue, alltrue, array, arange, \
-     zeros, float64, int32, transpose, shape
+from numpy import (
+    inf as Inf, nan as NaN, isfinite, any as sometrue, all as alltrue, array,
+    arange, zeros, float64, int32, transpose, shape
+)
 import math
 import random
 import types

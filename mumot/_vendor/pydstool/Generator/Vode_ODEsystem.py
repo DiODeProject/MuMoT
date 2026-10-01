@@ -10,9 +10,9 @@ from scipy.integrate import ode
 
 from .allimports import *
 from .baseclasses import theGenSpecHelper, _pollInputs
-from PyDSTool.Generator import ODEsystem as ODEsystem
-from PyDSTool.common import *
-from PyDSTool.utils import *
+from ..Generator import ODEsystem as ODEsystem
+from ..common import *
+from ..utils import *
 
 
 # Other imports
@@ -20,7 +20,7 @@ try:
     from numpy import unique
 except ImportError:
     # older version of numpy
-    from numpy import unique1d as unique
+    from numpy import unique as unique
 
 
 class Vode_ODEsystem(ODEsystem):

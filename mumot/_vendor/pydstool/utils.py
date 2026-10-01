@@ -2,26 +2,21 @@
     User utilities.
 """
 
-from distutils.util import get_platform
-from numpy.distutils import misc_util
-
 from .errors import *
 from .common import *
 from .parseUtils import joinStrs
-from PyDSTool.core.context_managers import RedirectStdout
+from .core.context_managers import RedirectStdout
 
 # !! Replace use of these named imports with np.<X>
-from numpy import Inf, NaN, isfinite, less, greater, sometrue, alltrue, \
-     searchsorted, take, argsort, array, swapaxes, asarray, zeros, transpose, \
-     float64, int32, argmin, ndarray, concatenate
+from numpy import (
+    inf as Inf, nan as NaN, isfinite, less, greater, any as sometrue, all as
+    alltrue, searchsorted, take, argsort, array, swapaxes, asarray, zeros,
+    transpose, float64, int32, argmin, ndarray, concatenate
+)
 import numpy as np
 from numpy.linalg import norm
-from scipy.optimize import minpack, zeros
-try:
-    newton_meth = minpack.newton
-except AttributeError:
-    # newer version of scipy
-    newton_meth = zeros.newton
+from scipy import optimize as minpack
+newton_meth = minpack.newton
 import time, sys, os, platform
 import copy
 
@@ -37,8 +32,7 @@ _functions = ['intersect', 'remain', 'union', 'cartesianProduct',
               'saveObjects', 'loadObjects', 'info', 'compareList',
               'findClosestArray', 'findClosestPointIndex', 'find',
               'makeMfileFunction', 'make_RHS_wrap', 'make_Jac_wrap',
-              'progressBar', 'distutil_destination', 'architecture',
-              'extra_arch_arg', 'arclength']
+              'progressBar', 'arclength']
 
 _mappings = ['_implicitSolveMethods', '_1DimplicitSolveMethods']
 
@@ -698,60 +692,3 @@ def arclength(pts):
     for i, x in enumerate(pts[1:]):
         arclength[i+1] = np.linalg.norm(x - pts[i]) + arclength[i]
     return arclength
-
-
-# ------------------------
-
-def distutil_destination():
-    """Internal utility that makes the goofy destination directory string so that PyDSTool
-    can find where the distutils fortran/gcc compilers put things.
-
-    If your temp directory turns out to be different to the one created here, contact us
-    on sourceforge.net, but in the meantime you can override destdir with whatever directory
-    name you find that is being used.
-    """
-    import scipy
-    osname = str.lower(platform.system())
-    pyname = platform.python_version_tuple()
-    machinename = platform.machine()
-    if osname == 'linux':
-        destdir = 'src.'+osname+'-'+machinename+'-'+pyname[0] + '.' + pyname[1]
-    elif osname in ['darwin', 'freebsd']:
-        # use the same version string as numpy.distutils.core.setup used by ContClass.CompileAutoLib
-        osver = get_platform()
-        destdir = 'src.' + osver + '-' +pyname[0] + '.' + pyname[1]
-    elif osname == 'windows':
-        destdir = 'src.win32-'+pyname[0]+'.'+pyname[1]
-    else:
-        destdir = ''
-    # TEMP for debugging
-    #import os
-    #os.system('echo %s > temp_dist.txt' % (os.path.abspath('.') + " : " + destdir))
-    return destdir
-
-
-def architecture():
-    """
-    Platform- and version-independent function to determine 32- or 64-bit architecture.
-    Used primarily to determine need for "-m32" option to C compilers for external library
-    compilation, e.g. by AUTO, Dopri, Radau.
-
-    Returns integer 32 or 64.
-    """
-    import struct
-    return struct.calcsize("P") * 8
-
-def extra_arch_arg(arglist):
-    """
-    Adds '-m32' flag to existing list of extra compiler/linker flags passed
-    as argument, based on whether architecture is detected as 32 bit. Otherwise,
-    it performs the identity function.
-    """
-    if architecture() == 32:
-        return arglist + ['-m32']
-    else:
-        return arglist
-
-
-def get_lib_extension():
-    return misc_util.get_shared_lib_extension()
