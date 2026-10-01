@@ -49,6 +49,10 @@ Modernised:
   trees as `parser.expr(...).tolist()` did under Python 3.8 (checked
   node-for-node against the real `parser` module on 180,000 random
   expressions)
+* Python 3.13 (PEP 667): code that ran `exec(code)` and then read the
+  names it defined from `locals()` now passes an explicit namespace
+  (`exec(code, globals(), ns)`) and reads from that, since `locals()`
+  returns a fresh snapshot on each call in Python 3.13
 * `x is 'literal'` comparisons (a `SyntaxWarning` since Python 3.8) replaced
   by `==`
 

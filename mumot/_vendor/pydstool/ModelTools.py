@@ -1612,12 +1612,13 @@ class EvMapping(object):
                                     for evname, state in self.activeDict.items()])
             self.defString = fnString
         try:
-            exec(fnString)
+            _exec_ns = locals()
+            exec(fnString, globals(), _exec_ns)
         except:
             print('Invalid function definition for event mapping:')
             print(fnString)
             raise
-        setattr(self, 'evmapping', types.MethodType(locals()['evmapping'], self))
+        setattr(self, 'evmapping', types.MethodType(_exec_ns['evmapping'], self))
 
     def __getstate__(self):
         d = copy.copy(self.__dict__)

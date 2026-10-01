@@ -627,13 +627,14 @@ class Event(object):
         # clean up FuncSpec usage of parsinps and x for pars/inputs and
         # variables
         try:
-            exec(self._funcstr)
+            _exec_ns = locals()
+            exec(self._funcstr, globals(), _exec_ns)
         except:
             print('Invalid event function definition:')
             print(self._funcstr)
             raise
         try:
-            setattr(self, '_fn', types.MethodType(locals()[self._funcname], self))
+            setattr(self, '_fn', types.MethodType(_exec_ns[self._funcname], self))
         except KeyError:
             print('Must pass objective function for event at initialization')
             raise
@@ -646,13 +647,14 @@ class Event(object):
             # clean up FuncSpec usage of parsinps and x for pars/inputs and
             # variables
             try:
-                exec(funcpair[0])
+                _exec_ns = locals()
+                exec(funcpair[0], globals(), _exec_ns)
             except:
                 print('Invalid auxiliary function definition:')
                 print(funcpair[0])
                 raise
             try:
-                setattr(self, funcpair[1], types.MethodType(locals()[funcpair[1]], self))
+                setattr(self, funcpair[1], types.MethodType(_exec_ns[funcpair[1]], self))
             except KeyError:
                 print('Must pass objective function for event at initialization')
                 raise

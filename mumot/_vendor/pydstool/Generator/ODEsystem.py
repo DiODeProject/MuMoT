@@ -104,21 +104,23 @@ class ODEsystem(ctsGen):
                 # user-defined auxiliary functions
                 # (built-ins are provided explicitly)
                 try:
-                    exec(fninfo[0])
+                    _exec_ns = locals()
+                    exec(fninfo[0], globals(), _exec_ns)
                 except:
                     print('Error in supplied auxiliary function code')
                 self._funcreg[fninfo[1]] = ('self', fninfo[0])
-                setattr(self, fninfo[1], types.MethodType(locals()[fninfo[1]], self))
+                setattr(self, fninfo[1], types.MethodType(_exec_ns[fninfo[1]], self))
                 # user auxiliary function interface wrapper
                 try:
                     uafi_code = self.funcspec._user_auxfn_interface[auxfnname]
                     try:
-                        exec(uafi_code)
+                        _exec_ns = locals()
+                        exec(uafi_code, globals(), _exec_ns)
                     except:
                         print('Error in auxiliary function wrapper')
                         raise
                     setattr(self.auxfns, auxfnname,
-                            types.MethodType(locals()[auxfnname], self.auxfns))
+                            types.MethodType(_exec_ns[auxfnname], self.auxfns))
                     self._funcreg[auxfnname] = ('', uafi_code)
                 except KeyError:
                     # not a user-defined aux fn
@@ -128,23 +130,25 @@ class ODEsystem(ctsGen):
         if self.funcspec.targetlang == 'python':
             fninfo = self.funcspec.spec
             try:
-                exec(fninfo[0])
+                _exec_ns = locals()
+                exec(fninfo[0], globals(), _exec_ns)
             except:
                 print('Error in supplied functional specification code')
                 raise
             self._funcreg[fninfo[1]] = ('self', fninfo[0])
-            setattr(self, fninfo[1], types.MethodType(locals()[fninfo[1]], self))
+            setattr(self, fninfo[1], types.MethodType(_exec_ns[fninfo[1]], self))
             # Add the auxiliary spec function (if present) to this
             # Generator's namespace
             if self.funcspec.auxspec != '':
                 fninfo = self.funcspec.auxspec
                 try:
-                    exec(fninfo[0])
+                    _exec_ns = locals()
+                    exec(fninfo[0], globals(), _exec_ns)
                 except:
                     print('Error in supplied auxiliary variable code')
                     raise
                 self._funcreg[fninfo[1]] = ('self', fninfo[0])
-                setattr(self, fninfo[1], types.MethodType(locals()[fninfo[1]], self))
+                setattr(self, fninfo[1], types.MethodType(_exec_ns[fninfo[1]], self))
 
 
     def haveJacobian(self):

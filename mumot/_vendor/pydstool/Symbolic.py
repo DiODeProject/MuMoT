@@ -677,11 +677,11 @@ class """+fn_name+"""_fn_wrapper(object):
             def_str += "\n    def " + fname + "(self" + embed_sig_str + \
                        "):\n        return " + fndef
     try:
-        exec(def_str)
+        exec(def_str, globals(), my_locals)
     except:
         print("Problem defining function:")
         raise
-    cls = locals()[fn_name+'_fn_wrapper']
+    cls = my_locals[fn_name+'_fn_wrapper']
     evalfunc = cls()
     evalfunc.__dict__.update(defs)
     if dyn_keys != [] and for_funcspec:
@@ -735,10 +735,11 @@ class fn_wrapper(type):
 
         """
         print("__init__ of fn_wrapper")
-        exec(call_str)
-        exec(alt_call_str)
-        setattr(cls, "__call__", types.MethodType(locals()['_call'], cls))
-        setattr(cls, "alt_call", types.MethodType(locals()['_alt_call'], cls))
+        _exec_ns = locals()
+        exec(call_str, globals(), _exec_ns)
+        exec(alt_call_str, globals(), _exec_ns)
+        setattr(cls, "__call__", types.MethodType(_exec_ns['_call'], cls))
+        setattr(cls, "alt_call", types.MethodType(_exec_ns['_alt_call'], cls))
         setattr(cls, "__name__", kwargs["fn_name"])
         setattr(cls, "_namemap", kwargs["_namemap"])
         setattr(cls, "_args", kwargs["arglist"])
@@ -748,8 +749,9 @@ class fn_wrapper(type):
                 ef_str = """def %s(self%s):
                 return %s
                 """ % (embed_fname, embed_sig_str, embed_fdef_str)
-                exec(ef_str)
-                ef = locals()[embed_fname]
+                _exec_ns = locals()
+                exec(ef_str, globals(), _exec_ns)
+                ef = _exec_ns[embed_fname]
                 setattr(cls, embed_fname, types.MethodType(ef, cls))
         if "defs" in kwargs:
             for def_key, def_val in kwargs["defs"].items():
@@ -776,11 +778,12 @@ class """+fn_name+"""_fn_wrapper(object):
             def_str += "\n    def " + fname + "(self" + embed_sig_str + \
                        "):\n        return " + fndef
     try:
-        exec(def_str)
+        _exec_ns = locals()
+        exec(def_str, globals(), _exec_ns)
     except:
         print("Problem defining function:")
         raise
-    evalfunc = locals()['fn_wrapper']()
+    evalfunc = _exec_ns['fn_wrapper']()
     evalfunc.__dict__.update(defs)
     if dyn_keys != [] and for_funcspec:
         # Don't make copy of the dict to allow automatic update.
