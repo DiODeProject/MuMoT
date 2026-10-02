@@ -15,22 +15,9 @@ Windows Compatibility:
 Renato Pagliara Vasquez
 """
 
-# Set package version.
-# NB with Python 3.8 we could use importlib.metadata (in std lib) instead.
-from pkg_resources import get_distribution, DistributionNotFound
-try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
-    # package is not installed
-    pass
 import sys
 
-import matplotlib
-from matplotlib import pyplot as plt
-# Guard against iopub rate limiting warnings (https://github.com/DiODeProject/MuMoT/issues/359)
-from notebook.notebookapp import NotebookApp
-NotebookApp.iopub_msg_rate_limit = 10000.0
-from sympy.parsing.latex import parse_latex
+from ._version import __version__
 
 # Import the functions and classes we wish to export i.e. the public API
 from .models import (
@@ -74,22 +61,30 @@ from .exceptions import (
     MuMoTWarning,
 )
 
-try:
-    # Try to get the currently-running IPython instance
-    ipython = get_ipython()
-    ipython.magic('alias_magic model latex')
-    ipython.magic('matplotlib nbagg')
+from IPython import get_ipython
 
-    def _hide_traceback(exc_tuple=None, filename=None, tb_offset=None,
-                        exception_only=False, running_compiled_code=False):
-        etype, value, tb = sys.exc_info()
-        return ipython._showtraceback(etype, value, ipython.InteractiveTB.get_exception_only(etype, value))
+# The currently-running IPython instance (None outside IPython)
+ipython = get_ipython()
+
+
+def _hide_traceback(exc_tuple=None, filename=None, tb_offset=None,
+                    exception_only=False, running_compiled_code=False):
+    etype, value, tb = sys.exc_info()
+    return ipython._showtraceback(etype, value, ipython.InteractiveTB.get_exception_only(etype, value))
+
+
+if ipython is not None:
+    ipython.run_line_magic('alias_magic', 'model latex')
+    # Interactive figures: ipympl's widget backend works in JupyterLab,
+    # Notebook 7+ and VS Code; nbagg only works in the classic Notebook
+    try:
+        import ipympl  # noqa: F401
+        ipython.run_line_magic('matplotlib', 'widget')
+    except ImportError:
+        ipython.run_line_magic('matplotlib', 'nbagg')
 
     _show_traceback = ipython.showtraceback
     ipython.showtraceback = _hide_traceback
-except NameError:
-    # There is no currently-running IPython instance
-    pass
 
 
 def setVerboseExceptions(verbose: bool = True) -> None:
@@ -101,4 +96,5 @@ def setVerboseExceptions(verbose: bool = True) -> None:
         Whether to show a exception traceback.  Defaults to True.
 
     """
-    ipython.showtraceback = _show_traceback if verbose else _hide_traceback
+    if ipython is not None:
+        ipython.showtraceback = _show_traceback if verbose else _hide_traceback

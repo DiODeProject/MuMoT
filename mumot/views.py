@@ -3,6 +3,7 @@ import bisect
 import copy
 import datetime
 import math
+import numbers
 import sys
 from typing import Dict, Optional, Tuple, Union
 
@@ -17,7 +18,6 @@ import matplotlib.ticker as ticker
 from mpl_toolkits.mplot3d import proj3d
 import numpy as np
 import networkx as nx
-import PyDSTool as dst
 from scipy.integrate import odeint
 import sympy
 from sympy import (
@@ -26,8 +26,6 @@ from sympy import (
     factorial,
     Function,
     lambdify,
-    latex,
-    simplify,
     Symbol,
     symbols,
 )
@@ -39,6 +37,8 @@ from . import (
     exceptions,
     utils,
 )
+from ._sympy_compat import latex, simplify
+from .continuation import equilibrium_continuation
 
 
 figureCounter = 1  # global figure counter for model views
@@ -287,8 +287,10 @@ class MuMoTview:
                 paramNames.append(str(key))
                 paramValues.append(item)
 
-        argNamesSymb = list(map(sympy.Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
+        # only numerical values can be substituted into model expressions
+        # (fixed params also include settings such as the network type)
+        argDict = {sympy.Symbol(name): value for name, value in zip(paramNames, paramValues)
+                   if isinstance(value, (numbers.Number, sympy.Basic))}
 
         if self._mumotModel._systemSize:
             argDict[self._mumotModel._systemSize] = 1
@@ -1749,11 +1751,11 @@ class MuMoTfieldView(MuMoTview):
                     vec3 = EvectsPlot[nn][0]
                     vec3norm = vec3.norm()
                     vec3 = vec3 / vec3norm
-                    if vec2norm >= vec3norm:
-                        angle_ell = sympy.acos(vec1.dot(vec2) / (vec1.norm() * vec2.norm())).evalf()
-                    else:
-                        angle_ell = sympy.acos(vec1.dot(vec3) / (vec1.norm() * vec3.norm())).evalf()
-                    angle_ell = angle_ell.evalf()
+                    vec = vec2 if vec2norm >= vec3norm else vec3
+                    # cosine of the angle; discard round-off (imaginary parts, |cos| > 1)
+                    # that would otherwise give a complex angle
+                    cos_ell = sympy.re((vec1.dot(vec) / (vec1.norm() * vec.norm())).evalf())
+                    angle_ell = sympy.acos(max(-1, min(1, cos_ell))).evalf()
                     projection_angle_list.append(angle_ell)
                     angle_ell_deg = 180 * angle_ell / (sympy.pi).evalf()
                     angle_ell_list.append(round(angle_ell_deg, 5))
@@ -2191,7 +2193,7 @@ class MuMoTvectorView(MuMoTfieldView):
                                choose_yrange=choose_yrange)
         else:
             self._get_field3d("3d vector plot", 10)
-            ax = self._figure.gca(projection='3d')
+            ax = _get_3d_axes(self._figure)
             # @todo: define colormap by user keyword; normalise off maximum value
             # in self._speed, and meshpoints?
             fig_vec3d = ax.quiver(self._X, self._Y, self._Z, self._Xdot,
@@ -2427,7 +2429,7 @@ class MuMoTstreamView(MuMoTfieldView):
             self._logs.append(log)
         else:
             self._get_field3d("3d stream plot", 10)
-            ax = self._figure.gca(projection='3d')
+            ax = _get_3d_axes(self._figure)
 
             argDict = self._get_argDict()
 
@@ -2525,8 +2527,6 @@ class MuMoTstreamView(MuMoTfieldView):
 class MuMoTbifurcationView(MuMoTview):
     """Bifurcation view on model."""
 
-    # model for bifurcation analysis
-    _pyDSmodel = None
     # critical parameter for bifurcation analysis
     _bifurcationParameter = None
     # first state variable of 2D system
@@ -2548,7 +2548,7 @@ class MuMoTbifurcationView(MuMoTview):
     # information about the mathematical expression displayed on vertical axis; can be 'None', '+' or '-'
     _SVoperation = None
     # initial conditions specified on corresponding sliders, will be used when calculation of fixed points fails
-    _pyDSmodel_ics = None
+    _initialStateSV = None
 
     # Parameters for controller specific to this MuMoTbifurcationView
     _BfcParams = None
@@ -2561,10 +2561,9 @@ class MuMoTbifurcationView(MuMoTview):
     # list of state variables
     _stateVariableList = None
 
-    # list of symbols protected in PyDSTool
-    _pydsProtected = ['gamma', 'Gamma']
-    # bifurcation parameter symbol passsed to PyDSTool
-    _bifurcationParameterPyDS = None
+    # state variable(s) used for bifurcation analysis, as SymPy symbols
+    _stateVarBif1Symbol = None
+    _stateVarBif2Symbol = None
 
     def _constructorSpecificParams(self, _):
         if self._controller is not None:
@@ -2593,19 +2592,13 @@ class MuMoTbifurcationView(MuMoTview):
 
         self._MaxNumPoints = kwargs.get('contMaxNumPoints', 100)
 
-        self._bifurcationParameter = _pydstoolify(bifurcationParameter)
-        replBifParam = {}
-        if self._bifurcationParameter in self._pydsProtected:
-            self._bifurcationParameterPyDS = 'A' + self._bifurcationParameter
-            replBifParam[self._bifurcationParameter] = self._bifurcationParameterPyDS
-        else:
-            self._bifurcationParameterPyDS = self._bifurcationParameter
+        self._bifurcationParameter = _plainName(bifurcationParameter)
 
         self._stateVarExpr1 = stateVarExpr1
-        stateVarExpr1 = _pydstoolify(stateVarExpr1)
+        stateVarExpr1 = _plainName(stateVarExpr1)
 
         if stateVarExpr2:
-            stateVarExpr2 = _pydstoolify(stateVarExpr2)
+            stateVarExpr2 = _plainName(stateVarExpr2)
 
         self._SVoperation = None
         try:
@@ -2623,9 +2616,6 @@ class MuMoTbifurcationView(MuMoTview):
             except ValueError:
                 self._stateVarBif1 = stateVarExpr1
                 self._stateVarBif2 = stateVarExpr2
-
-        # print(self._stateVarBif1)
-        # print(self._stateVarBif2)
 
         self._BfcParams = BfcParams
 
@@ -2660,33 +2650,8 @@ class MuMoTbifurcationView(MuMoTview):
 
         self._constructorSpecificParams(BfcParams)
 
-        # self._logs.append(log)
-
-        self._pyDSmodel = dst.args(name='MuMoT Model' + str(id(self)))
-        varspecs = {}
-        stateVariableList = []
-        replaceSV = {}
-        for reactant in self._mumotModel._reactants:
-            if reactant not in self._mumotModel._constantReactants:
-                stateVariableList.append(reactant)
-                reactantString = _pydstoolify(reactant)
-                if reactantString[0].islower() or reactantString in self._pydsProtected:
-                    replaceSV[reactantString] = 'A' + reactantString
-                    varspecs['A' + reactantString] = _pydstoolify(self._mumotModel._equations[reactant])
-                else:
-                    varspecs[reactantString] = _pydstoolify(self._mumotModel._equations[reactant])
-
-        for key, equation in varspecs.items():
-            for replKey, replVal in replaceSV.items():
-                equationNew = equation.replace(replKey, replVal)
-                varspecs[key] = equationNew
-        for key, equation in varspecs.items():
-            for replKey, replVal in replBifParam.items():
-                equationNew = equation.replace(replKey, replVal)
-                varspecs[key] = equationNew
-
-        self._pyDSmodel.varspecs = varspecs
-
+        stateVariableList = [reactant for reactant in self._mumotModel._reactants
+                             if reactant not in self._mumotModel._constantReactants]
         if len(stateVariableList) > 2:
             self._showErrorMessage('Bifurcation diagrams are currently only supported for 1D and 2D systems (1 or 2 time-dependent variables in the ODE system)!')
             return None
@@ -2696,22 +2661,22 @@ class MuMoTbifurcationView(MuMoTview):
         if len(stateVariableList) == 2:
             self._stateVariable2 = stateVariableList[1]
 
-        if self._stateVarBif2 is None:
-            if self._stateVariable2:
-                if self._stateVarBif1 == _pydstoolify(self._stateVariable1):
-                    self._stateVarBif2 = _pydstoolify(self._stateVariable2)
-                elif self._stateVarBif1 == _pydstoolify(self._stateVariable2):
-                    self._stateVarBif2 = _pydstoolify(self._stateVariable1)
-                self._stateVarBif2Print = self._stateVarBif2
-                if self._stateVarBif2[0].islower() or self._stateVarBif2 in self._pydsProtected:
-                    self._stateVarBif2 = 'A' + self._stateVarBif2
-        else:
-            self._stateVarBif2Print = self._stateVarBif2
-            if self._stateVarBif2[0].islower() or self._stateVarBif2 in self._pydsProtected:
-                self._stateVarBif2 = 'A' + self._stateVarBif2
+        if self._stateVarBif2 is None and self._stateVariable2:
+            if self._stateVarBif1 == _plainName(self._stateVariable1):
+                self._stateVarBif2 = _plainName(self._stateVariable2)
+            elif self._stateVarBif1 == _plainName(self._stateVariable2):
+                self._stateVarBif2 = _plainName(self._stateVariable1)
         self._stateVarBif1Print = self._stateVarBif1
-        if self._stateVarBif1[0].islower() or self._stateVarBif1 in self._pydsProtected:
-            self._stateVarBif1 = 'A' + self._stateVarBif1
+        self._stateVarBif2Print = self._stateVarBif2
+
+        # the state variables (as SymPy symbols) plotted on the vertical axis
+        stateVarsByName = {_plainName(sv): sv for sv in stateVariableList}
+        self._stateVarBif1Symbol = stateVarsByName.get(self._stateVarBif1)
+        self._stateVarBif2Symbol = stateVarsByName.get(self._stateVarBif2)
+        if self._stateVarBif1Symbol is None or (self._stateVarBif2 is not None and self._stateVarBif2Symbol is None):
+            self._showErrorMessage(f"Could not identify the state variable(s) in '{self._stateVarExpr1}'; "
+                                   f"state variables are: {', '.join(map(_plainName, stateVariableList))}")
+            return None
 
         if not self._silent:
             self._plot_bifurcation()
@@ -2727,44 +2692,29 @@ class MuMoTbifurcationView(MuMoTview):
             if self._stateVariable2:
                 print(f"State variables are: {self._stateVarBif1Print} and {self._stateVarBif2Print}.")
             else:
-                print("{State variable is: {self._stateVarBif1Print}.")
+                print(f"State variable is: {self._stateVarBif1Print}.")
             print(f"The bifurcation parameter chosen is: {self._bifurcationParameter}.")
         self._logs.append(log)
 
         argDict = self._get_argDict()
-        paramDict = {}
-        replaceRates = {}
-        for arg in argDict:
-            if arg in self._mumotModel._rates or arg in self._mumotModel._constantReactants or arg == self._mumotModel._systemSize:
-                if _pydstoolify(arg) in self._pydsProtected:
-                    paramDict['A' + _pydstoolify(arg)] = argDict[arg]
-                    if _pydstoolify(arg) != self._bifurcationParameter:
-                        replaceRates[_pydstoolify(arg)] = 'A' + _pydstoolify(arg)
-                else:
-                    paramDict[_pydstoolify(arg)] = argDict[arg]
-
-        for key, equation in self._pyDSmodel.varspecs.items():
-            for replKey, replVal in replaceRates.items():
-                equationNew = equation.replace(replKey, replVal)
-                self._pyDSmodel.varspecs[key] = equationNew
+        paramDict = {arg: value for arg, value in argDict.items()
+                     if arg in self._mumotModel._rates or arg in self._mumotModel._constantReactants
+                     or arg == self._mumotModel._systemSize}
+        bifurcationParameterSymbol = next((arg for arg in paramDict
+                                           if _plainName(arg) == self._bifurcationParameter), None)
+        if bifurcationParameterSymbol is None:
+            self._show_computation_stop()
+            self._showErrorMessage(f"'{self._bifurcationParameter}' is not a parameter of the model.")
+            return None
 
         with io.capture_output() as log:
-
-            self._pyDSmodel.pars = paramDict
 
             xdata = []  # list of arrays containing the bifurcation-parameter data for bifurcation diagram data
             ydata = []  # list of arrays containing the state variable data (either one variable, or the sum or difference of the two SVs) for bifurcation diagram data
 
             initDictList = []
-            self._pyDSmodel_ics = {}
-            for inState in self._initialState:
-                if inState in self._stateVariableList:
-                    self._pyDSmodel_ics[inState] = self._initialState[inState]
-
-            # print(self._pyDSmodel_ics
-            # for ic in self._pyDSmodel_ics:
-            #    if 'Phi0' in _pydstoolify(ic):
-            #        self._pyDSmodel_ics[_pydstoolify(ic)[_pydstoolify(ic).index('0') + 1:]] = self._pyDSmodel_ics.pop(ic)  # {'A': 0.1, 'B': 0.9 }
+            self._initialStateSV = {inState: value for inState, value in self._initialState.items()
+                                    if inState in self._stateVariableList}
 
             if len(self._stateVariableList) == 1:
                 realEQsol, eigList = self._get_fixedPoints1d()
@@ -2775,324 +2725,113 @@ class MuMoTbifurcationView(MuMoTview):
                 for kk in range(len(realEQsol)):
                     if all(sympy.sign(sympy.re(lam)) < 0 for lam in eigList[kk]):
                         initDictList.append(realEQsol[kk])
-                # self._showErrorMessage('Stationary state(s) detected and continuated.'
-                #                        'Initial conditions for state variables specified on sliders in Advanced options tab were not used.'
-                #                        '(Those are only used in case the calculation of fixed points fails.) ')
                 print(f"{len(initDictList)} stable steady state(s) detected and continuated. "
                       'Initial conditions for state variables specified on sliders in Advanced options tab were not used. '
                       'Those are only used in case the calculation of fixed points fails.')
             else:
-                initDictList.append(self._pyDSmodel_ics)
-                # self._showErrorMessage('Stationary states could not be calculated;'
-                #                        'used initial conditions specified on sliders in Advanced options tab instead. '
-                #                        'This means only one branch was attempted to be continuated '
-                #                        'and the starting point might not have been a stationary state. ')
+                initDictList.append(self._initialStateSV)
                 print('Stationary states could not be calculated; '
-                      f"used initial conditions specified on sliders in Advanced options tab instead: {self._pyDSmodel_ics}."
+                      f"used initial conditions specified on sliders in Advanced options tab instead: {self._initialStateSV}."
                       'This means only one branch was continuated and the starting point might not have been a stationary state.')
 
-            specialPoints = []  # list of special points: LP and BP
+            try:
+                continuation = equilibrium_continuation(
+                    {sv: self._mumotModel._equations[sv] for sv in self._stateVariableList},
+                    paramDict, bifurcationParameterSymbol, max_num_points=self._MaxNumPoints)
+            except ValueError as err:
+                self._show_computation_stop()
+                self._showErrorMessage(f"Bifurcation diagram could not be computed: {err}")
+                return None
+
+            stateVar1 = self._stateVarBif1Symbol
+            stateVar2 = self._stateVarBif2Symbol
             sPoints_X = []  # bifurcation parameter
             sPoints_Y = []  # stateVarBif1
+            sPoints_Z = []  # stateVarBif2
             sPoints_Labels = []
             eigenvalues = []
-            sPoints_Z = []  # stateVarBif2
             k_iter_BPlabel = 0
             k_iter_LPlabel = 0
 
-            for nn, init_dict in enumerate(initDictList):
-                # Mutate key names so they are in a form that is compatible
-                # with PyDSTool
-                init_dict_pyds = {}
-                for k, v in init_dict.items():
-                    k_pyds = _pydstoolify(k)
-                    if k_pyds.islower() or k_pyds in self._pydsProtected:
-                        k_pyds = 'A' + k_pyds
-                    init_dict_pyds[k_pyds] = v
+            def isNewSpecialPoint(point):
+                """Whether ``point`` differs (to 4 d.p.) in every coordinate from all special points found so far."""
+                coordinates = [(point.parameter, sPoints_X), (point.state[stateVar1], sPoints_Y)]
+                if stateVar2 is not None:
+                    coordinates.append((point.state[stateVar2], sPoints_Z))
+                return all(round(value, 4) not in [round(kk, 4) for kk in found]
+                           for value, found in coordinates)
 
-                #for key in initDictList[nn]:
-                #    old_key = key
-                #    new_key = _pydstoolify(key)
-                #    if new_key[0].islower() or new_key in self._pydsProtected:
-                #        new_key = 'A' + new_key
-                #    initDictList[nn][new_key] = initDictList[nn].pop(old_key)
+            def addSpecialPoint(point, label):
+                sPoints_X.append(point.parameter)
+                sPoints_Y.append(point.state[stateVar1])
+                if stateVar2 is not None:
+                    sPoints_Z.append(point.state[stateVar2])
+                sPoints_Labels.append(label)
 
-                # self._pyDSmodel.ics = init_dict_pyds
-                pyDSode = dst.Generator.Vode_ODEsystem(self._pyDSmodel)
-                pyDSode.set(ics=init_dict_pyds)
-                # pyDSode.set(pars = self._getBifParInitCondFromSlider())
-                pyDSode.set(pars={self._bifurcationParameterPyDS: self._initBifParam})
-
-                # print(self._getBifParInitCondFromSlider())
-                pyDScont = dst.ContClass(pyDSode)
-                EQ_iter = 1 + nn
-                k_iter_BP = 1
-                k_iter_LP = 1
-
-                # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
-                pyDScontArgs = dst.args(name='EQ' + str(EQ_iter), type='EP-C')
-                # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
-                pyDScontArgs.freepars = [self._bifurcationParameterPyDS]
-                # The following 3 parameters should work for most cases, as
-                # there should be a step-size adaption within PyDSTool.
-                pyDScontArgs.MaxNumPoints = self._MaxNumPoints
-                pyDScontArgs.MaxStepSize = 1e-1
-                pyDScontArgs.MinStepSize = 1e-5
-                pyDScontArgs.StepSize = 2e-3
-                # 'Limit Points' and 'Branch Points may be detected'
-                pyDScontArgs.LocBifPoints = ['LP', 'BP']
-                # to tell unstable from stable branches
-                pyDScontArgs.SaveEigen = True
-
-                pyDScont.newCurve(pyDScontArgs)
-
-                try:
-                    try:
-                        pyDScont['EQ' + str(EQ_iter)].backward()
-                    except:
-                        self._showErrorMessage('Continuation failure (backward) on initial branch<br>')
-                    try:
-                        pyDScont['EQ' + str(EQ_iter)].forward()
-                    except:
-                        self._showErrorMessage('Continuation failure (forward) on initial branch<br>')
-                except ZeroDivisionError:
-                    self._show_computation_stop()
-                    self._showErrorMessage('Division by zero<br>')
-
-                # pyDScont['EQ' + str(EQ_iter)].info()
-                if self._stateVarBif2 is not None:
-                    try:
-                        xdata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._bifurcationParameterPyDS])
-                        if self._SVoperation:
-                            if self._SVoperation == '-':
-                                ydata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1] -
-                                             pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif2])
-                            elif self._SVoperation == '+':
-                                ydata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1] +
-                                             pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif2])
-                            else:
-                                self._showErrorMessage("Only '+' and '-' are supported operations between state variables.")
-                        else:
-                            ydata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1])
-
-                        eigenvalues.append(np.array([pyDScont['EQ' + str(EQ_iter)].sol[kk].labels['EP']['data'].evals
-                                                     for kk in range(len(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1]))]))
-
-                        while pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP)):
-                            if (round(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP))[self._bifurcationParameterPyDS], 4) not in [round(kk, 4) for kk in sPoints_X]
-                                and round(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP))[self._stateVarBif1], 4) not in [round(kk, 4) for kk in sPoints_Y]
-                                and round(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP))[self._stateVarBif2], 4) not in [round(kk, 4) for kk in sPoints_Z]):
-                                sPoints_X.append(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP))[self._bifurcationParameterPyDS])
-                                sPoints_Y.append(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP))[self._stateVarBif1])
-                                sPoints_Z.append(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP))[self._stateVarBif2])
-                                k_iter_LPlabel += 1
-                                sPoints_Labels.append('LP' + str(k_iter_LPlabel))
-                            k_iter_LP += 1
-
-                        k_iter_BPlabel_previous = k_iter_BPlabel
-                        while pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP)):
-                            if (round(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP))[self._bifurcationParameterPyDS], 4) not in [round(kk, 4) for kk in sPoints_X]
-                                and round(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP))[self._stateVarBif1], 4) not in [round(kk, 4) for kk in sPoints_Y]
-                                and round(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP))[self._stateVarBif2], 4) not in [round(kk, 4) for kk in sPoints_Z]):
-                                sPoints_X.append(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP))[self._bifurcationParameterPyDS])
-                                sPoints_Y.append(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP))[self._stateVarBif1])
-                                sPoints_Z.append(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP))[self._stateVarBif2])
-                                k_iter_BPlabel += 1
-                                sPoints_Labels.append('BP' + str(k_iter_BPlabel))
-                            k_iter_BP += 1
-                        for jj in range(1, k_iter_BP):
-                            if 'BP' + str(jj + k_iter_BPlabel_previous) in sPoints_Labels:
-                                EQ_iter_BP = jj
-                                # print(EQ_iter_BP)
-                                k_iter_next = 1
-                                # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
-                                pyDScontArgs = dst.args(name='EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP), type='EP-C')
-                                # control parameter(s) (should be among those specified in self._pyDSmodel.pars)
-                                pyDScontArgs.freepars = [self._bifurcationParameterPyDS]
-                                # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
-                                pyDScontArgs.MaxNumPoints = self._MaxNumPoints
-                                pyDScontArgs.MaxStepSize = 1e-1
-                                pyDScontArgs.MinStepSize = 1e-5
-                                pyDScontArgs.StepSize = 5e-3
-                                # 'Limit Points' and 'Branch Points may be detected'
-                                pyDScontArgs.LocBifPoints = ['LP', 'BP']
-                                # To tell unstable from stable branches
-                                pyDScontArgs.SaveEigen = True
-                                pyDScontArgs.initpoint = 'EQ' + str(EQ_iter) + ':BP' + str(jj)
-                                pyDScont.newCurve(pyDScontArgs)
-
-                                try:
-                                    try:
-                                        pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].backward()
-                                    except:
-                                        self._showErrorMessage('Continuation failure (backward) starting from branch point<br>')
-                                    try:
-                                        pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].forward()
-                                    except:
-                                        self._showErrorMessage('Continuation failure (forward) starting from branch point<br>')
-                                except ZeroDivisionError:
-                                    self._show_computation_stop()
-                                    self._showErrorMessage('Division by zero<br>')
-
-                                xdata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._bifurcationParameterPyDS])
-                                if self._SVoperation:
-                                    if self._SVoperation == '-':
-                                        ydata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1] -
-                                                     pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif2])
-                                    elif self._SVoperation == '+':
-                                        ydata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1] +
-                                                     pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif2])
-                                    else:
-                                        self._showErrorMessage('Only \' +\' and \'-\' are supported operations between state variables.')
-                                else:
-                                    ydata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1])
-
-                                eigenvalues.append(np.array([pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[kk].labels['EP']['data'].evals
-                                                             for kk in range(len(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1]))]))
-                                while pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next)):
-                                    if (round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._bifurcationParameterPyDS], 4)
-                                            not in [round(kk, 4) for kk in sPoints_X]
-                                            and round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._stateVarBif1], 4)
-                                            not in [round(kk, 4) for kk in sPoints_Y]
-                                            and round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._stateVarBif2], 4)
-                                            not in [round(kk, 4) for kk in sPoints_Z]):
-                                        sPoints_X.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._bifurcationParameterPyDS])
-                                        sPoints_Y.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._stateVarBif1])
-                                        sPoints_Z.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._stateVarBif2])
-                                        sPoints_Labels.append('EQ_BP_BP' + str(k_iter_next))
-                                    k_iter_next += 1
-                                k_iter_next = 1
-                                while pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next)):
-                                    if (round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next))[self._bifurcationParameterPyDS], 4)
-                                            not in [round(kk, 4) for kk in sPoints_X]
-                                            and round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next))[self._stateVarBif1], 4)
-                                            not in [round(kk, 4) for kk in sPoints_Y]
-                                            and round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next))[self._stateVarBif2], 4)
-                                            not in [round(kk, 4) for kk in sPoints_Z]):
-                                        sPoints_X.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next))[self._bifurcationParameterPyDS])
-                                        sPoints_Y.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next))[self._stateVarBif1])
-                                        sPoints_Z.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next))[self._stateVarBif2])
-                                        sPoints_Labels.append('EQ_BP_LP' + str(k_iter_next))
-                                    k_iter_next += 1
-
-                    except TypeError:
-                        self._show_computation_stop()
-                        print("Continuation failed; "
-                              "try with different parameters - use sliders. "
-                              "If that does not work, try changing maximum number of continuation points using the keyword 'contMaxNumPoints'. "
-                              "If not set, default value is contMaxNumPoints=100.")
-
-                # Bifurcation routine for 1D system
-                else:
-                    try:
-                        xdata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._bifurcationParameterPyDS])
-                        ydata.append(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1])
-
-                        eigenvalues.append(np.array([pyDScont['EQ' + str(EQ_iter)].sol[kk].labels['EP']['data'].evals
-                                                     for kk in range(len(pyDScont['EQ' + str(EQ_iter)].sol[self._stateVarBif1]))]))
-
-                        while pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP)):
-                            if (round(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP))[self._bifurcationParameterPyDS], 4)
-                                    not in [round(kk, 4) for kk in sPoints_X]
-                                    and round(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP))[self._stateVarBif1], 4)
-                                    not in [round(kk, 4) for kk in sPoints_Y]):
-                                sPoints_X.append(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP))[self._bifurcationParameterPyDS])
-                                sPoints_Y.append(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('LP' + str(k_iter_LP))[self._stateVarBif1])
-                                k_iter_LPlabel += 1
-                                sPoints_Labels.append('LP' + str(k_iter_LPlabel))
-                            k_iter_LP += 1
-
-                        k_iter_BPlabel_previous = k_iter_BPlabel
-                        while pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP)):
-                            if (round(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP))[self._bifurcationParameterPyDS], 4)
-                                    not in [round(kk, 4) for kk in sPoints_X]
-                                    and round(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP))[self._stateVarBif1], 4)
-                                    not in [round(kk, 4) for kk in sPoints_Y]):
-                                sPoints_X.append(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP))[self._bifurcationParameterPyDS])
-                                sPoints_Y.append(pyDScont['EQ' + str(EQ_iter)].getSpecialPoint('BP' + str(k_iter_BP))[self._stateVarBif1])
-                                k_iter_BPlabel += 1
-                                sPoints_Labels.append('BP' + str(k_iter_BPlabel))
-                            k_iter_BP += 1
-                        for jj in range(1, k_iter_BP):
-                            if 'BP' + str(jj + k_iter_BPlabel_previous) in sPoints_Labels:
-                                EQ_iter_BP = jj
-                                print(EQ_iter_BP)
-                                k_iter_next = 1
-                                # 'EP-C' stands for Equilibrium Point Curve. The branch will be labelled with the string aftr name='name'.
-                                pyDScontArgs = dst.args(name='EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP), type='EP-C')
-                                # Control parameter(s) (should be among those specified in self._pyDSmodel.pars)
-                                pyDScontArgs.freepars = [self._bifurcationParameterPyDS]
-                                # The following 3 parameters should work for most cases, as there should be a step-size adaption within PyDSTool.
-                                pyDScontArgs.MaxNumPoints = self._MaxNumPoints
-                                pyDScontArgs.MaxStepSize = 1e-1
-                                pyDScontArgs.MinStepSize = 1e-5
-                                pyDScontArgs.StepSize = 5e-3
-                                # 'Limit Points' and 'Branch Points may be detected'
-                                pyDScontArgs.LocBifPoints = ['LP', 'BP']
-                                # To tell unstable from stable branches
-                                pyDScontArgs.SaveEigen = True
-                                pyDScontArgs.initpoint = 'EQ' + str(EQ_iter) + ':BP' + str(jj)
-                                pyDScont.newCurve(pyDScontArgs)
-
-                                try:
-                                    try:
-                                        pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].backward()
-                                    except:
-                                        self._showErrorMessage('Continuation failure (backward) starting from branch point<br>')
-                                    try:
-                                        pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].forward()
-                                    except:
-                                        self._showErrorMessage('Continuation failure (forward) starting from branch point<br>')
-                                except ZeroDivisionError:
-                                    self._show_computation_stop()
-                                    self._showErrorMessage('Division by zero<br>')
-
-                                xdata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._bifurcationParameterPyDS])
-                                ydata.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1])
-
-                                eigenvalues.append(np.array([pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[kk].labels['EP']['data'].evals
-                                                             for kk in range(len(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].sol[self._stateVarBif1]))]))
-                                while pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next)):
-                                    if (round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._bifurcationParameterPyDS], 4)
-                                            not in [round(kk, 4) for kk in sPoints_X]
-                                            and round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._stateVarBif1], 4)
-                                            not in [round(kk, 4) for kk in sPoints_Y]):
-                                        sPoints_X.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._bifurcationParameterPyDS])
-                                        sPoints_Y.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('BP' + str(k_iter_next))[self._stateVarBif1])
-                                        sPoints_Labels.append('EQ_BP_BP' + str(k_iter_next))
-                                    k_iter_next += 1
-                                k_iter_next = 1
-                                while pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next)):
-                                    if (round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next))[self._bifurcationParameterPyDS], 4)
-                                            not in [round(kk, 4) for kk in sPoints_X]
-                                            and round(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next))[self._stateVarBif1], 4)
-                                            not in [round(kk, 4) for kk in sPoints_Y]):
-                                        sPoints_X.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next))[self._bifurcationParameterPyDS])
-                                        sPoints_Y.append(pyDScont['EQ' + str(EQ_iter) + 'BP' + str(EQ_iter_BP)].getSpecialPoint('LP' + str(k_iter_next))[self._stateVarBif1])
-                                        sPoints_Labels.append('EQ_BP_LP' + str(k_iter_next))
-                                    k_iter_next += 1
-
-                    except TypeError:
-                        self._show_computation_stop()
-                        print("Continuation failed; "
-                              "try with different parameters - use sliders. "
-                              "If that does not work, try changing maximum number of continuation points using the keyword 'contMaxNumPoints'. "
-                              "If not set, default value is contMaxNumPoints=100.")
-
-                del(pyDScontArgs)
-                del(pyDScont)
-                del(pyDSode)
-            if self._SVoperation:
+            def addBranch(branch):
+                xdata.append(branch.parameter)
                 if self._SVoperation == '-':
-                    specialPoints = [sPoints_X, np.asarray(sPoints_Y) - np.asarray(sPoints_Z), sPoints_Labels]
+                    ydata.append(branch.states[stateVar1] - branch.states[stateVar2])
                 elif self._SVoperation == '+':
-                    specialPoints = [sPoints_X, np.asarray(sPoints_Y) + np.asarray(sPoints_Z), sPoints_Labels]
+                    ydata.append(branch.states[stateVar1] + branch.states[stateVar2])
                 else:
-                    self._showErrorMessage("Only '+' and '-' are supported operations between state variables.")
+                    ydata.append(branch.states[stateVar1])
+                eigenvalues.append(branch.eigenvalues)
+
+            def reportFailures(branch, where):
+                for direction in branch.failures:
+                    self._showErrorMessage(f"Continuation failure ({direction}) {where}<br>")
+
+            continuationFailedMessage = ("Continuation failed; "
+                                         "try with different parameters - use sliders. "
+                                         "If that does not work, try changing maximum number of continuation points using the keyword 'contMaxNumPoints'. "
+                                         f"If not set, default value is contMaxNumPoints={self._MaxNumPoints}.")
+
+            for init_dict in initDictList:
+                branch = continuation.from_state({sv: float(value) for sv, value in init_dict.items()},
+                                                 self._initBifParam, step_size=2e-3)
+                if branch is None:
+                    self._show_computation_stop()
+                    print(continuationFailedMessage)
+                    continue
+                reportFailures(branch, 'on initial branch')
+                addBranch(branch)
+
+                for point in branch.special('LP'):
+                    if isNewSpecialPoint(point):
+                        k_iter_LPlabel += 1
+                        addSpecialPoint(point, 'LP' + str(k_iter_LPlabel))
+
+                k_iter_BPlabel_previous = k_iter_BPlabel
+                branchPoints = branch.special('BP')
+                for point in branchPoints:
+                    if isNewSpecialPoint(point):
+                        k_iter_BPlabel += 1
+                        addSpecialPoint(point, 'BP' + str(k_iter_BPlabel))
+
+                # continue the other branch through each newly found branch point
+                for jj, point in enumerate(branchPoints, start=1):
+                    if 'BP' + str(jj + k_iter_BPlabel_previous) not in sPoints_Labels:
+                        continue
+                    newBranch = continuation.from_branch_point(point, step_size=5e-3)
+                    if newBranch is None:
+                        self._show_computation_stop()
+                        print(continuationFailedMessage)
+                        break
+                    reportFailures(newBranch, 'starting from branch point')
+                    addBranch(newBranch)
+                    for kind in ('BP', 'LP'):
+                        for newPoint in newBranch.special(kind):
+                            if isNewSpecialPoint(newPoint):
+                                addSpecialPoint(newPoint, f"EQ_BP_{kind}{newPoint.index}")
+
+            if self._SVoperation == '-':
+                specialPoints = [sPoints_X, np.asarray(sPoints_Y) - np.asarray(sPoints_Z), sPoints_Labels]
+            elif self._SVoperation == '+':
+                specialPoints = [sPoints_X, np.asarray(sPoints_Y) + np.asarray(sPoints_Z), sPoints_Labels]
             else:
                 specialPoints = [sPoints_X, np.asarray(sPoints_Y), sPoints_Labels]
 
-            # print('Special Points on curve: ', specialPoints)
             print('Special Points on curve:')
             if len(specialPoints[0]) == 0:
                 print('No special points could be detected.')
@@ -3110,7 +2849,6 @@ class MuMoTbifurcationView(MuMoTview):
                 self._chooseXrange = [0, xmaxbif]
 
             if xdata != [] and ydata != []:
-                # plt.clf()
                 _fig_formatting_2D(xdata=xdata,
                                    ydata=ydata,
                                    xlab=self._xlab,
@@ -3208,8 +2946,10 @@ class MuMoTbifurcationView(MuMoTview):
                 paramNames.append(str(key))
                 paramValues.append(item)
 
-        argNamesSymb = list(map(sympy.Symbol, paramNames))
-        argDict = dict(zip(argNamesSymb, paramValues))
+        # only numerical values can be substituted into model expressions
+        # (fixed params also include settings such as the network type)
+        argDict = {sympy.Symbol(name): value for name, value in zip(paramNames, paramValues)
+                   if isinstance(value, (numbers.Number, sympy.Basic))}
 
         if self._mumotModel._systemSize:
             argDict[self._mumotModel._systemSize] = 1
@@ -3670,7 +3410,7 @@ class MuMoTstochasticSimulationView(MuMoTview):
                             samples_y.append(results[state][-1] / self._systemSize
                                              if self._plotProportions
                                              else results[state][-1])
-                samples = np.column_stack((samples_x, samples_y))
+                samples = np.column_stack((samples_x, samples_y)).astype(float)
                 _plot_point_cov(samples, nstd=1, alpha=0.5, color='green')
             else:
                 for state in self._mumotModel._getAllReactants()[0]:
@@ -4451,7 +4191,10 @@ class MuMoTmultiagentView(MuMoTstochasticSimulationView):
             except ValueError:
                 pass
         if resetValueAndRange:
-            self._controller._widgetsExtraParams['netParam'].max = float("inf")  # temp to avoid min > max exception
+            # temporarily raise max to avoid min > max exception (the new min is at most 1;
+            # max must stay finite as widget state must be JSON-serialisable)
+            self._controller._widgetsExtraParams['netParam'].max = max(
+                self._controller._widgetsExtraParams['netParam'].max, 1)
         if (self._netType == consts.NetworkType.FULLY_CONNECTED):
             # self._controller._widgetsExtraParams['netParam'].min = 0
             # self._controller._widgetsExtraParams['netParam'].max = 1
@@ -4714,11 +4457,21 @@ class Arrow3D(mpatch.FancyArrowPatch):
         mpatch.FancyArrowPatch.__init__(self, (0, 0), (0, 0), *args, **kwargs)
         self._verts3d = xs, ys, zs
 
-    def draw(self, renderer) -> None:
+    def do_3d_projection(self, renderer=None) -> float:
         xs3d, ys3d, zs3d = self._verts3d
-        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
+        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, self.axes.M)
         self.set_positions((xs[0], ys[0]), (xs[1], ys[1]))
-        mpatch.FancyArrowPatch.draw(self, renderer)
+        return np.min(zs)
+
+
+def _get_3d_axes(figure):
+    """Return the current 3D axes of ``figure``, creating them if necessary.
+
+    Replacement for ``figure.gca(projection='3d')``, which Matplotlib no longer supports.
+    """
+    if figure.axes and figure.gca().name == '3d':
+        return figure.gca()
+    return figure.add_subplot(projection='3d')
 
 
 def _roundNumLogsOut(number: Union[sympy.Add, float]) -> str:
@@ -4776,7 +4529,7 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
     """
     fig = plt.gcf()
     # fig.set_size_inches(10,8)
-    ax = fig.gca(projection='3d')
+    ax = _get_3d_axes(fig)
 
     if kwargs.get('showPlane', False) is True:
         # pointsMesh = np.linspace(0, 1, 11)
@@ -4917,12 +4670,12 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
         ax.set_zlabel(r'' + str(zlabelstr), fontsize=axes_font_size)
 
     for tick in ax.xaxis.get_major_ticks():
-        tick.label.set_fontsize(18)
+        tick.label1.set_fontsize(18)
     for tick in ax.yaxis.get_major_ticks():
-        tick.label.set_fontsize(18)
+        tick.label1.set_fontsize(18)
     for tick in ax.zaxis.get_major_ticks():
         tick.set_pad(8)
-        tick.label.set_fontsize(18)
+        tick.label1.set_fontsize(18)
 
     plt.tight_layout(pad=4)
 
@@ -5342,9 +5095,9 @@ def _fig_formatting_2D(figure=None, xdata=None, ydata=None, choose_xrange=None, 
         plt.legend(loc=str(legend_loc), fontsize=legend_fontsize, ncol=2)
 
     for tick in ax.xaxis.get_major_ticks():
-        tick.label.set_fontsize(13)
+        tick.label1.set_fontsize(13)
     for tick in ax.yaxis.get_major_ticks():
-        tick.label.set_fontsize(13)
+        tick.label1.set_fontsize(13)
 
     plt.tight_layout()
 
@@ -5461,7 +5214,7 @@ def _fig_formatting_1D(figure=None, xdata=None, choose_xrange=None,
     plt.grid(kwargs.get('grid', False))
 
     for tick in ax.xaxis.get_major_ticks():
-        tick.label.set_fontsize(13)
+        tick.label1.set_fontsize(13)
 
     plt.tight_layout()
 
@@ -5599,252 +5352,8 @@ def _plot_cov_ellipse(
     return ellip
 
 
-def _deriveODEsFromRules(reactants, rules):
-    # @todo: replace with principled derivation via Master Equation and van Kampen expansion
-    equations = {}
-    terms = []
-    for rule in rules:
-        term = None
-        for reactant in rule.lhsReactants:
-            if term is None:
-                term = reactant
-            else:
-                term = term * reactant
-        term = term * rule.rate
-        terms.append(term)
-    for reactant in reactants:
-        rhs = None
-        for rule, term in zip(rules, terms):
-            # I love Python!
-            factor = rule.rhsReactants.count(reactant) - rule.lhsReactants.count(reactant)
-            if factor != 0:
-                if rhs is None:
-                    rhs = factor * term
-                else:
-                    rhs = rhs + factor * term
-        equations[reactant] = rhs
-
-    return equations
-
-
-def _deriveMasterEquation(stoichiometry):
-    """Derive the Master equation
-
-    Returns dictionary used in :method:`MuMoTmodel.showMasterEquation`.
-    """
-    substring = None
-
-    x, y, v, w, t, m = symbols('x y v w t m')
-    E_op = Function('E_op')
-    z = Function('z')
-    P = Function('P')
-    V = Symbol(r'\overline{V}', real=True, constant=True)
-
-    stoich = stoichiometry
-    nvec = []
-    for key1 in stoich:
-        for key2 in stoich[key1]:
-            if key2 != 'rate' and stoich[key1][key2] != 'const':
-                if key2 not in nvec:
-                    nvec.append(key2)
-                if len(stoich[key1][key2]) == 3:
-                    substring = stoich[key1][key2][2]
-    nvec = sorted(nvec, key=default_sort_key)
-
-    if len(nvec) < 1 or len(nvec) > 4:
-        print("Derivation of Master Equation works for 1, 2, 3 or 4 different reactants only")
-
-        return None, None
-
-    # assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
-
-    rhs = 0
-    sol_dict_rhs = {}
-    f = lambdify(z(y, v - w), z(y, v - w), modules='sympy')
-    g = lambdify((x, y, v), (factorial(x) / factorial(x - y)) / v**y, modules='sympy')
-    for key1 in stoich:
-        prod1 = 1
-        prod2 = 1
-        rate_fact = 1
-        for key2 in stoich[key1]:
-            if key2 != 'rate' and stoich[key1][key2] != 'const':
-                prod1 *= f(E_op(key2, stoich[key1][key2][0] - stoich[key1][key2][1]))
-                prod2 *= g(key2, stoich[key1][key2][0], V)
-            if stoich[key1][key2] == 'const':
-                rate_fact *= key2 / V
-
-        if len(nvec) == 1:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2 * V), P(nvec[0], t), stoich[key1]['rate'] * rate_fact)
-        elif len(nvec) == 2:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2 * V), P(nvec[0], nvec[1], t), stoich[key1]['rate'] * rate_fact)
-        elif len(nvec) == 3:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2 * V), P(nvec[0], nvec[1], nvec[2], t), stoich[key1]['rate'] * rate_fact)
-        else:
-            sol_dict_rhs[key1] = (prod1, simplify(prod2 * V), P(nvec[0], nvec[1], nvec[2], nvec[3], t), stoich[key1]['rate'] * rate_fact)
-
-    return sol_dict_rhs, substring
-
-
-def _doVanKampenExpansion(rhs, stoich):
-    """Return the left-hand side and right-hand side of van Kampen expansion."""
-    x, y, v, w, t, m = symbols('x y v w t m')
-    E_op = Function('E_op')
-    P = Function('P')
-    V = Symbol(r'\overline{V}', real=True, constant=True)
-    nvec = []
-    nconstvec = []
-    for key1 in stoich:
-        for key2 in stoich[key1]:
-            if key2 != 'rate' and stoich[key1][key2] != 'const':
-                if key2 not in nvec:
-                    nvec.append(key2)
-            elif key2 != 'rate' and stoich[key1][key2] == 'const':
-                if key2 not in nconstvec:
-                    nconstvec.append(key2)
-
-    nvec = sorted(nvec, key=default_sort_key)
-    if len(nvec) < 1 or len(nvec) > 4:
-        print("van Kampen expansion works for 1, 2, 3 or 4 different reactants only")
-
-        return None, None, None
-    # assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
-
-    NoiseDict = {}
-    PhiDict = {}
-    PhiConstDict = {}
-
-    for kk in range(len(nvec)):
-        NoiseDict[nvec[kk]] = Symbol(f"eta_{nvec[kk]}")
-        PhiDict[nvec[kk]] = Symbol(f"Phi_{nvec[kk]}")
-
-    for kk in range(len(nconstvec)):
-        PhiConstDict[nconstvec[kk]] = V * Symbol(f"Phi_{nconstvec[kk]}")
-
-    rhs_dict, substring = rhs(stoich)
-    rhs_vKE = 0
-
-    if len(nvec) == 1:
-        lhs_vKE = (Derivative(P(nvec[0], t), t).subs({nvec[0]: NoiseDict[nvec[0]]}) -
-                   sympy.sqrt(V) * Derivative(PhiDict[nvec[0]], t) * Derivative(P(nvec[0], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]]}))
-        for key in rhs_dict:
-            op = rhs_dict[key][0].subs({nvec[0]: NoiseDict[nvec[0]]})
-            func1 = rhs_dict[key][1].subs({nvec[0]: V * PhiDict[nvec[0]] + sympy.sqrt(V) * NoiseDict[nvec[0]]})
-            func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]]})
-            func = func1 * func2
-            # if len(op.args[0].args) ==0:
-            term = (op * func).subs({
-                op * func: func + op.args[1] / sympy.sqrt(V) * Derivative(func, op.args[0]) + op.args[1]**2 / (2 * V) * Derivative(func, op.args[0], op.args[0])})
-            # else:
-            #     term = (op.args[1] * func).subs({op.args[1] * func: func + op.args[1].args[1] / sympy.sqrt(V) * Derivative(func, op.args[1].args[0])
-            #                            + op.args[1].args[1]**2 / (2 * V) * Derivative(func, op.args[1].args[0], op.args[1].args[0])})
-            #     term = (op.args[0] * term).subs({op.args[0] * term: term + op.args[0].args[1] / sympy.sqrt(V) * Derivative(term, op.args[0].args[0])
-            #                            + op.args[0].args[1]**2 / (2 * V) * Derivative(term, op.args[0].args[0], op.args[0].args[0])})
-            rhs_vKE += rhs_dict[key][3].subs(PhiConstDict) * (term.doit() - func)
-    elif len(nvec) == 2:
-        lhs_vKE = (Derivative(P(nvec[0], nvec[1], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
-                   - sympy.sqrt(V) * Derivative(PhiDict[nvec[0]], t) * Derivative(P(nvec[0], nvec[1], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
-                   - sympy.sqrt(V) * Derivative(PhiDict[nvec[1]], t) * Derivative(P(nvec[0], nvec[1], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]}))
-
-        for key in rhs_dict:
-            op = rhs_dict[key][0].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
-            func1 = rhs_dict[key][1].subs({nvec[0]: V * PhiDict[nvec[0]] + sympy.sqrt(V) * NoiseDict[nvec[0]], nvec[1]: V * PhiDict[nvec[1]] + sympy.sqrt(V) * NoiseDict[nvec[1]]})
-            func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]]})
-            func = func1 * func2
-            if len(op.args[0].args) == 0:
-                term = (op * func).subs({op * func: func + op.args[1] / sympy.sqrt(V) * Derivative(func, op.args[0]) + op.args[1]**2 / (2 * V) * Derivative(func, op.args[0], op.args[0])})
-            else:
-                term = (op.args[1] * func).subs({op.args[1] * func: func + op.args[1].args[1] / sympy.sqrt(V) * Derivative(func, op.args[1].args[0])
-                                                 + op.args[1].args[1]**2 / (2 * V) * Derivative(func, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0] * term).subs({op.args[0] * term: term + op.args[0].args[1] / sympy.sqrt(V) * Derivative(term, op.args[0].args[0])
-                                                 + op.args[0].args[1]**2 / (2 * V) * Derivative(term, op.args[0].args[0], op.args[0].args[0])})
-            # term_num, term_denom = term.as_numer_denom()
-            rhs_vKE += rhs_dict[key][3].subs(PhiConstDict) * (term.doit() - func)
-    elif len(nvec) == 3:
-        lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], t), t).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
-                   - sympy.sqrt(V) * Derivative(PhiDict[nvec[0]], t) * Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
-                   - sympy.sqrt(V) * Derivative(PhiDict[nvec[1]], t) * Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
-                   - sympy.sqrt(V) * Derivative(PhiDict[nvec[2]], t) * Derivative(P(nvec[0], nvec[1], nvec[2], t), nvec[2]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]}))
-        rhs_dict, substring = rhs(stoich)
-        rhs_vKE = 0
-        for key in rhs_dict:
-            op = rhs_dict[key][0].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
-            func1 = rhs_dict[key][1].subs({nvec[0]: V * PhiDict[nvec[0]] + sympy.sqrt(V) * NoiseDict[nvec[0]], nvec[1]: V * PhiDict[nvec[1]] + sympy.sqrt(V) * NoiseDict[nvec[1]], nvec[2]: V * PhiDict[nvec[2]] + sympy.sqrt(V) * NoiseDict[nvec[2]]})
-            func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]]})
-            func = func1 * func2
-            if len(op.args[0].args) == 0:
-                term = (op * func).subs({op * func: func + op.args[1] / sympy.sqrt(V) * Derivative(func, op.args[0]) + op.args[1]**2 / (2 * V) * Derivative(func, op.args[0], op.args[0])})
-
-            elif len(op.args) == 2:
-                term = (op.args[1] * func).subs({op.args[1] * func: func + op.args[1].args[1] / sympy.sqrt(V) * Derivative(func, op.args[1].args[0])
-                                                 + op.args[1].args[1]**2 / (2 * V) * Derivative(func, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0] * term).subs({op.args[0] * term: term + op.args[0].args[1] / sympy.sqrt(V) * Derivative(term, op.args[0].args[0])
-                                                 + op.args[0].args[1]**2 / (2 * V) * Derivative(term, op.args[0].args[0], op.args[0].args[0])})
-            elif len(op.args) == 3:
-                term = (op.args[2] * func).subs({op.args[2] * func: func + op.args[2].args[1] / sympy.sqrt(V) * Derivative(func, op.args[2].args[0])
-                                                 + op.args[2].args[1]**2 / (2 * V) * Derivative(func, op.args[2].args[0], op.args[2].args[0])})
-                term = (op.args[1] * term).subs({op.args[1] * term: term + op.args[1].args[1] / sympy.sqrt(V) * Derivative(term, op.args[1].args[0])
-                                                 + op.args[1].args[1]**2 / (2 * V) * Derivative(term, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0] * term).subs({op.args[0] * term: term + op.args[0].args[1] / sympy.sqrt(V) * Derivative(term, op.args[0].args[0])
-                                                 + op.args[0].args[1]**2 / (2 * V) * Derivative(term, op.args[0].args[0], op.args[0].args[0])})
-            else:
-                print('Something went wrong!')
-            rhs_vKE += rhs_dict[key][3].subs(PhiConstDict) * (term.doit() - func)
-    else:
-        lhs_vKE = (Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), t).subs(
-            {nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
-            - sympy.sqrt(V) * Derivative(PhiDict[nvec[0]], t) * Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[0]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
-            - sympy.sqrt(V) * Derivative(PhiDict[nvec[1]], t) * Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[1]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
-            - sympy.sqrt(V) * Derivative(PhiDict[nvec[2]], t) * Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[2]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]})
-            - sympy.sqrt(V) * Derivative(PhiDict[nvec[3]], t) * Derivative(P(nvec[0], nvec[1], nvec[2], nvec[3], t), nvec[3]).subs({nvec[0]: NoiseDict[nvec[0]], nvec[1]: NoiseDict[nvec[1]], nvec[2]: NoiseDict[nvec[2]], nvec[3]: NoiseDict[nvec[3]]}))
-        rhs_dict, substring = rhs(stoich)
-        rhs_vKE = 0
-        for key in rhs_dict:
-            op = rhs_dict[key][0].subs({nvec[0]: NoiseDict[nvec[0]],
-                                        nvec[1]: NoiseDict[nvec[1]],
-                                        nvec[2]: NoiseDict[nvec[2]],
-                                        nvec[3]: NoiseDict[nvec[3]]})
-            func1 = rhs_dict[key][1].subs({nvec[0]: V * PhiDict[nvec[0]] + sympy.sqrt(V) * NoiseDict[nvec[0]],
-                                           nvec[1]: V * PhiDict[nvec[1]] + sympy.sqrt(V) * NoiseDict[nvec[1]],
-                                           nvec[2]: V * PhiDict[nvec[2]] + sympy.sqrt(V) * NoiseDict[nvec[2]],
-                                           nvec[3]: V * PhiDict[nvec[3]] + sympy.sqrt(V) * NoiseDict[nvec[3]]})
-            func2 = rhs_dict[key][2].subs({nvec[0]: NoiseDict[nvec[0]],
-                                           nvec[1]: NoiseDict[nvec[1]],
-                                           nvec[2]: NoiseDict[nvec[2]],
-                                           nvec[3]: NoiseDict[nvec[3]]})
-            func = func1 * func2
-            if len(op.args[0].args) == 0:
-                term = (op * func).subs({op * func: func + op.args[1] / sympy.sqrt(V) * Derivative(func, op.args[0]) + op.args[1]**2 / (2 * V) * Derivative(func, op.args[0], op.args[0])})
-
-            elif len(op.args) == 2:
-                term = (op.args[1] * func).subs({op.args[1] * func: func + op.args[1].args[1] / sympy.sqrt(V) * Derivative(func, op.args[1].args[0])
-                                                 + op.args[1].args[1]**2 / (2 * V) * Derivative(func, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0] * term).subs({op.args[0] * term: term + op.args[0].args[1] / sympy.sqrt(V) * Derivative(term, op.args[0].args[0])
-                                                 + op.args[0].args[1]**2 / (2 * V) * Derivative(term, op.args[0].args[0], op.args[0].args[0])})
-            elif len(op.args) == 3:
-                term = (op.args[2] * func).subs({op.args[2] * func: func + op.args[2].args[1] / sympy.sqrt(V) * Derivative(func, op.args[2].args[0])
-                                                 + op.args[2].args[1]**2 / (2 * V) * Derivative(func, op.args[2].args[0], op.args[2].args[0])})
-                term = (op.args[1] * term).subs({op.args[1] * term: term + op.args[1].args[1] / sympy.sqrt(V) * Derivative(term, op.args[1].args[0])
-                                                 + op.args[1].args[1]**2 / (2 * V) * Derivative(term, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0] * term).subs({op.args[0] * term: term + op.args[0].args[1] / sympy.sqrt(V) * Derivative(term, op.args[0].args[0])
-                                                 + op.args[0].args[1]**2 / (2 * V) * Derivative(term, op.args[0].args[0], op.args[0].args[0])})
-            elif len(op.args) == 4:
-                term = (op.args[3] * func).subs({op.args[3] * func: func + op.args[3].args[1] / sympy.sqrt(V) * Derivative(func, op.args[3].args[0])
-                                                 + op.args[3].args[1]**2 / (2 * V) * Derivative(func, op.args[3].args[0], op.args[3].args[0])})
-                term = (op.args[2] * term).subs({op.args[2] * term: term + op.args[2].args[1] / sympy.sqrt(V) * Derivative(term, op.args[2].args[0])
-                                                 + op.args[2].args[1]**2 / (2 * V) * Derivative(term, op.args[2].args[0], op.args[2].args[0])})
-                term = (op.args[1] * term).subs({op.args[1] * term: term + op.args[1].args[1] / sympy.sqrt(V) * Derivative(term, op.args[1].args[0])
-                                                 + op.args[1].args[1]**2 / (2 * V) * Derivative(term, op.args[1].args[0], op.args[1].args[0])})
-                term = (op.args[0] * term).subs({op.args[0] * term: term + op.args[0].args[1] / sympy.sqrt(V) * Derivative(term, op.args[0].args[0])
-                                                 + op.args[0].args[1]**2 / (2 * V) * Derivative(term, op.args[0].args[0], op.args[0].args[0])})
-            else:
-                print('Something went wrong!')
-            rhs_vKE += rhs_dict[key][3].subs(PhiConstDict) * (term.doit() - func)
-
-    return rhs_vKE.expand(), lhs_vKE, substring
-
-
-def _pydstoolify(equation) -> str:
-    """Utility function to mangle variable names in equations so they are accepted by PyDStool."""
+def _plainName(equation) -> str:
+    """Strip LaTeX markup (braces, underscores, backslashes, carets) from the string form of ``equation``."""
     eq_str = str(equation)
 
     chars_to_remove = ['{', '}', '_', '\\', '^']

@@ -134,8 +134,8 @@ To locally run the MuMoT test suite in an isolated Python environment
 
     #. Creates a new virtualenv_ (Python virtual environment) containing just
 
-       * MuMoT's dependencies  (see ``install_requires`` in ``setup.py``)
-       * the packages needed for testing and building the documentation (see ``extras_require`` in ``setup.py``)
+       * MuMoT's dependencies  (see ``dependencies`` in ``pyproject.toml``)
+       * the packages needed for testing and building the documentation (see ``optional-dependencies`` in ``pyproject.toml``)
 
        This environment is hidden in a ``.tox`` directory to discourage developers from manually tweaking it.
     #. Runs the :ref:`test suite described above<test_suite>`.
@@ -274,7 +274,7 @@ and pushes this to its Docker image registry.  The build process has three steps
 
 #. Install several Ubuntu packages (inc. GraphViz and a LaTeX distribution); see the ``apt.txt`` file in this repo;
 #. Create a Python virtualenv containing just the MuMoT Python package and its dependencies;
-#. Perform some post-install steps (install the TOC2 (table of contents) Jupyter extension and generate the Matplotlib font cache); see the ``postBuild`` file in this repo;
+#. Perform some post-install steps (generate the Matplotlib font cache); see the ``postBuild`` file in this repo;
 
 After an image has been created and pushed to the image registry it remains cached there until:
 
@@ -336,7 +336,7 @@ To create a release:
 
    .. code-block::
 
-      https://mybinder.org/v2/gh/DiODeProject/MuMoT/VERSION?filepath=docs%2FMuMoTuserManual.ipynb
+      https://mybinder.org/v2/gh/DiODeProject/MuMoT/VERSION?urlpath=tree/docs%2FMuMoTuserManual.ipynb
 
    ensure ``VERSION`` is ``master`` or
    a particular current or future tagged version, preceded by a ``v`` e.g. ``v0.9.0``.

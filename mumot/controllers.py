@@ -1113,7 +1113,10 @@ class MuMoTmultiController(MuMoTcontroller):
                     if key == 'initialState':
                         for state, pop in optionValues[0].items():
                             # self._widgetsExtraParams['init'+str(state)].unobserve(self._updateInitialStateWidgets, 'value')
-                            self._widgetsExtraParams[f"init{state}"].max = float('inf')  # temp to avoid exception min>max
+                            # temporarily raise max to avoid exception min>max (finite, as
+                            # widget state must be JSON-serialisable)
+                            self._widgetsExtraParams[f"init{state}"].max = max(
+                                self._widgetsExtraParams[f"init{state}"].max, pop[1], pop[2])
                             self._widgetsExtraParams[f"init{state}"].min = pop[1]
                             self._widgetsExtraParams[f"init{state}"].max = pop[2]
                             self._widgetsExtraParams[f"init{state}"].step = pop[3]

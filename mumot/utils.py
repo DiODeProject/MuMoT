@@ -10,9 +10,8 @@ from . import (
     consts,
     defaults,
     exceptions,
-    utils,
-    __version__
 )
+from ._version import __version__
 
 
 def about() -> None:
@@ -149,7 +148,8 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
             # first thing setting the values of the idleReactant
             if idleReactant is not None: 
                 idleValue = initialState[idleReactant][0]
-                if idleValue > 1: 
+                if idleValue > 1:
+                    new_val = 1
                     wrn_msg = f"WARNING! the initial value of reactant {idleReactant} has been changed to {new_val}\n"
                     warn(wrn_msg, exceptions.MuMoTWarning)
                     initialState[idleReactant][0] = new_val
@@ -238,7 +238,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
     if optionName == 'netType':
         # check validity of the network type or init to default
         if inputValue is not None:
-            decodedNetType = utils._decodeNetworkTypeFromString(inputValue)
+            decodedNetType = _decodeNetworkTypeFromString(inputValue)
             if decodedNetType is None:  # terminating the process if the input argument is wrong
                 error_msg = (f"The specified value for netType ={inputValue} is not valid. \n"
                              "Accepted values are: 'full',  'erdos-renyi', 'barabasi-albert', and 'dynamic'.")
@@ -246,7 +246,7 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
 
             return [inputValue, True]
         else:
-            decodedNetType = utils._decodeNetworkTypeFromString(initValues) if initValues is not None else None
+            decodedNetType = _decodeNetworkTypeFromString(initValues) if initValues is not None else None
             if decodedNetType is not None:  # assigning the init value only if it's a valid value
                 return [initValues, False]
             else:
@@ -261,24 +261,24 @@ def _format_advanced_option(optionName: str, inputValue, initValues, extraParam=
                          "Either leave free to widget the 'netParam' or fix the 'netType'.")
             raise exceptions.MuMoTValueError(error_msg)
         # check if netParam range is valid or set the correct default range (systemSize is necessary)
-        if utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.FULLY_CONNECTED:
+        if _decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.FULLY_CONNECTED:
             return [0, 0, 0, False]
-        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.ERSOS_RENYI:
+        elif _decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.ERSOS_RENYI:
             return _parse_input_keyword_for_numeric_widgets(
                 inputValue=inputValue,
                 defaultValueRangeStep=[0.1, 0.1, 1, 0.1],
                 initValueRangeStep=initValues,
                 validRange=(0.1, 1.0))
-        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.BARABASI_ALBERT:
+        elif _decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.BARABASI_ALBERT:
             maxEdges = systemSize - 1
             return _parse_input_keyword_for_numeric_widgets(
                 inputValue=inputValue,
                 defaultValueRangeStep=[min(maxEdges, 3), 1, maxEdges, 1],
                 initValueRangeStep=initValues,
                 validRange=(1, maxEdges))
-        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.SPACE:
+        elif _decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.SPACE:
             pass  # method is not implemented
-        elif utils._decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.DYNAMIC:
+        elif _decodeNetworkTypeFromString(netType[0]) == consts.NetworkType.DYNAMIC:
             return _parse_input_keyword_for_numeric_widgets(
                 inputValue=inputValue,
                 defaultValueRangeStep=[0.1, 0.0, 1.0, 0.05],

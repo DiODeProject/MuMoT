@@ -1,5 +1,85 @@
 [build-system]
-requires = ["setuptools>=30.3.0", "wheel", "setuptools_scm"]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "mumot"
+description = "Multiscale Modelling Tool"
+readme = "README.md"
+license = "GPL-3.0-only"
+license-files = ["LICENSE", "mumot/_vendor/pydstool/LICENSE"]
+authors = [
+    { name = "James A. R. Marshall", email = "james.marshall@shef.ac.uk" },
+    { name = "Andreagiovanni Reina" },
+    { name = "Thomas Bose" },
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Framework :: Jupyter",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    # sympy's LaTeX parser only works with the antlr4 runtime release that
+    # matches the version its grammar was generated with (4.11 for sympy >=1.12)
+    "antlr4-python3-runtime==4.11.*",
+    # Lower bounds only (no upper bounds): the oldest versions with the APIs
+    # MuMoT relies on, tested in CI with `uv pip install --resolution lowest-direct`
+    "graphviz>=0.20",
+    "ipykernel>=6.0",
+    "ipympl>=0.9",
+    "ipython>=8.0",
+    "ipywidgets>=8.0",
+    "matplotlib>=3.6",
+    "networkx>=2.8",
+    "numpy>=1.23",
+    "scipy>=1.9",
+    "sympy>=1.12",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7",
+    "pytest-cov>=4",
+    "nbval>=0.10",
+    "nbdime>=3",
+    "notebook>=7",
+]
+docs = [
+    "sphinx>=5",
+]
+
+[project.urls]
+Homepage = "https://github.com/DiODeProject/MuMoT"
+Documentation = "https://mumot.readthedocs.io"
+
+[tool.setuptools.packages.find]
+include = ["mumot*"]
+
 [tool.setuptools_scm]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["mumot"]
+omit = ["*/mumot/_vendor/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "if self.debug:",
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+ignore_errors = true

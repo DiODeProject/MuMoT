@@ -49,6 +49,9 @@ Included third-party code
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ``mumot/__init__.py``: contains functions (C) 2012 Free Software Foundation, under the MIT Licence
+* ``mumot/_vendor/pydstool/``: a modified copy of `PyDSTool <https://github.com/robclewley/pydstool>`__ 0.91.0,
+  (C) 2007-2014 Robert Clewley, under the BSD-style licence in ``mumot/_vendor/pydstool/LICENSE``;
+  used for the numerical continuation behind bifurcation diagrams
 
 mybinder.org
 ^^^^^^^^^^^^
@@ -58,7 +61,7 @@ funded by the `Gordon and Betty Moore Foundation <https://www.moore.org/>`__.
 
 .. _Andreagiovanni Reina: https://areina.staff.shef.ac.uk/
 .. _DiODe: http://diode.group.shef.ac.uk/
-.. _European Research Council: lhttps://erc.europa.eu/>`__ 
+.. _European Research Council: https://erc.europa.eu/
 .. _Horizon 2020: https://ec.europa.eu/programmes/horizon2020/en/
 .. _James A. R. Marshall: https://staffwww.dcs.shef.ac.uk/people/J.Marshall/james.html
 .. _ORDA: https://orda.shef.ac.uk/ 
