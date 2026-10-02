@@ -336,7 +336,7 @@ To create a release:
 
    .. code-block::
 
-      https://mybinder.org/v2/gh/DiODeProject/MuMoT/VERSION?filepath=docs%2FMuMoTuserManual.ipynb
+      https://mybinder.org/v2/gh/DiODeProject/MuMoT/VERSION?urlpath=tree/docs%2FMuMoTuserManual.ipynb
 
    ensure ``VERSION`` is ``master`` or
    a particular current or future tagged version, preceded by a ``v`` e.g. ``v0.9.0``.

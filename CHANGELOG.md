@@ -1,13 +1,13 @@
 # CHANGELOG
 
-## Unreleased
+## v1.3.0
 
 Modernisation for current Python and scientific Python versions:
 
  - Supports Python 3.10-3.13 (dropped 3.6-3.9) and current releases of NumPy (2.x), SciPy, SymPy,
    Matplotlib, IPython, ipywidgets and Jupyter (Notebook 7, JupyterLab).
  - Dependencies are no longer pinned, except `antlr4-python3-runtime==4.11.*`,
-   which SymPy's LaTeX parser requires.
+   which SymPy's LaTeX parser requires (see #418). Each dependency has a tested minimum version.
  - PyDSTool is no longer a dependency: a trimmed copy, updated for current Python/NumPy/SciPy,
    is bundled as `mumot._vendor.pydstool` (see its `README.md` for provenance and changes).
  - Bifurcation diagrams use the new `mumot.continuation` module, a small backend-independent
@@ -23,7 +23,12 @@ Modernisation for current Python and scientific Python versions:
    ⟨η⟩ as intended.
  - Removed the circular import between `mumot.utils` and the package (`mumot` can now be imported
    from a source checkout) and moved symbolic derivations from `views` to the new `mumot.equations`.
- - Packaging moved to `pyproject.toml`; CI, Read the Docs and Binder configuration updated.
+ - Fixed stream plots with noise ellipses (complex-valued angles) and widget state containing
+   infinite values, plus two latent bugs (broken `chmod` calls, an undefined variable in `utils`).
+ - New tests: continuation API, the bundled PyDSTool, and symbolic results checked against
+   MuMoT 1.2.2 with SymPy 1.4.
+ - Packaging moved to `pyproject.toml`; CI (including a minimum-dependency-versions job),
+   Read the Docs and Binder configuration updated.
 
 ## v1.2.2
 

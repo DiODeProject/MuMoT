@@ -6,6 +6,11 @@ build:
     python: "3.12"
   apt_packages:
     - graphviz
+  jobs:
+    # setuptools_scm derives the package version from git tags, which Read the
+    # Docs' shallow clone does not include
+    post_checkout:
+      - git fetch --unshallow --tags || git fetch --tags || true
 
 sphinx:
   configuration: docs/source/conf.py
