@@ -22,13 +22,13 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: '3.10'
+      # setup-uv creates and activates .venv because python-version is given
       - name: Install oldest allowed dependencies
         run: |
-          uv venv
           uv pip install --resolution lowest-direct ".[test]"
           uv pip check
       - name: Run unit tests
-        run: uv run --no-sync pytest --verbose tests
+        run: python -m pytest --verbose tests
 
   test_and_upload_distr_job:
     runs-on: ubuntu-latest
