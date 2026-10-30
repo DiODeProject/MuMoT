@@ -16,6 +16,8 @@ Modernisation for current Python and scientific Python versions:
    and could follow the wrong branch.
  - Interactive figures use the `ipympl` (`%matplotlib widget`) backend where available,
    so they work in Notebook 7+, JupyterLab and VS Code.
+ - Excludes ipykernel 7.0-7.3, with which interactive figures stay blank (the kernel loses the
+   figure that `ipympl` displays after a cell that created widgets has run).
  - Removed the ineffective `iopub` rate limit tweak (it only changed a setting in the kernel process;
    set `--ServerApp.iopub_msg_rate_limit` when starting Jupyter instead).
  - Restored behaviour that changed with newer SymPy (`latex()` of strings, `simplify()`
