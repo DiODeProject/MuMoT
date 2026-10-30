@@ -14,11 +14,9 @@ from sympy import (
     default_sort_key,
     Derivative,
     lambdify,
-    latex,
     linsolve,
     numbered_symbols,
     preview,
-    simplify,
     solve,
     Symbol,
     symbols,
@@ -31,10 +29,12 @@ from . import (
     controllers,
     defaults,
     consts,
+    equations,
     exceptions,
     utils,
     views,
 )
+from ._sympy_compat import latex, simplify
 
 
 class MuMoTmodel:
@@ -462,7 +462,7 @@ class MuMoTmodel:
 
             return
         # assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
-        rhs_dict, substring = views._deriveMasterEquation(stoich)
+        rhs_dict, substring = equations._deriveMasterEquation(stoich)
 
         return rhs_dict, substring
 
@@ -494,7 +494,7 @@ class MuMoTmodel:
 
             return
         # assert (len(nvec)==2 or len(nvec)==3 or len(nvec)==4), 'This module works for 2, 3 or 4 different reactants only'
-        rhs_dict, substring = views._deriveMasterEquation(stoich)
+        rhs_dict, substring = equations._deriveMasterEquation(stoich)
 
         # rhs_ME = 0
         term_count = 0
@@ -540,7 +540,7 @@ class MuMoTmodel:
             Dictionary of substitutions used, this defaults to `None` if no substitutions were made
         """
 
-        rhs_vke, lhs_vke, substring = views._doVanKampenExpansion(views._deriveMasterEquation, self._stoichiometry)
+        rhs_vke, lhs_vke, substring = equations._doVanKampenExpansion(equations._deriveMasterEquation, self._stoichiometry)
 
         return lhs_vke, rhs_vke, substring
 
@@ -555,7 +555,7 @@ class MuMoTmodel:
             `None`
 
         """
-        rhs_vke, lhs_vke, substring = views._doVanKampenExpansion(views._deriveMasterEquation, self._stoichiometry)
+        rhs_vke, lhs_vke, substring = equations._doVanKampenExpansion(equations._deriveMasterEquation, self._stoichiometry)
         out = latex(lhs_vke) + " := \n" + latex(rhs_vke)
         out = utils._doubleUnderscorify(utils._greekPrependify(out))
         display(Math(out))
@@ -1996,13 +1996,9 @@ class MuMoTmodel:
         self._ratesLaTeX = None
         self._equations = {}
         self._stoichiometry = {}
-        self._pyDSmodel = None
         self._dot = None
         if not os.path.isdir(self._tmpdirpath):
             os.mkdir(self._tmpdirpath)
-            os.system('chmod' + self._tmpdirpath + 'u+rwx')
-            os.system('chmod' + self._tmpdirpath + 'g-rwx')
-            os.system('chmod' + self._tmpdirpath + 'o+rwx')
         self._tmpdir = tempfile.TemporaryDirectory(dir=self._tmpdirpath)
         self._tmpfiles = []
 
@@ -2222,7 +2218,7 @@ def parseModel(modelDescription):
     if len(intersect) != 0:
         raise exceptions.MuMoTSyntaxError("Following reactants defined as both constant and variable: {intersect}")
     model._rates = rates
-    model._equations = views._deriveODEsFromRules(model._reactants, model._rules)
+    model._equations = equations._deriveODEsFromRules(model._reactants, model._rules)
     model._ratesLaTeX = {}
     rates = map(latex, list(model._rates))
     for (rate, latex_str) in zip(model._rates, rates):
@@ -2241,7 +2237,7 @@ def _get_orderedLists_vKE(stoich):
     """Create list of dictionaries where the key is the system size order."""
     V = Symbol(r'\overline{V}', real=True, constant=True)
     stoichiometry = stoich
-    rhs_vke, lhs_vke, substring = views._doVanKampenExpansion(views._deriveMasterEquation, stoichiometry)
+    rhs_vke, lhs_vke, substring = equations._doVanKampenExpansion(equations._deriveMasterEquation, stoichiometry)
     Vlist_lhs = []
     Vlist_rhs = []
     for jj in range(len(rhs_vke.args)):
@@ -2452,7 +2448,7 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
             EQsys1stOrdMom.append(eq1stOrderMoment)
             if M_1(NoiseDict[noise]) not in EOM_1stOrderMom:
                 EOM_1stOrderMom[M_1(NoiseDict[noise])] = eq1stOrderMoment
-                NoiseSubs1stOrder[M_1(NoiseDict[noise])] = r'\left< \vphantom{Dg}\right.' + latex(NoiseDict[noise]) + r'\left. \vphantom{Dg}\right>'
+                NoiseSubs1stOrder[M_1(NoiseDict[noise])] = Symbol(r'\left< \vphantom{Dg}\right.' + latex(NoiseDict[noise]) + r'\left. \vphantom{Dg}\right>')
 
     NoiseSubs2ndOrder = {}
     EQsys2ndOrdMom = []
@@ -2489,12 +2485,12 @@ def _getNoiseEOM(_getFokkerPlanckEquation, _get_orderedLists_vKE, stoich):
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[1]] * NoiseDict[nvec[3]]))
                     eq2ndOrderMoment = collect(eq2ndOrderMoment, M_2(NoiseDict[nvec[2]] * NoiseDict[nvec[3]]))
 
-                eq2ndOrderMoment = eq2ndOrderMoment.simplify()
+                eq2ndOrderMoment = simplify(eq2ndOrderMoment)
                 if eq2ndOrderMoment not in EQsys2ndOrdMom:
                     EQsys2ndOrdMom.append(eq2ndOrderMoment)
                 if M_2(NoiseDict[noise1] * NoiseDict[noise2]) not in EOM_2ndOrderMom:
                     EOM_2ndOrderMom[M_2(NoiseDict[noise1] * NoiseDict[noise2])] = eq2ndOrderMoment
-                    NoiseSubs2ndOrder[M_2(NoiseDict[noise1] * NoiseDict[noise2])] = (
+                    NoiseSubs2ndOrder[M_2(NoiseDict[noise1] * NoiseDict[noise2])] = Symbol(
                         r'\left< \vphantom{Dg}\right.' + latex(NoiseDict[noise1] * NoiseDict[noise2]) + r'\left. \vphantom{Dg}\right>')
 
     return EQsys1stOrdMom, EOM_1stOrderMom, NoiseSubs1stOrder, EQsys2ndOrdMom, EOM_2ndOrderMom, NoiseSubs2ndOrder
