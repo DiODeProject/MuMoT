@@ -48,10 +48,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y texlive texlive-latex-extra graphviz dvipng cm-super
-          # MuMoT draws model graphs with the circo layout engine; re-register
-          # Graphviz's plugins in case the runner image's plugin config is stale
-          which -a dot && dot -V
+          # MuMoT draws model graphs with the circo layout engine, which is in a
+          # separate package on Ubuntu >= 26.04 (older releases have it in libgvc6)
+          if apt-cache show libgvplugin-neato-layout8 > /dev/null 2>&1; then
+            sudo apt-get install -y libgvplugin-neato-layout8
+          fi
           sudo dot -c
+          dot -V
           echo 'graph { a -- b }' | dot -Kcirco -Tsvg > /dev/null
       - name: Set up a version of Python
         uses: actions/setup-python@v5
