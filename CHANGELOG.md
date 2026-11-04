@@ -16,6 +16,12 @@ Modernisation for current Python and scientific Python versions:
    and could follow the wrong branch.
  - Interactive figures use the `ipympl` (`%matplotlib widget`) backend where available,
    so they work in Notebook 7+, JupyterLab and VS Code.
+ - `visualise()` labels show in JupyterLab and Notebook 7: they display SVG output as an image, which
+   cannot load the separate label image files, so these are now embedded in the SVG.
+ - `substitute()` raises a clear error when LaTeX such as `\beta` or `\nu` was passed in an ordinary
+   (non-raw) Python string, where it silently became a control character. The user manual and demo
+   notebooks now use raw strings (`r'...'`) for LaTeX, which also avoids Python 3.12's
+   "invalid escape sequence" `SyntaxWarning` for e.g. `'\mu'`.
  - Excludes ipykernel 7.0-7.3, with which interactive figures stay blank (the kernel loses the
    figure that `ipympl` displays after a cell that created widgets has run).
  - Removed the ineffective `iopub` rate limit tweak (it only changed a setting in the kernel process;
