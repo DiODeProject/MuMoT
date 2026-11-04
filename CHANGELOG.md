@@ -22,6 +22,12 @@ Modernisation for current Python and scientific Python versions:
    (non-raw) Python string, where it silently became a control character. The user manual and demo
    notebooks now use raw strings (`r'...'`) for LaTeX, which also avoids Python 3.12's
    "invalid escape sequence" `SyntaxWarning` for e.g. `'\mu'`.
+ - `initWidgets` accepts parameter names without LaTeX backslashes, e.g. `'mu'` for `\mu`, as `params`
+   already did; such entries used to be ignored silently (so the user manual's bifurcation diagrams
+   started from the default slider values).
+ - Bifurcation diagrams stop a branch where a concentration leaves its meaningful range (0 to 1 for
+   a constant system size), instead of following it to unphysical states and near-singular parameter
+   values, where spurious branch points were found and followed.
  - Excludes ipykernel 7.0-7.3, with which interactive figures stay blank (the kernel loses the
    figure that `ipympl` displays after a cell that created widgets has run).
  - Removed the ineffective `iopub` rate limit tweak (it only changed a setting in the kernel process;

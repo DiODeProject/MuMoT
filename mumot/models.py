@@ -1822,7 +1822,10 @@ class MuMoTmodel:
             paramValuesDict[str(freeParam)] = utils._parse_input_keyword_for_numeric_widgets(
                 inputValue=utils._get_item_from_params_list(inputParams, str(freeParam)),
                 defaultValueRangeStep=[defaults.MuMoTdefault._initialRateValue, defaults.MuMoTdefault._rateLimits[0], defaults.MuMoTdefault._rateLimits[1], defaults.MuMoTdefault._rateStep],
-                initValueRangeStep=initWidgetsSympy.get(freeParam),
+                # also accept a name without LaTeX backslashes, e.g. 'mu' for \mu,
+                # as for inputParams (parse_latex would read 'mu' as m*u)
+                initValueRangeStep=initWidgetsSympy.get(
+                    freeParam, utils._get_item_from_params_list(list((initWidgets or {}).items()), str(freeParam))),
                 validRange=(-float("inf"), float("inf")))
 
         if showSystemSize:

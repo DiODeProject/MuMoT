@@ -27,6 +27,15 @@ def test_substitute_accepts_latex_in_raw_strings():
     assert {str(s) for s in model._rates} == {'a_{A}', 'beta', 'nu', 'theta'}
 
 
+@pytest.mark.parametrize('name', ['mu', r'\mu'])
+def test_init_widgets_accept_names_without_backslashes(name):
+    r"""initWidgets={'mu': ...} sets the slider for \mu (it used to be ignored)."""
+    model = parseModel(MODEL).substitute(r'g_A = \mu')
+    values = model._create_free_param_dictionary_for_controller(
+        inputParams=[], initWidgets={name: [3, 1, 5, 0.5]})
+    assert values['mu'][0] == 3
+
+
 def test_embed_svg_images(tmp_path, monkeypatch):
     """Links to local image files become data URIs; anything else is kept."""
     monkeypatch.chdir(tmp_path)

@@ -23,7 +23,7 @@ returning :class:`Branch` objects, and be returned by
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import numpy as np
 import sympy
@@ -80,18 +80,25 @@ class EquilibriumContinuation:
         The parameter varied along the branches.
     max_num_points, max_step_size, min_step_size
         Continuation settings.
+    state_bounds
+        Optional ``(lower, upper)`` bounds for (some of) the state variables:
+        a branch stops where it leaves them, e.g. where a concentration would
+        become negative, instead of following equilibria that have no meaning
+        for the model (and may lie near singularities of ``equations``).
     """
 
     def __init__(self, equations: Mapping[sympy.Symbol, sympy.Expr],
                  parameters: Mapping[sympy.Symbol, float],
                  free_parameter: sympy.Symbol, *, max_num_points: int = 100,
-                 max_step_size: float = 1e-1, min_step_size: float = 1e-5):
+                 max_step_size: float = 1e-1, min_step_size: float = 1e-5,
+                 state_bounds: Optional[Mapping[sympy.Symbol, Tuple[float, float]]] = None):
         self.equations = dict(equations)
         self.parameters = dict(parameters)
         self.free_parameter = free_parameter
         self.max_num_points = max_num_points
         self.max_step_size = max_step_size
         self.min_step_size = min_step_size
+        self.state_bounds = dict(state_bounds or {})
         missing = (set().union(*(sympy.sympify(eq).free_symbols for eq in self.equations.values()))
                    - set(self.equations) - set(self.parameters) - {free_parameter})
         if missing:
@@ -150,6 +157,9 @@ class _PyDSToolEquilibriumContinuation(EquilibriumContinuation):
         model.varspecs = dict(self._varspecs)
         model.pars = {self._par_names[sym]: float(value)
                       for sym, value in self.parameters.items()}
+        if self.state_bounds:
+            model.xdomain = {self._var_names[sym]: [float(lower), float(upper)]
+                             for sym, (lower, upper) in self.state_bounds.items()}
         ode = dst.Generator.Vode_ODEsystem(model)
         ode.set(ics=ics)
         if parameter_value is not None:
@@ -167,6 +177,10 @@ class _PyDSToolEquilibriumContinuation(EquilibriumContinuation):
         cont_args.MinStepSize = self.min_step_size
         cont_args.StepSize = step_size
         cont_args.LocBifPoints = ['LP', 'BP']
+        if self.state_bounds:
+            # stop at the boundary ('B' point) of the domain set in _new_continuer
+            cont_args.LocBifPoints.append('B')
+            cont_args.StopAtPoints = ['B']
         cont_args.SaveEigen = True
         for key, value in extra_args.items():
             setattr(cont_args, key, value)
