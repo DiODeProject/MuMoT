@@ -1,6 +1,9 @@
 """MuMoT model classes."""
 
+import base64
 import copy
+import html
+import mimetypes
 import sympy
 import os
 import re
@@ -35,6 +38,51 @@ from . import (
     views,
 )
 from ._sympy_compat import latex, simplify
+
+
+class _ModelGraph(Digraph):
+    """:class:`graphviz.Digraph` whose SVG output embeds the images it refers to.
+
+    The node and edge labels drawn by :meth:`MuMoTmodel.visualise` are LaTeX
+    images in local files, which the SVG produced by Graphviz links to by path.
+    JupyterLab and Notebook 7 display SVG output as an image, which cannot load
+    other files, so the labels would be missing; embed them as data URIs instead.
+    """
+
+    def _repr_mimebundle_(self, include=None, exclude=None, **kwargs):
+        bundle = super()._repr_mimebundle_(include, exclude, **kwargs)
+        if 'image/svg+xml' in bundle:
+            bundle['image/svg+xml'] = _embedSVGimages(bundle['image/svg+xml'])
+        return bundle
+
+
+def _checkForEscapedLaTeX(string):
+    """Raise an error if Python turned the start of a LaTeX command into a control character.
+
+    In an ordinary (non-raw) Python string, e.g. ``'\\beta'`` is a backspace
+    followed by ``eta`` and ``'\\nu'`` a newline followed by ``u``.
+    """
+    match = re.search(r'[\a\b\f\r\t\v]|\nu', string)
+    if match:
+        escape = {'\a': r'\a', '\b': r'\b', '\f': r'\f', '\r': r'\r', '\t': r'\t', '\v': r'\v'}.get(match.group(), r'\n')
+        raise exceptions.MuMoTSyntaxError(
+            f"{string!r} contains the escape sequence '{escape}': Python interprets backslashes "
+            "in ordinary strings, so LaTeX commands such as \\beta, \\nu or \\theta are changed. "
+            "Use a raw string, e.g. r'v = \\beta/2', or double the backslashes.")
+
+
+def _embedSVGimages(svg):
+    """Replace links to local image files in SVG source by data URIs."""
+    def embed(match):
+        path = html.unescape(match.group(2))
+        mimetype = mimetypes.guess_type(path)[0]
+        if mimetype is None or not os.path.isfile(path):
+            return match.group(0)
+        with open(path, 'rb') as f:
+            data = base64.b64encode(f.read()).decode('ascii')
+        return '%s="data:%s;base64,%s"' % (match.group(1), mimetype, data)
+
+    return re.sub(r'((?:xlink:)?href)="([^"]+)"', embed, svg)
 
 
 class MuMoTmodel:
@@ -92,6 +140,7 @@ class MuMoTmodel:
             A new model.
 
         """
+        _checkForEscapedLaTeX(subsString)
         sizeSet = False
         sizeSetrhs = []
         size_set_expr = None
@@ -209,7 +258,7 @@ class MuMoTmodel:
         """
         errorShown = False
         if self._dot is None:
-            dot = Digraph(comment="Model", engine='circo')
+            dot = _ModelGraph(comment="Model", engine='circo')
             if not self._constantSystemSize:
                 dot.node(str('1'), " ", image=self._localLaTeXimageFile(Symbol('\\emptyset')))  # @todo: only display if used: for now, guess it is used if system size is non-constant
             for reactant in self._reactants:
@@ -1773,7 +1822,10 @@ class MuMoTmodel:
             paramValuesDict[str(freeParam)] = utils._parse_input_keyword_for_numeric_widgets(
                 inputValue=utils._get_item_from_params_list(inputParams, str(freeParam)),
                 defaultValueRangeStep=[defaults.MuMoTdefault._initialRateValue, defaults.MuMoTdefault._rateLimits[0], defaults.MuMoTdefault._rateLimits[1], defaults.MuMoTdefault._rateStep],
-                initValueRangeStep=initWidgetsSympy.get(freeParam),
+                # also accept a name without LaTeX backslashes, e.g. 'mu' for \mu,
+                # as for inputParams (parse_latex would read 'mu' as m*u)
+                initValueRangeStep=initWidgetsSympy.get(
+                    freeParam, utils._get_item_from_params_list(list((initWidgets or {}).items()), str(freeParam))),
                 validRange=(-float("inf"), float("inf")))
 
         if showSystemSize:

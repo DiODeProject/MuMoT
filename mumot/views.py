@@ -2734,10 +2734,15 @@ class MuMoTbifurcationView(MuMoTview):
                       f"used initial conditions specified on sliders in Advanced options tab instead: {self._initialStateSV}."
                       'This means only one branch was continuated and the starting point might not have been a stationary state.')
 
+            # stop branches where a concentration leaves its meaningful range
+            # (with a little slack for equilibria on the boundary)
+            upperBound = 1 + 1e-6 if self._mumotModel._constantSystemSize else np.inf
+            stateBounds = {sv: (-1e-6, upperBound) for sv in self._stateVariableList}
             try:
                 continuation = equilibrium_continuation(
                     {sv: self._mumotModel._equations[sv] for sv in self._stateVariableList},
-                    paramDict, bifurcationParameterSymbol, max_num_points=self._MaxNumPoints)
+                    paramDict, bifurcationParameterSymbol, max_num_points=self._MaxNumPoints,
+                    state_bounds=stateBounds)
             except ValueError as err:
                 self._show_computation_stop()
                 self._showErrorMessage(f"Bifurcation diagram could not be computed: {err}")

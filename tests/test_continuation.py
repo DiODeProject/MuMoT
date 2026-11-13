@@ -25,6 +25,19 @@ def test_fold_normal_form():
     assert np.all(eig[branch.states[x] < -0.01] > 0)
 
 
+def test_state_bounds_stop_branch():
+    """dx/dt = p - x**2 again, but only 0 <= x <= 0.5 is of interest."""
+    x, p = sympy.symbols('x p')
+    cont = equilibrium_continuation({x: p - x**2}, {p: 0.1}, p, max_num_points=200,
+                                    state_bounds={x: (0.0, 0.5)})
+    branch = cont.from_state({x: 0.1**0.5})
+    assert branch is not None
+    # stops at the boundaries instead of following x past the fold at 0 or beyond 0.5
+    assert branch.states[x].min() == pytest.approx(0, abs=1e-2)
+    assert branch.states[x].max() == pytest.approx(0.5, abs=1e-2)
+    assert branch.parameter.max() == pytest.approx(0.25, abs=1e-2)
+
+
 def test_pitchfork_branch_switching():
     """dx/dt = p*x - x**3, dy/dt = -y: branch point at p = 0 on x = 0.
 
