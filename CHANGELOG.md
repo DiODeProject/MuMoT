@@ -28,6 +28,12 @@ Modernisation for current Python and scientific Python versions:
  - Bifurcation diagrams stop a branch where a concentration leaves its meaningful range (0 to 1 for
    a constant system size), instead of following it to unphysical states and near-singular parameter
    values, where spurious branch points were found and followed.
+ - Fixed 3D stream plots with `showFixedPoints=True`, which failed when a fixed point had a
+   repeated eigenvalue (newer SymPy can report it once, with multiplicity 1) or when drawing
+   fixed points given as SymPy numbers.
+ - Removed debugging output that put a view object's repr in the controller's message area.
+ - More test notebooks run in CI: the Master/Fokker-Planck equation (fixing a stale `In[44]`),
+   bifurcation and 1D/3D stream tests.
  - Excludes ipykernel 7.0-7.3, with which interactive figures stay blank (the kernel loses the
    figure that `ipympl` displays after a cell that created widgets has run).
  - Removed the ineffective `iopub` rate limit tweak (it only changed a setting in the kernel process;

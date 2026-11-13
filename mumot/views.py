@@ -437,6 +437,10 @@ class MuMoTview:
             eigVects = JACsub.eigenvects()
             for kk in range(len(eigVects)):
                 evSet[eigVects[kk][0]] = (eigVects[kk][1], eigVects[kk][2])
+            if sum(multiplicity for multiplicity, _ in evSet.values()) != 3:
+                # with floating-point entries SymPy can merge a repeated
+                # eigenvalue into one of multiplicity 1, losing the other(s)
+                evSet = _numericEigenvalues(JACsub)
             eigList.append(evSet)
 
         return realEQsol, eigList  # returns two lists of dictionaries
@@ -776,7 +780,6 @@ class MuMoTtimeEvolutionView(MuMoTview):
             plt.figure(self._figureNum)
             plt.clf()
             self._resetErrorMessage()
-        self._showErrorMessage(str(self))
         self._update_params()
 
     def _update_view_specific_params(self, freeParamDict=None):
@@ -1650,7 +1653,6 @@ class MuMoTfieldView(MuMoTview):
             plt.figure(self._figureNum)
             plt.clf()
             self._resetErrorMessage()
-        self._showErrorMessage(str(self))
 
         realEQsol = None
         EV = None
@@ -2877,7 +2879,6 @@ class MuMoTbifurcationView(MuMoTview):
             plt.figure(self._figureNum)
             plt.clf()
             self._resetErrorMessage()
-        self._showErrorMessage(str(self))
 
     def _build_bookmark(self, includeParams: bool = True) -> str:
         if not self._silent:
@@ -4489,6 +4490,21 @@ def _roundNumLogsOut(number: Union[sympy.Add, float]) -> str:
         return str(number.round(4))
 
 
+def _numericEigenvalues(matrix):
+    """Eigenvalues of a numeric SymPy matrix as ``{eigenvalue: (multiplicity, [])}``.
+
+    The same form as built from :meth:`sympy.Matrix.eigenvects` (without the
+    eigenvectors), with repeated eigenvalues counted by NumPy.
+    """
+    evSet = {}
+    for value in np.linalg.eigvals(np.array(matrix.evalf(), dtype=complex)):
+        value = complex(round(value.real, 10), round(value.imag, 10))
+        key = sympy.Float(value.real) if value.imag == 0 else sympy.Float(value.real) + sympy.I * sympy.Float(value.imag)
+        multiplicity, vectors = evSet.get(key, (0, []))
+        evSet[key] = (multiplicity + 1, vectors)
+    return evSet
+
+
 def _buildFig(object, figure=None):
     """Generic function for constructing figure objects in :class:`MuMoTview` and :class:`MuMoTmultiController` classes.
 
@@ -4636,22 +4652,19 @@ def _fig_formatting_3D(figure, xlab=None, ylab=None, zlab=None, ax_reformat=Fals
         if not specialPoints[0] == []:
             for jj in range(len(specialPoints[0])):
                 try:
-                    len(specialPoints[3][jj]) == 3
-                    lam1 = specialPoints[3][jj][0]
-                    lam2 = specialPoints[3][jj][1]
-                    lam3 = specialPoints[3][jj][2]
-                    if (sympy.re(lam1) < 0 and sympy.re(lam2) < 0 and sympy.re(lam3) < 0):
+                    if all(sympy.re(lam) < 0 for lam in specialPoints[3][jj]):
                         FPcolor = 'g'
                         FPmarker = 'o'
                     else:
                         FPcolor = 'r'
                         FPmarker = '>'
-                except:
+                except Exception:
                     print('Check input!')
                     FPcolor = 'k'
+                    FPmarker = 'o'
 
-                ax.scatter([specialPoints[0][jj]], [specialPoints[1][jj]], [specialPoints[2][jj]],
-                           marker=FPmarker, s=100, c=FPcolor)
+                ax.scatter([float(sympy.re(specialPoints[0][jj]))], [float(sympy.re(specialPoints[1][jj]))],
+                           [float(sympy.re(specialPoints[2][jj]))], marker=FPmarker, s=100, c=FPcolor)
 
     if kwargs.get('fontsize', None) is not None:
         axes_font_size = kwargs['fontsize']
