@@ -32,6 +32,8 @@ Modernisation for current Python and scientific Python versions:
    repeated eigenvalue (newer SymPy can report it once, with multiplicity 1) or when drawing
    fixed points given as SymPy numbers.
  - Removed debugging output that put a view object's repr in the controller's message area.
+ - User manual section numbering works in JupyterLab and Notebook 7 (sections start at `##`, so
+   they are numbered 1, 2, ... rather than 0.0.1, 0.0.2, ...).
  - More test notebooks run in CI: the Master/Fokker-Planck equation (fixing a stale `In[44]`),
    bifurcation and 1D/3D stream tests.
  - Excludes ipykernel 7.0-7.3, with which interactive figures stay blank (the kernel loses the
