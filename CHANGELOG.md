@@ -5,6 +5,9 @@
  - New demo notebook (draft) `DemoNotebooks/Geometric_decision_making.ipynb`: the neural spin model of
    geometric decision-making (Sridhar et al. 2021, PNAS; Gorbonos et al. 2024, PRX Life) as a MuMoT
    model, with the compromise-to-decision bifurcation, critical angles, noise and three targets.
+ - `SSA()` and `multiagent()` update their progress bar only when the percentage changes. They
+   updated it at every simulation step, which for larger systems exceeded Jupyter's IOPub message
+   rate limit (so output stopped) and slowed the simulation down.
  - Views no longer draw into a figure the user made with plain Matplotlib (e.g. `plt.subplots()`)
    that happened to have the number MuMoT would use next; such a view showed no figure.
  - Bifurcation diagrams no longer fail with `KeyError: 'name'` when a branch switched at a branch

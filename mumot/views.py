@@ -3193,10 +3193,16 @@ class MuMoTstochasticSimulationView(MuMoTview):
 
         self._initSingleSimulation()
 
+        shownPercent = None
         while self._t < self._maxTime:
-            # Update progress bar
-            self._progressBar.value = self._t
-            self._progressBar.description = f"Loading {runID}{round(self._t / self._maxTime*100)}%:"
+            # Update progress bar, only when the percentage changes: every update is a
+            # message to the browser, and one per simulation step can exceed Jupyter's
+            # IOPub message rate limit (and slows the simulation down)
+            percent = round(self._t / self._maxTime * 100)
+            if percent != shownPercent:
+                shownPercent = percent
+                self._progressBar.value = self._t
+                self._progressBar.description = f"Loading {runID}{percent}%:"
 
             timeInterval, self._currentState = self._simulationStep()
             # increment time
