@@ -63,6 +63,9 @@ Numerical fixes in PyCont:
   is singular *at* the branch point, so which branch was found depended on
   floating-point rounding (and differed between NumPy/SciPy/LAPACK versions).
   It now uses the continuation tangent and the SVD null space of the Jacobian.
+* `Continuation.getSpecialPoint`: skips points whose label has no
+  `name` (e.g. at a domain boundary) instead of raising `KeyError`, as the commented-out
+  upstream version did.
 * `Continuation._MoorePenrose`: falls back to the least-squares solution if
   the bordered Jacobian is exactly singular (e.g. when starting a curve at a
   branch point) instead of raising `LinAlgError`.

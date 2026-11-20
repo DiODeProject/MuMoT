@@ -1824,7 +1824,7 @@ class Continuation(object):
             l = []
             for ix in ixs:
                 pt = self.sol[ix]
-                if pt.labels[label1]['name'] == label2:
+                if pt.labels[label1].get('name') == label2:  # MuMoT: points can lack a name
                     l.append(pt)
 #            l = [pt for pt in self.sol if pt.labels.has_key(label1) and \
 #                 pt.labels[label1].has_key('name') and \

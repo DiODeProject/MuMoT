@@ -58,3 +58,17 @@ def test_visualise_svg_embeds_label_images(tmp_path, monkeypatch):
     svg = model.visualise()._repr_mimebundle_()["image/svg+xml"]
     assert svg.count('href="data:image/png;base64,') >= 5  # 2 nodes, 3 edges
     assert '__mumot_files__' not in svg
+
+
+def test_view_does_not_reuse_a_users_figure():
+    """A view gets a new figure even if the user created one with the number it would take."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from mumot import views
+    users_figure = plt.figure(views.figureCounter)
+    model = parseModel(MODEL)
+    controller = model.integrate()
+    assert controller._view._figure is not users_figure
+    assert plt.fignum_exists(users_figure.number)
+    plt.close('all')

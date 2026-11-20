@@ -4527,6 +4527,11 @@ def _buildFig(object, figure=None):
     value : Numbered figure object
     """
     global figureCounter
+    if figure is None:
+        # skip numbers of figures made outside MuMoT (e.g. with plt.subplots()), which
+        # plt.figure(number) would otherwise return instead of a new figure
+        while plt.fignum_exists(figureCounter):
+            figureCounter += 1
     object._figureNum = figureCounter
     if figureCounter == 1:
         plt.ion()
